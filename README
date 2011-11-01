@@ -1,0 +1,11 @@
+This is going to be great.  More details to come.
+
+=================================================================================
+Installing SourceNet
+=================================================================================
+
+To install:
+- install and configure django to talk with a database (http://docs.djangoproject.com/en/dev/intro/tutorial01/).
+- install and configure a django application.
+- install and configure the sourcenet application.
+- play (and hope it doesn't break!).
