@@ -4,7 +4,7 @@ from django.conf.urls.defaults import patterns
 from django.conf.urls.defaults import url
 
 # import polls from mysite
-from mysite.sourcenet.models import Article
+from research.sourcenet.models import Article
 
 # polls-specific URL settings, intended to be included in master urls.py file.
 #urlpatterns = patterns( 'mysite.polls.views',
@@ -43,8 +43,8 @@ urlpatterns = patterns( '',
     # left in all the stuff above as a sample.  Making an output view, to let a
     #    user specify what they want in output, and then an output/display view
     #    to display the results of the rendering.
-    ( r'^output/network$', 'mysite.sourcenet.views.output_network'),
-    ( r'^output/articles$', 'mysite.sourcenet.views.output_articles'),
+    ( r'^output/network$', 'research.sourcenet.views.output_network'),
+    ( r'^output/articles$', 'research.sourcenet.views.output_articles'),
     #( r'^output/display$', 'mysite.sourcenet.views.output_display'),
 
 )

@@ -24,11 +24,11 @@ import pickle
 from django.db.models import Q
 
 # Import the classes for our SourceNet application
-from mysite.sourcenet.models import Article
+from research.sourcenet.models import Article
 
 # Import sourcenet export classes.
-from mysite.sourcenet.export.csv_article_output import CsvArticleOutput
-from mysite.sourcenet.export.network_data_output import NetworkDataOutput
+from research.sourcenet.export.csv_article_output import CsvArticleOutput
+from research.sourcenet.export.network_data_output import NetworkDataOutput
 
 #===============================================================================
 # classes (in alphabetical order by name)

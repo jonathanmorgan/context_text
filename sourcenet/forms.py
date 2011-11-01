@@ -6,11 +6,11 @@ from django.contrib.auth.models import User
 
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput
-from mysite.sourcenet.export.csv_article_output import CsvArticleOutput
-from mysite.sourcenet.export.network_data_output import NetworkDataOutput
-from mysite.sourcenet.models import Article_Source
-from mysite.sourcenet.models import Newspaper
-from mysite.sourcenet.models import Topic
+from research.sourcenet.export.csv_article_output import CsvArticleOutput
+from research.sourcenet.export.network_data_output import NetworkDataOutput
+from research.sourcenet.models import Article_Source
+from research.sourcenet.models import Newspaper
+from research.sourcenet.models import Topic
 
 # create a form to let a user specify the criteria used to limit the articles
 #    that are used to create output.

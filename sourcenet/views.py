@@ -28,13 +28,13 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 # Import the form class for network output
-from mysite.sourcenet.forms import ArticleSelectForm
-from mysite.sourcenet.forms import ArticleOutputTypeSelectForm
-from mysite.sourcenet.forms import PersonSelectForm
-from mysite.sourcenet.forms import NetworkOutputForm
+from research.sourcenet.forms import ArticleSelectForm
+from research.sourcenet.forms import ArticleOutputTypeSelectForm
+from research.sourcenet.forms import PersonSelectForm
+from research.sourcenet.forms import NetworkOutputForm
 
 # import class that actually processes requests for outputting networks.
-from mysite.sourcenet.export.network_output import NetworkOutput
+from research.sourcenet.export.network_output import NetworkOutput
 
 # Import the classes for our SourceNet application
 #from mysite.sourcenet.models import Article

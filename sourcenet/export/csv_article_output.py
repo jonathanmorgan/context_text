@@ -21,9 +21,9 @@ import StringIO
 # Import the classes for our SourceNet application
 #from mysite.sourcenet.models import Article
 #from mysite.sourcenet.models import Article_Author
-from mysite.sourcenet.models import Article_Source
+from research.sourcenet.models import Article_Source
 #from mysite.sourcenet.models import Person
-from mysite.sourcenet.models import Topic
+from research.sourcenet.models import Topic
 
 
 #===============================================================================

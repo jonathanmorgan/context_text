@@ -358,7 +358,7 @@ class Article_Data( models.Model ):
 
     # Meta-data for this class.
     class Meta:
-        ordering = [ 'pub_date', 'section', 'page' ]
+        ordering = [ 'article', 'last_modified', 'create_date' ]
 
     #----------------------------------------------------------------------
     # methods

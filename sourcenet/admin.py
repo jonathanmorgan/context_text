@@ -1,16 +1,17 @@
-from mysite.sourcenet.models import Location
-from mysite.sourcenet.models import Topic
-from mysite.sourcenet.models import Person
-from mysite.sourcenet.models import Organization
-from mysite.sourcenet.models import Person_Organization
-from mysite.sourcenet.models import Document
-from mysite.sourcenet.models import Newspaper
-#from mysite.sourcenet.models import Article_Topic
-from mysite.sourcenet.models import Article_Author
-from mysite.sourcenet.models import Article_Source
-#from mysite.sourcenet.models import Article_Location
-#from mysite.sourcenet.models import Source_Organization
-from mysite.sourcenet.models import Article
+from research.sourcenet.models import Location
+from research.sourcenet.models import Topic
+from research.sourcenet.models import Person
+from research.sourcenet.models import Organization
+from research.sourcenet.models import Person_Organization
+from research.sourcenet.models import Document
+from research.sourcenet.models import Newspaper
+#from research.sourcenet.models import Article_Topic
+from research.sourcenet.models import Article_Author
+from research.sourcenet.models import Article_Source
+#from research.sourcenet.models import Article_Location
+#from research.sourcenet.models import Source_Organization
+from research.sourcenet.models import Article
+from research.sourcenet.models import Article_Data
 from django.contrib import admin
 
 admin.site.register( Location )
@@ -122,12 +123,42 @@ class ArticleAdmin( admin.ModelAdmin ):
     fieldsets = [
         ( None,
             {
-                'fields' : [ 'coder', 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'topics', 'article_type', 'is_sourced', 'can_code' ]
+                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'text' ]
             }
         ),
-        ( "Article Locations and Text (Optional)",
+    ]
+
+    #inlines = [
+        #TopicInline,
+        #ArticleAuthorInline,
+        #ArticleSourceInline,
+        #LocationInline
+    #]
+
+    list_display = ( 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
+    list_display_links = ( 'headline', )
+    list_filter = [ 'pub_date', 'newspaper' ]
+    search_fields = [ 'headline', 'unique_identifier', 'id' ]
+    #search_fields = [ 'newspaper', 'coder', 'headline' ]
+    #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
+    date_hierarchy = 'pub_date'
+
+admin.site.register( Article, ArticleAdmin )
+
+#-------------------------------------------------------------------------------
+# Article Data admin definition
+#-------------------------------------------------------------------------------
+
+class Article_DataAdmin( admin.ModelAdmin ):
+    fieldsets = [
+        ( None,
             {
-                'fields' : [ 'locations', 'text'  ],
+                'fields' : [ 'coder', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
+            }
+        ),
+        ( "Article Locations (Optional)",
+            {
+                'fields' : [ 'locations'  ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -140,15 +171,15 @@ class ArticleAdmin( admin.ModelAdmin ):
         #LocationInline
     ]
 
-    list_display = ( 'coder', 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
-    list_display_links = ( 'headline', )
-    list_filter = [ 'pub_date', 'newspaper', 'coder' ]
-    search_fields = [ 'headline', 'unique_identifier', 'id' ]
+    list_display = ( 'id', 'coder', 'create_date', 'article_type', 'status' )
+    list_display_links = ( 'id', )
+    list_filter = [ 'coder' ]
+    search_fields = [ 'id' ]
     #search_fields = [ 'newspaper', 'coder', 'headline' ]
     #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
-    date_hierarchy = 'pub_date'
+    date_hierarchy = 'create_date'
 
-admin.site.register( Article, ArticleAdmin )
+admin.site.register( Article_Data, Article_DataAdmin )
 
 #-------------------------------------------------------------------------------
 # Article Source admin definition
