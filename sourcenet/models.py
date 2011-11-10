@@ -288,11 +288,14 @@ class Article( models.Model ):
     author_string = models.TextField( blank = True, null = True )
     headline = models.CharField( max_length = 255 )
     text = models.TextField( blank = True )
+    corrections = models.TextField( blank = True, null = True )
     edition = models.CharField( max_length = 255, blank = True, null = True )
     index_terms = models.TextField( blank = True, null = True )
     archive_source = models.CharField( max_length = 255, blank = True, null = True )
     archive_id = models.CharField( max_length = 255, blank = True, null = True )
     permalink = models.TextField( blank = True, null = True )
+    copyright = models.TextField( blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
     raw_html = models.TextField( blank = True, null = True )
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     create_date = models.DateTimeField( auto_now_add = True )
@@ -931,5 +934,29 @@ class Source_Organization( models.Model ):
         #string_OUT = self.rank + " - " + self.location.name
 #        string_OUT = '%d - %s' % ( self.rank, self.location.name )
 #        return string_OUT
+
+#= End Article_Location Model ======================================================
+
+
+# Import_Error model
+class Import_Error( models.Model ):
+
+    unique_identifier = models.CharField( max_length = 255, blank = True )
+    archive_source = models.CharField( max_length = 255, blank = True, null = True )
+    item = models.TextField( blank = True, null = True )
+    message = models.TextField( blank = True, null = True )
+    exception = models.TextField( blank = True, null = True )
+    batch_identifier = models.CharField( max_length = 255, blank = True )
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+    #----------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------
+
+    def __unicode__( self ):
+        #string_OUT = self.rank + " - " + self.location.name
+        string_OUT = '%d - %s (%s): %s' % ( self.id, self.unique_identifier, self.item, self.message )
+        return string_OUT
 
 #= End Article_Location Model ======================================================
