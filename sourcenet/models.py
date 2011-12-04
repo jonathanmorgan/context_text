@@ -1,7 +1,26 @@
+# python imports
+import logging
+from decimal import Decimal
+from decimal import getcontext
+
+# Django core imports
+#from django.core.exceptions import DoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned
+
+# Django imports
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
+# Django query object for OR-ing selection criteria together.
+from django.db.models import Q
+
+# Dajngo object for interacting directly with database.
+from django.db import connection
+
+'''
+Models for SourceNet, including some that are specific to the Grand Rapids Press.
+'''
 
 # Locations
 class Location( models.Model ):
@@ -286,7 +305,9 @@ class Article( models.Model ):
     #page = models.IntegerField( blank = True )
     page = models.CharField( max_length = 255, blank = True, null = True )
     author_string = models.TextField( blank = True, null = True )
+    author_varchar = models.CharField( max_length = 255, blank = True, null = True )
     headline = models.CharField( max_length = 255 )
+    # What is this? - author = models.CharField( max_length = 255, blank = True, null = True )
     text = models.TextField( blank = True )
     corrections = models.TextField( blank = True, null = True )
     edition = models.CharField( max_length = 255, blank = True, null = True )
@@ -298,6 +319,9 @@ class Article( models.Model ):
     notes = models.TextField( blank = True, null = True )
     raw_html = models.TextField( blank = True, null = True )
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
+    is_local_news = models.BooleanField( default = 0 )
+    is_sports = models.BooleanField( default = 0 )
+    is_local_author = models.BooleanField( default = 0 )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
@@ -885,7 +909,7 @@ class Source_Organization( models.Model ):
             string_OUT = string_OUT + " ( " + self.title + " )"
         return string_OUT
 
-#= End Person_Organization Model ======================================================
+#= End Source_Organization Model ======================================================
 
 
 # Source_Organization model
@@ -959,4 +983,341 @@ class Import_Error( models.Model ):
         string_OUT = '%d - %s (%s): %s' % ( self.id, self.unique_identifier, self.item, self.message )
         return string_OUT
 
-#= End Article_Location Model ======================================================
+#= End Import_Error Model ======================================================
+
+
+# Temp_Section model
+class Temp_Section( models.Model ):
+
+    #----------------------------------------------------------------------
+    # constants-ish
+    #----------------------------------------------------------------------
+
+    NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    
+    # variables for building nuanced queries in django.
+    # query for bylines of in-house authors.
+    Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
+
+    #----------------------------------------------------------------------
+    # instance variables
+    #----------------------------------------------------------------------
+
+    name = models.CharField( max_length = 255, blank = True, null = True )
+    total_articles = models.IntegerField( blank = True, null = True, default = 0 )
+    in_house_articles = models.IntegerField( blank = True, null = True, default = 0 )
+    external_articles = models.IntegerField( blank = True, null = True, default = 0 )
+    external_booth = models.IntegerField( blank = True, null = True, default = 0 )
+    in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
+    percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
+    percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
+    
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+    def __unicode__( self ):
+    
+        #string_OUT = self.rank + " - " + self.location.name
+        string_OUT = '%d - %s' % ( self.id, self.name )
+        return string_OUT
+
+    #-- END method __unicode__() --#
+
+
+    def get_external_article_count( self, *args, **kwargs ):
+    
+        '''
+        Retrieves count of articles in the current section whose "author_varchar"
+           column indicate that the articles were not written by the Grand
+           Rapids Press newsroom.
+        '''
+    
+        # return reference
+        value_OUT = -1
+        
+        # Declare variables
+        article_qs = None 
+        name_q = None
+        author_q = None
+       
+        # get articles.
+        name_q = Q( section = self.name )
+        author_q =  Temp_Section.Q_IN_HOUSE_AUTHOR
+        
+        #logging.debug( str( name_q ) )
+        #logging.debug( str( author_q ) )
+        
+        article_qs = Article.objects.filter( name_q )
+        article_qs = article_qs.exclude( author_q )
+        
+        #logging.debug( article_qs.query )
+        
+        # get count.
+        value_OUT = article_qs.count()
+        
+        return value_OUT
+        
+    #-- END method get_external_article_count --#
+
+
+    def get_external_booth_count( self, *args, **kwargs ):
+    
+        '''
+        Retrieves count of articles in the current section whose "author_varchar"
+           column indicate that the articles were not written by the Grand
+           Rapids Press newsroom, but were implemented in another Booth company
+           newsroom.
+        '''
+    
+        # return reference
+        value_OUT = -1
+        
+        # Declare variables
+        article_qs = None
+        name_q = None
+        author_q = None
+        
+        # get articles.
+        name_q = Q( section = self.name )
+        author_q =  Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS NEWS SERVICE$' )
+        
+        #logging.debug( str( name_q ) )
+        #logging.debug( str( author_q ) )
+        
+        article_qs = Article.objects.filter( name_q, author_q )
+        
+        # get count.
+        value_OUT = article_qs.count()
+        
+        return value_OUT
+        
+    #-- END method get_external_article_count --#
+
+
+    def get_in_house_article_count( self, *args, **kwargs ):
+    
+        '''
+        Retrieves count of articles in the current section whose "author_varchar"
+           column indicate that the articles were written by the actual Grand
+           Rapids Press newsroom.
+        '''
+    
+        # return reference
+        value_OUT = -1
+        
+        # Declare variables
+        article_qs = None 
+        
+        # get articles.
+        article_qs = Article.objects.filter( Q( section = self.name ), Temp_Section.Q_IN_HOUSE_AUTHOR )
+        
+        # get count.
+        value_OUT = article_qs.count()
+        
+        return value_OUT
+        
+    #-- END method get_in_house_article_count --#
+
+
+    def get_in_house_author_count( self, *args, **kwargs ):
+    
+        '''
+        Retrieves count of distinct author strings (including joint bylines
+           separate from either individual's name, and including misspellings)
+           of articles in the current section whose "author_varchar" column
+           indicate that the articles were implemented by the actual Grand
+           Rapids Press newsroom.
+        '''
+    
+        # return reference
+        value_OUT = -1
+        
+        # Declare variables
+        my_cursor = None
+        query_string = ""
+        my_row = None
+        
+        # get database cursor
+        my_cursor = connection.cursor()
+        
+        # create SQL query string
+        query_string = "SELECT COUNT( DISTINCT CONVERT( LEFT( author_varchar, LOCATE( ' / ', author_varchar ) ), CHAR ) ) as name_count"
+        query_string += " FROM sourcenet_article"
+        query_string += " WHERE section = '" + self.name + "'"
+        query_string += "     AND"
+        query_string += "     ("
+        query_string += "         ( UPPER( author_varchar ) REGEXP '.* */ *THE GRAND RAPIDS PRESS$' )"
+        query_string += "         OR ( UPPER( author_varchar ) REGEXP '.* */ *PRESS .* EDITOR$' )"
+        query_string += "         OR ( UPPER( author_varchar ) REGEXP '.* */ *GRAND RAPIDS PRESS .* BUREAU$' )"
+        query_string += "         OR ( UPPER( author_varchar ) REGEXP '.* */ *SPECIAL TO THE PRESS$' )"
+        query_string += "     )"
+        
+        # execute query.
+        my_cursor.execute( query_string )
+        
+        # get the row that is returned.
+        my_row = my_cursor.fetchone()
+        
+        # get count.
+        value_OUT = my_row[ 0 ]
+        
+        return value_OUT
+        
+    #-- END method get_in_house_author_count --#
+
+
+    def get_total_article_count( self, *args, **kwargs ):
+    
+        '''
+        Retrieves count of articles whose "section" column contain the current
+           section instance's name.
+        '''
+    
+        # return reference
+        value_OUT = -1
+        
+        # Declare variables
+        article_qs = None 
+        
+        # get articles.
+        article_qs = Article.objects.filter( section = self.name )
+        
+        # get count.
+        value_OUT = article_qs.count()
+        
+        return value_OUT
+        
+    #-- END method get_total_article_count --#
+    
+
+    def process_column_values( self, do_save_IN = False, *args, **kwargs ):
+    
+        '''
+        Generates values for all columns for section name passed in.
+        '''
+    
+        # return reference
+        status_OUT = "Success!"
+        
+        # Declare variables
+        my_total_articles = -1
+        my_in_house_articles = -1
+        my_external_articles = -1
+        my_external_booth = -1
+        my_in_house_authors = -1
+        my_percent_in_house = -1
+        my_percent_external = -1
+        
+        # initialize Decimal Math
+        getcontext().prec = 20
+        
+        # get values.
+        my_total_articles = self.get_total_article_count()
+        my_in_house_articles = self.get_in_house_article_count()
+        my_external_articles = self.get_external_article_count()
+        my_external_booth = self.get_external_booth_count()
+        my_in_house_authors = self.get_in_house_author_count()
+
+        # derive additional values
+
+        # percent of articles that are in-house
+        if ( ( my_in_house_articles >= 0 ) and ( my_total_articles > 0 ) ):
+
+            # divide in-house by total
+            my_percent_in_house = Decimal( my_in_house_articles ) / Decimal( my_total_articles )
+            
+        else:
+        
+            # either no in-house or total is 0.  Set to 0.
+            my_percent_in_house = 0
+            
+        #-- END check to make sure values are OK for calculating percent --#
+        
+        # percent of articles that are external
+        if ( ( my_external_articles >= 0 ) and ( my_total_articles > 0 ) ):
+
+            # divide external by total
+            my_percent_external = Decimal( my_external_articles ) / Decimal( my_total_articles )
+            
+        else:
+        
+            # either no external or total is 0.  Set to 0.
+            my_percent_external = 0
+            
+        #-- END check to make sure values are OK for calculating percent --#
+        
+        # set values
+        self.total_articles = my_total_articles
+        self.in_house_articles = my_in_house_articles
+        self.external_articles = my_external_articles
+        self.external_booth = my_external_booth
+        self.in_house_authors = my_in_house_authors
+        self.percent_in_house = my_percent_in_house
+        self.percent_external = my_percent_external
+        
+        # save?
+        if ( do_save_IN == True ):
+        
+            # save.
+            self.save()
+        
+        #-- END check to see if we save or not. --#
+        
+        return status_OUT
+        
+    #-- END method process_column_values --#
+
+
+    #----------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------
+
+    @classmethod
+    def get_instance_for_name( self, name_IN = "",  *args, **kwargs ):
+    
+        '''
+        Generates values for all columns for section name passed in.
+        '''
+    
+        # return reference
+        instance_OUT = None
+        
+        # Declare variables
+        me = "get_instance_for_name"
+        result_qs = None
+        result_count = -1
+        
+        # got a name?
+        if ( name_IN ):
+
+            # try to get Temp_Section instance with name = name_IN
+            try:
+            
+                instance_OUT = self.objects.get( name = name_IN )
+
+            except MultipleObjectsReturned:
+
+                # error!
+                loging.debug( "In " + me + ": ERROR - more than one match for name \"" + name_IN + "\" when there should only be one.  Returning nothing." )
+
+            except ObjectDoesNotExist:
+
+                # either nothing or negative count (either implies no match).
+                #    Return new instance.
+                instance_OUT = Temp_Section()
+                instance_OUT.name = name_IN
+                
+            #-- END try to retrieve instance for name passed in. --#
+            
+        #-- END check to see if name passed in --#
+        
+        return instance_OUT
+        
+    #-- END class method get_instance_for_name --#
+
+
+#= End Temp_Section Model ======================================================
