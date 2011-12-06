@@ -970,7 +970,9 @@ class Import_Error( models.Model ):
     item = models.TextField( blank = True, null = True )
     message = models.TextField( blank = True, null = True )
     exception = models.TextField( blank = True, null = True )
+    stack_trace = models.TextField( blank = True, null = True )
     batch_identifier = models.CharField( max_length = 255, blank = True )
+    item_date = models.DateTimeField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
