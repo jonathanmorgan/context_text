@@ -1,3 +1,7 @@
+#================================================================================
+# Imports
+#================================================================================
+
 # python imports
 import datetime
 from decimal import Decimal
@@ -62,18 +66,27 @@ from django.db.models import Q
 # Dajngo object for interacting directly with database.
 from django.db import connection
 
+
+#================================================================================
+# Shared variables and functions
+#================================================================================
+
 '''
 Gross debugging code, shared across all models.
 '''
 
 DEBUG = True
+STATUS_SUCCESS = "Success!"
 
-def output_debug( message_IN ):
+def output_debug( message_IN, method_IN = "" ):
     
     '''
     Accepts message string.  If debug is on, passes it to print().  If not,
        does nothing for now.
     '''
+    
+    # declare variables
+    my_message = ""
 
     # got a message?
     if ( message_IN ):
@@ -81,15 +94,71 @@ def output_debug( message_IN ):
         # only print if debug is on.
         if ( DEBUG == True ):
         
+            my_message = message_IN
+        
+            # got a method?
+            if ( method_IN ):
+            
+                # We do - append to front of message.
+                my_message = "In " + method_IN + ": " + my_message
+                
+            #-- END check to see if method passed in --#
+        
             # debug is on.  For now, just print.
-            print( message_IN )
-            logging.debug( message_IN )
+            print( my_message )
+            logging.debug( my_message )
         
         #-- END check to see if debug is on --#
     
     #-- END check to see if message. --#
 
 #-- END method output_debug() --#
+
+
+def get_dict_value( dict_IN, name_IN, default_IN = None ):
+
+    '''
+    Convenience method for getting value for name of dictionary entry that might
+       or might not exist in dictionary.
+    '''
+    
+    # return reference
+    value_OUT = default_IN
+
+    # got a dict?
+    if ( dict_IN ):
+    
+        # got a name?
+        if ( name_IN ):
+
+            # name in dictionary?
+            if ( name_IN in dict_IN ):
+            
+                # yup.  Get it.
+                value_OUT = dict_IN[ name_IN ]
+                
+            else:
+            
+                # no.  Return default.
+                value_OUT = default_IN
+            
+            #-- END check to see if start date in arguments --#
+            
+        else:
+        
+            value_OUT = default_IN
+            
+        #-- END check to see if name passed in. --#
+        
+    else:
+    
+        value_OUT = default_IN
+        
+    #-- END check to see if dict passed in. --#
+
+    return value_OUT
+
+#-- END method get_dict_value() --#
 
 
 '''
@@ -210,7 +279,7 @@ class Location( models.Model ):
 
         return string_OUT
 
-#= End Location Model =========================================================
+#= End Location Model ===========================================================
 
 # Topic model
 class Topic( models.Model ):
@@ -458,7 +527,14 @@ class Person( models.Model ):
             
         #-- END check to see if ID --#
                 
-        string_OUT = self.last_name + ', ' + self.first_name + " " + self.middle_name
+        string_OUT = self.last_name + ', ' + self.first_name
+        
+        # middle name?
+        if ( self.middle_name ):
+        
+            string_OUT += " " + self.middle_name
+            
+        #-- END middle name check --#
 
         if ( self.title ):
         
@@ -668,6 +744,22 @@ class Newspaper( models.Model ):
 # Article model
 class Article( models.Model ):
 
+    #----------------------------------------------------------------------------
+    # Constants-ish
+    #----------------------------------------------------------------------------
+    
+    
+    CODER_USERNAME_AUTOMATED = "automated"
+    CODER_USER_AUTOMATED = User.objects.get( username = "automated" )
+    
+    PARAM_AUTOPROC_ALL = "autoproc_all"
+    PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
+    
+    
+    #----------------------------------------------------------------------------
+    # Model fields (persisted in database)
+    #----------------------------------------------------------------------------
+
     unique_identifier = models.CharField( max_length = 255, blank = True )
     source_string = models.CharField( max_length = 255, blank = True, null = True )
     newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
@@ -701,13 +793,17 @@ class Article( models.Model ):
     #sources = models.ManyToManyField( Article_Source )
     #locations = models.ManyToManyField( Article_Location, blank = True )
 
+    #----------------------------------------------------------------------------
+    # Instance variables and meta-data
+    #----------------------------------------------------------------------------
+
     # Meta-data for this class.
     class Meta:
         ordering = [ 'pub_date', 'section', 'page' ]
 
-    #----------------------------------------------------------------------
-    # methods
-    #----------------------------------------------------------------------
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
 
     def __unicode__( self ):
 
@@ -759,6 +855,148 @@ class Article( models.Model ):
     #-- END method __unicode__() --#
     
     
+    def do_automated_processing( self, *args, **kwargs ):
+
+        '''
+        Accepts parameters to tell which parts of processing to implement, in
+           **kwargs.  Tries to pull in any existing automated coding.  If none
+           found, makes new coding record for user "automated".  Does requested
+           coding, either "all", or just individual parts of records.  Returns
+           status.
+        preconditions: None
+        postconditions: Updates related article_data record for "automated" user.
+           If multiple article_coding records found for automated user, outputs
+           error message, returns error status, does nothing.
+        '''
+    
+        # return reference
+        status_OUT = STATUS_SUCCESS
+        
+        # declare variables
+        me = "do_automated_processing"
+        process_all_IN = False
+        process_authors_IN = False
+        automated_user = None
+        my_article_data = None
+        latest_status = ""
+        
+        # parse params
+        process_all_IN = get_dict_value( kwargs, self.PARAM_AUTOPROC_ALL, True )
+        
+        # if not process all, do we process any?
+        if ( process_all_IN == False ):
+
+            # how about authors?
+            process_authors_IN = get_dict_value( kwargs, self.PARAM_AUTOPROC_AUTHORS, True )
+            
+        #-- END check to see if we set processing flags by item --#
+        
+        # first, see if we have article data for automated coder.
+        automated_user = self.CODER_USER_AUTOMATED
+        my_article_data = self.get_article_data_for_coder( automated_user )
+        
+        if ( my_article_data ):
+        
+            # we do.  Process stuff.
+            
+            # process authors?
+            if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
+            
+                # process authors.
+                latest_status = my_article_data.process_author_string()
+
+                output_debug( "After calling process_author_string() - " + latest_status, me )
+                
+            #-- End check to see if we process authors --#
+            
+        else:
+        
+            # error making/retrieving article data.
+            status_OUT = "No article data returned for automated user ( " + str( automated_user ) + " ).  Doing nothing."
+            output_debug( status_OUT, me )
+            
+        #-- END check to see if we have article data. --#
+        
+        return status_OUT
+    
+    #-- END method do_automated_processing() --#
+    
+    
+    def get_article_data_for_coder( self, coder_IN = None, *args, ***kwargs ):
+
+        '''
+        Checks to see if there is a nested article_data instance for the coder
+           whose User instance is passed in.  If so, returns it.  If not, creates
+           one, places minimum required for save inside, saves, then returns it.
+        preconditions: Assumes that you are looking for a single coding record
+           for a given user, and that the user won't have multiple.  If the user
+           might have more than one coding record, just invoke:
+           
+           self.article_data_set.filter( coder = <user_instance> )
+           
+           to get a QuerySet, and see if it returns anything.  If not, call this
+           method to create a new one for that user.
+        postconditions: If user passed in doesn't have a article_data record,
+           this will create one for him or her, save it, and then return it.
+        '''
+    
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "get_article_data_for_coder"
+        article_data_qs = None
+        article_data_count = -1
+        
+        # Do we have a coder passed in?
+        if ( coder_IN ):
+
+            # first, see if we have an associated article_data instance already.
+            article_data_qs = self.article_data_set.filter( coder = coder_IN )
+            
+            # what we got back?
+            article_data_count = article_data_qs.count()
+            
+            # if 0, create new, populate, and save.
+            if ( article_data_count == 0 ):
+            
+                # create instance
+                instance_OUT = Article_Data()
+
+                # populate
+                instance_OUT.article = self
+                instance_OUT.coder = coder_IN
+
+                # save article_data instance.
+                instance_OUT.save()
+                
+                output_debug( "Created article_data for " + str( coder_IN ) + ".", me )
+
+            elif ( article_data_count == 1 ):
+            
+                # one found.  Get and return it.
+                instance_OUT = article_data_qs.get()
+
+                output_debug( "Found existing article_data for " + str( coder_IN ) + ".", me )
+                
+            elif ( article_data_count > 1 ):
+            
+                # found more than one.  Log error, suggest just pulling QuerySet.
+                output_debug( "Found multiple article_data records for " + str( coder_IN ) + ".  Returning None.  If this is expected, try self.article_data_set.filter( coder = <user_instance> ) instead.", me )
+                
+            #-- END processing based on counts --#
+            
+        else:
+        
+            output_debug( "No coder passed in, returning None.", me )
+
+        #-- END check to see if we have a coder --#
+        
+        return instance_OUT
+    
+    #-- END method do_automated_processing() --#
+    
+    
 #= End Article Model ============================================================
 
 
@@ -797,9 +1035,6 @@ class Article_Data( models.Model ):
     #authors = models.ManyToManyField( Article_Author )
     #sources = models.ManyToManyField( Article_Source )
     #locations = models.ManyToManyField( Article_Location, blank = True )
-
-    # non-database instance variables.
-    debug = False
 
     # Meta-data for this class.
     class Meta:
@@ -908,7 +1143,7 @@ class Article_Data( models.Model ):
         '''
         
         # return reference
-        status_OUT = "Success!"
+        status_OUT = STATUS_SUCCESS
         
         # declare variables.
         me = "process_author_string"
@@ -923,6 +1158,7 @@ class Article_Data( models.Model ):
         author_name = ""
         author_person = None
         article_author = None
+        article_author_qs = None
         
         # get related article.
         if ( self.article ):
@@ -991,7 +1227,7 @@ class Article_Data( models.Model ):
                     #-- END loop over and-delimited split of authors --#
                     
                     # time to start testing.  Print out the array.
-                    output_debug( str( author_name_list ) )
+                    output_debug( "In " + me + ": Author list: " + str( author_name_list ) )
 
                     # For each name in array, see if we already have a matching
                     #    person.
@@ -1009,17 +1245,37 @@ class Article_Data( models.Model ):
                             
                                 # no ID.  Save the record.
                                 author_person.save()
+                                output_debug( "In " + me + ": saving new person - " + str( author_person ) )
                                 
-                            #-- END check to se3 if new Person. --#
+                            #-- END check to see if new Person. --#
                             
-                            # Now, we need to add Article_Author instance,
-                            #    including adding in place for organization string.
-                            article_author = Article_Author()
-                            article_author.article_data = self
-                            article_author.person = author_person
-                            article_author.organization_string = author_organization
-                            article_author.save()
+                            # Now, we need to deal with Article_Author instance.
+                            #    First, see if there already is one for this
+                            #    name.  If so, do nothing.  If not, make one.
+                            article_author_qs = self.article_author_set.filter( person = author_person )
+                            
+                            # got anything?
+                            if ( article_author_qs.count() == 0 ):
+                                                         
+                                # no - add - including organization string.
+                                article_author = Article_Author()
+                                article_author.article_data = self
+                                article_author.person = author_person
+                                article_author.organization_string = author_organization
+                                article_author.save()
+                                
+                                output_debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
 
+                            else:
+                            
+                                output_debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
+                                
+                            #-- END check if need new Article_Author instance --#
+    
+                        else:
+                        
+                            output_debug( "In " + me + ": error - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
+    
                         #-- END check to see if person found. --#
                     
                     #-- END loop over author names. --#
@@ -1964,7 +2220,7 @@ class Temp_Section( models.Model ):
         '''
     
         # return reference
-        status_OUT = "Success!"
+        status_OUT = STATUS_SUCCESS
         
         # Declare variables
         my_total_articles = -1

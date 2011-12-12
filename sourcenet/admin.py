@@ -85,7 +85,7 @@ class TopicInline( admin.TabularInline ):
 class ArticleAuthorInline( admin.StackedInline ):
     model = Article_Author
     extra = 2
-    fk_name = 'article'
+    fk_name = 'article_data'
 
 #class Source_OrganizationInline( admin.TabularInline ):
 #    model = Source_Organization
@@ -95,7 +95,7 @@ class ArticleAuthorInline( admin.StackedInline ):
 class ArticleSourceInline( admin.StackedInline ):
     model = Article_Source
     extra = 2
-    fk_name = 'article'
+    fk_name = 'article_data'
     fieldsets = [
         ( None,                 { 'fields' : [ 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
         ( "Notes (Optional)",
@@ -188,7 +188,7 @@ admin.site.register( Article_Data, Article_DataAdmin )
 class Article_SourceAdmin( admin.ModelAdmin ):
 
     fieldsets = [
-        ( None,                 { 'fields' : [ 'article', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
+        ( None,                 { 'fields' : [ 'article_data', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
         ( "Notes (Optional)",
             {
                 'fields' : [ 'notes' ],
@@ -201,9 +201,9 @@ class Article_SourceAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'person', 'organization', 'article' )
+    list_display = ( 'person', 'organization', 'article_data' )
     #list_display_links = ( 'headline', )
-    list_filter = [ 'person', 'organization', 'article' ]
+    list_filter = [ 'person', 'organization', 'article_data' ]
     #search_fields = [ 'article', 'person', 'organization' ]
     #date_hierarchy = 'pub_date'
 
@@ -218,16 +218,16 @@ admin.site.register( Article_Source, Article_SourceAdmin )
 class Article_AuthorAdmin( admin.ModelAdmin ):
 
     fieldsets = [
-        ( None,                 { 'fields' : [ 'article', 'author_type', 'person' ] } ),
+        ( None, { 'fields' : [ 'article_data', 'author_type', 'person' ] } ),
     ]
 
     #inlines = [
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'person', 'article' )
+    list_display = ( 'person', 'article_data' )
     #list_display_links = ( 'headline', )
-    list_filter = [ 'person', 'article' ]
+    list_filter = [ 'person', 'article_data' ]
     #search_fields = [ 'article', 'person' ]
     #date_hierarchy = 'pub_date'
 
