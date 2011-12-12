@@ -1,7 +1,51 @@
 # python imports
-import logging
+import datetime
 from decimal import Decimal
 from decimal import getcontext
+import logging
+import pickle
+
+# nameparse import
+# http://pypi.python.org/pypi/nameparser
+from nameparser import HumanName
+
+'''
+Code sample:
+
+from nameparser import HumanName
+>>> test = HumanName( "Jonathan Scott Morgan" )
+>>> test
+<HumanName : [
+        Title: '' 
+        First: 'Jonathan' 
+        Middle: 'Scott' 
+        Last: 'Morgan' 
+        Suffix: ''
+]>
+>>> import pickle
+>>> test2 = pickle.dumps( test )
+>>> test3 = pickle.loads( test2 )
+>>> test3.__eq__( test2 )
+False
+>>> test3.__eq__( test )
+True
+>>> test3.first
+u'Jonathan'
+>>> test3.middle
+u'Scott'
+>>> test3.last
+u'Morgan'
+>>> test3.title
+u''
+>>> test3.suffix
+u''
+>>> if ( test3 == test ):
+...     print( "True!" )
+... else:
+...     print( "False!" )
+... 
+True!
+'''
 
 # Django core imports
 #from django.core.exceptions import DoesNotExist
@@ -17,6 +61,36 @@ from django.db.models import Q
 
 # Dajngo object for interacting directly with database.
 from django.db import connection
+
+'''
+Gross debugging code, shared across all models.
+'''
+
+DEBUG = True
+
+def output_debug( message_IN ):
+    
+    '''
+    Accepts message string.  If debug is on, passes it to print().  If not,
+       does nothing for now.
+    '''
+
+    # got a message?
+    if ( message_IN ):
+    
+        # only print if debug is on.
+        if ( DEBUG == True ):
+        
+            # debug is on.  For now, just print.
+            print( message_IN )
+            logging.debug( message_IN )
+        
+        #-- END check to see if debug is on --#
+    
+    #-- END check to see if message. --#
+
+#-- END method output_debug() --#
+
 
 '''
 Models for SourceNet, including some that are specific to the Grand Rapids Press.
@@ -171,27 +245,324 @@ class Person( models.Model ):
     first_name = models.CharField( max_length = 255 )
     middle_name = models.CharField( max_length = 255, blank = True )
     last_name = models.CharField( max_length = 255 )
+    name_prefix = models.CharField( max_length = 255, blank = True, null = True )
+    name_suffix = models.CharField( max_length = 255, blank = True, null = True )
+    full_name_string = models.CharField( max_length = 255, blank = True, null = True )
     gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
     title = models.CharField( max_length = 255, blank = True )
+    nameparser_pickled = models.TextField( blank = True, null = True )
     notes = models.TextField( blank = True )
 
     # Meta-data for this class.
     class Meta:
         ordering = [ 'last_name', 'first_name', 'middle_name' ]
 
+
     #----------------------------------------------------------------------
-    # methods
+    # static methods
+    #----------------------------------------------------------------------
+    
+    
+    @staticmethod
+    def get_person_for_name( name_IN, create_if_no_match_IN = False ):
+    
+        '''
+        This method accepts the full name of a person.  Uses NameParse object to
+           parse name into prefix/title, first name, middle name(s), last name,
+           and suffix.  Looks first for an exact person match.  If one found,
+           returns it.  If none found, returns new Person instance with name
+           stored in it.
+        preconditions: None.
+        postconditions: Looks first for an exact person match.  If one found,
+           returns it.  If none found, returns new Person instance with name
+           stored in it.  If multiple matches found, error, so will return None.
+           If new Person instance returned, it will not have been saved.  If you
+           want that person to be in the database, you have to save it yourself.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables.
+        me = "get_person_for_name"
+        person_qs = None
+        person_count = -1
+        
+        # got a name?
+        if ( name_IN ):
+        
+            # try to retrieve person for name.
+            person_qs = Person.look_up_person_from_name( name_IN )
+            
+            # got a match?
+            person_count = person_qs.count()
+            if ( person_count == 1 ):
+            
+                # got one match.  Return it.
+                instance_OUT = person_qs.get()
+                
+                output_debug( "In " + me + ": found single match for name: " + name_IN )
+                
+            elif( person_count == 0 ):
+            
+                # no matches.  What do we do?
+                if ( create_if_no_match_IN == True ):
+                
+                    # create new Person!
+                    instance_OUT = Person()
+                    
+                    # store name
+                    instance_OUT.set_name( name_IN )
+                    
+                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, creating new Person!" )
+                    
+                else:
+                
+                    # return None!
+                    instance_OUT = None
+                    
+                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, returning Nones!" )
+                    
+                #-- END check to see if we create on no match. --#
+                
+            else:
+            
+                # Multiple matches.  Trouble.
+                output_debug( "In " + me + ": multiple matches for name \"" + name_IN + ".  Returning None." )
+                instance_OUT = None
+            
+            #-- END check count of persons returned. --#
+            
+        else:
+        
+            # No name passed in.  Nothing to return.
+            output_debug( "In " + me + ": no name passed in, so returning None." )
+            instance_OUT = None
+        
+        #-- END check for name string passed in. --#
+
+        return instance_OUT
+    
+    #-- END method get_person_for_name() --#
+
+
+    @staticmethod
+    def look_up_person_from_name( name_IN = "" ):
+    
+        '''
+        This method accepts the full name of a person.  Uses NameParse object to
+           parse name into prefix/title, first name, middle name(s), last name,
+           and suffix.  Looks first for an exact person match.  If one found,
+           returns it.  If none found, if create flag is true, returns new Person
+           instance with name stored in it.  If flag if false, returns None.
+        preconditions: None.
+        postconditions: If new Person instance returned, it will not have been
+           saved.  If you want that person to be in the database, you have to
+           save it yourself.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables.
+        me = "look_up_person_from_name"
+        parsed_name = None
+        prefix = ""
+        first = ""
+        middle = ""
+        last = ""
+        suffix = ""
+        person_qs = None
+        person_count = -1
+                
+        # got a name?
+        if ( name_IN ):
+        
+            # yes.  Parse it using HumanName class from nameparser.
+            parsed_name = HumanName( name_IN )          
+            
+            # Use parsed values to build a search QuerySet.  First, get values.
+            prefix = parsed_name.title
+            first = parsed_name.first
+            middle = parsed_name.middle
+            last = parsed_name.last
+            suffix = parsed_name.suffix
+            
+            # build up queryset.
+            qs_OUT = Person.objects.all()
+            
+            # got a prefix?
+            if ( prefix ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( name_prefix__iexact = prefix )
+                
+            #-- END check for prefix --#
+            
+            # first name
+            if ( first ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( first_name__iexact = first )
+                
+            #-- END check for first name --#
+            
+            # middle name
+            if ( middle ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( middle_name__iexact = middle )
+                
+            #-- END check for middle name --#
+
+            # last name
+            if ( last ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( last_name__iexact = last )
+                
+            #-- END check for last name --#
+            
+            # suffix
+            if ( suffix ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( name_suffix__iexact = suffix )
+                
+            #-- END suffix --#
+            
+        else:
+        
+            # No name, returning None
+            output_debug( "In " + me + ": no name passed in, returning None." )
+        
+        #-- END check to see if we have a name. --#
+        
+        return qs_OUT
+    
+    #-- END static method look_up_person_from_name() --#
+    
+
+    #----------------------------------------------------------------------
+    # instance methods
     #----------------------------------------------------------------------
 
     def __unicode__( self ):
+ 
         # return reference
         string_OUT = ''
+ 
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+                
         string_OUT = self.last_name + ', ' + self.first_name + " " + self.middle_name
-        if ( ( self.title is not None ) and ( self.title != '' ) ):
+
+        if ( self.title ):
+        
             string_OUT = string_OUT + " ( " + self.title + " )"
+            
+        #-- END check to see if we have a title. --#
+ 
         return string_OUT
 
-#= End Person Model =========================================================
+    #-- END method __unicode__() --#
+
+
+    def set_name( self, name_IN = "" ):
+    
+        '''
+        This method accepts the full name of a person.  Uses NameParse object to
+           parse name into prefix/title, first name, middle name(s), last name,
+           and suffix.  Stores resulting parsed values in this instance, and also
+           stores the pickled name object and the full name string.
+        preconditions: None.
+        postconditions: Updates values in this instance with values parsed out of
+           name passed in.
+        '''
+        
+        # declare variables.
+        me = "set_name"
+        parsed_name = None
+        prefix = ""
+        first = ""
+        middle = ""
+        last = ""
+        suffix = ""
+                
+        # No name, returning None
+        output_debug( "In " + me + ": storing name: " + name_IN )
+
+        # got a name?
+        if ( name_IN ):
+        
+            # yes.  Parse it using HumanName class from nameparser.
+            parsed_name = HumanName( name_IN )          
+            
+            # Use parsed values to build a search QuerySet.  First, get values.
+            prefix = parsed_name.title
+            first = parsed_name.first
+            middle = parsed_name.middle
+            last = parsed_name.last
+            suffix = parsed_name.suffix
+            
+            # got a prefix?
+            if ( prefix ):
+    
+                # set value
+                self.name_prefix = prefix
+                
+            #-- END check for prefix --#
+            
+            # first name
+            if ( first ):
+    
+                # set value
+                self.first_name = first
+                
+            #-- END check for first name --#
+            
+            # middle name
+            if ( middle ):
+    
+                # set value
+                self.middle_name = middle
+                
+            #-- END check for middle name --#
+
+            # last name
+            if ( last ):
+    
+                # set value
+                self.last_name = last
+                
+            #-- END check for last name --#
+            
+            # suffix
+            if ( suffix ):
+    
+                # set value
+                self.name_suffix = suffix
+                
+            #-- END suffix --#
+            
+            # Finally, store the full name string (and the pickled object?).
+            self.full_name_string = str( parsed_name )
+            #self.nameparser_pickled = pickle.dumps( parsed_name )
+            
+        else:
+        
+            # No name, returning None
+            output_debug( "In " + me + ": no name passed in, returning None." )
+        
+        #-- END check to see if we have a name. --#
+        
+    #-- END static method look_up_person_from_name() --#
+    
+
+#== END Person Model ===========================================================#
 
 
 # Orgnization model
@@ -339,12 +710,56 @@ class Article( models.Model ):
     #----------------------------------------------------------------------
 
     def __unicode__( self ):
-        string_OUT = str( self.id ) + " - " + self.newspaper.name + " (" + self.pub_date.strftime( "%b %d, %Y" ) + ", " + self.section + str( self.page ) + ", UID: " + self.unique_identifier + ") - " + self.headline
+
+        # start with stuff we should always have.
+        string_OUT = str( self.id ) + " - " + self.pub_date.strftime( "%b %d, %Y" )
+        
+        # Got a section?
+        if ( self.section ):
+        
+            # add section
+            string_OUT += ", " + self.section
+        
+        #-- END check to see if section present.
+        
+        # Got a page?
+        if ( self.page ):
+        
+            # add page.
+            string_OUT += " ( " + str( self.page ) + " )"
+            
+        #-- END check to see if page. --#
+        
+        # Unique Identifier?
+        if ( self.unique_identifier ):
+
+            # Add UID
+            string_OUT += ", UID: " + self.unique_identifier
+            
+        #-- END check for unique identifier
+        
+        # headline
+        string_OUT += " - " + self.headline
+        
+        # got a related newspaper?
+        if ( self.newspaper ):
+        
+            # Yes.  Append it.
+            string_OUT += " ( " + self.newspaper.name + " )"
+            
+        elif ( self.source_string ):
+        
+            # Well, we have a source string.
+            string_OUT += " ( " + self.source_string + " )"
+            
+        #-- END check to see if newspaper present. --#
+        
         return string_OUT
 
     #-- END method __unicode__() --#
-
-#= End Article Model ===========================================================
+    
+    
+#= End Article Model ============================================================
 
 
 # Article_Data model
@@ -369,7 +784,7 @@ class Article_Data( models.Model ):
 
     article = models.ForeignKey( Article )
     coder = models.ForeignKey( User )
-    topics = models.ManyToManyField( Topic )
+    topics = models.ManyToManyField( Topic, blank = True, null = True )
     locations = models.ManyToManyField( Location, blank = True )
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
     is_sourced = models.BooleanField( default = 1 )
@@ -383,16 +798,21 @@ class Article_Data( models.Model ):
     #sources = models.ManyToManyField( Article_Source )
     #locations = models.ManyToManyField( Article_Location, blank = True )
 
+    # non-database instance variables.
+    debug = False
+
     # Meta-data for this class.
     class Meta:
         ordering = [ 'article', 'last_modified', 'create_date' ]
 
-    #----------------------------------------------------------------------
+    #----------------------------------------------------------------------------
     # methods
-    #----------------------------------------------------------------------
+    #----------------------------------------------------------------------------
 
     def __unicode__( self ):
-        string_OUT = str( self.id ) + " - " + self.newspaper.name + " (" + self.pub_date.strftime( "%b %d, %Y" ) + ", " + self.section + str( self.page ) + ", UID: " + self.unique_identifier + ") - " + self.headline
+
+        string_OUT = str( self.id ) + " - " + str( self.article )
+        
         return string_OUT
 
     #-- END method __unicode__() --#
@@ -468,7 +888,169 @@ class Article_Data( models.Model ):
 
     #-- END method get_source_counts_by_type() --#
 
-#= End Article_Data Model ===========================================================
+
+    def process_author_string( self ):
+    
+        '''
+        This method parses the contents of the parent article's author_string
+           variable.  Breaks out the organizational affiliation portion of the
+           author string (the part after the "/", then splits on commas and
+           ampersands to detect multiple authors.  For each author, uses the
+           NameParse object to parse their name into prefix/title, first name,
+           middle name(s), last name, and suffix.  Looks first for an exact
+           person match.  If one found, creates an Article_Author instance to
+           link that person to this instance.  If none found, creates a new
+           Person, associates it with this instance, then searches for
+           potential duplicates, associating any found with the newly created
+           Person record.
+        preconditions: Assumes that there is an associated article.  If not,
+           there will be an exception.
+        '''
+        
+        # return reference
+        status_OUT = "Success!"
+        
+        # declare variables.
+        me = "process_author_string"
+        my_article = None
+        author_string = ""
+        author_parts = None
+        author_parts_length = -1
+        author_organization = ""
+        author_name_list = []
+        author_and_part = ""
+        author_comma_part = ""
+        author_name = ""
+        author_person = None
+        article_author = None
+        
+        # get related article.
+        if ( self.article ):
+        
+            # got an article
+            my_article = self.article
+            
+            # get author_string
+            author_string = my_article.author_string
+            
+            # got an author string?
+            if ( author_string ):
+            
+                # got an author string.  Parse it.  First, break out organization.
+                # split author string on "/"
+                author_parts = author_string.split( '/' )
+                
+                # got two parts?
+                author_parts_length = len( author_parts )
+                if ( author_parts_length == 2 ):
+                
+                    # we do.  2nd part = organization
+                    author_organization = author_parts[ 1 ]
+                    author_organization = author_organization.strip()
+                    
+                    # first part is author string we look at going forward.
+                    author_string = author_parts[ 0 ]
+                    author_string = author_string.strip()
+                    
+                elif ( ( author_parts_length == 0 ) or ( author_parts_length > 2 ) ):
+                
+                    # error.  what to do?
+                    status_OUT = "ERROR - in " + me + ": splitting on '/' resulted in either an empty array or more than two things.  This isn't right ( " + my_article.author_string + " )."
+                    
+                #-- END check results of splitting on "/"
+                
+                # Got something in author_string?
+                if ( author_string ):
+
+                    # after splitting, we have a string.  Now need to split on
+                    #    "," and " and ".  First, split on " and ".
+                    for author_and_part in author_string.split( " and " ):
+                    
+                        # try splitting on comma.
+                        author_parts = author_and_part.split( "," )
+                        
+                        # got any?
+                        if ( len( author_parts ) > 0 ):
+                        
+                            # yes.  Add each as a name.
+                            for author_comma_part in author_parts:
+                            
+                                # add name to list of names.
+                                author_name_list.append( author_comma_part )
+                                
+                            #-- END loop over authors separated by commas. --#
+                            
+                        else:
+                        
+                            # no comma-delimited names.  Add current string to
+                            #    name list.
+                            author_name_list.append( author_and_part )
+                            
+                        #-- END check to see if comma-delimited names --#
+                        
+                    #-- END loop over and-delimited split of authors --#
+                    
+                    # time to start testing.  Print out the array.
+                    output_debug( str( author_name_list ) )
+
+                    # For each name in array, see if we already have a matching
+                    #    person.
+                    for author_name in author_name_list:
+                    
+                        # first, call Person method to find matching person for
+                        #    name.
+                        author_person = Person.get_person_for_name( author_name, True )
+                        
+                        # got a person?
+                        if ( author_person ):
+
+                            # if no ID, is new.  Save to database.
+                            if ( not( author_person.id ) ):
+                            
+                                # no ID.  Save the record.
+                                author_person.save()
+                                
+                            #-- END check to se3 if new Person. --#
+                            
+                            # Now, we need to add Article_Author instance,
+                            #    including adding in place for organization string.
+                            article_author = Article_Author()
+                            article_author.article_data = self
+                            article_author.person = author_person
+                            article_author.organization_string = author_organization
+                            article_author.save()
+
+                        #-- END check to see if person found. --#
+                    
+                    #-- END loop over author names. --#
+
+                else:                
+                    
+                    # error.  what to do?
+                    status_OUT = "ERROR - in " + me + ": after splitting on '/', no author string left.  Not a standard byline ( " + my_article.author_string + " )."
+ 
+                #-- END check to see if anything in author string.
+            
+            else:
+            
+                # No author string - error.
+                status_OUT = "ERROR - in " + me + ": no author string, so nothing to do."
+            
+            #-- END check to see if author string. --#
+        
+        else:
+        
+            # No related article. Error.
+            status_OUT = "ERROR - in " + me + ": no related article, so nothing to do."
+        
+        #-- END check to see if we have a related article. --#
+        
+        return status_OUT
+    
+    #-- END method process_author_string() --#
+    
+
+#= End Article_Data Model =======================================================
 
 
 # Article_Person model
@@ -479,7 +1061,7 @@ class Article_Person( models.Model ):
     #    ( "source", "Article Source" )
     #)
 
-    article = models.ForeignKey( Article_Data )
+    article_data = models.ForeignKey( Article_Data )
     person = models.ForeignKey( Person, blank = True, null = True )
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
 
@@ -491,17 +1073,32 @@ class Article_Person( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
-        if ( self.person is not None ):
-            string_OUT = self.person.last_name + ", " + self.person.first_name
-        else:
-            string_OUT = 'empty Article_Person instance'
-        return string_OUT
 
-    #
-    # Returns information on the article associated with this person.
-    #
+    def __unicode__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        if ( self.person is not None ):
+        
+            string_OUT = self.person.last_name + ", " + self.person.first_name
+        
+        else:
+        
+            string_OUT = 'empty Article_Person instance'
+        
+        #-- END check to see if person. --#
+        
+        return string_OUT
+    
+    #-- END method __unicode__() --#
+
+
     def get_article_info( self ):
+    
+        '''
+        Returns information on the article associated with this person.
+        '''
 
         # return reference
         string_OUT = ''
@@ -510,7 +1107,7 @@ class Article_Person( models.Model ):
         article_instance = None
 
         # get article instance
-        article_instance = self.article
+        article_instance = self.article_data.article
 
         string_OUT = str( article_instance )
 
@@ -518,7 +1115,9 @@ class Article_Person( models.Model ):
 
     #-- END method get_article_info() --#
 
+
     get_article_info.short_description = 'Article Info.'
+
 
     #
     # Returns information on the article associated with this person.
@@ -618,18 +1217,31 @@ class Article_Author( Article_Person ):
         ( "other", "Other" )
     )
 
-    author_type = models.CharField( max_length = 255, choices = AUTHOR_TYPE_CHOICES )
+    author_type = models.CharField( max_length = 255, choices = AUTHOR_TYPE_CHOICES, default = "staff", blank = True, null = True )
+    organization_string = models.CharField( max_length = 255, blank = True, null = True )
+
 
     #----------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------
 
+
     def __unicode__( self ):
+        
         if ( self.person is not None ):
+        
             string_OUT = self.person.last_name + ", " + self.person.first_name + " (" + self.author_type + ")"
+        
         else:
+        
             string_OUT = self.author_type
+            
+        #-- END check to see if we have a person. --#
+        
         return string_OUT
+
+    #-- END __unicode__() method --#
+
 
 #= End Article_Author Model ======================================================
 
@@ -726,21 +1338,21 @@ class Article_Source( Article_Person ):
         ( "other", "Other" )
     )
 
-    source_type = models.CharField( max_length = 255, choices = SOURCE_TYPE_CHOICES )
-    title = models.CharField( max_length = 255, blank = True )
-    more_title = models.CharField( max_length = 255, blank = True )
+    source_type = models.CharField( max_length = 255, choices = SOURCE_TYPE_CHOICES, blank = True, null = True )
+    title = models.CharField( max_length = 255, blank = True, null = True )
+    more_title = models.CharField( max_length = 255, blank = True, null = True )
     organization = models.ForeignKey( Organization, blank = True, null = True )
     document = models.ForeignKey( Document, blank = True, null = True )
-    topics = models.ManyToManyField( Topic, blank = True )
-    source_contact_type = models.CharField( max_length = 255, choices = SOURCE_CONTACT_TYPE_CHOICES )
-    source_capacity = models.CharField( max_length = 255, choices = SOURCE_CAPACITY_CHOICES )
+    topics = models.ManyToManyField( Topic, blank = True, null = True )
+    source_contact_type = models.CharField( max_length = 255, choices = SOURCE_CONTACT_TYPE_CHOICES, blank = True, null = True )
+    source_capacity = models.CharField( max_length = 255, choices = SOURCE_CAPACITY_CHOICES, blank = True, null = True )
     #count_direct_quote = models.IntegerField( "Count direct quotes", default = 0 )
     #count_indirect_quote = models.IntegerField( "Count indirect quotes", default = 0 )
     #count_from_press_release = models.IntegerField( "Count quotes from press release", default = 0 )
     #count_spoke_at_event = models.IntegerField( "Count quotes from public appearances", default = 0 )
     #count_other_use_of_source = models.IntegerField( "Count other uses of source", default = 0 )
-    localness = models.CharField( max_length = 255, choices = LOCALNESS_CHOICES )
-    notes = models.TextField( blank = True )
+    localness = models.CharField( max_length = 255, choices = LOCALNESS_CHOICES, blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
 
     #----------------------------------------------------------------------
     # methods
@@ -1000,6 +1612,11 @@ class Temp_Section( models.Model ):
     # variables for building nuanced queries in django.
     # query for bylines of in-house authors.
     Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
+    
+    # date range params
+    PARAM_START_DATE = "start_date"
+    PARAM_END_DATE = "end_date"
+    DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
     #----------------------------------------------------------------------
     # instance variables
@@ -1013,6 +1630,8 @@ class Temp_Section( models.Model ):
     in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
     percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
     percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
+    start_date = models.DateTimeField( blank = True, null = True )
+    end_date = models.DateTimeField( blank = True, null = True )
     
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -1024,10 +1643,104 @@ class Temp_Section( models.Model ):
     def __unicode__( self ):
     
         #string_OUT = self.rank + " - " + self.location.name
-        string_OUT = '%d - %s' % ( self.id, self.name )
+        string_OUT = '%d - %s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %d; per_ext = %d; start = %s; end = %s' % ( self.id, self.name, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.in_house_authors, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
         return string_OUT
 
     #-- END method __unicode__() --#
+
+    
+    def append_shared_article_qs_params( self, query_set_IN, *args, **kwargs ):
+    
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        date_range_q = None
+        
+        # got a query set?
+        if ( not( query_set_IN ) ):
+        
+            # No.  Make one.
+            qs_OUT = Article.objects.all()
+        
+        else:
+        
+            # use the one passed in.
+            qs_OUT = query_set_IN
+        
+        #-- END check to see if query set passed in --#
+        
+        # date range
+        date_range_q = self.create_q_article_date_range( *args, **kwargs )
+        
+        if ( date_range_q ):
+        
+            # yup. add it to query.
+            qs_OUT = qs_OUT.filter( date_range_q )
+            
+        # end date range check.      
+        
+        return qs_OUT
+    
+    #-- END method append_shared_article_qs_params() --#
+
+
+    def create_q_article_date_range( self, *args, **kwargs ):
+    
+        '''
+        Accepts a start and end date in the keyword arguments.  Creates a Q()
+           instance that filters dates based on start and end date passed in. If
+           both are missing, does nothing.  If on or other passed in, filters
+           accordingly.
+        Preconditions: Dates must be in YYYY-MM-DD format.
+        Postconditions: None.
+        '''
+        
+        # return reference
+        q_OUT = None
+        
+        # declare variables
+        start_date_IN = ""
+        end_date_IN = ""
+        
+        # retrieve dates
+        # start date
+        if ( self.PARAM_START_DATE in kwargs ):
+        
+            # yup.  Get it.
+            start_date_IN = kwargs[ self.PARAM_START_DATE ]
+        
+        #-- END check to see if start date in arguments --#
+        
+        # end date
+        if ( self.PARAM_END_DATE in kwargs ):
+        
+            # yup.  Get it.
+            end_date_IN = kwargs[ self.PARAM_END_DATE ]
+        
+        #-- END check to see if end date in arguments --#
+        
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
+        
+            # both start and end.
+            q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT ) )
+            q_OUT = q_OUT & Q( pub_date__lte = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT ) )
+        
+        elif( start_date_IN ):
+        
+            # just start date
+            q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT ) )
+        
+        elif( end_date_IN ):
+        
+            # just end date
+            q_OUT = Q( pub_date__lte = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT ) )
+        
+        #-- END conditional to see what we got. --#
+
+        return q_OUT
+    
+    #-- END method create_q_article_date_range() --#
 
 
     def get_external_article_count( self, *args, **kwargs ):
@@ -1055,6 +1768,9 @@ class Temp_Section( models.Model ):
         
         article_qs = Article.objects.filter( name_q )
         article_qs = article_qs.exclude( author_q )
+        
+        # add shared filter parameters - for now, just date range.
+        article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
         
         #logging.debug( article_qs.query )
         
@@ -1092,6 +1808,9 @@ class Temp_Section( models.Model ):
         
         article_qs = Article.objects.filter( name_q, author_q )
         
+        # add shared filter parameters - for now, just date range.
+        article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+        
         # get count.
         value_OUT = article_qs.count()
         
@@ -1112,10 +1831,13 @@ class Temp_Section( models.Model ):
         value_OUT = -1
         
         # Declare variables
-        article_qs = None 
+        article_qs = None
         
         # get articles.
         article_qs = Article.objects.filter( Q( section = self.name ), Temp_Section.Q_IN_HOUSE_AUTHOR )
+        
+        # add shared filter parameters - for now, just date range.
+        article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
         
         # get count.
         value_OUT = article_qs.count()
@@ -1142,6 +1864,8 @@ class Temp_Section( models.Model ):
         my_cursor = None
         query_string = ""
         my_row = None
+        start_date_IN = ""
+        end_date_IN = ""
         
         # get database cursor
         my_cursor = connection.cursor()
@@ -1157,7 +1881,41 @@ class Temp_Section( models.Model ):
         query_string += "         OR ( UPPER( author_varchar ) REGEXP '.* */ *GRAND RAPIDS PRESS .* BUREAU$' )"
         query_string += "         OR ( UPPER( author_varchar ) REGEXP '.* */ *SPECIAL TO THE PRESS$' )"
         query_string += "     )"
+
+        # retrieve dates
+        # start date
+        if ( self.PARAM_START_DATE in kwargs ):
         
+            # yup.  Get it.
+            start_date_IN = kwargs[ self.PARAM_START_DATE ]
+        
+        #-- END check to see if start date in arguments --#
+        
+        # end date
+        if ( self.PARAM_END_DATE in kwargs ):
+        
+            # yup.  Get it.
+            end_date_IN = kwargs[ self.PARAM_END_DATE ]
+        
+        #-- END check to see if end date in arguments --#
+        
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
+        
+            # both start and end.
+            query_string += "     AND ( ( pub_date >= '" + start_date_IN + "' ) AND ( pub_date <= '" + end_date_IN + "' ) )"
+        
+        elif( start_date_IN ):
+        
+            # just start date
+            query_string += "     AND ( pub_date >= '" + start_date_IN + "' )"
+        
+        elif( end_date_IN ):
+        
+            # just end date
+            query_string += "     AND ( pub_date <= '" + end_date_IN + "' )"
+        
+        #-- END conditional to see what we got. --#
+
         # execute query.
         my_cursor.execute( query_string )
         
@@ -1188,6 +1946,9 @@ class Temp_Section( models.Model ):
         # get articles.
         article_qs = Article.objects.filter( section = self.name )
         
+        # add shared filter parameters - for now, just date range.
+        article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+
         # get count.
         value_OUT = article_qs.count()
         
@@ -1214,15 +1975,50 @@ class Temp_Section( models.Model ):
         my_percent_in_house = -1
         my_percent_external = -1
         
+        # start and end date?
+        start_date_IN = ""
+        end_date_IN = ""
+        
+        # retrieve dates
+        # start date
+        if ( self.PARAM_START_DATE in kwargs ):
+        
+            # yup.  Get it.
+            start_date_IN = kwargs[ self.PARAM_START_DATE ]
+            start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
+            print( "*** Start date = " + str( start_date_IN ) + "\n" )
+            
+        else:
+        
+            # doh.  Not what I thought it was.
+            print( "*** No start date!\n" )
+        
+        #-- END check to see if start date in arguments --#
+        
+        # end date
+        if ( self.PARAM_END_DATE in kwargs ):
+        
+            # yup.  Get it.
+            end_date_IN = kwargs[ self.PARAM_END_DATE ]
+            end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
+            print( "*** End date = " + str( end_date_IN ) + "\n" )
+            
+        else:
+        
+            # doh.  Not what I thought it was.
+            print( "*** No end date!\n" )
+        
+        #-- END check to see if end date in arguments --#
+
         # initialize Decimal Math
         getcontext().prec = 20
         
         # get values.
-        my_total_articles = self.get_total_article_count()
-        my_in_house_articles = self.get_in_house_article_count()
-        my_external_articles = self.get_external_article_count()
-        my_external_booth = self.get_external_booth_count()
-        my_in_house_authors = self.get_in_house_author_count()
+        my_total_articles = self.get_total_article_count( *args, **kwargs )
+        my_in_house_articles = self.get_in_house_article_count( *args, **kwargs )
+        my_external_articles = self.get_external_article_count( *args, **kwargs )
+        my_external_booth = self.get_external_booth_count( *args, **kwargs )
+        my_in_house_authors = self.get_in_house_author_count( *args, **kwargs )
 
         # derive additional values
 
@@ -1251,7 +2047,7 @@ class Temp_Section( models.Model ):
             my_percent_external = 0
             
         #-- END check to make sure values are OK for calculating percent --#
-        
+       
         # set values
         self.total_articles = my_total_articles
         self.in_house_articles = my_in_house_articles
@@ -1260,7 +2056,9 @@ class Temp_Section( models.Model ):
         self.in_house_authors = my_in_house_authors
         self.percent_in_house = my_percent_in_house
         self.percent_external = my_percent_external
-        
+        self.start_date = start_date_IN
+        self.end_date = end_date_IN
+
         # save?
         if ( do_save_IN == True ):
         
