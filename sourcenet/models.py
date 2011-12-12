@@ -922,7 +922,7 @@ class Article( models.Model ):
     #-- END method do_automated_processing() --#
     
     
-    def get_article_data_for_coder( self, coder_IN = None, *args, ***kwargs ):
+    def get_article_data_for_coder( self, coder_IN = None, *args, **kwargs ):
 
         '''
         Checks to see if there is a nested article_data instance for the coder
