@@ -898,7 +898,7 @@ class Article( models.Model ):
             
             # Got something.  Loop over the QuerySet, calling the method
             #    do_automated_processing() on each one.
-            for current_article in article_qs:
+            for current_article in article_qs.iterator():
                 
                 # increment counter
                 articles_processed += 1
