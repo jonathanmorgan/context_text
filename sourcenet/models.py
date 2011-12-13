@@ -718,6 +718,9 @@ class Newspaper( models.Model ):
     description = models.TextField( blank = True )
     organization = models.ForeignKey( Organization )
     newsbank_code = models.CharField( max_length = 255, null = True, blank = True )
+    sections_local_news = models.TextField( blank = True, null = True )
+    sections_sports = models.TextField( blank = True, null = True )
+    
     #location = models.ForeignKey( Location )
 
     # Meta-data for this class.
@@ -1015,7 +1018,7 @@ class Article( models.Model ):
             
         #-- END check to see if we set processing flags by item --#
         
-        output_debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
+        output_debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"", me, "--- " )
         
         # first, see if we have article data for automated coder.
         automated_user = self.CODER_USER_AUTOMATED
@@ -1032,7 +1035,7 @@ class Article( models.Model ):
                 latest_status = my_article_data.process_author_string()
                 do_save_data = True
                 
-                output_debug( "After calling process_author_string() - " + latest_status, me )
+                output_debug( "After calling process_author_string() - " + latest_status, me, "--- " )
                 
             #-- End check to see if we process authors --#
             
@@ -1055,7 +1058,7 @@ class Article( models.Model ):
         
             # error making/retrieving article data.
             status_OUT = "No article data returned for automated user ( " + str( automated_user ) + " ).  Doing nothing."
-            output_debug( status_OUT, me )
+            output_debug( status_OUT, me, "--- " )
             
         #-- END check to see if we have article data. --#
         
