@@ -77,6 +77,7 @@ Gross debugging code, shared across all models.
 
 DEBUG = True
 STATUS_SUCCESS = "Success!"
+DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 def output_debug( message_IN, method_IN = "" ):
     
@@ -707,6 +708,7 @@ class Newspaper( models.Model ):
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
     organization = models.ForeignKey( Organization )
+    newsbank_code = models.CharField( max_length = 255, null = True, blank = True )
     #location = models.ForeignKey( Location )
 
     # Meta-data for this class.
@@ -752,8 +754,12 @@ class Article( models.Model ):
     CODER_USERNAME_AUTOMATED = "automated"
     CODER_USER_AUTOMATED = User.objects.get( username = "automated" )
     
+    # parameters that can be passed in to static 
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
+    PARAM_START_DATE = "start_date"
+    PARAM_END_DATE = "end_date"
+    PARAM_SINGLE_DATE = "single_date"
     
     
     #----------------------------------------------------------------------------
@@ -802,8 +808,115 @@ class Article( models.Model ):
         ordering = [ 'pub_date', 'section', 'page' ]
 
     #----------------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------------
+
+
+    @classmethod
+    def process_articles( cls, *args, **kwargs ):
+
+        '''
+        Accepts parameters inside the kwargs argument.  Based on parameters,
+           creates a QuerySet of articles to process, then calls the
+           "do_automated_processing" on each, passing it the kwargs passed in to
+           this process.
+        Preconditions: dates passed in must be in "YYYY-MM-DD" format.
+        Postconditions: All kinds of things can happen because of this method.
+           There definitely are side-effects, database is updated.
+        '''
+        
+        # return reference
+        status_OUT = STATUS_SUCCESS
+        
+        # declare variables
+        me = "classmethod process_articles"
+        start_date_IN = None
+        end_date_IN = None
+        single_date_IN = None
+        article_qs = None
+        current_article = None
+        current_status = ""
+        
+        # pull in parameters.
+        start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE )
+        end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE )
+        single_date_IN = get_dict_value( kwargs, cls.PARAM_SINGLE_DATE )
+        
+        # build QuerySet
+        article_qs = cls.objects.all()
+        
+        # process dates.
+        # got a single date?
+        if ( single_date_IN ):
+            
+            # yes - convert to datetime, then filter to publication date of just
+            #    that day.
+            single_date_IN = datetime.datetime.strptime( single_date_IN, DEFAULT_DATE_FORMAT )
+            article_qs = article_qs.filter( pub_date = single_date_IN )
+            
+        # how about some sort of date range?
+        elif ( ( start_date_IN ) or ( end_date_IN ) ):
+            
+            # got at least a start or end date - filter.
+            if ( start_date_IN ):
+                
+                # filter on start date
+                start_date_IN = datetime.datetime.strptime( start_date_IN, DEFAULT_DATE_FORMAT )
+                article_qs = article_qs.filter( pub_date__gte = start_date_IN )
+                
+            #-- END check to see if start date. --#
+            
+            # end date.
+            if ( end_date_IN ):
+                
+                # filter on start date
+                end_date_IN = datetime.datetime.strptime( end_date_IN, DEFAULT_DATE_FORMAT )
+                article_qs = article_qs.filter( pub_date__lte = end_date_IN )
+                
+            #-- END check to see if start date. --#
+            
+        #-- END date conditional. --#
+        
+        # Done creating QuerySet.  Got anything to process?
+        if ( article_qs.count() > 0 ):
+            
+            # Got something.  Loop over the QuerySet, calling the method
+            #    do_automated_processing() on each one.
+            for current_article in article_qs:
+                
+                # call the method.
+                current_status = current_article.do_automated_processing( *args, **kwargs )
+                
+                # see if status other than success
+                if ( current_status != STATUS_SUCCESS ):
+                    
+                    # error - output
+                    output_debug( "Error with article \"" + str( current_article ) + "\": " + current_status, me )
+                    
+                else:
+                    
+                    # Success move on.
+                    output_debug( "Processed article \"" + str( current_article ) + "\" successfully.\n", me )
+                
+                #-- END status processing. --#
+                
+            #-- END loop over articles. --#
+            
+        else:
+            
+            status_OUT = "Article QuerySet did not contain any articles, so nothing to process."
+            
+        #-- END check to see if anything to process. --#
+                
+        return status_OUT
+
+    #-- END static method process_articles() --#
+
+
+    #----------------------------------------------------------------------------
     # instance methods
     #----------------------------------------------------------------------------
+
 
     def __unicode__( self ):
 
@@ -879,6 +992,8 @@ class Article( models.Model ):
         automated_user = None
         my_article_data = None
         latest_status = ""
+        do_save_article = True
+        do_save_data = False
         
         # parse params
         process_all_IN = get_dict_value( kwargs, self.PARAM_AUTOPROC_ALL, True )
@@ -904,10 +1019,26 @@ class Article( models.Model ):
             
                 # process authors.
                 latest_status = my_article_data.process_author_string()
-
+                do_save_data = True
+                
                 output_debug( "After calling process_author_string() - " + latest_status, me )
                 
             #-- End check to see if we process authors --#
+            
+            # Save Article_Data instance?
+            if ( do_save_data ):
+                
+                my_article_data.save()
+                
+            #-- END check to see if we save article data --#
+            
+            # save the article, as well?
+            if ( do_save_article == True ):
+                
+                # We do also save the article itself.
+                self.save()
+                
+            #-- END check to see if we save article. --#
             
         else:
         
