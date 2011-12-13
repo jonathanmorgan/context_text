@@ -846,8 +846,10 @@ class Article( models.Model ):
         end_date_IN = None
         single_date_IN = None
         article_qs = None
+        article_count = -1
         current_article = None
         current_status = ""
+        articles_processed = -1
         
         # pull in parameters.
         start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE )
@@ -890,11 +892,16 @@ class Article( models.Model ):
         #-- END date conditional. --#
         
         # Done creating QuerySet.  Got anything to process?
-        if ( article_qs.count() > 0 ):
+        article_count = article_qs.count()
+        articles_processed = 0
+        if ( article_count > 0 ):
             
             # Got something.  Loop over the QuerySet, calling the method
             #    do_automated_processing() on each one.
             for current_article in article_qs:
+                
+                # increment counter
+                articles_processed += 1
                 
                 # call the method.
                 current_status = current_article.do_automated_processing( *args, **kwargs )
@@ -903,12 +910,12 @@ class Article( models.Model ):
                 if ( current_status != STATUS_SUCCESS ):
                     
                     # error - output
-                    output_debug( "Error with article \"" + str( current_article ) + "\": " + current_status, me, "=== " )
+                    output_debug( "ERROR with article " + str( articles_processed ) + " of " + str( article_count ) + " - \"" + str( current_article ) + "\": " + current_status + "\n", me, "=== " )
                     
                 else:
                     
                     # Success move on.
-                    output_debug( "Processed article \"" + str( current_article ) + "\" successfully.\n", me, "=== " )
+                    output_debug( "SUCCESS - Processed article " + str( articles_processed ) + " of " + str( article_count ) + " - \"" + str( current_article ) + "\"\n", me, "=== " )
                 
                 #-- END status processing. --#
                 
