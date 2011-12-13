@@ -1317,7 +1317,7 @@ class Article_Data( models.Model ):
             # got an author string?
             if ( author_string ):
             
-                output_data( "Processing author string: \"" + author_string + "\"", me, "--- " )
+                output_debug( "Processing author string: \"" + author_string + "\"", me, "--- " )
                 
                 # got an author string.  Parse it.  First, break out organization.
                 # split author string on "/"
