@@ -8,6 +8,7 @@ from decimal import Decimal
 from decimal import getcontext
 import logging
 import pickle
+import re
 
 # nameparse import
 # http://pypi.python.org/pypi/nameparser
@@ -78,8 +79,9 @@ Gross debugging code, shared across all models.
 DEBUG = True
 STATUS_SUCCESS = "Success!"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+REGEX_BEGINS_WITH_BY = re.compile( r'^BY ', re.IGNORECASE )
 
-def output_debug( message_IN, method_IN = "" ):
+def output_debug( message_IN, method_IN = "", indent_with_IN = "" ):
     
     '''
     Accepts message string.  If debug is on, passes it to print().  If not,
@@ -104,6 +106,13 @@ def output_debug( message_IN, method_IN = "" ):
                 my_message = "In " + method_IN + ": " + my_message
                 
             #-- END check to see if method passed in --#
+            
+            # indent?
+            if ( indent_with_IN ):
+                
+                my_message = indent_with_IN + my_message
+                
+            #-- END check to see if we indent. --#
         
             # debug is on.  For now, just print.
             print( my_message )
@@ -1006,6 +1015,8 @@ class Article( models.Model ):
             
         #-- END check to see if we set processing flags by item --#
         
+        output_debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
+        
         # first, see if we have article data for automated coder.
         automated_user = self.CODER_USER_AUTOMATED
         my_article_data = self.get_article_data_for_coder( automated_user )
@@ -1318,6 +1329,9 @@ class Article_Data( models.Model ):
                     # first part is author string we look at going forward.
                     author_string = author_parts[ 0 ]
                     author_string = author_string.strip()
+                    
+                    # also, if string starts with "By ", remove it.
+                    author_string = re.sub( REGEX_BEGINS_WITH_BY, "", author_string )
                     
                 elif ( ( author_parts_length == 0 ) or ( author_parts_length > 2 ) ):
                 
