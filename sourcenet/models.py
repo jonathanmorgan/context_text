@@ -903,12 +903,12 @@ class Article( models.Model ):
                 if ( current_status != STATUS_SUCCESS ):
                     
                     # error - output
-                    output_debug( "Error with article \"" + str( current_article ) + "\": " + current_status, me )
+                    output_debug( "Error with article \"" + str( current_article ) + "\": " + current_status, me, "=== " )
                     
                 else:
                     
                     # Success move on.
-                    output_debug( "Processed article \"" + str( current_article ) + "\" successfully.\n", me )
+                    output_debug( "Processed article \"" + str( current_article ) + "\" successfully.\n", me, "=== " )
                 
                 #-- END status processing. --#
                 
