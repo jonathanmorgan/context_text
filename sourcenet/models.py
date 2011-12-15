@@ -2234,8 +2234,12 @@ class Temp_Section( models.Model ):
                     
                 #-- END loop over pages for a day.
                 
-                # Output average articles per page.
-                output_debug( "Average articles per page: " + str( daily_article_count / daily_page_count ), me, "" )
+                # Output average articles per page if page count is not 0.
+                if ( daily_page_count > 0 ):
+                
+                    output_debug( "Average articles per page: " + str( daily_article_count / daily_page_count ), me, "" )
+                    
+                #-- END check to make sure we don't divide by 0. --#
 
                 # Add the counts to the lists.
                 day_page_count_list.append( daily_page_count )
@@ -2243,7 +2247,7 @@ class Temp_Section( models.Model ):
                 
                 # increment the date and re-calculate timedelta.
                 current_date = current_date + datetime.timedelta( days = 1 )
-                current_timedelta = end_date - current_date
+                current_timedelta = end_date_IN - current_date
                 
             #-- END loop over days --#
 
@@ -2371,12 +2375,8 @@ class Temp_Section( models.Model ):
         # do we have dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
             
-            # we do.  Convert them to datetime.
-            start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-        
             # add shared filter parameters - for now, just date range.
-            base_article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+            base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
     
             # get current section articles.
             base_article_qs = base_article_qs.filter( section = self.name )
@@ -2617,12 +2617,8 @@ class Temp_Section( models.Model ):
         # do we have dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
             
-            # we do.  Convert them to datetime.
-            start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-        
             # add shared filter parameters - for now, just date range.
-            base_article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+            base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
     
             # get in-house articles in current section articles.
             base_article_qs = base_article_qs.filter( section = self.name )
@@ -2692,6 +2688,8 @@ class Temp_Section( models.Model ):
         my_in_house_authors = -1
         my_percent_in_house = -1
         my_percent_external = -1
+        my_averages = None
+        my_in_house_averages = None
         debug_string = ""
         
         # start and end date?
@@ -2738,6 +2736,8 @@ class Temp_Section( models.Model ):
         my_external_articles = self.get_external_article_count( *args, **kwargs )
         my_external_booth = self.get_external_booth_count( *args, **kwargs )
         my_in_house_authors = self.get_in_house_author_count( *args, **kwargs )
+        my_averages = self.get_averages_per_day( *args, **kwargs )
+        my_in_house_averages = self.get_in_house_averages_per_day( *args, **kwargs )
 
         # derive additional values
 
