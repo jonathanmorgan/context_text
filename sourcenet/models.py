@@ -2039,6 +2039,9 @@ class Temp_Section( models.Model ):
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
     
     # property names for dictionaries of output information.
+    OUTPUT_DAY_COUNT = "day_count"
+    OUTPUT_ARTICLE_COUNT = "article_count"
+    OUTPUT_PAGE_COUNT = "page_count"
     OUTPUT_ARTICLES_PER_DAY = "articles_per_day"
     OUTPUT_PAGES_PER_DAY = "pages_per_day"
 
@@ -2047,10 +2050,13 @@ class Temp_Section( models.Model ):
     #----------------------------------------------------------------------
 
     name = models.CharField( max_length = 255, blank = True, null = True )
+    total_days = models.IntegerField( blank = True, null = True, default = 0 )
     total_articles = models.IntegerField( blank = True, null = True, default = 0 )
     in_house_articles = models.IntegerField( blank = True, null = True, default = 0 )
     external_articles = models.IntegerField( blank = True, null = True, default = 0 )
     external_booth = models.IntegerField( blank = True, null = True, default = 0 )
+    total_pages = models.IntegerField( blank = True, null = True, default = 0 )
+    in_house_pages = models.IntegerField( blank = True, null = True, default = 0 )
     in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
     percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
@@ -2257,14 +2263,6 @@ class Temp_Section( models.Model ):
             day_count = len( day_page_count_list )
             
             # loop to get totals for page and article counts.
-            for current_count in day_page_count_list:
-                
-                # add current count to total_page_count
-                total_page_count += current_count
-                
-            #-- END loop over page counts --#
-            
-            # loop to get totals for page and article counts.
             for current_count in day_article_count_list:
                 
                 # add current count to total_page_count
@@ -2272,8 +2270,19 @@ class Temp_Section( models.Model ):
                 
             #-- END loop over page counts --#
             
+            # loop to get totals for page and article counts.
+            for current_count in day_page_count_list:
+                
+                # add current count to total_page_count
+                total_page_count += current_count
+                
+            #-- END loop over page counts --#
+            
             # Populate output values.
+            values_OUT[ Temp_Section.OUTPUT_DAY_COUNT ] = day_count
+            values_OUT[ Temp_Section.OUTPUT_ARTICLE_COUNT ] = total_article_count
             values_OUT[ Temp_Section.OUTPUT_ARTICLES_PER_DAY ] = Decimal( total_article_count ) / Decimal( day_count )
+            values_OUT[ Temp_Section.OUTPUT_PAGE_COUNT ] = total_page_count
             values_OUT[ Temp_Section.OUTPUT_PAGES_PER_DAY ] = Decimal( total_page_count ) / Decimal( day_count )                
                 
         #-- END check to see if we have required variables. --#
@@ -2365,6 +2374,8 @@ class Temp_Section( models.Model ):
         start_date_IN = None
         end_date_IN = None
         averages_dict = None
+        day_count = None
+        page_count = None
         pages_per_day = None
         articles_per_day = None
         
@@ -2386,12 +2397,16 @@ class Temp_Section( models.Model ):
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
             
-            # bust out the two values.
+            # bust out the values.
             values_OUT = averages_dict
+            day_count = averages_dict.get( Temp_Section.OUTPUT_DAY_COUNT, Decimal( "0" ) )
+            page_count = averages_dict.get( Temp_Section.OUTPUT_PAGE_COUNT, Decimal( "0" ) )
             articles_per_day = averages_dict.get( Temp_Section.OUTPUT_ARTICLES_PER_DAY, Decimal( "0" ) )
             pages_per_day = averages_dict.get( Temp_Section.OUTPUT_PAGES_PER_DAY, Decimal( "0" ) )
             
             # Store values in this instance.
+            self.total_days = day_count
+            self.total_pages = page_count
             self.average_articles_per_day = articles_per_day
             self.average_pages_per_day = pages_per_day
         
@@ -2424,6 +2439,8 @@ class Temp_Section( models.Model ):
         start_date_IN = None
         end_date_IN = None
         averages_dict = None
+        day_count = None
+        page_count = None
         pages_per_day = None
         articles_per_day = None
         
@@ -2446,12 +2463,16 @@ class Temp_Section( models.Model ):
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
             
-            # bust out the two values.
+            # bust out the values.
             values_OUT = averages_dict
+            day_count = averages_dict.get( Temp_Section.OUTPUT_DAY_COUNT, Decimal( "0" ) )
+            page_count = averages_dict.get( Temp_Section.OUTPUT_PAGE_COUNT, Decimal( "0" ) )
             articles_per_day = averages_dict.get( Temp_Section.OUTPUT_ARTICLES_PER_DAY, Decimal( "0" ) )
             pages_per_day = averages_dict.get( Temp_Section.OUTPUT_PAGES_PER_DAY, Decimal( "0" ) )
             
             # Store values in this instance.
+            self.total_days = day_count
+            self.in_house_pages = page_count
             self.average_in_house_articles_per_day = articles_per_day
             self.average_in_house_pages_per_day = pages_per_day
         
@@ -2531,7 +2552,7 @@ class Temp_Section( models.Model ):
         
         return value_OUT
         
-    #-- END method get_external_article_count --#
+    #-- END method get_external_booth_count --#
 
 
     def get_in_house_article_count( self, *args, **kwargs ):
@@ -2935,6 +2956,7 @@ class Temp_Section( models.Model ):
         return instance_OUT
         
     #-- END class method find_instance --#
+
 
     @classmethod
     def process_section_date_range( cls, *args, **kwargs ):
