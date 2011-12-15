@@ -2091,7 +2091,10 @@ class Temp_Section( models.Model ):
             # yup. add it to query.
             qs_OUT = qs_OUT.filter( date_range_q )
             
-        # end date range check.      
+        # end date range check.
+        
+        # try deferring the text and raw_html fields.
+        qs_OUT.defer( 'text', 'raw_html' )
         
         return qs_OUT
     
@@ -2389,8 +2392,8 @@ class Temp_Section( models.Model ):
         my_percent_external = -1
         
         # start and end date?
-        start_date_IN = ""
-        end_date_IN = ""
+        start_date_IN = None
+        end_date_IN = None
         
         # retrieve dates
         # start date
@@ -2403,7 +2406,7 @@ class Temp_Section( models.Model ):
             
         else:
         
-            # doh.  Not what I thought it was.
+            # No start date.
             print( "*** No start date!\n" )
         
         #-- END check to see if start date in arguments --#
@@ -2418,7 +2421,7 @@ class Temp_Section( models.Model ):
             
         else:
         
-            # doh.  Not what I thought it was.
+            # No end date.
             print( "*** No end date!\n" )
         
         #-- END check to see if end date in arguments --#
