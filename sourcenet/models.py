@@ -2472,7 +2472,7 @@ class Temp_Section( models.Model ):
         else:
         
             # either no in-house or total is 0.  Set to 0.
-            my_percent_in_house = Decimnal( 0 )
+            my_percent_in_house = None
             
         #-- END check to make sure values are OK for calculating percent --#
         
@@ -2485,7 +2485,7 @@ class Temp_Section( models.Model ):
         else:
         
             # either no external or total is 0.  Set to 0.
-            my_percent_external = Decimal( 0 )
+            my_percent_external = None
             
         #-- END check to make sure values are OK for calculating percent --#
        
