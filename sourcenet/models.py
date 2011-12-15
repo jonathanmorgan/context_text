@@ -2265,7 +2265,7 @@ class Temp_Section( models.Model ):
             total_article_count = 0
             # day_count = len( day_page_count_list )
             overall_time_delta = end_date_IN - start_date_IN
-            day_count = overall_time_delta.days
+            day_count = overall_time_delta.days + 1
             
             # loop to get totals for page and article counts.
             for current_count in day_article_count_list:
