@@ -2048,8 +2048,8 @@ class Temp_Section( models.Model ):
     external_articles = models.IntegerField( blank = True, null = True, default = 0 )
     external_booth = models.IntegerField( blank = True, null = True, default = 0 )
     in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
-    percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
-    percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = 0 )
+    percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
+    percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     start_date = models.DateTimeField( blank = True, null = True )
     end_date = models.DateTimeField( blank = True, null = True )
     
