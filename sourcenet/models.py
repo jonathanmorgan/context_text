@@ -2495,8 +2495,15 @@ class Temp_Section( models.Model ):
         self.external_articles = my_external_articles
         self.external_booth = my_external_booth
         self.in_house_authors = my_in_house_authors
-        self.percent_in_house = my_percent_in_house
-        self.percent_external = my_percent_external
+
+        if ( my_percent_in_house ):
+            self.percent_in_house = my_percent_in_house
+        #-- END check if we have in-house percent --#
+
+        if ( my_percent_external ):
+            self.percent_external = my_percent_external
+        #-- END check to see if we have percent external --#
+
         self.start_date = start_date_IN
         self.end_date = end_date_IN
 
