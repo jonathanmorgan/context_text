@@ -2030,6 +2030,10 @@ class Temp_Section( models.Model ):
     PARAM_START_DATE = "start_date"
     PARAM_END_DATE = "end_date"
     DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+    
+    # other parameters
+    PARAM_CUSTOM_ARTICLE_Q = "custom_article_q"
+    PARAM_CUSTOM_SECTION_Q = "custom_section_q"
 
     #----------------------------------------------------------------------
     # instance variables
@@ -2069,6 +2073,7 @@ class Temp_Section( models.Model ):
         
         # declare variables
         date_range_q = None
+        custom_q_IN = None
         
         # got a query set?
         if ( not( query_set_IN ) ):
@@ -2093,8 +2098,24 @@ class Temp_Section( models.Model ):
             
         # end date range check.
         
+        # got a custom Q passed in?
+        if ( self.PARAM_CUSTOM_ARTICLE_Q in kwargs ):
+        
+            # yup.  Get it.
+            custom_q_IN = kwargs[ self.PARAM_CUSTOM_ARTICLE_Q ]
+            
+            # anything there?
+            if ( custom_q_IN ):
+                
+                # add it to the output QuerySet
+                qs_OUT = qs_OUT.filter( custom_q_IN )
+                
+            #-- END check to see if custom Q() populated --#
+        
+        #-- END check to see if start date in arguments --#        
+        
         # try deferring the text and raw_html fields.
-        qs_OUT.defer( 'text', 'raw_html' )
+        #qs_OUT.defer( 'text', 'raw_html' )
         
         return qs_OUT
     
@@ -2506,14 +2527,84 @@ class Temp_Section( models.Model ):
         me = "get_instance_for_name"
         result_qs = None
         result_count = -1
+
+        # start and end date?
+        start_date_IN = None
+        end_date_IN = None
+        custom_q_IN = None
         
+        # retrieve dates
+        # start date
+        if ( self.PARAM_START_DATE in kwargs ):
+        
+            # yup.  Get it.
+            start_date_IN = kwargs[ self.PARAM_START_DATE ]
+            start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
+            print( "*** Start date = " + str( start_date_IN ) + "\n" )
+            
+        else:
+        
+            # No start date.
+            print( "*** No start date!\n" )
+        
+        #-- END check to see if start date in arguments --#
+        
+        # end date
+        if ( self.PARAM_END_DATE in kwargs ):
+        
+            # yup.  Get it.
+            end_date_IN = kwargs[ self.PARAM_END_DATE ]
+            end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
+            print( "*** End date = " + str( end_date_IN ) + "\n" )
+            
+        else:
+        
+            # No end date.
+            print( "*** No end date!\n" )
+        
+        #-- END check to see if end date in arguments --#
+
         # got a name?
         if ( name_IN ):
 
             # try to get Temp_Section instance with name = name_IN
             try:
             
-                instance_OUT = self.objects.get( name = name_IN )
+                # filter on name.
+                result_qs = self.objects.filter( name = name_IN )
+                
+                # got a start date?
+                if ( start_date_IN ):
+                    
+                    result_qs = result_qs.filter( start_date__gte = start_date_IN )
+                    
+                #-- END check to see if we have a start date. --#
+                
+                # got an end date?
+                if ( end_date_IN ):
+                    
+                    result_qs = result_qs.filter( end_date__lte = end_date_IN )
+                    
+                #-- END check to see if we have an end date. --#
+                
+                # got a custom Q passed in?
+                if ( self.PARAM_CUSTOM_SECTION_Q in kwargs ):
+                
+                    # yup.  Get it.
+                    custom_q_IN = kwargs[ self.PARAM_CUSTOM_SECTION_Q ]
+                    
+                    # anything there?
+                    if ( custom_q_IN ):
+                        
+                        # add it to the output QuerySet
+                        result_qs = result_qs.filter( custom_q_IN )
+                        
+                    #-- END check to see if custom Q() populated --#
+                
+                #-- END check to see if custom Q() in arguments --#        
+
+                # try to get() a single matching instance.
+                instance_OUT = result_qs.get()
 
             except MultipleObjectsReturned:
 
@@ -2526,6 +2617,20 @@ class Temp_Section( models.Model ):
                 #    Return new instance.
                 instance_OUT = Temp_Section()
                 instance_OUT.name = name_IN
+
+                # got a start date?
+                if ( start_date_IN ):
+                    
+                    instance_OUT.start_date = start_date_IN
+                    
+                #-- END check to see if we have a start date. --#
+                
+                # got an end date?
+                if ( end_date_IN ):
+                    
+                    instance_OUT.end_date = end_date_IN
+                    
+                #-- END check to see if we have an end date. --#
                 
             #-- END try to retrieve instance for name passed in. --#
             
