@@ -6,6 +6,7 @@
 import datetime
 from decimal import Decimal
 from decimal import getcontext
+import gc
 import logging
 import pickle
 import re
@@ -66,6 +67,7 @@ from django.db.models import Q
 
 # Dajngo object for interacting directly with database.
 from django.db import connection
+import django.db
 
 
 #================================================================================
@@ -2997,6 +2999,10 @@ class Temp_Section( models.Model ):
                 # output current instance.
                 output_debug( "Finished processing section " + current_section_name + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
                 
+                # memory management.
+                gc.collect()
+                django.db.reset_queries()
+                
             #-- END loop over sections. --#
             
         #-- END check to make sure we have dates. --#
@@ -3065,6 +3071,10 @@ class Temp_Section( models.Model ):
                     # increment the date and re-calculate timedelta.
                     current_date = current_date + datetime.timedelta( days = 1 )
                     current_timedelta = end_date - current_date
+                    
+                    # memory management.
+                    gc.collect()
+                    django.db.reset_queries()
                     
                 #-- END loop over dates in date range --#
                 
