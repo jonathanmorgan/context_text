@@ -2171,6 +2171,8 @@ class Temp_Section( models.Model ):
         daily_article_qs = None
         start_date_IN = None
         end_date_IN = None
+        start_date = None
+        end_date = None
         current_date = None
         current_timedelta = None
         page_dict = None
@@ -2194,16 +2196,16 @@ class Temp_Section( models.Model ):
         if ( ( query_set_IN ) and ( start_date_IN ) and ( end_date_IN ) ):
             
             # we do.  Convert them to datetime.
-            start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
+            start_date = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
+            end_date = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
         
             # initialize list of counts.
             day_page_count_list = []
             day_article_count_list = []
         
             # then, loop one day at a time.
-            current_date = start_date_IN
-            current_timedelta = end_date_IN - current_date
+            current_date = start_date
+            current_timedelta = end_date - current_date
             
             # loop over dates as long as difference between current and end is 0
             #    or greater.
@@ -2256,16 +2258,25 @@ class Temp_Section( models.Model ):
                 
                 # increment the date and re-calculate timedelta.
                 current_date = current_date + datetime.timedelta( days = 1 )
-                current_timedelta = end_date_IN - current_date
+                current_timedelta = end_date - current_date
                 
             #-- END loop over days --#
 
             # get day count
             total_page_count = 0
             total_article_count = 0
+            
             # day_count = len( day_page_count_list )
-            overall_time_delta = end_date_IN - start_date_IN
-            day_count = overall_time_delta.days + 1
+            if ( start_date_IN == end_date_IN ):
+                
+                day_count = 1
+                
+            else:
+                
+                overall_time_delta = end_date - start_date
+                day_count = overall_time_delta.days + 1
+                
+            #-- END try to get number of days set correctly. --#
             
             # loop to get totals for page and article counts.
             for current_count in day_article_count_list:
@@ -2819,7 +2830,7 @@ class Temp_Section( models.Model ):
         if ( do_save_IN == True ):
         
             # output contents.
-            debug_string = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", self.total_days, my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, self.total_pages, self.in_house_pages, my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
+            debug_string = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", self.total_days, my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, self.total_pages, self.in_house_pages,   my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
             output_debug( debug_string, me, "===>" )
             output_debug( "Contents of instance: " + str( self ), me, "===>" )
             
