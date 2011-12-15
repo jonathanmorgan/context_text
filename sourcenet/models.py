@@ -2518,7 +2518,7 @@ class Temp_Section( models.Model ):
     #----------------------------------------------------------------------
 
     @classmethod
-    def find_instance( self, name_IN = "",  *args, **kwargs ):
+    def find_instance( self, *args, **kwargs ):
     
         '''
         Generates values for all columns for section name passed in.
