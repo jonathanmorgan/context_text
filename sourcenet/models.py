@@ -2061,33 +2061,46 @@ class Temp_Section( models.Model ):
     #----------------------------------------------------------------------
 
     def __unicode__( self ):
-    
-        #string_OUT = self.rank + " - " + self.location.name
-        string_OUT = '%d - %s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %d; per_ext = %d; start = %s; end = %s' % ( self.id, self.name, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.in_house_authors, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
+
+        # build the whole string except the id prefix.    
+        string_OUT = '%s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( self.name, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.in_house_authors, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
+
+        # add on ID if one present.
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - " + string_OUT
+            
+        #-- END check to see if there is an ID. --#
+        
         return string_OUT
 
     #-- END method __unicode__() --#
 
     
-    def append_shared_article_qs_params( self, query_set_IN, *args, **kwargs ):
+    def append_shared_article_qs_params( self, query_set_IN = None, *args, **kwargs ):
     
         # return reference
         qs_OUT = None
         
         # declare variables
+        me = "append_shared_article_qs_params"
         date_range_q = None
         custom_q_IN = None
         
         # got a query set?
-        if ( not( query_set_IN ) ):
-        
-            # No.  Make one.
-            qs_OUT = Article.objects.all()
-        
-        else:
+        if ( query_set_IN ):
         
             # use the one passed in.
             qs_OUT = query_set_IN
+            
+            #output_debug( "QuerySet passed in, using it.", me, "*** " )
+        
+        else:
+        
+            # No.  Make one.
+            qs_OUT = Article.objects.all()
+            
+            #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
         
         #-- END check to see if query set passed in --#
         
@@ -2195,25 +2208,21 @@ class Temp_Section( models.Model ):
         value_OUT = -1
         
         # Declare variables
+        me = "get_external_article_count"
         article_qs = None 
-        name_q = None
-        author_q = None
+        position = ""
        
-        # get articles.
-        name_q = Q( section = self.name )
-        author_q =  Temp_Section.Q_IN_HOUSE_AUTHOR
-        
-        #logging.debug( str( name_q ) )
-        #logging.debug( str( author_q ) )
-        
-        article_qs = Article.objects.filter( name_q )
-        article_qs = article_qs.exclude( author_q )
-        
         # add shared filter parameters - for now, just date range.
         article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
         
-        #logging.debug( article_qs.query )
-        
+        # get exclude bylines of local authors.
+        article_qs = article_qs.exclude( Temp_Section.Q_IN_HOUSE_AUTHOR )
+
+        # include just this section.
+        article_qs = article_qs.filter( section = self.name )
+
+        #output_debug( "Query: " + str( article_qs.query ), me, "---===>" )
+
         # get count.
         value_OUT = article_qs.count()
         
@@ -2235,21 +2244,21 @@ class Temp_Section( models.Model ):
         value_OUT = -1
         
         # Declare variables
+        me = "get_external_booth_count"
         article_qs = None
-        name_q = None
         author_q = None
-        
-        # get articles.
-        name_q = Q( section = self.name )
-        author_q =  Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS NEWS SERVICE$' )
-        
-        #logging.debug( str( name_q ) )
-        #logging.debug( str( author_q ) )
-        
-        article_qs = Article.objects.filter( name_q, author_q )
         
         # add shared filter parameters - for now, just date range.
         article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+        
+        # only get articles by news service.
+        author_q = Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS NEWS SERVICE$' )
+        article_qs = article_qs.filter( author_q )
+        
+        # limit to current section.
+        article_qs = article_qs.filter( section = self.name )
+        
+        #output_debug( "Query: " + str( article_qs.query ), me, "---===>" )
         
         # get count.
         value_OUT = article_qs.count()
@@ -2271,6 +2280,7 @@ class Temp_Section( models.Model ):
         value_OUT = -1
         
         # Declare variables
+        me = "get_in_house_article_count"
         article_qs = None
         
         # get articles.
@@ -2278,6 +2288,7 @@ class Temp_Section( models.Model ):
         
         # add shared filter parameters - for now, just date range.
         article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
+        #output_debug( "Query: " + str( article_qs.query ), me, "---===>" )
         
         # get count.
         value_OUT = article_qs.count()
@@ -2415,6 +2426,7 @@ class Temp_Section( models.Model ):
         my_in_house_authors = -1
         my_percent_in_house = -1
         my_percent_external = -1
+        debug_string = ""
         
         # start and end date?
         start_date_IN = None
@@ -2427,12 +2439,12 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             start_date_IN = kwargs[ self.PARAM_START_DATE ]
             start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
+            #output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
             
         else:
         
             # No start date.
-            output_debug( "*** No start date!\n", me )
+            output_debug( "No start date!", me, "*** " )
         
         #-- END check to see if start date in arguments --#
         
@@ -2442,12 +2454,12 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             end_date_IN = kwargs[ self.PARAM_END_DATE ]
             end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-            output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
+            #output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
             
         else:
         
             # No end date.
-            output_debug( "*** No end date!\n", me )
+            output_debug( "No end date!", me, "*** " )
         
         #-- END check to see if end date in arguments --#
 
@@ -2510,8 +2522,12 @@ class Temp_Section( models.Model ):
         # save?
         if ( do_save_IN == True ):
         
-            # save.
-            output_debug( "Before save, contents of instance: " + str( self ), me, "===>" )
+            # output contents.
+            debug_string = '%s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
+            output_debug( debug_string, me, "===>" )
+            output_debug( "Contents of instance: " + str( self ), me, "===>" )
+            
+            # save
             self.save()
         
         #-- END check to see if we save or not. --#
@@ -2556,12 +2572,12 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             section_name_IN = kwargs[ self.PARAM_SECTION_NAME ]
             result_qs = result_qs.filter( name = section_name_IN )
-            output_debug( "*** Requested section name = " + str( section_name_IN ) + "\n", me )
+            output_debug( "Requested section name = " + str( section_name_IN ), me, "*** " )
             
         else:
         
             # No start date.
-            output_debug( "*** No section name!\n", me )
+            output_debug( "No section name!", me, "*** " )
         
         #-- END check to see if start date in arguments --#
         
@@ -2572,12 +2588,12 @@ class Temp_Section( models.Model ):
             start_date_IN = kwargs[ self.PARAM_START_DATE ]
             start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
             result_qs = result_qs.filter( start_date = start_date_IN )
-            output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
+            output_debug( "Start date = " + str( start_date_IN ), me, "*** " )
             
         else:
         
             # No start date.
-            output_debug( "*** No start date!\n", me )
+            output_debug( "No start date!\n", me, "*** " )
         
         #-- END check to see if start date in arguments --#
         
@@ -2588,12 +2604,12 @@ class Temp_Section( models.Model ):
             end_date_IN = kwargs[ self.PARAM_END_DATE ]
             end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
             result_qs = result_qs.filter( end_date = end_date_IN )
-            output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
+            output_debug( "End date = " + str( end_date_IN ), me, "*** " )
             
         else:
         
             # No end date.
-            output_debug( "*** No end date!\n", me )
+            output_debug( "No end date!\n", me, "*** " )
         
         #-- END check to see if end date in arguments --#
 
