@@ -2039,9 +2039,6 @@ class Temp_Section( models.Model ):
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
     
     # property names for dictionaries of output information.
-    OUTPUT_DAY_COUNT = "day_count"
-    OUTPUT_ARTICLE_COUNT = "article_count"
-    OUTPUT_PAGE_COUNT = "page_count"
     OUTPUT_ARTICLES_PER_DAY = "articles_per_day"
     OUTPUT_PAGES_PER_DAY = "pages_per_day"
 
@@ -2050,13 +2047,10 @@ class Temp_Section( models.Model ):
     #----------------------------------------------------------------------
 
     name = models.CharField( max_length = 255, blank = True, null = True )
-    total_days = models.IntegerField( blank = True, null = True, default = 0 )
     total_articles = models.IntegerField( blank = True, null = True, default = 0 )
     in_house_articles = models.IntegerField( blank = True, null = True, default = 0 )
     external_articles = models.IntegerField( blank = True, null = True, default = 0 )
     external_booth = models.IntegerField( blank = True, null = True, default = 0 )
-    total_pages = models.IntegerField( blank = True, null = True, default = 0 )
-    in_house_pages = models.IntegerField( blank = True, null = True, default = 0 )
     in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
     percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
@@ -2262,27 +2256,24 @@ class Temp_Section( models.Model ):
             total_article_count = 0
             day_count = len( day_page_count_list )
             
-            # loop to get totals for article counts.
-            for current_count in day_article_count_list:
-                
-                # add current count to total_page_count
-                total_article_count += current_count
-                
-            #-- END loop over article counts --#
-
-            # loop to get totals for page counts.
+            # loop to get totals for page and article counts.
             for current_count in day_page_count_list:
                 
                 # add current count to total_page_count
                 total_page_count += current_count
                 
             #-- END loop over page counts --#
-                        
+            
+            # loop to get totals for page and article counts.
+            for current_count in day_article_count_list:
+                
+                # add current count to total_page_count
+                total_article_count += current_count
+                
+            #-- END loop over page counts --#
+            
             # Populate output values.
-            values_OUT[ Temp_Section.OUTPUT_DAY_COUNT ] = day_count
-            values_OUT[ Temp_Section.OUTPUT_ARTICLE_COUNT ] = total_article_count
             values_OUT[ Temp_Section.OUTPUT_ARTICLES_PER_DAY ] = Decimal( total_article_count ) / Decimal( day_count )
-            values_OUT[ Temp_Section.OUTPUT_PAGE_COUNT ] = total_page_count                        
             values_OUT[ Temp_Section.OUTPUT_PAGES_PER_DAY ] = Decimal( total_page_count ) / Decimal( day_count )                
                 
         #-- END check to see if we have required variables. --#
@@ -2352,7 +2343,7 @@ class Temp_Section( models.Model ):
     #-- END method create_q_article_date_range() --#
 
 
-    def get_averages_per_day( self, *args, **kwargs ):
+    def get_daily_averages( self, *args, **kwargs ):
     
         '''
         Retrieves pages in current section then averages the counts of pages and
@@ -2368,20 +2359,20 @@ class Temp_Section( models.Model ):
         values_OUT = -1
         
         # Declare variables
-        me = "get_averages_per_day"
+        me = "get_daily_averages"
         base_article_qs = None
         daily_article_qs = None
         start_date_IN = None
         end_date_IN = None
         averages_dict = None
-        day_count = None
-        page_count = None
         pages_per_day = None
         articles_per_day = None
         
         # get start and end date.
         start_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_START_DATE, None )
         end_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_END_DATE, None )
+        
+        output_debug( "Getting daily averages for " + start_date_IN + " to " + end_date_IN, me, ">>> " )
         
         # do we have dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
@@ -2395,16 +2386,12 @@ class Temp_Section( models.Model ):
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
             
-            # bust out the values.
+            # bust out the two values.
             values_OUT = averages_dict
-            day_count = averages_dict.get( Temp_Section.OUTPUT_DAY_COUNT, Decimal( "0" ) )
-            page_count = averages_dict.get( Temp_Section.OUTPUT_PAGE_COUNT, Decimal( "0" ) )
             articles_per_day = averages_dict.get( Temp_Section.OUTPUT_ARTICLES_PER_DAY, Decimal( "0" ) )
             pages_per_day = averages_dict.get( Temp_Section.OUTPUT_PAGES_PER_DAY, Decimal( "0" ) )
             
             # Store values in this instance.
-            self.total_days = day_count
-            self.total_pages = page_count
             self.average_articles_per_day = articles_per_day
             self.average_pages_per_day = pages_per_day
         
@@ -2412,7 +2399,67 @@ class Temp_Section( models.Model ):
 
         return values_OUT
         
-    #-- END method get_averages_per_day() --#
+    #-- END method get_daily_averages() --#
+
+
+    def get_daily_in_house_averages( self, *args, **kwargs ):
+    
+        '''
+        Retrieves pages in current section that have local writers on them for
+           each day, then averages the counts over the number of days. Returns
+           the average.
+        Preconditions: Must have a start and end date.  If not, returns -1.
+        Postconditions: Returns a dictionary with two values in it, average
+           articles per day and average pages per day.  Also stores the values
+           in the current instance, so the calling method need not deal that.
+        '''
+    
+        # return reference
+        values_OUT = -1
+        
+        # Declare variables
+        me = "get_daily_in_house_averages"
+        base_article_qs = None
+        daily_article_qs = None
+        start_date_IN = None
+        end_date_IN = None
+        averages_dict = None
+        pages_per_day = None
+        articles_per_day = None
+        
+        # get start and end date.
+        start_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_START_DATE, None )
+        end_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_END_DATE, None )
+        
+        output_debug( "Getting daily IN-HOUSE averages for " + start_date_IN + " to " + end_date_IN, me, ">>> " )
+        
+        # do we have dates?
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
+            
+            # add shared filter parameters - for now, just date range.
+            base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
+    
+            # get in-house articles in current section articles.
+            base_article_qs = base_article_qs.filter( section = self.name )
+            base_article_qs = base_article_qs.filter( Temp_Section.Q_IN_HOUSE_AUTHOR )
+            
+            # call method to calculate averages.
+            averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
+            
+            # bust out the two values.
+            values_OUT = averages_dict
+            articles_per_day = averages_dict.get( Temp_Section.OUTPUT_ARTICLES_PER_DAY, Decimal( "0" ) )
+            pages_per_day = averages_dict.get( Temp_Section.OUTPUT_PAGES_PER_DAY, Decimal( "0" ) )
+            
+            # Store values in this instance.
+            self.average_in_house_articles_per_day = articles_per_day
+            self.average_in_house_pages_per_day = pages_per_day
+        
+        #-- END conditional to make sure we have start and end dates --#
+
+        return values_OUT
+        
+    #-- END method get_daily_in_house_averages() --#
 
 
     def get_external_article_count( self, *args, **kwargs ):
@@ -2600,70 +2647,6 @@ class Temp_Section( models.Model ):
     #-- END method get_in_house_author_count --#
 
 
-    def get_in_house_averages_per_day( self, *args, **kwargs ):
-    
-        '''
-        Retrieves pages in current section that have local writers on them for
-           each day, then averages the counts over the number of days. Returns
-           the average.
-        Preconditions: Must have a start and end date.  If not, returns -1.
-        Postconditions: Returns a dictionary with two values in it, average
-           articles per day and average pages per day.  Also stores the values
-           in the current instance, so the calling method need not deal that.
-        '''
-    
-        # return reference
-        values_OUT = -1
-        
-        # Declare variables
-        me = "get_in_house_averages_per_day"
-        base_article_qs = None
-        daily_article_qs = None
-        start_date_IN = None
-        end_date_IN = None
-        averages_dict = None
-        day_count = None
-        page_count = None
-        pages_per_day = None
-        articles_per_day = None
-        
-        # get start and end date.
-        start_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_START_DATE, None )
-        end_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_END_DATE, None )
-        
-        # do we have dates?
-        if ( ( start_date_IN ) and ( end_date_IN ) ):
-            
-            # add shared filter parameters - for now, just date range.
-            base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
-    
-            # get in-house articles in current section articles.
-            base_article_qs = base_article_qs.filter( section = self.name )
-            base_article_qs = base_article_qs.filter( Temp_Section.Q_IN_HOUSE_AUTHOR )
-            
-            # call method to calculate averages.
-            averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
-            
-            # bust out the two values.
-            values_OUT = averages_dict
-            day_count = averages_dict.get( Temp_Section.OUTPUT_DAY_COUNT, Decimal( "0" ) )
-            page_count = averages_dict.get( Temp_Section.OUTPUT_PAGE_COUNT, Decimal( "0" ) )
-            articles_per_day = averages_dict.get( Temp_Section.OUTPUT_ARTICLES_PER_DAY, Decimal( "0" ) )
-            pages_per_day = averages_dict.get( Temp_Section.OUTPUT_PAGES_PER_DAY, Decimal( "0" ) )
-            
-            # Store values in this instance.
-            self.total_days = day_count
-            self.in_house_pages = page_count
-            self.average_in_house_articles_per_day = articles_per_day
-            self.average_in_house_pages_per_day = pages_per_day
-        
-        #-- END conditional to make sure we have start and end dates --#
-
-        return values_OUT
-        
-    #-- END method get_in_house_averages_per_day() --#
-
-
     def get_total_article_count( self, *args, **kwargs ):
     
         '''
@@ -2757,8 +2740,8 @@ class Temp_Section( models.Model ):
         my_external_articles = self.get_external_article_count( *args, **kwargs )
         my_external_booth = self.get_external_booth_count( *args, **kwargs )
         my_in_house_authors = self.get_in_house_author_count( *args, **kwargs )
-        my_averages = self.get_averages_per_day( *args, **kwargs )
-        my_in_house_averages = self.get_in_house_averages_per_day( *args, **kwargs )
+        my_averages = self.get_daily_averages( *args, **kwargs )
+        my_in_house_averages = self.get_daily_in_house_averages( *args, **kwargs )
 
         # derive additional values
 
