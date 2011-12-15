@@ -2062,10 +2062,10 @@ class Temp_Section( models.Model ):
     in_house_authors = models.IntegerField( blank = True, null = True, default = 0 )
     percent_in_house = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     percent_external = models.DecimalField( max_digits = 21, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
-    average_pages_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     average_articles_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
-    average_in_house_pages_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
+    average_pages_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     average_in_house_articles_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
+    average_in_house_pages_per_day = models.DecimalField( max_digits = 25, decimal_places = 20, blank = True, null = True, default = Decimal( '0' ) )
     start_date = models.DateTimeField( blank = True, null = True )
     end_date = models.DateTimeField( blank = True, null = True )
     
@@ -2078,8 +2078,19 @@ class Temp_Section( models.Model ):
 
     def __unicode__( self ):
 
-        # build the whole string except the id prefix.    
-        string_OUT = '%s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( self.name, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.in_house_authors, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
+        # build the whole string except the id prefix.  Let DEBUG dictate level
+        #    of detail.
+        if ( DEBUG == True ):
+        
+            # high detail.
+            string_OUT = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; avg_art = %f; avg_page = %f; avg_ih_art = %f; avg_ih_page = %f; per_in = %f; per_ext = %f; start = %s; end = %s' % ( self.name + ": ", self.total_days, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.total_pages, self.in_house_pages, self.in_house_authors, self.average_articles_per_day, self.average_pages_per_day, self.average_in_house_articles_per_day, self.average_in_house_pages_per_day, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
+            
+        else:
+        
+            # less detail.
+            string_OUT = '%s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( self.name, self.total_articles, self.in_house_articles, self.external_articles, self.external_booth, self.in_house_authors, self.percent_in_house, self.percent_external, str( self.start_date ), str( self.end_date ) )
+            
+        #-- Decide what level of detail based on debug or not --#
 
         # add on ID if one present.
         if ( self.id ):
@@ -2173,6 +2184,7 @@ class Temp_Section( models.Model ):
         end_date_IN = None
         start_date = None
         end_date = None
+        qs_article_count = -1
         current_date = None
         current_timedelta = None
         page_dict = None
@@ -2186,14 +2198,14 @@ class Temp_Section( models.Model ):
         day_count = -1
         current_count = -1
         total_page_count = -1
-        total_article_count = 0-1
+        total_article_count = -1
         
         # get start and end date.
         start_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_START_DATE, None )
         end_date_IN = get_dict_value( kwargs, Temp_Section.PARAM_END_DATE, None )
         
-        # do we a QuerySet and dates?
-        if ( ( query_set_IN ) and ( start_date_IN ) and ( end_date_IN ) ):
+        # do we have dates?
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
             
             # we do.  Convert them to datetime.
             start_date = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
@@ -2220,39 +2232,51 @@ class Temp_Section( models.Model ):
                 # get articles for current date.add current date to list.
                 article_qs = query_set_IN.filter( pub_date = current_date )
                 
-                for article in article_qs:
-                    
-                    # get the page for the current article.
-                    current_page = article.page
-                    
-                    # get current page article, increment, and store.
-                    current_page_article_count = get_dict_value( page_dict, current_page, 0 )
-                    current_page_article_count += 1
-                    page_dict[ current_page ] = current_page_article_count
-                    
-                #-- END loop over articles for current day. --#
+                # check if we have anything in the QuerySet
+                qs_article_count = article_qs.count()
+                output_debug( "Article count: " + str( qs_article_count ), me, "--- " )
                 
-                # Now, loop over the pages, adding them up and outputting counts
-                #    for each page.
-                for current_page, current_page_article_count in page_dict.items():
+                # only process if there is something in the QuerySet
+                if ( qs_article_count > 0 ):
                 
-                    # add 1 to page count
-                    daily_page_count += 1
-                    daily_article_count += current_page_article_count
+                    for article in article_qs:
+                        
+                        # get the page for the current article.
+                        current_page = article.page
+                        
+                        # get current page article, increment, and store.
+                        current_page_article_count = get_dict_value( page_dict, current_page, 0 )
+                        current_page_article_count += 1
+                        page_dict[ current_page ] = current_page_article_count
+                        
+                    #-- END loop over articles for current day. --#
                     
-                    # output page and count.
-                    output_debug( current_page + ", " + str( current_page_article_count ), me, "--- " )
+                    # Now, loop over the pages (not the same as number of
+                    #    articles - likely will be fewer, with multiple
+                    #    articles per page), adding them up and outputting counts
+                    #    for each page.
+                    output_debug( "Page count: " + str( len( page_dict ) ), me, "--- " )
+                    for current_page, current_page_article_count in page_dict.items():
                     
-                #-- END loop over pages for a day.
+                        # add 1 to page count
+                        daily_page_count += 1
+                        daily_article_count += current_page_article_count
+                        
+                        # output page and count.
+                        output_debug( current_page + ", " + str( current_page_article_count ), me, "--- " )
+                        
+                    #-- END loop over pages for a day.
+                    
+                    # Output average articles per page if page count is not 0.
+                    if ( daily_page_count > 0 ):
+                    
+                        output_debug( "Average articles per page: " + str( daily_article_count / daily_page_count ), me )
+                        
+                    #-- END check to make sure we don't divide by 0. --#
                 
-                # Output average articles per page if page count is not 0.
-                if ( daily_page_count > 0 ):
-                
-                    output_debug( "Average articles per page: " + str( daily_article_count / daily_page_count ), me, "" )
-                    
-                #-- END check to make sure we don't divide by 0. --#
+                #-- END check to see if there are any articles. --#
 
-                # Add the counts to the lists.
+                # Always add a count for each day to the lists, even if it is 0.
                 day_page_count_list.append( daily_page_count )
                 day_article_count_list.append( daily_article_count )
                 
@@ -2262,10 +2286,11 @@ class Temp_Section( models.Model ):
                 
             #-- END loop over days --#
 
-            # get day count
+            # initialize count holders
             total_page_count = 0
             total_article_count = 0
             
+            # get day count
             # day_count = len( day_page_count_list )
             if ( start_date_IN == end_date_IN ):
                 
@@ -2277,6 +2302,8 @@ class Temp_Section( models.Model ):
                 day_count = overall_time_delta.days + 1
                 
             #-- END try to get number of days set correctly. --#
+            
+            output_debug( "Day Count: " + str( day_count ), me, "--- " )
             
             # loop to get totals for page and article counts.
             for current_count in day_article_count_list:
@@ -2401,6 +2428,8 @@ class Temp_Section( models.Model ):
         
         output_debug( "Getting daily averages for " + start_date_IN + " to " + end_date_IN, me, ">>> " )
         
+        output_debug( "State of object entering method: " + str( self ), me, ">>> " )
+
         # do we have dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
             
@@ -2412,6 +2441,8 @@ class Temp_Section( models.Model ):
             
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
+            
+            output_debug( "Averages returned: " + str( averages_dict ), me, ">>> " )
             
             # bust out the values.
             values_OUT = averages_dict
@@ -2427,6 +2458,8 @@ class Temp_Section( models.Model ):
             self.average_pages_per_day = pages_per_day
         
         #-- END conditional to make sure we have start and end dates --#
+
+        output_debug( "State of object before leaving method: " + str( self ), me, ">>> " )
 
         return values_OUT
         
@@ -2466,6 +2499,8 @@ class Temp_Section( models.Model ):
         
         output_debug( "Getting daily IN-HOUSE averages for " + start_date_IN + " to " + end_date_IN, me, ">>> " )
         
+        output_debug( "State of object entering method: " + str( self ), me, ">>> " )
+
         # do we have dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
             
@@ -2479,6 +2514,8 @@ class Temp_Section( models.Model ):
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
             
+            output_debug( "Averages returned: " + str( averages_dict ), me, ">>> " )
+
             # bust out the values.
             values_OUT = averages_dict
             day_count = averages_dict.get( Temp_Section.OUTPUT_DAY_COUNT, Decimal( "0" ) )
@@ -2492,7 +2529,10 @@ class Temp_Section( models.Model ):
             self.average_in_house_articles_per_day = articles_per_day
             self.average_in_house_pages_per_day = pages_per_day
         
+
         #-- END conditional to make sure we have start and end dates --#
+
+        output_debug( "State of object before leaving method: " + str( self ), me, ">>> " )
 
         return values_OUT
         
@@ -2744,7 +2784,7 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             start_date_IN = kwargs[ self.PARAM_START_DATE ]
             start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            #output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
+            output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
             
         else:
         
@@ -2759,7 +2799,7 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             end_date_IN = kwargs[ self.PARAM_END_DATE ]
             end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-            #output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
+            output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
             
         else:
         
@@ -2830,12 +2870,14 @@ class Temp_Section( models.Model ):
         if ( do_save_IN == True ):
         
             # output contents.
-            debug_string = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", self.total_days, my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, self.total_pages, self.in_house_pages,   my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
+            debug_string = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; avg_art = %f; avg_page = %f; avg_ih_art = %f; avg_ih_page = %f; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", self.total_days, my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, self.total_pages, self.in_house_pages, my_in_house_authors, self.average_articles_per_day, self.average_pages_per_day, self.average_in_house_articles_per_day, self.average_in_house_pages_per_day, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
             output_debug( debug_string, me, "===>" )
             output_debug( "Contents of instance: " + str( self ), me, "===>" )
             
             # save
-            self.save()
+            save_result = self.save()
+            
+            output_debug( "save() result: " + str( save_result ), me, "*** " )
         
         #-- END check to see if we save or not. --#
         
