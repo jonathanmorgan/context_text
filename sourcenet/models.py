@@ -2934,7 +2934,126 @@ class Temp_Section( models.Model ):
             
         return instance_OUT
         
-    #-- END class method get_instance_for_name --#
+    #-- END class method find_instance --#
+
+    @classmethod
+    def process_section_date_range( cls, *args, **kwargs ):
+ 
+        # declare variables
+        me = "process_section_date_range"
+        start_date_IN = ""
+        end_date_IN = ""
+        save_stats = True
+        section_params = {}
+        current_section_name = ""
+        current_instance = None
+        
+        # Get start and end dates
+        start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE, None )
+        end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE, None )
+
+
+        # got dates?
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
+
+            # store in params.
+            section_params[ cls.PARAM_START_DATE ] = start_date_IN
+            section_params[ cls.PARAM_END_DATE ] = end_date_IN
+            
+            # loop over list of section names that are local news or sports.
+            for current_section_name in cls.NEWS_SECTION_NAME_LIST:
+            
+                # set section name
+                section_params[ cls.PARAM_SECTION_NAME ] = current_section_name
+            
+                # get instance
+                current_instance = cls.find_instance( **section_params )
+
+                # process values and save
+                current_instance.process_column_values( save_stats, **section_params )
+                
+                # output current instance.
+                output_debug( "Finished processing section " + current_section_name + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
+                
+            #-- END loop over sections. --#
+            
+        #-- END check to make sure we have dates. --#
+        
+    #-- END method process_section_date_range() --#
+
+
+    @classmethod
+    def process_section_date_range_day_by_day( cls, *args, **kwargs ):
+
+        # declare variables
+        me = "process_section_date_range_day_by_day"
+        start_date_IN = ""
+        end_date_IN = ""
+        start_date = None
+        end_date = None
+        save_stats = True
+        daily_params = {}
+        current_section_name = ""
+        current_date = None
+        current_timedelta = None
+        current_instance = None
+        
+        
+        # Get start and end dates
+        start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE, None )
+        end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE, None )
+
+        # got dates?
+        if ( ( start_date_IN ) and ( end_date_IN ) ):
+            
+            # loop over list of section names that are local news or sports.
+            for current_section_name in cls.NEWS_SECTION_NAME_LIST:
+            
+                # set section name
+                daily_params[ cls.PARAM_SECTION_NAME ] = current_section_name
+            
+                # Convert start and end dates to datetime.
+                start_date = datetime.datetime.strptime( start_date_IN, cls.DEFAULT_DATE_FORMAT )
+                end_date = datetime.datetime.strptime( end_date_IN, cls.DEFAULT_DATE_FORMAT )
+            
+                # then, loop one day at a time.
+                current_date = start_date
+                current_timedelta = end_date - current_date
+            
+                # loop over dates as long as difference between current and end is 0
+                #    or greater.
+                while ( current_timedelta.days > -1 ):
+                
+                    # today's page map
+                    output_debug( "Processing " + str( current_date ), me )
+                        
+                    # set start and end date in kwargs to current_date
+                    daily_params[ cls.PARAM_START_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
+                    daily_params[ cls.PARAM_END_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
+            
+                    # get an instance
+                    current_instance = cls.find_instance( **daily_params )
+                
+                    # process values and save
+                    current_instance.process_column_values( save_stats, **daily_params )
+                    
+                    # Done with this date.  Moving on.
+                    output_debug( "Finished processing date " + str( current_date ) + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
+                    
+                    # increment the date and re-calculate timedelta.
+                    current_date = current_date + datetime.timedelta( days = 1 )
+                    current_timedelta = end_date - current_date
+                    
+                #-- END loop over dates in date range --#
+                
+                # output current instance.
+                output_debug( "Finished processing section " + current_section_name + "\n\n", me, "\n\n=== " )
+            
+            #-- END loop over sections. --#
+            
+        #-- END check to make sure we have start and end date. --#
+        
+    #-- END method process_section_date_range_day_by_day() --#
 
 
 #= End Temp_Section Model ======================================================
