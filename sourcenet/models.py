@@ -2819,7 +2819,7 @@ class Temp_Section( models.Model ):
         if ( do_save_IN == True ):
         
             # output contents.
-            debug_string = '%s: tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
+            debug_string = '%s: tot_day = %d; tot_art = %d; in_art = %d; ext_art= %d; ext_booth = %d; tot_page = %d; in_page = %d; in_auth = %d; per_in = %f; per_ext = %f; start = %s; end = %s' % ( "Before save, contents of variables for " + self.name + ": ", self.total_days, my_total_articles, my_in_house_articles, my_external_articles, my_external_booth, self.total_pages, self.in_house_pages, my_in_house_authors, my_percent_in_house, my_percent_external, str( start_date_IN ), str( end_date_IN ) )
             output_debug( debug_string, me, "===>" )
             output_debug( "Contents of instance: " + str( self ), me, "===>" )
             
