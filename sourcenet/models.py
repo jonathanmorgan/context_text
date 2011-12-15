@@ -2031,8 +2031,11 @@ class Temp_Section( models.Model ):
     PARAM_END_DATE = "end_date"
     DEFAULT_DATE_FORMAT = "%Y-%m-%d"
     
-    # other parameters
+    # other article parameters.
     PARAM_CUSTOM_ARTICLE_Q = "custom_article_q"
+    
+    # section selection parameters.
+    PARAM_SECTION_NAME = "section_name"
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
 
     #----------------------------------------------------------------------
@@ -2404,6 +2407,7 @@ class Temp_Section( models.Model ):
         status_OUT = STATUS_SUCCESS
         
         # Declare variables
+        me = "process_column_values"
         my_total_articles = -1
         my_in_house_articles = -1
         my_external_articles = -1
@@ -2423,12 +2427,12 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             start_date_IN = kwargs[ self.PARAM_START_DATE ]
             start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            print( "*** Start date = " + str( start_date_IN ) + "\n" )
+            output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
             
         else:
         
             # No start date.
-            print( "*** No start date!\n" )
+            output_debug( "*** No start date!\n", me )
         
         #-- END check to see if start date in arguments --#
         
@@ -2438,12 +2442,12 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             end_date_IN = kwargs[ self.PARAM_END_DATE ]
             end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-            print( "*** End date = " + str( end_date_IN ) + "\n" )
+            output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
             
         else:
         
             # No end date.
-            print( "*** No end date!\n" )
+            output_debug( "*** No end date!\n", me )
         
         #-- END check to see if end date in arguments --#
 
@@ -2514,7 +2518,7 @@ class Temp_Section( models.Model ):
     #----------------------------------------------------------------------
 
     @classmethod
-    def get_instance_for_name( self, name_IN = "",  *args, **kwargs ):
+    def find_instance( self, name_IN = "",  *args, **kwargs ):
     
         '''
         Generates values for all columns for section name passed in.
@@ -2528,24 +2532,44 @@ class Temp_Section( models.Model ):
         result_qs = None
         result_count = -1
 
-        # start and end date?
+        # incoming parameters
+        section_name_IN = ""
         start_date_IN = None
         end_date_IN = None
         custom_q_IN = None
         
-        # retrieve dates
+        # start with Empty QuerySet
+        result_qs = self.objects.all()
+        
+        # retrieve parameters
+        # section name
+        if ( self.PARAM_SECTION_NAME in kwargs ):
+        
+            # yup.  Get it.
+            section_name_IN = kwargs[ self.PARAM_SECTION_NAME ]
+            result_qs = result_qs.filter( name = section_name_IN )
+            output_debug( "*** Requested section name = " + str( section_name_IN ) + "\n", me )
+            
+        else:
+        
+            # No start date.
+            output_debug( "*** No section name!\n", me )
+        
+        #-- END check to see if start date in arguments --#
+        
         # start date
         if ( self.PARAM_START_DATE in kwargs ):
         
             # yup.  Get it.
             start_date_IN = kwargs[ self.PARAM_START_DATE ]
             start_date_IN = datetime.datetime.strptime( start_date_IN, self.DEFAULT_DATE_FORMAT )
-            print( "*** Start date = " + str( start_date_IN ) + "\n" )
+            result_qs = result_qs.filter( start_date = start_date_IN )
+            output_debug( "*** Start date = " + str( start_date_IN ) + "\n", me )
             
         else:
         
             # No start date.
-            print( "*** No start date!\n" )
+            output_debug( "*** No start date!\n", me )
         
         #-- END check to see if start date in arguments --#
         
@@ -2555,87 +2579,65 @@ class Temp_Section( models.Model ):
             # yup.  Get it.
             end_date_IN = kwargs[ self.PARAM_END_DATE ]
             end_date_IN = datetime.datetime.strptime( end_date_IN, self.DEFAULT_DATE_FORMAT )
-            print( "*** End date = " + str( end_date_IN ) + "\n" )
+            result_qs = result_qs.filter( end_date = end_date_IN )
+            output_debug( "*** End date = " + str( end_date_IN ) + "\n", me )
             
         else:
         
             # No end date.
-            print( "*** No end date!\n" )
+            output_debug( "*** No end date!\n", me )
         
         #-- END check to see if end date in arguments --#
 
-        # got a name?
-        if ( name_IN ):
-
-            # try to get Temp_Section instance with name = name_IN
-            try:
-            
-                # filter on name.
-                result_qs = self.objects.filter( name = name_IN )
-                
-                # got a start date?
-                if ( start_date_IN ):
-                    
-                    result_qs = result_qs.filter( start_date__gte = start_date_IN )
-                    
-                #-- END check to see if we have a start date. --#
-                
-                # got an end date?
-                if ( end_date_IN ):
-                    
-                    result_qs = result_qs.filter( end_date__lte = end_date_IN )
-                    
-                #-- END check to see if we have an end date. --#
-                
-                # got a custom Q passed in?
-                if ( self.PARAM_CUSTOM_SECTION_Q in kwargs ):
-                
-                    # yup.  Get it.
-                    custom_q_IN = kwargs[ self.PARAM_CUSTOM_SECTION_Q ]
-                    
-                    # anything there?
-                    if ( custom_q_IN ):
-                        
-                        # add it to the output QuerySet
-                        result_qs = result_qs.filter( custom_q_IN )
-                        
-                    #-- END check to see if custom Q() populated --#
-                
-                #-- END check to see if custom Q() in arguments --#        
-
-                # try to get() a single matching instance.
-                instance_OUT = result_qs.get()
-
-            except MultipleObjectsReturned:
-
-                # error!
-                loging.debug( "In " + me + ": ERROR - more than one match for name \"" + name_IN + "\" when there should only be one.  Returning nothing." )
-
-            except ObjectDoesNotExist:
-
-                # either nothing or negative count (either implies no match).
-                #    Return new instance.
-                instance_OUT = Temp_Section()
-                instance_OUT.name = name_IN
-
-                # got a start date?
-                if ( start_date_IN ):
-                    
-                    instance_OUT.start_date = start_date_IN
-                    
-                #-- END check to see if we have a start date. --#
-                
-                # got an end date?
-                if ( end_date_IN ):
-                    
-                    instance_OUT.end_date = end_date_IN
-                    
-                #-- END check to see if we have an end date. --#
-                
-            #-- END try to retrieve instance for name passed in. --#
-            
-        #-- END check to see if name passed in --#
+        # got a custom Q passed in?
+        if ( self.PARAM_CUSTOM_SECTION_Q in kwargs ):
         
+            # yup.  Get it.
+            custom_q_IN = kwargs[ self.PARAM_CUSTOM_SECTION_Q ]
+            
+            # anything there?
+            if ( custom_q_IN ):
+                
+                # add it to the output QuerySet
+                result_qs = result_qs.filter( custom_q_IN )
+                
+            #-- END check to see if custom Q() populated --#
+        
+        #-- END check to see if custom Q() in arguments --#        
+
+        # try to get Temp_Section instance
+        try:
+        
+            instance_OUT = result_qs.get()
+
+        except MultipleObjectsReturned:
+
+            # error!
+            loging.debug( "In " + me + ": ERROR - more than one match for name \"" + name_IN + "\" when there should only be one.  Returning nothing." )
+
+        except ObjectDoesNotExist:
+
+            # either nothing or negative count (either implies no match).
+            #    Return new instance.
+            instance_OUT = Temp_Section()
+            instance_OUT.name = section_name_IN
+
+            # got a start date?
+            if ( start_date_IN ):
+                
+                instance_OUT.start_date = start_date_IN
+                
+            #-- END check to see if we have a start date. --#
+            
+            # got an end date?
+            if ( end_date_IN ):
+                
+                instance_OUT.end_date = end_date_IN
+                
+            #-- END check to see if we have an end date. --#
+            
+        #-- END try to retrieve instance for name passed in. --#
+            
         return instance_OUT
         
     #-- END class method get_instance_for_name --#
