@@ -2511,6 +2511,7 @@ class Temp_Section( models.Model ):
         if ( do_save_IN == True ):
         
             # save.
+            output_debug( "Before save, contents of instance: " + str( self ), me, "===>" )
             self.save()
         
         #-- END check to see if we save or not. --#
@@ -2620,7 +2621,7 @@ class Temp_Section( models.Model ):
         except MultipleObjectsReturned:
 
             # error!
-            loging.debug( "In " + me + ": ERROR - more than one match for name \"" + name_IN + "\" when there should only be one.  Returning nothing." )
+            output_debug( "ERROR - more than one match for name \"" + name_IN + "\" when there should only be one.  Returning nothing.", me )
 
         except ObjectDoesNotExist:
 
