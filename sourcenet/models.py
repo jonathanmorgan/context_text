@@ -1160,7 +1160,8 @@ class Article_Content( models.Model ):
     CONTENT_TYPE_CHOICES = (
         ( "html", "HTML" ),
         ( "text", "Text" ),
-        ( "other", "Other" )
+        ( "other", "Other" ),
+        ( "none", "None" )
     )
 
     #----------------------------------------------------------------------
@@ -1168,7 +1169,7 @@ class Article_Content( models.Model ):
     #----------------------------------------------------------------------
 
     article = models.ForeignKey( Article )
-    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True )
+    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -1182,7 +1183,7 @@ class Article_Content( models.Model ):
     # methods
     #----------------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __unicode__( self, content_type_IN = "content" ):
 
         # return reference
         string_OUT = ""
@@ -1193,7 +1194,7 @@ class Article_Content( models.Model ):
             
         #-- END check to see if ID --#
              
-        string_OUT += "content "
+        string_OUT += content_type_IN
         
         if ( self.type ):
             
@@ -1207,10 +1208,22 @@ class Article_Content( models.Model ):
 
     #-- END method __unicode__() --#
 
-# Article_Content model
+#-- END abstract Article_Content model --#
+
+
+# Article_RawData model
 class Article_RawData( Article_Content ):
 
-    type = models.CharField( max_length = 255, choices = Article_Content.CONTENT_TYPE_CHOICES, blank = True, null = True, default = "html" )
+    def __unicode__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = super( Article_Text, self ).__unicode__( "raw data" )
+        
+        return string_OUT
+
+    #-- END method __unicode__() --#
 
 #-- END Article_RawData model --#
 
@@ -1218,7 +1231,16 @@ class Article_RawData( Article_Content ):
 # Article_Text model
 class Article_Text( Article_Content ):
 
-    type = models.CharField( max_length = 255, choices = Article_Content.CONTENT_TYPE_CHOICES, blank = True, null = True, default = "text" )
+    def __unicode__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = super( Article_Text, self ).__unicode__( "text" )
+        
+        return string_OUT
+
+    #-- END method __unicode__() --#
 
 #-- END Article_Text model --#
 
