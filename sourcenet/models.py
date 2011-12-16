@@ -1154,6 +1154,75 @@ class Article( models.Model ):
 #= End Article Model ============================================================
 
 
+# Article_Content model
+class Article_Content( models.Model ):
+
+    CONTENT_TYPE_CHOICES = (
+        ( "html", "HTML" ),
+        ( "text", "Text" ),
+        ( "other", "Other" )
+    )
+
+    #----------------------------------------------------------------------
+    # instance variables and meta
+    #----------------------------------------------------------------------
+
+    article = models.ForeignKey( Article )
+    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True )
+    content = models.TextField()
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+        abstract = True
+        ordering = [ 'article', 'last_modified', 'create_date' ]
+
+    #----------------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------------
+
+    def __unicode__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        if ( self.id ):
+            
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+             
+        string_OUT += "content "
+        
+        if ( self.type ):
+            
+            string_OUT += " of type \"" + self.type + "\""
+            
+        #-- END check to see if there is a type --#
+             
+        string_OUT += " for article: " + str( self.article )
+        
+        return string_OUT
+
+    #-- END method __unicode__() --#
+
+# Article_Content model
+class Article_RawData( Article_Content ):
+
+    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "html" )
+
+#-- END Article_RawData model --#
+
+
+# Article_Text model
+class Article_Text( Article_Content ):
+
+    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "text" )
+
+#-- END Article_Text model --#
+
+
 # Article_Data model
 class Article_Data( models.Model ):
 
