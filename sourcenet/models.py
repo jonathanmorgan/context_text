@@ -2022,7 +2022,9 @@ class Temp_Section( models.Model ):
     # constants-ish
     #----------------------------------------------------------------------
 
+    # Section Name constants.
     NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    SECTION_NAME_ALL = "all"
     
     # variables for building nuanced queries in django.
     # query for bylines of in-house authors.
@@ -2039,6 +2041,7 @@ class Temp_Section( models.Model ):
     # section selection parameters.
     PARAM_SECTION_NAME = "section_name"
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
+    PARAM_JUST_PROCESS_ALL = "just_process_all" # set to True if just want sum of all sections, not records for each individual section.  If False, processes each section individually, then generates the "all" record.
     
     # property names for dictionaries of output information.
     OUTPUT_DAY_COUNT = "day_count"
@@ -2104,6 +2107,63 @@ class Temp_Section( models.Model ):
     #-- END method __unicode__() --#
 
     
+    def add_section_name_filter_to_article_qs( self, qs_IN = None, *args, **kwargs ):
+        
+        '''
+        Checks section name in this instance.  If "all", adds a filter to
+           QuerySet where section just has to be one of those in the list of
+           locals.  If not all, adds a filter to limit the section to the name.
+        Preconditions: instance must have a name set.
+        Postconditions: returns the QuerySet passed in with an additional filter
+           for section name.  If no QuerySet passed in, creates new Article
+           QuerySet, returns it with filter added.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        me = "add_section_name_filter_to_article_qs"
+        my_section_name = ""
+        
+        # got a query set?
+        if ( qs_IN ):
+        
+            # use the one passed in.
+            qs_OUT = qs_IN
+            
+            #output_debug( "QuerySet passed in, using it.", me, "*** " )
+        
+        else:
+        
+            # No.  Make one.
+            qs_OUT = Article.objects.all()
+            
+            #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
+        
+        #-- END check to see if query set passed in --#
+        
+        # get section name.
+        my_section_name = self.name
+        
+        # see if section name is "all".
+        if ( my_section_name == Temp_Section.SECTION_NAME_ALL ):
+            
+            # add filter for name being in the list
+            qs_OUT = qs_OUT.filter( section__in = Temp_Section.NEWS_SECTION_NAME_LIST )
+            
+        else:
+            
+            # just limit to the name.
+            qs_OUT = qs_OUT.filter( section = self.name )
+            
+        #-- END check to see if section name is "all" --#
+        
+        return qs_OUT
+        
+    #-- END method add_section_name_filter_to_article_qs() --#
+
+
     def append_shared_article_qs_params( self, query_set_IN = None, *args, **kwargs ):
     
         # return reference
@@ -2437,7 +2497,8 @@ class Temp_Section( models.Model ):
             base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
     
             # get current section articles.
-            base_article_qs = base_article_qs.filter( section = self.name )
+            #base_article_qs = base_article_qs.filter( section = self.name )
+            base_article_qs = self.add_section_name_filter_to_article_qs( base_article_qs, *args, **kwargs )
             
             # call method to calculate averages.
             averages_dict = self.calculate_average_pages_articles_per_day( base_article_qs, *args, **kwargs )
@@ -2508,7 +2569,7 @@ class Temp_Section( models.Model ):
             base_article_qs = self.append_shared_article_qs_params( *args, **kwargs )
     
             # get in-house articles in current section articles.
-            base_article_qs = base_article_qs.filter( section = self.name )
+            base_article_qs = self.add_section_name_filter_to_article_qs( base_article_qs, *args, **kwargs )
             base_article_qs = base_article_qs.filter( Temp_Section.Q_IN_HOUSE_AUTHOR )
             
             # call method to calculate averages.
@@ -2562,7 +2623,7 @@ class Temp_Section( models.Model ):
         article_qs = article_qs.exclude( Temp_Section.Q_IN_HOUSE_AUTHOR )
 
         # include just this section.
-        article_qs = article_qs.filter( section = self.name )
+        article_qs = self.add_section_name_filter_to_article_qs( article_qs, *args, **kwargs )
 
         #output_debug( "Query: " + str( article_qs.query ), me, "---===>" )
 
@@ -2599,7 +2660,7 @@ class Temp_Section( models.Model ):
         article_qs = article_qs.filter( author_q )
         
         # limit to current section.
-        article_qs = article_qs.filter( section = self.name )
+        article_qs = self.add_section_name_filter_to_article_qs( article_qs, *args, **kwargs )
         
         #output_debug( "Query: " + str( article_qs.query ), me, "---===>" )
         
@@ -2627,7 +2688,9 @@ class Temp_Section( models.Model ):
         article_qs = None
         
         # get articles.
-        article_qs = Article.objects.filter( Q( section = self.name ), Temp_Section.Q_IN_HOUSE_AUTHOR )
+        #article_qs = Article.objects.filter( Q( section = self.name ), Temp_Section.Q_IN_HOUSE_AUTHOR )
+        article_qs = self.add_section_name_filter_to_article_qs( *args, **kwargs )
+        article_qs = article_qs.filter( Temp_Section.Q_IN_HOUSE_AUTHOR )
         
         # add shared filter parameters - for now, just date range.
         article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
@@ -2657,6 +2720,7 @@ class Temp_Section( models.Model ):
         # Declare variables
         my_cursor = None
         query_string = ""
+        name_list_string = ""
         my_row = None
         start_date_IN = ""
         end_date_IN = ""
@@ -2667,7 +2731,34 @@ class Temp_Section( models.Model ):
         # create SQL query string
         query_string = "SELECT COUNT( DISTINCT CONVERT( LEFT( author_varchar, LOCATE( ' / ', author_varchar ) ), CHAR ) ) as name_count"
         query_string += " FROM sourcenet_article"
-        query_string += " WHERE section = '" + self.name + "'"
+        
+        # add in ability to either look for "all" or a single section name.
+        if ( self.name == Temp_Section.SECTION_NAME_ALL ):
+
+            # start IN statement.
+            query_string += " WHERE section IN ( "
+            
+            # make list of section names.
+            name_list_string = "', '".join( Temp_Section.NEWS_SECTION_NAME_LIST )
+            
+            # check if there is anything in that list.
+            if ( name_list_string ):
+            
+                # there is.  add quotes to beginning and end.
+                name_list_string = "'" + name_list_string + "'"
+                
+            #-- END check to see if we have anything in list. --#
+            
+            # add list to IN, then close out IN statement.
+            query_string += name_list_string + " )"            
+            
+        else:
+            
+            # not all, so just limit to current name.
+            query_string += " WHERE section = '" + self.name + "'"
+            
+        #-- END check to see if "all" --#
+        
         query_string += "     AND"
         query_string += "     ("
         query_string += "         ( UPPER( author_varchar ) REGEXP '.* */ *THE GRAND RAPIDS PRESS$' )"
@@ -2738,7 +2829,8 @@ class Temp_Section( models.Model ):
         article_qs = None 
         
         # get articles.
-        article_qs = Article.objects.filter( section = self.name )
+        #article_qs = Article.objects.filter( section = self.name )
+        article_qs = self.add_section_name_filter_to_article_qs( *args, **kwargs )
         
         # add shared filter parameters - for now, just date range.
         article_qs = self.append_shared_article_qs_params( article_qs, *args, **kwargs )
@@ -3023,6 +3115,7 @@ class Temp_Section( models.Model ):
         me = "process_section_date_range"
         start_date_IN = ""
         end_date_IN = ""
+        skip_individual_sections_IN = False
         save_stats = True
         section_params = {}
         current_section_name = ""
@@ -3032,6 +3125,9 @@ class Temp_Section( models.Model ):
         start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE, None )
         end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE, None )
 
+        # check if we only want to create "all" records, so skip individual
+        #    sections.
+        skip_individual_sections_IN = get_dict_value( kwargs, cls.PARAM_JUST_PROCESS_ALL, False )
 
         # got dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
@@ -3040,26 +3136,48 @@ class Temp_Section( models.Model ):
             section_params[ cls.PARAM_START_DATE ] = start_date_IN
             section_params[ cls.PARAM_END_DATE ] = end_date_IN
             
-            # loop over list of section names that are local news or sports.
-            for current_section_name in cls.NEWS_SECTION_NAME_LIST:
-            
-                # set section name
-                section_params[ cls.PARAM_SECTION_NAME ] = current_section_name
-            
-                # get instance
-                current_instance = cls.find_instance( **section_params )
+            # process records for individual sections?
+            if( skip_individual_sections_IN == False ):
+                    
+                # loop over list of section names that are local news or sports.
+                for current_section_name in cls.NEWS_SECTION_NAME_LIST:
+                
+                    # set section name
+                    section_params[ cls.PARAM_SECTION_NAME ] = current_section_name
+                
+                    # get instance
+                    current_instance = cls.find_instance( **section_params )
+    
+                    # process values and save
+                    current_instance.process_column_values( save_stats, **section_params )
+                    
+                    # output current instance.
+                    output_debug( "Finished processing section " + current_section_name + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
+                    
+                    # memory management.
+                    gc.collect()
+                    django.db.reset_queries()
+                    
+                #-- END loop over sections. --#
 
-                # process values and save
-                current_instance.process_column_values( save_stats, **section_params )
-                
-                # output current instance.
-                output_debug( "Finished processing section " + current_section_name + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
-                
-                # memory management.
-                gc.collect()
-                django.db.reset_queries()
-                
-            #-- END loop over sections. --#
+            #-- END check to see if just want to update "all" rows. --#
+            
+            # Then, do the "all"
+            # set section name
+            section_params[ cls.PARAM_SECTION_NAME ] = Temp_Section.SECTION_NAME_ALL
+        
+            # get instance
+            current_instance = cls.find_instance( **section_params )
+
+            # process values and save
+            current_instance.process_column_values( save_stats, **section_params )
+            
+            # output current instance.
+            output_debug( "Finished processing section " + current_section_name + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
+            
+            # memory management.
+            gc.collect()
+            django.db.reset_queries()
             
         #-- END check to make sure we have dates. --#
         
@@ -3073,6 +3191,7 @@ class Temp_Section( models.Model ):
         me = "process_section_date_range_day_by_day"
         start_date_IN = ""
         end_date_IN = ""
+        skip_individual_sections_IN = False
         start_date = None
         end_date = None
         save_stats = True
@@ -3086,59 +3205,81 @@ class Temp_Section( models.Model ):
         # Get start and end dates
         start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE, None )
         end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE, None )
+        
+        # check if we only want to create "all" records, so skip individual
+        #    sections.
+        skip_individual_sections_IN = get_dict_value( kwargs, cls.PARAM_JUST_PROCESS_ALL, False )
 
         # got dates?
         if ( ( start_date_IN ) and ( end_date_IN ) ):
             
-            # loop over list of section names that are local news or sports.
-            for current_section_name in cls.NEWS_SECTION_NAME_LIST:
+            # Convert start and end dates to datetime.
+            start_date = datetime.datetime.strptime( start_date_IN, cls.DEFAULT_DATE_FORMAT )
+            end_date = datetime.datetime.strptime( end_date_IN, cls.DEFAULT_DATE_FORMAT )
+        
+            # then, loop one day at a time.
+            current_date = start_date
+            current_timedelta = end_date - current_date
+        
+            # loop over dates as long as difference between current and end is 0
+            #    or greater.
+            while ( current_timedelta.days > -1 ):
             
-                # set section name
-                daily_params[ cls.PARAM_SECTION_NAME ] = current_section_name
-            
-                # Convert start and end dates to datetime.
-                start_date = datetime.datetime.strptime( start_date_IN, cls.DEFAULT_DATE_FORMAT )
-                end_date = datetime.datetime.strptime( end_date_IN, cls.DEFAULT_DATE_FORMAT )
-            
-                # then, loop one day at a time.
-                current_date = start_date
-                current_timedelta = end_date - current_date
-            
-                # loop over dates as long as difference between current and end is 0
-                #    or greater.
-                while ( current_timedelta.days > -1 ):
+                # current date
+                output_debug( "Processing " + str( current_date ), me )
+                    
+                # set start and end date in kwargs to current_date
+                daily_params[ cls.PARAM_START_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
+                daily_params[ cls.PARAM_END_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
+        
+                # process records for individual sections?
+                if( skip_individual_sections_IN == False ):
+                    
+                    # yes - loop over list of section names that are local news or sports.
+                    for current_section_name in cls.NEWS_SECTION_NAME_LIST:
+                    
+                        # set section name
+                        daily_params[ cls.PARAM_SECTION_NAME ] = current_section_name
                 
-                    # today's page map
-                    output_debug( "Processing " + str( current_date ), me )
+                        # get an instance
+                        current_instance = cls.find_instance( **daily_params )
+                    
+                        # process values and save
+                        current_instance.process_column_values( save_stats, **daily_params )
                         
-                    # set start and end date in kwargs to current_date
-                    daily_params[ cls.PARAM_START_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
-                    daily_params[ cls.PARAM_END_DATE ] = current_date.strftime( cls.DEFAULT_DATE_FORMAT )
-            
-                    # get an instance
-                    current_instance = cls.find_instance( **daily_params )
+                        # output current instance.
+                        output_debug( "Finished processing section " + current_section_name + "\n\n", me, "\n\n=== " )
+                        
+                    #-- END loop over sections. --#
+                    
+                #-- END check to see if just want to update "all" rows. --#
                 
-                    # process values and save
-                    current_instance.process_column_values( save_stats, **daily_params )
-                    
-                    # Done with this date.  Moving on.
-                    output_debug( "Finished processing date " + str( current_date ) + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
-                    
-                    # increment the date and re-calculate timedelta.
-                    current_date = current_date + datetime.timedelta( days = 1 )
-                    current_timedelta = end_date - current_date
-                    
-                    # memory management.
-                    gc.collect()
-                    django.db.reset_queries()
-                    
-                #-- END loop over dates in date range --#
+                # process "all"
+                # set section name
+                daily_params[ cls.PARAM_SECTION_NAME ] = cls.SECTION_NAME_ALL
+        
+                # get an instance
+                current_instance = cls.find_instance( **daily_params )
+            
+                # process values and save
+                current_instance.process_column_values( save_stats, **daily_params )
                 
                 # output current instance.
                 output_debug( "Finished processing section " + current_section_name + "\n\n", me, "\n\n=== " )
             
-            #-- END loop over sections. --#
-            
+                # Done with this date.  Moving on.
+                output_debug( "Finished processing date " + str( current_date ) + " - " + str( current_instance ) + "\n\n", me, "\n\n=== " )
+                
+                # increment the date and re-calculate timedelta.
+                current_date = current_date + datetime.timedelta( days = 1 )
+                current_timedelta = end_date - current_date
+                
+                # memory management.
+                gc.collect()
+                django.db.reset_queries()
+                    
+            #-- END loop over dates in date range --#
+           
         #-- END check to make sure we have start and end date. --#
         
     #-- END method process_section_date_range_day_by_day() --#
