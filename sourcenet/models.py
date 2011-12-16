@@ -1165,7 +1165,7 @@ class Article_Content( models.Model ):
     )
 
     #----------------------------------------------------------------------
-    # instance variables and meta
+    # model fields and meta
     #----------------------------------------------------------------------
 
     article = models.ForeignKey( Article )
@@ -1179,11 +1179,17 @@ class Article_Content( models.Model ):
         abstract = True
         ordering = [ 'article', 'last_modified', 'create_date' ]
 
+    #----------------------------------------------------------------------
+    # instance variables
+    #----------------------------------------------------------------------
+
+    content_description = "content"
+    
     #----------------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------------
 
-    def __unicode__( self, content_type_IN = "content" ):
+    def __unicode__( self ):
 
         # return reference
         string_OUT = ""
@@ -1194,7 +1200,7 @@ class Article_Content( models.Model ):
             
         #-- END check to see if ID --#
              
-        string_OUT += content_type_IN
+        string_OUT += self.content_description
         
         if ( self.type ):
             
@@ -1219,7 +1225,11 @@ class Article_RawData( Article_Content ):
         # return reference
         string_OUT = ""
         
-        string_OUT = super( Article_Text, self ).__unicode__( "raw data" )
+        # set content description
+        self.content_description = "raw data"
+        
+        # call string method.
+        string_OUT = super( Article_RawData, self ).__unicode__()
         
         return string_OUT
 
@@ -1236,8 +1246,12 @@ class Article_Text( Article_Content ):
         # return reference
         string_OUT = ""
         
-        string_OUT = super( Article_Text, self ).__unicode__( "text" )
+        # set content description
+        self.content_description = "text"
         
+        # call string method.
+        string_OUT = super( Article_Text, self ).__unicode__()
+                
         return string_OUT
 
     #-- END method __unicode__() --#
