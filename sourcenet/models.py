@@ -1210,7 +1210,7 @@ class Article_Content( models.Model ):
 # Article_Content model
 class Article_RawData( Article_Content ):
 
-    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "html" )
+    type = models.CharField( max_length = 255, choices = Article_Content.CONTENT_TYPE_CHOICES, blank = True, null = True, default = "html" )
 
 #-- END Article_RawData model --#
 
@@ -1218,7 +1218,7 @@ class Article_RawData( Article_Content ):
 # Article_Text model
 class Article_Text( Article_Content ):
 
-    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "text" )
+    type = models.CharField( max_length = 255, choices = Article_Content.CONTENT_TYPE_CHOICES, blank = True, null = True, default = "text" )
 
 #-- END Article_Text model --#
 
