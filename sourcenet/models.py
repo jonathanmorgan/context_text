@@ -799,7 +799,7 @@ class Article( models.Model ):
     archive_id = models.CharField( max_length = 255, blank = True, null = True )
     permalink = models.TextField( blank = True, null = True )
     copyright = models.TextField( blank = True, null = True )
-    notes = models.TextField( blank = True, null = True )
+    # notes = models.TextField( blank = True, null = True ) - moved to related Article_Notes instance.
     raw_html = models.TextField( blank = True, null = True )
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     is_local_news = models.BooleanField( default = 0 )
@@ -1215,6 +1215,27 @@ class Article_Content( models.Model ):
     #-- END method __unicode__() --#
 
 #-- END abstract Article_Content model --#
+
+
+# Article_Notes model
+class Article_Notes( Article_Content ):
+
+    def __unicode__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        # set content description
+        self.content_description = "notes"
+        
+        # call string method.
+        string_OUT = super( Article_Notes, self ).__unicode__()
+                
+        return string_OUT
+
+    #-- END method __unicode__() --#
+
+#-- END Article_Notes model --#
 
 
 # Article_RawData model
@@ -2404,7 +2425,7 @@ class Temp_Section( models.Model ):
                 # only process if there is something in the QuerySet
                 if ( qs_article_count > 0 ):
                 
-                    for article in article_qs:
+                    for article in article_qs.iterator():
                         
                         # get the page for the current article.
                         current_page = article.page
