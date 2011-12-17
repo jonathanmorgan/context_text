@@ -791,7 +791,7 @@ class Article( models.Model ):
     author_varchar = models.CharField( max_length = 255, blank = True, null = True )
     headline = models.CharField( max_length = 255 )
     # What is this? - author = models.CharField( max_length = 255, blank = True, null = True )
-    text = models.TextField( blank = True )
+    # text = models.TextField( blank = True ) - moved to related Article_Text instance.
     corrections = models.TextField( blank = True, null = True )
     edition = models.CharField( max_length = 255, blank = True, null = True )
     index_terms = models.TextField( blank = True, null = True )
@@ -800,7 +800,7 @@ class Article( models.Model ):
     permalink = models.TextField( blank = True, null = True )
     copyright = models.TextField( blank = True, null = True )
     # notes = models.TextField( blank = True, null = True ) - moved to related Article_Notes instance.
-    raw_html = models.TextField( blank = True, null = True )
+    # raw_html = models.TextField( blank = True, null = True ) - moved to related Article_RawData instance.
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     is_local_news = models.BooleanField( default = 0 )
     is_sports = models.BooleanField( default = 0 )
@@ -1148,9 +1148,141 @@ class Article( models.Model ):
         
         return instance_OUT
     
-    #-- END method do_automated_processing() --#
+    #-- END method get_article_data_for_coder() --#
     
     
+    def set_raw_html( self, text_IN = "", do_save_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a piece of text.  Adds it as a related Article_RawData instance.
+           If there is already an Article_RawData instance, we just replace that
+           instance's content with the text passed in.  If not, we make one.
+        Preconditions: Probably should do this after you've saved the article,
+           so there is an ID in it, so this child class will know what article
+           it is related to.
+        Postconditions: Article_RawData instance is returned, saved if save flag
+           is true.
+        '''
+        
+        # return reference
+        instance_OUT = None
+
+        # declare variables
+        me = "set_raw_html"
+        current_qs = None
+        current_count = -1
+        current_content = None
+        
+        # get current text QuerySet
+        current_qs = self.article_rawdata_set
+        
+        # how many do we have?
+        current_count = current_qs.count()
+        if ( current_count == 1 ):
+            
+            # One.  Get it.
+            instance_OUT = current_qs.get()
+            
+        elif ( current_count == 0 ):
+            
+            # Nothing.  Make new one.
+            instance_OUT = Article_RawData()
+            instance_OUT.article = self
+            instance_OUT.type = "html"
+            
+        else:
+            
+            # Either error or more than one (so error).
+            output_debug( "Found more than one related Article_RawData.  Doing nothing.", me )
+            
+        #-- END check to see if have one or not. --#
+
+        if ( instance_OUT ):
+
+            # set the text in the instance.
+            instance_OUT.content = text_IN
+            
+            # save?
+            if ( do_save_IN == True ):
+                
+                # yes.
+                instance_OUT.save()
+                
+            #-- END check to see if we save. --#
+
+        #-- END check to see if instance. --#
+        
+        return instance_OUT
+
+    #-- END method set_raw_html() --#
+    
+
+    def set_text( self, text_IN = "", do_save_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a piece of text.  Adds it as a related Article_Text instance.
+           If there is already an Article_Text instance, we just replace that
+           instance's content with the text passed in.  If not, we make one.
+        Preconditions: Probably should do this after you've saved the article,
+           so there is an ID in it, so this child class will know what article
+           it is related to.
+        Postconditions: Article_Text instance is returned, saved if save flag
+           is true.
+        '''
+        
+        # return reference
+        instance_OUT = None
+
+        # declare variables
+        me = "set_text"
+        current_qs = None
+        current_count = -1
+        current_content = None
+        
+        # get current text QuerySet
+        current_qs = self.article_text_set
+        
+        # how many do we have?
+        current_count = current_qs.count()
+        if ( current_count == 1 ):
+            
+            # One.  Get it.
+            instance_OUT = current_qs.get()
+            
+        elif ( current_count == 0 ):
+            
+            # Nothing.  Make new one.
+            instance_OUT = Article_Text()
+            instance_OUT.article = self
+            instance_OUT.type = "text"
+            
+        else:
+            
+            # Either error or more than one (so error).
+            output_debug( "Found more than one related text.  Doing nothing.", me )
+            
+        #-- END check to see if have one or not. --#
+
+        if ( instance_OUT ):
+
+            # set the text in the instance.
+            instance_OUT.content = text_IN
+            
+            # save?
+            if ( do_save_IN == True ):
+                
+                # yes.
+                instance_OUT.save()
+                
+            #-- END check to see if we save. --#
+
+        #-- END check to see if instance. --#
+        
+        return instance_OUT
+
+    #-- END method set_text() --#
+    
+
 #= End Article Model ============================================================
 
 
@@ -1168,7 +1300,7 @@ class Article_Content( models.Model ):
     # model fields and meta
     #----------------------------------------------------------------------
 
-    article = models.ForeignKey( Article )
+    article = models.ForeignKey( Article, unique = True )
     type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
     create_date = models.DateTimeField( auto_now_add = True )
