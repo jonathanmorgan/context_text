@@ -1168,7 +1168,7 @@ class Article( models.Model ):
         instance_OUT = None
 
         # declare variables
-        me = "set_raw_html"
+        me = "set_notes"
         current_qs = None
         current_count = -1
         current_content = None
@@ -1214,7 +1214,7 @@ class Article( models.Model ):
         
         return instance_OUT
 
-    #-- END method set_raw_html() --#
+    #-- END method set_notes() --#
     
 
     def set_raw_html( self, text_IN = "", do_save_IN = True, *args, **kwargs ):
