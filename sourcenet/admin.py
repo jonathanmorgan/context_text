@@ -5,10 +5,13 @@ from research.sourcenet.models import Organization
 from research.sourcenet.models import Person_Organization
 from research.sourcenet.models import Document
 from research.sourcenet.models import Newspaper
-#from research.sourcenet.models import Article_Topic
 from research.sourcenet.models import Article_Author
-from research.sourcenet.models import Article_Source
 #from research.sourcenet.models import Article_Location
+from research.sourcenet.models import Article_Notes
+from research.sourcenet.models import Article_RawData
+from research.sourcenet.models import Article_Source
+from research.sourcenet.models import Article_Text
+#from research.sourcenet.models import Article_Topic
 #from research.sourcenet.models import Source_Organization
 from research.sourcenet.models import Article
 from research.sourcenet.models import Article_Data
@@ -21,9 +24,12 @@ admin.site.register( Topic )
 admin.site.register( Document )
 admin.site.register( Newspaper )
 #admin.site.register( Article )
-#admin.site.register( Article_Topic )
 #admin.site.register( Article_Author )
+admin.site.register( Article_Notes )
+admin.site.register( Article_RawData )
 #admin.site.register( Article_Source )
+admin.site.register( Article_Text )
+#admin.site.register( Article_Topic )
 #admin.site.register( Source_Organization )
 #admin.site.register( Article_Location )
  
@@ -82,6 +88,52 @@ class TopicInline( admin.TabularInline ):
     model = Topic
     ordering = [ "name" ]
 
+class ArticleNotesInline( admin.StackedInline ):
+    model = Article_Notes
+    fk_name = 'article'
+
+class ArticleRawDataInline( admin.StackedInline ):
+    model = Article_RawData
+    fk_name = 'article'
+
+class ArticleTextInline( admin.StackedInline ):
+    model = Article_Text
+    fk_name = 'article'
+
+#class LocationInline( admin.StackedInline ):
+#    model = Article_Location
+#    extra = 2
+#    fk_name = 'article'
+
+#-------------------------------------------------------------------------------
+# Article admin definition
+#-------------------------------------------------------------------------------
+
+class ArticleAdmin( admin.ModelAdmin ):
+    fieldsets = [
+        ( None,
+            {
+                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status' ]
+            }
+        ),
+    ]
+
+    inlines = [
+        ArticleTextInline,
+        ArticleNotesInline,
+        ArticleRawDataInline
+    ]
+
+    list_display = ( 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
+    list_display_links = ( 'headline', )
+    list_filter = [ 'pub_date', 'newspaper' ]
+    search_fields = [ 'headline', 'unique_identifier', 'id' ]
+    #search_fields = [ 'newspaper', 'coder', 'headline' ]
+    #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
+    date_hierarchy = 'pub_date'
+
+admin.site.register( Article, ArticleAdmin )
+
 class ArticleAuthorInline( admin.StackedInline ):
     model = Article_Author
     extra = 2
@@ -105,45 +157,6 @@ class ArticleSourceInline( admin.StackedInline ):
             }
         ),
     ]
-
-    #inlines = [
-    #    Source_OrganizationInline,
-    #]
-
-#class LocationInline( admin.StackedInline ):
-#    model = Article_Location
-#    extra = 2
-#    fk_name = 'article'
-
-#-------------------------------------------------------------------------------
-# Article admin definition
-#-------------------------------------------------------------------------------
-
-class ArticleAdmin( admin.ModelAdmin ):
-    fieldsets = [
-        ( None,
-            {
-                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'text' ]
-            }
-        ),
-    ]
-
-    #inlines = [
-        #TopicInline,
-        #ArticleAuthorInline,
-        #ArticleSourceInline,
-        #LocationInline
-    #]
-
-    list_display = ( 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
-    list_display_links = ( 'headline', )
-    list_filter = [ 'pub_date', 'newspaper' ]
-    search_fields = [ 'headline', 'unique_identifier', 'id' ]
-    #search_fields = [ 'newspaper', 'coder', 'headline' ]
-    #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
-    date_hierarchy = 'pub_date'
-
-admin.site.register( Article, ArticleAdmin )
 
 #-------------------------------------------------------------------------------
 # Article Data admin definition
