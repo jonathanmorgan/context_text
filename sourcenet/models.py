@@ -2324,6 +2324,7 @@ class Import_Error( models.Model ):
     stack_trace = models.TextField( blank = True, null = True )
     batch_identifier = models.CharField( max_length = 255, blank = True )
     item_date = models.DateTimeField( blank = True, null = True )
+    status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
