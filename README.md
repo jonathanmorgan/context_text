@@ -1,5 +1,3 @@
-This is going to be great.  More details to come.
-
 Installing SourceNet
 ====================
 
