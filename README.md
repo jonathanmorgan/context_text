@@ -4,9 +4,29 @@ Installing SourceNet
 To install:
 * install and configure django to talk with a database (http://docs.djangoproject.com/en/dev/intro/tutorial01/).
 * install and configure a django application named "research" (including setting up database in settings.py).
+
+    * In the folder where you want your application, run:
+    
+            django-admin.py startproject research
+
+    * This creates the following folder structure and files (among others):
+
+            /research
+
+                manage.py
+
+                /research
+
+                    settings.py
+    
+    * Edit the research/research/settings.py file and update it with details of your database configuration (https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup).
+
 * install and configure the sourcenet application.
+
     * move sourcenet into your django application directory.
+
     * initialize the database - go into directory where manage.py is installed, and run "python manage.py syncdb".
+
     * configure your web server so it knows of your wsgi.py file.  If apache, need to make sure mod_wsgi is installed, add something like this to the apache config:
     
         WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
