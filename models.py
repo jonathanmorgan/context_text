@@ -768,12 +768,42 @@ class Article( models.Model ):
     CODER_USERNAME_AUTOMATED = "automated"
     CODER_USER_AUTOMATED = User.objects.get( username = "automated" )
     
-    # parameters that can be passed in to static 
+    # parameters that can be passed in to class methods 
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
+
+    # LOOKUP parameters
+    #==================
+
+    # newspaper filter (expects instance of Newspaper model)
+    PARAM_NEWSPAPER_ID = "newspaper_id"
+    PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
+    PARAM_NEWSPAPER_INSTANCE = "newspaper"
+
+    # date range parameters, for article lookup.
     PARAM_START_DATE = "start_date"
     PARAM_END_DATE = "end_date"
     PARAM_SINGLE_DATE = "single_date"
+    DEFAULT_DATE_FORMAT = "%Y-%m-%d"    
+    
+    # section selection parameters.
+    PARAM_SECTION_NAME = "section_name"
+    PARAM_SECTION_NAME_LIST = "section_name_list"
+    PARAM_CUSTOM_SECTION_Q = "custom_section_q"
+    PARAM_JUST_PROCESS_ALL = "just_process_all" # set to True if just want sum of all sections, not records for each individual section.  If False, processes each section individually, then generates the "all" record.
+
+    # other article parameters.
+    PARAM_CUSTOM_ARTICLE_Q = "custom_article_q"
+    
+    # Django queryset parameters
+    #===========================
+
+    # variables for building nuanced queries in django.
+    # Will be specific to each paper, so using Grand Rapids Press as example.
+
+    # Grand Rapids Press
+    GRP_NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    Q_GRP_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
     
     
     #----------------------------------------------------------------------------
@@ -826,6 +856,256 @@ class Article( models.Model ):
     #----------------------------------------------------------------------------
 
 
+    @classmethod
+    def add_section_filter_to_article_qs( cls, section_list_IN = [], qs_IN = None, *args, **kwargs ):
+        
+        '''
+        Accepts section name and query string.  If "all", adds a filter to
+           QuerySet where section just has to be one of those in the list of
+           locals.  If not all, adds a filter to limit the section to the name.
+        Preconditions: instance must have a name set.
+        Postconditions: returns the QuerySet passed in with an additional filter
+           for section name.  If no QuerySet passed in, creates new Article
+           QuerySet, returns it with filter added.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        me = "add_section_filter_to_article_qs"
+        my_section_list = ""
+        
+        # got a query set?
+        if ( qs_IN ):
+        
+            # use the one passed in.
+            qs_OUT = qs_IN
+            
+            #output_debug( "QuerySet passed in, using it.", me, "*** " )
+        
+        else:
+        
+            # No.  Make one.
+            qs_OUT = cls.objects.all()
+            
+            #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
+        
+        #-- END check to see if query set passed in --#
+        
+        # get section name.
+        my_section_list = section_list_IN
+        
+        # add filter for name being in the list
+        qs_OUT = qs_OUT.filter( section__in = my_section_list )
+                
+        return qs_OUT
+        
+    #-- END method add_section_filter_to_article_qs() --#
+
+
+    @classmethod
+    def create_q_article_date_range( cls, start_date_IN = "", end_date_IN = "", *args, **kwargs ):
+    
+        '''
+        Accepts string start and end dates (YYYY-MM-DD format). in the keyword
+           arguments.  Creates a Q() instance that filters dates based on start
+           and end date passed in. If both are missing, does nothing.  If one or
+           other passed in, filters accordingly.
+        Preconditions: Dates must be strings in YYYY-MM-DD format.
+        Postconditions: Returns the Q() instance - to use it, you must pass it
+           to a QuerySet's filter method.  If neither start nor end dates are
+           passed in, returns None.
+        '''
+        
+        # return reference
+        q_OUT = None
+        
+        # declare variables
+        start_date = ""
+        end_date = ""
+        
+        # retrieve dates
+        # start date
+        start_date = start_date_IN
+        if ( start_date == "" ):
+
+            # no start date passed in. Check in the kwargs.
+            if ( cls.PARAM_START_DATE in kwargs ):
+        
+                # yup.  Use it.
+                start_date = kwargs[ cls.PARAM_START_DATE ]
+        
+            #-- END check to see if start date in arguments --#
+
+        #-- END check to see if start date passed in. --#
+        
+        # end date
+        end_date = end_date_IN
+        if( end_date == "" ):
+            
+            # no end date passed in.  Check in kwargs.
+            if ( cls.PARAM_END_DATE in kwargs ):
+        
+                # yup.  Use it.
+                end_date = kwargs[ cls.PARAM_END_DATE ]
+        
+            #-- END check to see if end date in arguments --#
+
+        #-- END check to see if end date passed in.
+
+        if ( ( start_date ) and ( end_date ) ):
+        
+            # both start and end.
+            q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date, cls.DEFAULT_DATE_FORMAT ) )
+            q_OUT = q_OUT & Q( pub_date__lte = datetime.datetime.strptime( end_date, cls.DEFAULT_DATE_FORMAT ) )
+        
+        elif( start_date ):
+        
+            # just start date
+            q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date, cls.DEFAULT_DATE_FORMAT ) )
+        
+        elif( end_date ):
+        
+            # just end date
+            q_OUT = Q( pub_date__lte = datetime.datetime.strptime( end_date, cls.DEFAULT_DATE_FORMAT ) )
+        
+        #-- END conditional to see what we got. --#
+
+        return q_OUT
+    
+    #-- END method create_q_article_date_range() --#
+
+
+    @classmethod
+    def filter_articles( cls, qs_IN = None, *args, **kwargs ):
+        
+        '''
+        Accepts parameters in kwargs.  Uses arguments to filter a QuerySet of
+           articles, which it subsequently returns.  Currently, you can pass
+           this method a section name list and date range start and end dates.
+           You can also pass in an optional QuerySet instance.  If QuerySet
+           passed in, this method appends filters to it.  If not, starts with
+           a new QuerySet.
+        Preconditions: None.
+        Postconditions: returns the QuerySet passed in with filters added as
+           specified by arguments.  If no QuerySet passed in, creates new
+           Article QuerySet, returns it with filters added.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        me = "filter_articles"
+        newspaper_ID_IN = None
+        newspaper_newsbank_code_IN = None
+        newspaper_instance = None
+        q_date_range = None
+        section_name_list_IN = None
+        custom_q_IN = None
+
+        # got a query set?
+        if ( qs_IN ):
+        
+            # use the one passed in.
+            qs_OUT = qs_IN
+            
+            #output_debug( "QuerySet passed in, using it.", me, "*** " )
+        
+        else:
+        
+            # No.  Make one.
+            qs_OUT = cls.objects.all()
+            
+            #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
+        
+        #-- END check to see if query set passed in --#
+
+        # newspapers
+        #-----------
+
+        # try to update QuerySet for selected newspaper.
+        if ( cls.PARAM_NEWSPAPER_ID in kwargs ):
+    
+            # yup.  Use it.
+            newspaper_ID_IN = kwargs[ cls.PARAM_NEWSPAPER_ID ]
+            newspaper_instance = Newspaper.objects.get( pk = newspaper_ID_IN )
+    
+        #-- END check to see if newspaper instance in arguments --#
+
+        # try to update QuerySet for selected newspaper.
+        if ( cls.PARAM_NEWSPAPER_NEWSBANK_CODE in kwargs ):
+    
+            # yup.  Use it.
+            newspaper_newsbank_code_IN = kwargs[ cls.PARAM_NEWSPAPER_NEWSBANK_CODE ]
+            newspaper_instance = Newspaper.objects.get( newsbank_code = newspaper_newsbank_code_IN )
+    
+        #-- END check to see if newspaper instance in arguments --#
+
+        # try to update QuerySet for selected newspaper.
+        if ( cls.PARAM_NEWSPAPER_INSTANCE in kwargs ):
+    
+            # yup.  Use it.
+            newspaper_instance = kwargs[ cls.PARAM_NEWSPAPER_INSTANCE ]
+    
+        #-- END check to see if newspaper instance in arguments --#
+
+        # got a newspaper instance?
+        if ( newspaper_instance ):
+
+            # Yes.  Filter.
+            qs_OUT = qs_OUT.filter( newspaper = newspaper_instance )
+
+        # date range
+        #-----------
+
+        # try to get Q() for start and end dates.
+        q_date_range = cls.create_q_article_date_range( "", "", *args, **kwargs )
+
+        # got a Q()?
+        if ( q_date_range ):
+
+            # Yes.  Add it to query set.
+            qs_OUT = qs_OUT.filter( q_date_range )
+
+        #-- END check to see if date range present.
+
+        # Sections
+        #---------
+
+        # try to update QuerySet for selected sections.
+        if ( cls.PARAM_SECTION_NAME_LIST in kwargs ):
+    
+            # yup.  Use it.
+            section_name_list_IN = kwargs[ cls.PARAM_SECTION_NAME_LIST ]
+            qs_OUT = cls.add_section_filter_to_article_qs( section_name_list_IN, qs_OUT )
+    
+        #-- END check to see if start date in arguments --#
+
+        # Custom-built Q() object
+        #------------------------
+        # try to update QuerySet for selected sections.
+        if ( cls.PARAM_CUSTOM_ARTICLE_Q in kwargs ):
+
+            # Get the Q and filter with it.
+            custom_q_IN = kwargs[ cls.PARAM_CUSTOM_ARTICLE_Q ]
+
+            # got something in the parameter?
+            if ( custom_q_IN ):
+
+                # yes.  Filter.
+                qs_OUT = qs_OUT.filter( custom_q_IN )
+
+            #-- END check to see if custom Q() present. --#
+
+        #-- END check to see if Custom Q argument present --#
+
+        return qs_OUT
+        
+    #-- END method filter_articles() --#
+
+        
     @classmethod
     def process_articles( cls, *args, **kwargs ):
 

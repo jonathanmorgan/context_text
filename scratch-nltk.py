@@ -41,6 +41,10 @@ from sourcenet.models import Article, Temp_Section, Newspaper
 # Retrieve articles in our search range.
 #================================================================================
 
+#--------------------------------------------------------------------------------
+# Initially, use Temp_Section - need to move this code into  Article eventually.
+#--------------------------------------------------------------------------------
+
 # Use Temp_Section to build up query that just gets local news for Grand Rapids Press from in-house authors over a certain date range.
 
 # Grand Rapids Press
@@ -89,8 +93,36 @@ date_params[ Temp_Section.PARAM_END_DATE ] = "2010-06-30"
 # use it to filter to just those before layoffs.
 after_qs = ts_instance.append_shared_article_qs_params( article_qs, **date_params )
 
-# Need to start experimenting with chunkers.
-# In packt book, NER is on page 133.
+#--------------------------------------------------------------------------------
+# Filter articles with Article.filter_articles()
+#--------------------------------------------------------------------------------
+
+from sourcenet.models import Article, Temp_Section, Newspaper
+
+# create parameters instance
+article_filter_params = {}
+article_filter_params[ Article.PARAM_NEWSPAPER_NEWSBANK_CODE ] = "GRPB"
+article_filter_params[ Article.PARAM_SECTION_NAME_LIST ] = Article.GRP_NEWS_SECTION_NAME_LIST
+article_filter_params[ Article.PARAM_CUSTOM_ARTICLE_Q ] = Article.Q_GRP_IN_HOUSE_AUTHOR
+
+# dates before layoffs
+article_filter_params[ Article.PARAM_START_DATE ] = "2009-07-01"
+article_filter_params[ Article.PARAM_END_DATE ] = "2009-07-31"
+before_qs = Article.filter_articles( **article_filter_params )
+
+# dates before layoffs
+article_filter_params[ Article.PARAM_START_DATE ] = "2010-06-01"
+article_filter_params[ Article.PARAM_END_DATE ] = "2010-06-30"
+after_qs = Article.filter_articles( **article_filter_params )
+
+
+#================================================================================
+# NLTK stuff
+#================================================================================
+
+#--------------------------------------------------------------------------------
+# Get article to test on
+#--------------------------------------------------------------------------------
 
 # get first article in before list.
 test_article = before_qs[ 0 ]
@@ -100,10 +132,6 @@ article_text_qs = test_article.article_text_set.all()
 article_text = article_text_qs[ 0 ].content
 
 # * todo: Strip dateline from beginning.
-
-#================================================================================
-# NLTK stuff
-#================================================================================
 
 #--------------------------------------------------------------------------------
 # Tokenizing
@@ -223,6 +251,9 @@ tagger = pickle.load( f )
 #--------------------------------------------------------------------------------
 # Named Entity Chunking
 #--------------------------------------------------------------------------------
+
+# Need to start experimenting with chunkers.
+# In packt book, NER is on page 133.
 
 # Once you have parsed parts of speech from your sentences, then you can look
 #    for names.  Must pass the ne_chunk method a list of tagged words, though,
