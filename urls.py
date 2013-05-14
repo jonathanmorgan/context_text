@@ -1,10 +1,22 @@
+'''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
 # import djanfgo.conf.urls.defaults stuff.
 #from django.conf.urls.defaults import *
 from django.conf.urls.defaults import patterns
 from django.conf.urls.defaults import url
 
 # import polls from mysite
-from research.sourcenet.models import Article
+from sourcenet.models import Article
 
 # polls-specific URL settings, intended to be included in master urls.py file.
 #urlpatterns = patterns( 'mysite.polls.views',
@@ -43,8 +55,8 @@ urlpatterns = patterns( '',
     # left in all the stuff above as a sample.  Making an output view, to let a
     #    user specify what they want in output, and then an output/display view
     #    to display the results of the rendering.
-    ( r'^output/network$', 'research.sourcenet.views.output_network'),
-    ( r'^output/articles$', 'research.sourcenet.views.output_articles'),
+    ( r'^output/network$', 'sourcenet.views.output_network'),
+    ( r'^output/articles$', 'sourcenet.views.output_articles'),
     #( r'^output/display$', 'mysite.sourcenet.views.output_display'),
 
 )

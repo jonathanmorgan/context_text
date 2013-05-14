@@ -1,4 +1,16 @@
 '''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
+'''
 This code file contains a class that implements functions for interacting with
    the online database of Newsbank.  It mostly includes methods for building and
    connecting to URLs that represent issues of newspapers and articles within an
@@ -23,13 +35,13 @@ from xml.sax import saxutils
 import re
 
 # HTML parsing
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 
 # django model for article
 #os.environ.setdefault( "DJANGO_SETTINGS_MODULE", "research.settings" )
 #sys.path.append( '/home/jonathanmorgan/Documents/django-dev/research' )
-#from research.sourcenet.models import Article
+#from sourcenet.models import Article
 from sourcenet.models import Article
 
 #================================================================================

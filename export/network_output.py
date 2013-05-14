@@ -1,6 +1,20 @@
-# The network_output module contains objects and code to parse and output social
-#    network data from sourcenet in a variety of formats, and also generates
-#    some descriptive statistics as it builds output.
+'''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
+'''
+The network_output module contains objects and code to parse and output social
+   network data from sourcenet in a variety of formats, and also generates
+   some descriptive statistics as it builds output.
+'''
 
 __author__="jonathanmorgan"
 __date__ ="$May 1, 2010 12:49:50 PM$"
@@ -24,11 +38,11 @@ import pickle
 from django.db.models import Q
 
 # Import the classes for our SourceNet application
-from research.sourcenet.models import Article
+from sourcenet.models import Article
 
 # Import sourcenet export classes.
-from research.sourcenet.export.csv_article_output import CsvArticleOutput
-from research.sourcenet.export.network_data_output import NetworkDataOutput
+from sourcenet.export.csv_article_output import CsvArticleOutput
+from sourcenet.export.network_data_output import NetworkDataOutput
 
 #===============================================================================
 # classes (in alphabetical order by name)

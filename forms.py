@@ -1,3 +1,15 @@
+'''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
 # import django form object.
 from django import forms
 
@@ -6,11 +18,11 @@ from django.contrib.auth.models import User
 
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput
-from research.sourcenet.export.csv_article_output import CsvArticleOutput
-from research.sourcenet.export.network_data_output import NetworkDataOutput
-from research.sourcenet.models import Article_Source
-from research.sourcenet.models import Newspaper
-from research.sourcenet.models import Topic
+from sourcenet.export.csv_article_output import CsvArticleOutput
+from sourcenet.export.network_data_output import NetworkDataOutput
+from sourcenet.models import Article_Source
+from sourcenet.models import Newspaper
+from sourcenet.models import Topic
 
 # create a form to let a user specify the criteria used to limit the articles
 #    that are used to create output.

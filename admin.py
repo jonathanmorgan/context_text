@@ -1,20 +1,32 @@
-from research.sourcenet.models import Location
-from research.sourcenet.models import Topic
-from research.sourcenet.models import Person
-from research.sourcenet.models import Organization
-from research.sourcenet.models import Person_Organization
-from research.sourcenet.models import Document
-from research.sourcenet.models import Newspaper
-from research.sourcenet.models import Article_Author
-#from research.sourcenet.models import Article_Location
-from research.sourcenet.models import Article_Notes
-from research.sourcenet.models import Article_RawData
-from research.sourcenet.models import Article_Source
-from research.sourcenet.models import Article_Text
-#from research.sourcenet.models import Article_Topic
-#from research.sourcenet.models import Source_Organization
-from research.sourcenet.models import Article
-from research.sourcenet.models import Article_Data
+'''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
+from sourcenet.models import Location
+from sourcenet.models import Topic
+from sourcenet.models import Person
+from sourcenet.models import Organization
+from sourcenet.models import Person_Organization
+from sourcenet.models import Document
+from sourcenet.models import Newspaper
+from sourcenet.models import Article_Author
+#from sourcenet.models import Article_Location
+from sourcenet.models import Article_Notes
+from sourcenet.models import Article_RawData
+from sourcenet.models import Article_Source
+from sourcenet.models import Article_Text
+#from sourcenet.models import Article_Topic
+#from sourcenet.models import Source_Organization
+from sourcenet.models import Article
+from sourcenet.models import Article_Data
 from django.contrib import admin
 
 admin.site.register( Location )

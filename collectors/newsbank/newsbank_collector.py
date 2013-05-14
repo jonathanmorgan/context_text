@@ -1,4 +1,16 @@
 '''
+Copyright 2010-2013 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
+'''
 This code file contains a class that can be used to pull down articles from
    Newsbank.  It currently works on a newspaper level - you tell it a
    newspaper, a date range, and a set of sections you want to include, if
@@ -22,7 +34,7 @@ import urllib2
 import re
 
 # HTML parsing
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 
 # collector parent class
