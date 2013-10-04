@@ -192,7 +192,6 @@ def output_articles( request_IN ):
             # retrieve QuerySet based on parameters passed in.
             network_query_set = network_outputter.create_network_query_set()
 
-            '''
             # get count of queryset return items
             if ( ( network_query_set != None ) or ( network_query_set != "" ) ):
 
@@ -239,7 +238,8 @@ def output_articles( request_IN ):
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'output_type_form' ] = output_type_form
             response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
-
+            '''
+            
         else:
 
             # not valid - render the form again
