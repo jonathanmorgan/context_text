@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>Output SourceNet article data</title>
+    </head>
+    <body>
+        <h1>Output SourceNet article data</h1>
+        <ul>
+            <li>
+                <a href="./network">Go to network outputter</a>
+            </li>
+        </ul>
+
+{% if article_select_form.errors %}
+            <p style="color: red;">
+                Please correct the error{{ article_select_form.errors|pluralize }} below.
+            </p>
+{% endif %}
+{% if output_type_form.errors %}
+            <p style="color: red;">
+                Please correct the error{{ output_type_form.errors|pluralize }} below.
+            </p>
+{% endif %}
+
+        <form action="" method="post">
+            {% csrf_token %}
+            <table>
+{% if output_string %}
+                <tr>
+                    <td>Output:</td><td><textarea cols="80" rows="10" readonly="readonly">{{ output_string }}</textarea></td>
+                </tr>
+{% endif %}
+                {{ output_type_form }}
+                {{ article_select_form }}
+                <tr>
+                    <td>&nbsp;</td>
+                    <td><input type="submit" value="Submit"></td>
+                </tr>
+            </table>
+        </form>
+        <p>* For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").</p>
+        <p>Example: <i>2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28</i></p>
+    </body>
+</html>

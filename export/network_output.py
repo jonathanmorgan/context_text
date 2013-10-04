@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 '''
 Copyright 2010-2013 Jonathan Morgan
 
@@ -551,13 +553,18 @@ class NetworkOutput():
             # see if we are omitting duplicates - can only do this if no unique
             #    IDs specified.  Those take precedence (and django can't handle
             #    multiple IN statements).
-            if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO) and ( unique_ids_IN == '' ) ):
+            if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
 
                 # remove duplicate articles.
                 query_set_OUT = self.remove_duplicate_articles( query_set_OUT )
 
             #-- END check to see if we allow duplicates --#
 
+        else:
+        
+            # no request set.  Error.
+            query_set_OUT = None
+        
         #-- END check to make sure we have a request. --#
 
         return query_set_OUT

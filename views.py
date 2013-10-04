@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 '''
 Copyright 2010-2013 Jonathan Morgan
 
@@ -30,6 +32,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 #from django.http import HttpResponse
 #from django.http import HttpResponseRedirect
 
+# import django code for csrf security stuff.
+from django.core.context_processors import csrf
+
 # import the render_to_response() method from django.shortcuts
 #from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
@@ -46,7 +51,7 @@ from sourcenet.forms import PersonSelectForm
 from sourcenet.forms import NetworkOutputForm
 
 # import class that actually processes requests for outputting networks.
-from research.sourcenet.export.network_output import NetworkOutput
+from sourcenet.export.network_output import NetworkOutput
 
 # Import the classes for our SourceNet application
 #from sourcenet.models import Article
@@ -137,19 +142,27 @@ def output_articles( request_IN ):
     response_OUT = None
 
     # declare variables
+    my_context_instance = None
+    response_dictionary = {}
     default_template = ''
     article_select_form = None
     output_type_form = None
-    response_dictionary = {}
     output_string = ''
     network_outputter = None
     current_item = None
     network_query_set = None
     article_count = ''
     query_counter = ''
+    
+    # configure context instance
+    my_context_instance = RequestContext( request_IN )
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/output.html'
+    default_template = 'sourcenet_output_articles.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -179,40 +192,60 @@ def output_articles( request_IN ):
             # retrieve QuerySet based on parameters passed in.
             network_query_set = network_outputter.create_network_query_set()
 
+            '''
             # get count of queryset return items
-            article_count = network_query_set.count()
+            if ( ( network_query_set != None ) or ( network_query_set != "" ) ):
 
-            output_string += "\n\nTotal articles returned: " + str( article_count ) + "\n\n\n"
-
-            # loop over the query set.
-            query_counter = 0
-            for current_item in network_query_set:
-                query_counter += 1
-                output_string += "- ( " + str( query_counter ) + " ) " + current_item.headline + "\n"
-
-            # first, build the CSV list of articles, so we can use it for
-            #    reliability, basic statistics.
-            output_string += "\n\n"
-            output_string += "====================\n"
-            output_string += "CSV output:\n"
-            output_string += "====================\n"
-            output_string += network_outputter.render_csv_article_data( network_query_set )
-            output_string += "====================\n"
-            output_string += "END CSV output\n"
-            output_string += "====================\n"
-
-            # Prepare parameters for view.
-            response_dictionary[ 'output_string' ] = output_string
+                # get count of articles
+                article_count = network_query_set.count()
+    
+                output_string += "\n\nTotal articles returned: " + str( article_count ) + "\n\n\n"
+    
+                # loop over the query set.
+                query_counter = 0
+                for current_item in network_query_set:
+                    query_counter += 1
+                    output_string += "- ( " + str( query_counter ) + " ) " + current_item.headline + "\n"
+    
+                # first, build the CSV list of articles, so we can use it for
+                #    reliability, basic statistics.
+                output_string += "\n\n"
+                output_string += "====================\n"
+                output_string += "CSV output:\n"
+                output_string += "====================\n"
+                output_string += network_outputter.render_csv_article_data( network_query_set )
+                output_string += "====================\n"
+                output_string += "END CSV output\n"
+                output_string += "====================\n"
+    
+                # Prepare parameters for view.
+                response_dictionary[ 'output_string' ] = output_string
+                response_dictionary[ 'article_select_form' ] = article_select_form
+                response_dictionary[ 'output_type_form' ] = output_type_form
+                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+                
+            else:
+            
+                # is None.  error.
+                response_dictionary[ 'output_string' ] = "ERROR - network query set is None."
+                response_dictionary[ 'article_select_form' ] = article_select_form
+                response_dictionary[ 'output_type_form' ] = output_type_form
+                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            
+            #-- END check to see if query set is None --#
+            '''
+            # is None.  error.
+            response_dictionary[ 'output_string' ] = "debug - " + str( type( network_query_set ) ) + " - " + str( network_query_set )
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'output_type_form' ] = output_type_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         else:
 
             # not valid - render the form again
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'output_type_form' ] = output_type_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         #-- END check to see whether or not form is valid. --#
 
@@ -225,7 +258,7 @@ def output_articles( request_IN ):
         response_dictionary[ 'output_type_form' ] = output_type_form
 
         # declare variables
-        response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
     #-- END check to see if new request or POST --#
 
@@ -241,11 +274,12 @@ def output_network( request_IN ):
     response_OUT = None
 
     # declare variables
+    my_context_instance = None
+    response_dictionary = {}
     default_template = ''
     article_select_form = None
     network_output_form = None
     person_select_form = None
-    response_dictionary = {}
     output_string = ''
     network_outputter = None
     current_item = None
@@ -253,8 +287,15 @@ def output_network( request_IN ):
     article_count = ''
     query_counter = ''
 
+    # configure context instance
+    my_context_instance = RequestContext( request_IN )
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
     # set my teplate
-    default_template = 'sourcenet/output_network.html'
+    default_template = 'sourcenet_output_network.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -315,7 +356,7 @@ def output_network( request_IN ):
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'network_output_form' ] = network_output_form
             response_dictionary[ 'person_select_form' ] = person_select_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         else:
 
@@ -323,7 +364,7 @@ def output_network( request_IN ):
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'network_output_form' ] = network_output_form
             response_dictionary[ 'person_select_form' ] = person_select_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         #-- END check to see whether or not form is valid. --#
 
@@ -338,7 +379,7 @@ def output_network( request_IN ):
         response_dictionary[ 'person_select_form' ] = person_select_form
 
         # declare variables
-        response_OUT = render_to_response( default_template, response_dictionary, context_instance = RequestContext( request_IN ) )
+        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
     #-- END check to see if new request or POST --#
 
