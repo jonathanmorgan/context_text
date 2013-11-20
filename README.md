@@ -60,6 +60,8 @@ sourcenet is a django application for capturing and analyzing networks of news b
             )
 
     - initialize the database - go into directory where manage.py is installed, and run `python manage.py syncdb`.
+    
+        - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
     - add 'sourcenet' to your list of INSTALLED\_APPS:
 
@@ -139,6 +141,10 @@ sourcenet is a django application for capturing and analyzing networks of news b
             
     - In django 1.6, the django.contrib.admin line should already be uncommented, and you'll have to just add the admindocs line.
             
+- if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py syncdb`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
+    
+    - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have done this above.
+
 - open up the `urls.py` file in the folder where settings.py lives and follow the instructions there for uncommenting lines to get the admins to work.
 
         from django.conf.urls import patterns, include, url
