@@ -14,8 +14,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # import djanfgo.conf.urls.defaults stuff.
 #from django.conf.urls.defaults import *
-from django.conf.urls.defaults import patterns
-from django.conf.urls.defaults import url
+from django.conf.urls import patterns
+from django.conf.urls import url
 
 # import polls from mysite
 from sourcenet.models import Article

@@ -10,6 +10,11 @@ sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
 '''
 
+# import code for AJAX select
+from ajax_select import make_ajax_form
+from ajax_select.admin import AjaxSelectAdmin
+
+# Import models
 from sourcenet.models import Location
 from sourcenet.models import Topic
 from sourcenet.models import Person
@@ -147,9 +152,20 @@ class ArticleAdmin( admin.ModelAdmin ):
 admin.site.register( Article, ArticleAdmin )
 
 class ArticleAuthorInline( admin.StackedInline ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Author, dict( person = 'person' ) )
+
     model = Article_Author
     extra = 2
     fk_name = 'article_data'
+    
+#-- END class ArticleAuthorInline --#
 
 #class Source_OrganizationInline( admin.TabularInline ):
 #    model = Source_Organization
@@ -157,6 +173,15 @@ class ArticleAuthorInline( admin.StackedInline ):
 #    fk_name = 'source_organization'
 
 class ArticleSourceInline( admin.StackedInline ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Source, dict( person = 'person', organization = 'organization' ) )
+
     model = Article_Source
     extra = 2
     fk_name = 'article_data'
@@ -170,15 +195,27 @@ class ArticleSourceInline( admin.StackedInline ):
         ),
     ]
 
+#-- END class ArticleSourceInline --#
+
+
 #-------------------------------------------------------------------------------
 # Article Data admin definition
 #-------------------------------------------------------------------------------
 
 class Article_DataAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Data, dict( article = 'article' ) )
+
     fieldsets = [
         ( None,
             {
-                'fields' : [ 'coder', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
+                'fields' : [ 'article', 'coder', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
             }
         ),
         ( "Article Locations (Optional)",
@@ -212,6 +249,14 @@ admin.site.register( Article_Data, Article_DataAdmin )
 
 class Article_SourceAdmin( admin.ModelAdmin ):
 
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Source, dict( person = 'person', organization = 'organization' ) )
+
     fieldsets = [
         ( None,                 { 'fields' : [ 'article_data', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
         ( "Notes (Optional)",
@@ -241,6 +286,14 @@ admin.site.register( Article_Source, Article_SourceAdmin )
 #-------------------------------------------------------------------------------
 
 class Article_AuthorAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Author, dict( person = 'person' ) )
 
     fieldsets = [
         ( None, { 'fields' : [ 'article_data', 'author_type', 'person' ] } ),

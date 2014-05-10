@@ -10,6 +10,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
     - django - `(sudo) pip install django` (1.5.X preferred, latest 1.4.X should work, too)
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - south - `(sudo) pip install south`
+    - django-ajax-selects
 
 ### Install "research" django project
 
@@ -72,6 +73,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
                 'south',
+                'sourcenet',
             )
 
     - Initialize the sourcenet tables using south:
@@ -153,11 +155,94 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         (sudo) python manage.py collectstatic
 
+### Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
+
+- get the admins working.
+
+- add the following to resesarch/settings.py:
+
+    - add 'django-ajax-selects' to your list of INSTALLED\_APPS.  Result:
+
+            INSTALLED_APPS = (
+                'django.contrib.auth',
+                'django.contrib.contenttypes',
+                'django.contrib.sessions',
+                'django.contrib.sites',
+                'django.contrib.messages',
+                'django.contrib.staticfiles',
+                # Uncomment the next line to enable the admin:
+                # 'django.contrib.admin',
+                # Uncomment the next line to enable admin documentation:
+                # 'django.contrib.admindocs',
+                'south',
+                'sourcenet',
+                'django-ajax-selects',
+            )
+        
+    - add the following to the bottom of the file:
+    
+            AJAX_LOOKUP_CHANNELS = {
+
+                # the simplest case, pass a DICT with the model and field to search against :
+                #'track' : dict(model='music.track',search_field='title'),
+                # this generates a simple channel
+                # specifying the model Track in the music app, and searching against the 'title' field
+            
+                # or write a custom search channel and specify that using a TUPLE
+                'article' : ( 'sourcenet.ajax-select-lookups', 'ArticleLookup' ),
+                'organization' : ( 'sourcenet.ajax-select-lookups', 'OrganizationLookup' ),
+                'person' : ( 'sourcenet.ajax-select-lookups', 'PersonLookup' ),
+                # this specifies to look for the class `PersonLookup` in the `sourcenet.ajax-select-lookups` module
+
+            }
+            
+            # magically include jqueryUI/js/css
+            AJAX_SELECT_BOOTSTRAP = True
+            AJAX_SELECT_INLINES = 'inline'    
+
+- add the following to resesarch/urls.py to enable djang-ajax-selects URL lookups.
+
+    - Add:
+
+            from ajax_select import urls as ajax_select_urls
+            
+        and
+
+            url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+
+    - Example Result:
+
+            from django.conf.urls import patterns, include, url
+            
+            # django-ajax-selects URLs
+            from ajax_select import urls as ajax_select_urls
+            
+            # Uncomment the next two lines to enable the admin:
+            from django.contrib import admin
+            admin.autodiscover()
+            
+            urlpatterns = patterns('',
+
+                # Examples:
+                # url(r'^$', 'research.views.home', name='home'),
+                # url(r'^research/', include('research.foo.urls')),
+                
+                # django-ajax-select URLs
+                url( r'^admin/lookups/', include( ajax_select_urls ) ),
+                
+                # Uncomment the admin/doc line below to enable admin documentation:
+                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
+            
+                # Uncomment the next line to enable the admin:
+                url( r'^admin/', include( admin.site.urls ) ),
+
+            )
+            
 ### Enable sourcenet network data output pages
 
 - get the admins working.
 
-- add a line to enable the sourcenet URLs (in `research.sourcenet.urls`) to the urlpatterns structure.
+- add a line to resesarch/urls.py to enable the sourcenet URLs (in `research.sourcenet.urls`) to the urlpatterns structure.
 
     - Add:
 
