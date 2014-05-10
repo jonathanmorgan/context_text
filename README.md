@@ -7,7 +7,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 - required python modules (install with pip):
 
     - nameparser - `(sudo) pip install nameparser`
-    - django - `(sudo) pip install django` (1.5.X preferred, latest 1.4.X should work, too)
+    - django - `(sudo) pip install django` (1.6.X preferred, latest 1.4.X or 1.5.X should work, too)
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - south - `(sudo) pip install south`
     - django-ajax-selects
@@ -39,7 +39,10 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - in research/research/settings.py:
 
-    - Edit the research/research/settings.py file and update it with details of your database configuration (https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup).
+    - Edit the research/research/settings.py file and update it with details of your database configuration
+    
+        - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
+        - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
     - add 'south' to your list of INSTALLED\_APPS:
 
@@ -58,6 +61,8 @@ sourcenet is a django application for capturing and analyzing networks of news b
             )
 
     - initialize the database - go into directory where manage.py is installed, and run `python manage.py syncdb`.
+    
+        - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
     - add 'sourcenet' to your list of INSTALLED\_APPS:
 
@@ -88,7 +93,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         (sudo) apt-get install libapache2-mod-wsgi
 
-- configure your web server so it knows of research/research/wsgi.py.  If apache, add something like this to the apache config (in ubuntu, for example, I'd put it in `/etc/apache2/conf.d`, in a file named `django-apps`):
+- configure your web server so it knows of research/research/wsgi.py.  If apache, add something like this to the apache config (in ubuntu, for example, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`):
 
         WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
         WSGIProcessGroup sourcenet-1
@@ -106,22 +111,40 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # apache 2.4:
                 #Require all granted
                 # apache 2.2 or earlier:
-                #Allow from all
+                Allow from all
             </Files>
         </Directory>
 
-- If the WSGIPythonPath doesn't take, add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
+- If you are using apache 2.4 on ubuntu 13.10:
+
+    - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
+    
+    - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
+    
+    - enable it with the a2enconf command:
+
+            (sudo) a2enconf django-sourcenet
+
+- Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
 
         sys.path.append( '<project_folder>/research' )
 
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
 
-- open up the `settings.py` file in `<project_folder>/research` and follow the instructions there for uncommenting lines in INSTALLED_APPLICATIONS to get the admins to work.
+- open up the `settings.py` file in `<project_folder>/research` and:
 
-        # Uncomment the next line to enable the admin:
-        'django.contrib.admin',
-        # Uncomment the next line to enable admin documentation:
-        'django.contrib.admindocs',
+    - follow the instructions there for uncommenting lines in INSTALLED_APPLICATIONS to get the admins to work.
+
+            # Uncomment the next line to enable the admin:
+            'django.contrib.admin',
+            # Uncomment the next line to enable admin documentation:
+            'django.contrib.admindocs',
+            
+    - In django 1.6, the django.contrib.admin line should already be uncommented, and you'll have to just add the admindocs line.
+            
+- if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py syncdb`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
+    
+    - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have done this above.
 
 - open up the `urls.py` file in the folder where settings.py lives and follow the instructions there for uncommenting lines to get the admins to work.
 
@@ -142,7 +165,13 @@ sourcenet is a django application for capturing and analyzing networks of news b
             # Uncomment the next line to enable the admin:
             url(r'^admin/', include(admin.site.urls)),
         )
+
+    - In django 1.6, the admin.site.urls line should already be uncommented, and you'll have to just add the admindocs line.
         
+#### Static file support:
+
+- [https://docs.djangoproject.com/en/dev/howto/static-files/](https://docs.djangoproject.com/en/dev/howto/static-files/)
+
 - in your web root, create a folder named "static" directly in your webroot to hold static files for applications (in ubuntu, the default webroot is /var/www):
 
         (sudo) mkdir static
@@ -154,6 +183,12 @@ sourcenet is a django application for capturing and analyzing networks of news b
 - run the following command to initialize static files for your applications (have to sudo if the folder is in webroot, owned by root):
 
         (sudo) python manage.py collectstatic
+        
+#### Test!
+
+- test by going to the URL:
+
+        http://<your_server>/sourcenet/admin/
 
 ### Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
 
@@ -263,6 +298,12 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 url( r'^admin/', include( admin.site.urls ) ),
             )
             
+#### Test!
+
+- test by going to the URL:
+
+        http://<your_server>/sourcenet/sourcenet/output/network
+
 ## Collecting Articles
 
 There is an example application in sourcenet/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
