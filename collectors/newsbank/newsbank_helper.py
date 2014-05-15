@@ -117,6 +117,7 @@ class NewsBankHelper( object ):
     # variables for collecting across a date range.
     regex_docid = None
     regex_section_name = None
+    regex_white_space = re.compile(r'\s+')
     
     # variables for URL and request generation
     place_code = ""
@@ -949,6 +950,10 @@ class NewsBankHelper( object ):
                     bs_h3_docCite = bs_div_docBody.find( "h3", self.HTML_CLASS_DOC_CITE )
                     my_headline = bs_h3_docCite.string
                     my_headline = bs_helper.convert_html_entities( my_headline )
+                    
+                    # strip out extra white space (tabs, newlines, etc.).
+                    my_headline = self.regex_white_space.sub( " ", my_headline )
+                    my_headline = my_headline.strip()
         
                     self.output_debug( "<<< headline: " + my_headline )
                     

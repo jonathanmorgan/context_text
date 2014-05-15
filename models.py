@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 '''
 Copyright 2010-2013 Jonathan Morgan
 
@@ -80,6 +82,10 @@ from django.db.models import Q
 # Dajngo object for interacting directly with database.
 from django.db import connection
 import django.db
+
+# django encoding imports (for supporting 2 and 3).
+import django.utils.encoding
+from django.utils.encoding import python_2_unicode_compatible
 
 
 #================================================================================
@@ -190,6 +196,7 @@ Models for SourceNet, including some that are specific to the Grand Rapids Press
 '''
 
 # Locations
+@python_2_unicode_compatible
 class Location( models.Model ):
 
     # States to choose from.
@@ -271,7 +278,7 @@ class Location( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         # return reference
         string_OUT = ''
         delimiter = ''
@@ -306,6 +313,7 @@ class Location( models.Model ):
 #= End Location Model ===========================================================
 
 # Topic model
+@python_2_unicode_compatible
 class Topic( models.Model ):
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
@@ -319,7 +327,7 @@ class Topic( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         string_OUT = self.name
         return string_OUT
 
@@ -327,6 +335,7 @@ class Topic( models.Model ):
 
 
 # Person model
+@python_2_unicode_compatible
 class Person( models.Model ):
 
     GENDER_CHOICES = (
@@ -540,7 +549,7 @@ class Person( models.Model ):
     # instance methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
  
         # return reference
         string_OUT = ''
@@ -568,7 +577,7 @@ class Person( models.Model ):
  
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 
     def set_name( self, name_IN = "" ):
@@ -666,6 +675,7 @@ class Person( models.Model ):
 
 
 # Orgnization model
+@python_2_unicode_compatible
 class Organization( models.Model ):
 
     name = models.CharField( max_length = 255 )
@@ -680,7 +690,7 @@ class Organization( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         string_OUT = self.name
         return string_OUT
 
@@ -688,6 +698,7 @@ class Organization( models.Model ):
 
 
 # Person_Organization model
+@python_2_unicode_compatible
 class Person_Organization( models.Model ):
 
     person = models.ForeignKey( Person )
@@ -698,7 +709,7 @@ class Person_Organization( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         string_OUT = self.organization.name
         if ( self.title != '' ):
             string_OUT = string_OUT + " ( " + self.title + " )"
@@ -708,6 +719,7 @@ class Person_Organization( models.Model ):
 
 
 # Document model
+@python_2_unicode_compatible
 class Document( models.Model ):
 
     name = models.CharField( max_length = 255 )
@@ -718,7 +730,7 @@ class Document( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         string_OUT = self.name
         return string_OUT
 
@@ -726,6 +738,7 @@ class Document( models.Model ):
 
 
 # Newspaper model
+@python_2_unicode_compatible
 class Newspaper( models.Model ):
 
     name = models.CharField( max_length = 255 )
@@ -745,7 +758,7 @@ class Newspaper( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         string_OUT = self.name
         return string_OUT
 
@@ -762,7 +775,7 @@ class Newspaper( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-#    def __unicode__( self ):
+#    def __str__( self ):
 #        string_OUT = '%d - %s' % ( self.rank, self.topic.name )
 #        return string_OUT
 
@@ -770,6 +783,7 @@ class Newspaper( models.Model ):
 
 
 # Article model
+@python_2_unicode_compatible
 class Article( models.Model ):
 
     #----------------------------------------------------------------------------
@@ -1231,7 +1245,7 @@ class Article( models.Model ):
     #----------------------------------------------------------------------------
 
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         # start with stuff we should always have.
         string_OUT = str( self.id ) + " - " + self.pub_date.strftime( "%b %d, %Y" )
@@ -1278,7 +1292,7 @@ class Article( models.Model ):
         
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
     
     
     def do_automated_processing( self, *args, **kwargs ):
@@ -1645,6 +1659,7 @@ class Article( models.Model ):
 
 
 # Article_Content model
+@python_2_unicode_compatible
 class Article_Content( models.Model ):
 
     CONTENT_TYPE_CHOICES = (
@@ -1679,7 +1694,7 @@ class Article_Content( models.Model ):
     # methods
     #----------------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def to_string( self ):
 
         # return reference
         string_OUT = ""
@@ -1702,15 +1717,27 @@ class Article_Content( models.Model ):
         
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = self.to_string()
+        
+        return string_OUT
+
+    #-- END method __str__() --#
 
 #-- END abstract Article_Content model --#
 
 
 # Article_Notes model
+@python_2_unicode_compatible
 class Article_Notes( Article_Content ):
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         # return reference
         string_OUT = ""
@@ -1719,19 +1746,20 @@ class Article_Notes( Article_Content ):
         self.content_description = "notes"
         
         # call string method.
-        string_OUT = super( Article_Notes, self ).__unicode__()
+        string_OUT = super( Article_Notes, self ).to_string()
                 
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 #-- END Article_Notes model --#
 
 
 # Article_RawData model
+@python_2_unicode_compatible
 class Article_RawData( Article_Content ):
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         # return reference
         string_OUT = ""
@@ -1740,19 +1768,20 @@ class Article_RawData( Article_Content ):
         self.content_description = "raw data"
         
         # call string method.
-        string_OUT = super( Article_RawData, self ).__unicode__()
+        string_OUT = super( Article_RawData, self ).to_string()
         
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 #-- END Article_RawData model --#
 
 
 # Article_Text model
+@python_2_unicode_compatible
 class Article_Text( Article_Content ):
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         # return reference
         string_OUT = ""
@@ -1761,16 +1790,17 @@ class Article_Text( Article_Content ):
         self.content_description = "text"
         
         # call string method.
-        string_OUT = super( Article_Text, self ).__unicode__()
+        string_OUT = super( Article_Text, self ).to_string()
                 
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 #-- END Article_Text model --#
 
 
 # Article_Data model
+@python_2_unicode_compatible
 class Article_Data( models.Model ):
 
     # declaring a few "constants"
@@ -1814,13 +1844,13 @@ class Article_Data( models.Model ):
     # methods
     #----------------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         string_OUT = str( self.id ) + " - " + str( self.article )
         
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 
     def get_source_counts_by_type( self ):
@@ -2085,6 +2115,7 @@ class Article_Data( models.Model ):
 
 
 # Article_Person model
+@python_2_unicode_compatible
 class Article_Person( models.Model ):
 
     #RELATION_TYPE_CHOICES = (
@@ -2105,7 +2136,7 @@ class Article_Person( models.Model ):
     #----------------------------------------------------------------------
 
 
-    def __unicode__( self ):
+    def __str__( self ):
         
         # return reference
         string_OUT = ""
@@ -2122,7 +2153,7 @@ class Article_Person( models.Model ):
         
         return string_OUT
     
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 
     def get_article_info( self ):
@@ -2226,6 +2257,7 @@ class Article_Person( models.Model ):
 
 
 # Article_Author model
+@python_2_unicode_compatible
 class Article_Author( Article_Person ):
 
     AUTHOR_TYPE_TO_ID_MAP = {
@@ -2257,7 +2289,7 @@ class Article_Author( Article_Person ):
     #----------------------------------------------------------------------
 
 
-    def __unicode__( self ):
+    def __str__( self ):
         
         if ( self.person is not None ):
         
@@ -2271,13 +2303,14 @@ class Article_Author( Article_Person ):
         
         return string_OUT
 
-    #-- END __unicode__() method --#
+    #-- END __str__() method --#
 
 
 #= End Article_Author Model ======================================================
 
 
 # Article_Source model
+@python_2_unicode_compatible
 class Article_Source( Article_Person ):
 
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = 'include_capacities'
@@ -2389,7 +2422,7 @@ class Article_Source( Article_Person ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         # return reference
         string_OUT = ''
 
@@ -2418,7 +2451,7 @@ class Article_Source( Article_Person ):
 
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
 
     def is_connected( self, param_dict_IN = None ):
@@ -2529,6 +2562,7 @@ class Article_Source( Article_Person ):
 
 
 # Source_Organization model
+@python_2_unicode_compatible
 class Source_Organization( models.Model ):
 
     article_source = models.ForeignKey( Article_Source )
@@ -2539,7 +2573,7 @@ class Source_Organization( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         # return reference
         string_OUT = ''
 
@@ -2566,7 +2600,7 @@ class Source_Organization( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-#    def __unicode__( self ):
+#    def __str__( self ):
 
         # return reference
 #        string_OUT = ''
@@ -2597,7 +2631,7 @@ class Source_Organization( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-#    def __unicode__( self ):
+#    def __str__( self ):
         #string_OUT = self.rank + " - " + self.location.name
 #        string_OUT = '%d - %s' % ( self.rank, self.location.name )
 #        return string_OUT
@@ -2606,6 +2640,7 @@ class Source_Organization( models.Model ):
 
 
 # Import_Error model
+@python_2_unicode_compatible
 class Import_Error( models.Model ):
 
     unique_identifier = models.CharField( max_length = 255, blank = True )
@@ -2624,7 +2659,7 @@ class Import_Error( models.Model ):
     # methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
         #string_OUT = self.rank + " - " + self.location.name
         string_OUT = '%d - %s (%s): %s' % ( self.id, self.unique_identifier, self.item, self.message )
         return string_OUT
@@ -2633,6 +2668,7 @@ class Import_Error( models.Model ):
 
 
 # Temp_Section model
+@python_2_unicode_compatible
 class Temp_Section( models.Model ):
 
     #----------------------------------------------------------------------
@@ -2696,7 +2732,7 @@ class Temp_Section( models.Model ):
     # instance methods
     #----------------------------------------------------------------------
 
-    def __unicode__( self ):
+    def __str__( self ):
 
         # build the whole string except the id prefix.  Let DEBUG dictate level
         #    of detail.
@@ -2721,7 +2757,7 @@ class Temp_Section( models.Model ):
         
         return string_OUT
 
-    #-- END method __unicode__() --#
+    #-- END method __str__() --#
 
     
     def add_section_name_filter_to_article_qs( self, qs_IN = None, *args, **kwargs ):
@@ -3902,4 +3938,96 @@ class Temp_Section( models.Model ):
     #-- END method process_section_date_range_day_by_day() --#
 
 
-#= End Temp_Section Model ======================================================
+#= End Temp_Section Model ======================================================#
+
+
+@python_2_unicode_compatible
+class Articles_To_Migrate( models.Model ):
+
+    ARTICLE_TYPE_CHOICES = (
+        ( "news", "News" ),
+        ( "sports", "Sports" ),
+        ( "feature", "Feature" ),
+        ( "opinion", "Opinion" ),
+        ( "other", "Other" )
+    )
+
+    article = models.ForeignKey( Article, blank = True, null = True )
+    unique_identifier = models.CharField( max_length = 255, blank = True )
+    coder = models.ForeignKey( User )
+    newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+    pub_date = models.DateField()
+    section = models.CharField( max_length = 255, blank = True )
+    page = models.IntegerField( blank = True )
+    headline = models.CharField( max_length = 255 )
+    text = models.TextField( blank = True )
+    is_sourced = models.BooleanField( default = 1 )
+    can_code = models.BooleanField( default = 1 )
+    article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
+
+    #----------------------------------------------------------------------------
+    # Instance variables and meta-data
+    #----------------------------------------------------------------------------
+
+    # Meta-data for this class.
+    class Meta:
+        ordering = [ 'pub_date', 'section', 'page' ]
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def __str__( self ):
+
+        # start with stuff we should always have.
+        string_OUT = str( self.id ) + " - " + self.pub_date.strftime( "%b %d, %Y" )
+        
+        # Got a section?
+        if ( self.section ):
+        
+            # add section
+            string_OUT += ", " + self.section
+        
+        #-- END check to see if section present.
+        
+        # Got a page?
+        if ( self.page ):
+        
+            # add page.
+            string_OUT += " ( " + str( self.page ) + " )"
+            
+        #-- END check to see if page. --#
+        
+        # Unique Identifier?
+        if ( self.unique_identifier ):
+
+            # Add UID
+            string_OUT += ", UID: " + self.unique_identifier
+            
+        #-- END check for unique identifier
+        
+        # headline
+        string_OUT += " - " + self.headline
+        
+        # got a related newspaper?
+        if ( self.newspaper ):
+        
+            # Yes.  Append it.
+            string_OUT += " ( " + self.newspaper.name + " )"
+            
+        elif ( self.source_string ):
+        
+            # Well, we have a source string.
+            string_OUT += " ( " + self.source_string + " )"
+            
+        #-- END check to see if newspaper present. --#
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+     
+
+#= END Articles_To_Migrate model ===============================================#
+
