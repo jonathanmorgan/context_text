@@ -151,7 +151,7 @@ def output_articles( request_IN ):
     network_outputter = None
     current_item = None
     network_query_set = None
-    article_count = ''
+    article_data_count = ''
     query_counter = ''
     
     # configure context instance
@@ -196,15 +196,15 @@ def output_articles( request_IN ):
             if ( ( network_query_set != None ) or ( network_query_set != "" ) ):
 
                 # get count of articles
-                article_count = network_query_set.count()
+                article_data_count = network_query_set.count()
     
-                output_string += "\n\nTotal articles returned: " + str( article_count ) + "\n\n\n"
+                output_string += "\n\nTotal articles returned: " + str( article_data_count ) + "\n\n\n"
     
                 # loop over the query set.
                 query_counter = 0
                 for current_item in network_query_set:
                     query_counter += 1
-                    output_string += "- ( " + str( query_counter ) + " ) " + current_item.headline + "\n"
+                    output_string += "- ( " + str( query_counter ) + " ) " + current_item.article.headline + "\n"
     
                 # first, build the CSV list of articles, so we can use it for
                 #    reliability, basic statistics.
@@ -324,20 +324,20 @@ def output_network( request_IN ):
             # summary info.
             #-------------------------------------------------------------------
 
-            # retrieve article QuerySet based on parameters passed in.
+            # retrieve Article_Data QuerySet based on parameters passed in.
             network_query_set = network_outputter.create_network_query_set()
 
             # get count of queryset return items
-            article_count = network_query_set.count()
+            article_data_count = network_query_set.count()
 
-            output_string += "\n\nTotal articles returned: " + str( article_count ) + "\n\n\n"
+            output_string += "\n\nTotal article data rows returned: " + str( article_data_count ) + "\n\n\n"
 
             # loop over the query set.
             query_counter = 0
             for current_item in network_query_set:
 
                 query_counter += 1
-                output_string += "- ( " + str( query_counter ) + " ) " + current_item.headline + "\n"
+                output_string += "- ( " + str( query_counter ) + " ) " + current_item.article.headline + "\n"
 
             #-- END loop over articles to list out headlines. --#
 

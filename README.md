@@ -1,3 +1,5 @@
+<!-- TOC -->
+
 # sourcenet
 
 sourcenet is a django application for capturing and analyzing networks of news based on articles.
@@ -341,10 +343,27 @@ Once you have coded your articles, you can output network data from them by goin
 - Syntax for fancy date range fields: For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").
 
         Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+        
+- For an idea of how you can invoke the network data outputter programmatically, see the `output_network()` method in the file `views.py`.
+
+- Parameters you can set to filter network creation can be seen on the web page for outputting network data.  If you want to interact programmatically, they are listed in the class /export/network_output.py, and you can see the expected values in the method `create_query_set()`.
+
+    - For convenience, here is a list that was current at the time of this update of parameters you can use:
+    
+        - _`start_date`_ - publication date - articles will be included that were published on or after this date.
+        - _`end_date`_ - publication date - articles will be included that were published on or before this date.
+        - _`date_range`_ - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+        - _`publications`_ - list of IDs of newspapers you want included.
+        - _`coders`_ - list of IDs of coders whose data you want included.
+        - _`topics`_ - list of IDs of topics whose data you want included.
+        - _`unique_identifiers`_ - list of unique identifiers of articles whose data you want included.
+        - _`header_prefix`_ -  for output, optional prefix you want appended to front of column header names.
+        - _`output_type`_ - type of output you want, currently only CSV for UCINet is supported.
+        - _`allow_duplicate_articles`_ - allow duplicate articles...  Not sure this is relevant anymore.
 
 ## License
 
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-present (2014) Jonathan Morgan
 
 This file is part of [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).
 

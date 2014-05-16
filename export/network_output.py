@@ -16,6 +16,12 @@ You should have received a copy of the GNU Lesser General Public License along w
 The network_output module contains objects and code to parse and output social
    network data from sourcenet in a variety of formats, and also generates
    some descriptive statistics as it builds output.
+   
+2014-05-16 - Jonathan Morgan - Updated so that this object now speaks in terms
+   of Article_Data, not Article, so that we support multiple passes at coding
+   a given article by different people, only have to store the contents of each
+   article once.
+   
 '''
 
 __author__="jonathanmorgan"
@@ -41,6 +47,7 @@ from django.db.models import Q
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article
+from sourcenet.models import Article_Data
 
 # Import sourcenet export classes.
 from sourcenet.export.csv_article_output import CsvArticleOutput
@@ -50,7 +57,7 @@ from sourcenet.export.network_data_output import NetworkDataOutput
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkOutput():
+class NetworkOutput( object ):
 
 
     #---------------------------------------------------------------------------
@@ -58,16 +65,16 @@ class NetworkOutput():
     #---------------------------------------------------------------------------
 
     # network selection parameters we expect.
-    PARAM_START_DATE = 'start_date'
-    PARAM_END_DATE = 'end_date'
-    PARAM_DATE_RANGE = 'date_range'
-    PARAM_PUBLICATIONS = 'publications'
-    PARAM_CODERS = 'coders'
-    PARAM_TOPICS = 'topics'
-    PARAM_UNIQUE_IDS = 'unique_identifiers'
-    PARAM_HEADER_PREFIX = 'header_prefix'
-    PARAM_OUTPUT_TYPE = 'output_type'
-    PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'
+    PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
+    PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
+    PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+    PARAM_PUBLICATIONS = 'publications'   # list of IDs of newspapers you want included.
+    PARAM_CODERS = 'coders'   # list of IDs of coders whose data you want included.
+    PARAM_TOPICS = 'topics'   # list of IDs of topics whose data you want included.
+    PARAM_UNIQUE_IDS = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
+    PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
+    PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, currently only CSV for UCINet is supported.
+    PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
 
     # parameters specific to network output
     PARAM_NETWORK_LABEL = NetworkDataOutput.PARAM_NETWORK_LABEL
@@ -248,24 +255,25 @@ class NetworkOutput():
     def create_person_dict( self, load_person_IN = False ):
 
         """
-            Accepts the request and the person start and end dates.  Uses these
-                to retrieve all the articles in the range specified, and then
-                builds a dictionary of all the IDs of those people mapped to
-                their Person instance.
+            Accepts flag that dictates whether we load the actual person
+               record or not.  Uses person start and end dates from nested
+               request to retrieve all the article data in the range specified,
+               and then builds a dictionary of all the IDs of those people
+               mapped to their Person instance.
 
             Preconditions: request must have contained required parameters, and
-                so contained at least a start and end date and a publication.
-                Should we have a flag that says to use the same criteria as the
-                selection criteria?
+               so contained at least a start and end date and a publication.
+               Should we have a flag that says to use the same criteria as the
+               selection criteria?
 
             Postconditions: uses a lot of memory if you choose a large date
-                range.
+               range.
 
             Parameters:
             - request_IN - django request object.
             - load_person_IN - boolean, if False, doesn't load Person model
-                instances while building the dictionary.  If True, loads Person
-                models and stores them in the dictionary.
+               instances while building the dictionary.  If True, loads Person
+               models and stores them in the dictionary.
 
             Returns:
             - Dictionary - dictionary that maps person IDs to Person model
@@ -278,8 +286,8 @@ class NetworkOutput():
 
         # declare variables
         request_IN = None
-        article_query_set = None
-        current_article = None
+        article_data_query_set = None
+        current_article_data = None
         author_qs = None
         source_qs = None
 
@@ -289,18 +297,19 @@ class NetworkOutput():
         # got request?
         if ( request_IN ):
 
-            # get query set to loop over articles that match our person select criteria.
-            article_query_set = self.create_person_query_set()
+            # get query set to loop over Article_Data that matches our person
+            #    select criteria.
+            article_data_query_set = self.create_person_query_set()
 
             # loop over the articles
-            for current_article in article_query_set:
+            for current_article_data in article_data_query_set:
 
                 # retrieve authors and add them to dict
-                author_qs = current_article.article_author_set.all()
+                author_qs = current_article_data.article_author_set.all()
                 person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
 
                 # retrieve sources and add them to dict
-                source_qs = current_article.article_source_set.all()
+                source_qs = current_article_data.article_source_set.all()
                 person_dict_OUT = self.add_people_to_dict( source_qs, person_dict_OUT, load_person_IN )
 
             #-- END loop over articles --#
@@ -376,14 +385,14 @@ class NetworkOutput():
             allow_duplicate_articles_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, NetworkOutput.CHOICE_NO )
 
             # get all articles to start
-            query_set_OUT = Article.objects.all()
+            query_set_OUT = Article_Data.objects.all()
 
             # now filter based on parameters passed in.
             # start date
             if ( start_date_IN != '' ):
 
                 # set up query instance
-                current_query = Q( pub_date__gte = start_date_IN )
+                current_query = Q( article__pub_date__gte = start_date_IN )
 
                 # add it to list of queries
                 query_list.append( current_query )
@@ -394,7 +403,7 @@ class NetworkOutput():
             if ( end_date_IN != '' ):
 
                 # set up query instance
-                current_query = Q( pub_date__lte = end_date_IN )
+                current_query = Q( article__pub_date__lte = end_date_IN )
 
                 # add it to list of queries
                 query_list.append( current_query )
@@ -417,7 +426,7 @@ class NetworkOutput():
                     range_end_date = date_range_pair[ 1 ]
 
                     # make Q
-                    date_range_q = Q( pub_date__gte = range_start_date ) & Q( pub_date__lte = range_end_date )
+                    date_range_q = Q( article__pub_date__gte = range_start_date ) & Q( article__pub_date__lte = range_end_date )
 
                     # add Q to Q list.
                     date_range_q_list.append( date_range_q )
@@ -446,7 +455,7 @@ class NetworkOutput():
                 for current_item in publications_IN:
 
                     # set up query instance
-                    current_query = Q( newspaper__id = current_item )
+                    current_query = Q( article__newspaper__id = current_item )
 
                     # see if we already have a query.  If not, make one.
                     if ( compound_query is None ):
@@ -491,7 +500,7 @@ class NetworkOutput():
             # topics
             if ( topics_IN ):
 
-                # loop over the coders, adding a Q object for each to the
+                # loop over the topics, adding a Q object for each to the
                 #    aggregated set of things we will pass to filter function.
                 for current_item in topics_IN:
 
@@ -535,7 +544,7 @@ class NetworkOutput():
                 # set up query instance to look for articles with
                 #    unique_identifier in the list of values passed in.  Not
                 #    quoting, since django should do that.
-                current_query = Q( unique_identifier__in = unique_id_list )
+                current_query = Q( article__unique_identifier__in = unique_id_list )
 
                 # add it to list of queries
                 query_list.append( current_query )
@@ -556,7 +565,7 @@ class NetworkOutput():
             if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
 
                 # remove duplicate articles.
-                query_set_OUT = self.remove_duplicate_articles( query_set_OUT )
+                query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
 
             #-- END check to see if we allow duplicates --#
 
@@ -703,41 +712,34 @@ class NetworkOutput():
     #-- END render_csv_article_data() --#
 
 
-    def remove_duplicate_articles( self, query_set_IN ):
+    def remove_duplicate_article_data( self, query_set_IN ):
 
         """
-            Accepts query set of articles.  Creates a new instance of the
-               CsvArticleOutput class, places the query set in it, sets up its
-               instance variables approrpiately according to the request, then
-               renders CSV output and returns that output as a string.
-               Uses the query set to output CSV data in the format specified in
-               the output_type request parameter.  If one line per article, has
-               sets of columns for as many authors and sources as are present in
-               the articles with the most authors and sources, respectively.  If
-               one line per source, each article is given a line for each source
-               with all other article information duplicated for each source. If
-               one line per author, each article is given a line for each author
-               with all other article information duplicated for each author.
-
-            Preconditions: assumes that we have a query set of articles passed
-               in that we can store in the instance.  If not, does nothing,
-               returns empty string.
-
+            Accepts query set of Article_Data.  Designed to make sure we only
+            have one data record per article.  This could be a good idea in
+            some cases, and could be a bad idea in others...
+            
+            Preconditions: assumes that we have a query set of Article_Data
+               instances passed in that we can interact with to look for
+               duplicates.  If not, does nothing.
+               
             Postconditions: returns a query set with a not IN filter that omits
-               more than one article with info on a given unique article ID.
+               Article_Data instances past the first it encounters for a given
+               article.
 
             Parameters:
-            - query_set_IN - django HTTP request instance that contains parameters we use to generate network data.
+            - query_set_IN - django QuerySet instance that contains Article_Data instances.
 
             Returns:
-            - QuerySet - CSV output for the network described by the articles selected based on the parameters passed in.
+            - QuerySet - QuerySet of Article_Data instances with only one Article_Data row per Article.
         """
 
         # return reference
         qs_OUT = ''
 
         # declare variables
-        unique_article_id_to_article_id_dict = {}
+        unique_article_id_to_article_data_id_dict = {}
+        current_article_data = None
         current_article = None
         current_unique_id = ''
         current_id = -1
@@ -746,27 +748,35 @@ class NetworkOutput():
         # do we have a query set?
         if ( query_set_IN ):
 
-            # loop over the articles
-            for current_article in query_set_IN:
+            # loop over the article data
+            for current_article_data in query_set_IN:
 
-                # get unique
-                current_unique_id = current_article.unique_identifier
-                current_id = current_article.id
+                # got an article?
+                current_article = current_article_data.article
+                if ( current_article ):
 
-                # is the unique_id in the dict?
-                if current_unique_id in unique_article_id_to_article_id_dict:
+                    # yes - get unique identifier of article
+                    current_unique_id = current_article.unique_identifier
 
-                    # yes - so, this is a duplicate.  Add id to omit list.
-                    omit_id_list.append( current_id )
+                    # get ID of current Article_Data row.
+                    current_id = current_article_data.id
+    
+                    # is the unique_id in the dict?
+                    if current_unique_id in unique_article_id_to_article_data_id_dict:
+    
+                        # yes - so, this is a duplicate.  Add id to omit list.
+                        omit_id_list.append( current_id )
+    
+                    else:
+    
+                        # not in dict, so add it and its ID.
+                        unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_id
+    
+                    #-- END check to see if duplicate. --#
+                    
+                #-- END check to see if we have an article. --#
 
-                else:
-
-                    # not in dict, so add it and its ID.
-                    unique_article_id_to_article_id_dict[ current_unique_id ] = current_id
-
-                #-- END check to see if duplicate. --#
-
-            #-- END loop over articles --#
+            #-- END loop over article data --#
 
             # anything in omit list?
             if ( len( omit_id_list ) > 0 ):
@@ -780,15 +790,15 @@ class NetworkOutput():
 
         return qs_OUT
 
-    #-- END remove_duplicate_articles() --#
+    #-- END remove_duplicate_article_data() --#
 
 
     def render_network_data( self, query_set_IN ):
 
         """
-            Accepts query set of articles and master dictionary of people..  Creates a new instance of the
+            Accepts query set of Article_Data.  Creates a new instance of the
                CsvArticleOutput class, places the query set in it, sets up its
-               instance variables approrpiately according to the request, then
+               instance variables appropriately according to the request, then
                renders CSV output and returns that output as a string.
                Uses the query set to output CSV data in the format specified in
                the output_type request parameter.  If one line per article, has

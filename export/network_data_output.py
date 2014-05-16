@@ -39,7 +39,7 @@ from sourcenet.models import Article_Source
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkDataOutput():
+class NetworkDataOutput( object ):
 
 
     #---------------------------------------------------------------------------
@@ -1131,40 +1131,40 @@ class NetworkDataOutput():
         network_data_OUT = ''
 
         # declare variables
-        article_query_set = None
+        article_data_query_set = None
         person_dict = None
         network_dict = {}
-        article_counter = 0
-        current_article = None
+        article_data_counter = 0
+        current_article_data = None
         article_author_count = -1
         author_qs = None
         source_qs = None
 
         # start by grabbing person dict, query set.
-        article_query_set = self.query_set
+        article_data_query_set = self.query_set
         person_dict = self.person_dictionary
 
         # make sure each of these has something in it.
-        if ( ( article_query_set ) and ( person_dict ) ):
+        if ( ( article_data_query_set ) and ( person_dict ) ):
 
             # loop over the articles.
-            for current_article in article_query_set:
+            for current_article_data in article_data_query_set:
 
-                article_counter += 1
+                article_data_counter += 1
 
                 if ( NetworkDataOutput.DEBUG == True ):
-                    self.debug += "\n\n+++ Current article = " + str( current_article.id ) + " +++\n\n"
+                    self.debug += "\n\n+++ Current article data = " + str( current_article_data.id ) + " +++\n\n"
                 #-- END DEBUG --#
 
                 # first, see how many authors this article has.
-                article_author_count = current_article.article_author_set.count()
+                article_author_count = current_article_data.article_author_set.count()
 
                 # if no authors, move on.
                 if ( article_author_count > 0 ):
 
                     # get authors
-                    author_qs = current_article.article_author_set.all()
-                    source_qs = current_article.article_source_set.all()
+                    author_qs = current_article_data.article_author_set.all()
+                    source_qs = current_article_data.article_source_set.all()
 
                     # call method to loop over authors and tie them to other
                     #    authors (if present) and eligible sources.
@@ -1221,9 +1221,6 @@ class NetworkDataOutput():
             network_data_OUT += self.create_label_string( "\n" )
             network_data_OUT += "\n\nLabel array, for use in analysis:\n"
             network_data_OUT += self.create_label_string( ",", '"' ) + "\n"
-
-
-
 
         #-- END check to make sure we have the data we need. --#
 

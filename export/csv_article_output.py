@@ -42,7 +42,7 @@ from sourcenet.models import Topic
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class CsvArticleOutput():
+class CsvArticleOutput( object ):
 
 
     #---------------------------------------------------------------------------
@@ -97,12 +97,12 @@ class CsvArticleOutput():
     #---------------------------------------------------------------------------
 
 
-    def create_article_list( self, output_type_IN, article_IN = None, header_prefix_IN = ''):
+    def create_article_list( self, output_type_IN, article_data_IN = None, header_prefix_IN = ''):
 
         """
             Method: create_article_list
 
-            Purpose: Accepts an output type, an optional Article model
+            Purpose: Accepts an output type, an optional Article_Data model
                instance and an optional header prefix.  If output type is
                "values" and model instance is passed in, uses the values in the
                instance to populate the list. If no instance, puts empty strings
@@ -113,7 +113,7 @@ class CsvArticleOutput():
 
             Params:
             - output_type_IN - output type, either "values" or "headers".
-            - article_IN - optional - Article model instance to use to populate values for this article.
+            - article_data_IN - optional - Article_Data model instance to use to populate values for this article.
             - header_prefix_IN - optional - prefix to append to the beginning of each header.
 
             Returns:
@@ -125,6 +125,8 @@ class CsvArticleOutput():
         list_OUT = []
 
         # declare variables
+        my_article = None
+        article_data_id = ''
         article_id = ''
         article_unique_identifier = ''
         article_coder = ''
@@ -145,61 +147,87 @@ class CsvArticleOutput():
         # check output type
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
-            # outputting values.  Got an article?
-            if ( article_IN is not None ):
+            # outputting values.
+            
+            # Got an Article_Data instance?
+            if ( article_data_IN is not None ):
+            
+                # get info from article_data_IN
+                article_data_id = article_data_IN.id
+                article_coder = article_data_IN.coder.id
+                article_type = article_data_IN.article_type
+                article_is_sourced = article_data_IN.is_sourced
+                article_can_code = article_data_IN.can_code
+                
+                # Check to see if we have a nested Article
+                my_article = article_data_IN.article
 
-                # got an Article instance - set type value from the instance
-                article_id = article_IN.id
-                article_unique_identifier = article_IN.unique_identifier
-                article_coder = article_IN.coder.id
-                article_newspaper = article_IN.newspaper
+            else:
+            
+                # No.  set Article_Data variables to empty, set flag to say we
+                #    output empty article data, as well.
+                article_data_id = ""
+                article_coder = ""
+                article_type = ""
+                article_is_sourced = ""
+                article_can_code = ""
+                
+                # no article data?  Yikes.
+                my_article = None
+                
+            #-- END check to see if ArticleData passed in --#
+
+            # Got an Article?
+            if ( ( my_article ) and ( my_article is not None ) ):
+
+                # set values from the Article instance
+                article_id = my_article.id
+                article_unique_identifier = my_article.unique_identifier
+
+                article_newspaper = my_article.newspaper
                 if ( article_newspaper is not None ):
                     article_newspaper_name = article_newspaper.name
                 else:
                     article_newspaper_name = 'no paper'
-                article_pub_date = article_IN.pub_date.strftime( '%Y-%m-%d' )
-                article_section = article_IN.section
-                article_page = article_IN.page
-                article_headline = article_IN.headline
-                article_type = article_IN.article_type
-                article_is_sourced = article_IN.is_sourced
-                article_can_code = article_IN.can_code
+                #-- END check to see if paper present. --#
+                
+                article_pub_date = my_article.pub_date.strftime( '%Y-%m-%d' )
+                article_section = my_article.section
+                article_page = my_article.page
+                article_headline = my_article.headline
 
-            else:
+            else:                
 
-                # no author instance, set values to empty string.
+                # no Article instance, set values to empty string.
                 article_id = ''
                 article_unique_identifier = ''
-                article_coder = ''
-                article_newspaper = None
-                if ( article_newspaper is not None ):
-                    article_newspaper_name = article_newspaper.name
-                else:
-                    article_newspaper_name = ''
+                article_newspaper_name = ''
                 article_pub_date = ''
                 article_section = ''
                 article_page = ''
                 article_headline = ''
-                article_type = ''
-                article_is_sourced = ''
-                article_can_code = ''
 
             #-- END check to see if Article model instance was passed in --#
 
         else:
 
             # type is not values, so output headers
+            
+            # from Article_Data
+            article_data_id = header_prefix_IN + "article_data_id"
+            article_coder = header_prefix_IN + "coder_id"
+            article_type = header_prefix_IN + "article_type"
+            article_is_sourced = header_prefix_IN + "is_sourced"
+            article_can_code = header_prefix_IN + "can_code"
+
+            # from Article
             article_id = header_prefix_IN + "article_id"
             article_unique_identifier = header_prefix_IN + "unique_identifier"
-            article_coder = header_prefix_IN + "coder_id"
             article_newspaper_name = header_prefix_IN + "newspaper"
             article_pub_date = header_prefix_IN + "pub_date"
             article_section = header_prefix_IN + "section"
             article_page = header_prefix_IN + "page"
             article_headline = header_prefix_IN + "headline"
-            article_type = header_prefix_IN + "article_type"
-            article_is_sourced = header_prefix_IN + "is_sourced"
-            article_can_code = header_prefix_IN + "can_code"
 
         #-- END population of values based on presence of Article --#
 
@@ -208,7 +236,9 @@ class CsvArticleOutput():
         # append the article information
         #-----------------------------------------------------------------------
 
-        # add article information to the list.
+        # add article information to the list.  For now, leave them in the same
+        #    order as before, but with article_data_id at the beginning of each.
+        list_OUT.append( article_data_id )
         list_OUT.append( article_id )
         list_OUT.append( article_unique_identifier )
         list_OUT.append( article_coder )
@@ -228,13 +258,13 @@ class CsvArticleOutput():
         # append topics
         #-----------------------------------------------------------------------
 
-        list_OUT.extend( self.create_topic_list( output_type_IN, article_IN, header_prefix_IN ) )
+        list_OUT.extend( self.create_topic_list( output_type_IN, article_data_IN, header_prefix_IN ) )
 
         #-----------------------------------------------------------------------
         # append locations
         #-----------------------------------------------------------------------
 
-        list_OUT.extend( self.create_location_list( output_type_IN, article_IN, header_prefix_IN ) )
+        list_OUT.extend( self.create_location_list( output_type_IN, article_data_IN, header_prefix_IN ) )
 
         return list_OUT
 
@@ -505,12 +535,12 @@ class CsvArticleOutput():
     #-- END method create_header_list() --#
 
 
-    def create_location_list( self, output_type_IN, article_IN = None, header_prefix_IN = ''):
+    def create_location_list( self, output_type_IN, article_data_IN = None, header_prefix_IN = ''):
 
         """
             Method: create_location_list
 
-            Purpose: Accepts an output type, an optional Article model
+            Purpose: Accepts an output type, an optional Article_Data model
                instance and an optional header prefix.  If output type is
                "values" and model instance is passed in, uses the locations in
                the instance, in combination with the max_locations instance
@@ -522,7 +552,7 @@ class CsvArticleOutput():
 
             Params:
             - output_type_IN - output type, either "values" or "headers".
-            - article_IN - optional - Article model instance to use to populate location values for this article.
+            - article_data_IN - optional - Article model instance to use to populate location values for this article.
             - header_prefix_IN - optional - prefix to append to the beginning of each header.
 
             Returns:
@@ -554,10 +584,10 @@ class CsvArticleOutput():
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
             # outputting values.  Got an article?
-            if ( article_IN is not None ):
+            if ( article_data_IN is not None ):
 
                 # got an Article instance - set type value from the instance
-                article_locations = article_IN.locations.order_by( 'id' )
+                article_locations = article_data_IN.locations.order_by( 'id' )
                 article_locations_count = article_locations.count()
 
             else:
@@ -769,12 +799,12 @@ class CsvArticleOutput():
     #-- END method create_person_list() --#
 
 
-    def create_source_count_list( self, output_type_IN, article_IN = None, header_prefix_IN = ''):
+    def create_source_count_list( self, output_type_IN, article_data_IN = None, header_prefix_IN = ''):
 
         """
             Method: create_source_count_list
 
-            Purpose: Accepts an output type, an optional Article model
+            Purpose: Accepts an output type, an optional Article_Data model
                instance and an optional header prefix.  If output type is
                "values" and model instance is passed in, uses the sources in the
                instance to populate the list. If no instance, puts empty strings
@@ -785,7 +815,7 @@ class CsvArticleOutput():
 
             Params:
             - output_type_IN - output type, either "values" or "headers".
-            - article_IN - optional - Article model instance to use to populate source count values for this article.
+            - article_data_IN - optional - Article_Data model instance to use to populate source count values for this article.
             - header_prefix_IN - optional - prefix to append to the beginning of each header.
 
             Returns:
@@ -811,10 +841,10 @@ class CsvArticleOutput():
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
             # outputting values.  Got an article?
-            if ( article_IN is not None ):
+            if ( article_data_IN is not None ):
 
                 # yes.  Set the article count.
-                article_source_count = article_IN.article_source_set.count()
+                article_source_count = article_data_IN.article_source_set.count()
 
             else:
 
@@ -833,14 +863,14 @@ class CsvArticleOutput():
         # append topic information
         #-----------------------------------------------------------------------
 
-        # regardless of output type, append topic count contents
+        # regardless of output type, append source count contents
         list_OUT.append( article_source_count )
 
-        # for outputting topics, different based on output type.
+        # for outputting sources, different based on output type.
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
             # ...and broken out by type.
-            article_source_counts_by_type = article_IN.get_source_counts_by_type()
+            article_source_counts_by_type = article_data_IN.get_source_counts_by_type()
 
             # loop over the counts in alphabetical order of type, appending each to
             #    list as we go.
@@ -992,12 +1022,12 @@ class CsvArticleOutput():
     #-- END method create_source_list() --#
 
 
-    def create_topic_list( self, output_type_IN, article_IN = None, header_prefix_IN = ''):
+    def create_topic_list( self, output_type_IN, article_data_IN = None, header_prefix_IN = ''):
 
         """
             Method: create_topic_list
 
-            Purpose: Accepts an output type, an optional Article model
+            Purpose: Accepts an output type, an optional Article_Data model
                instance and an optional header prefix.  If output type is
                "values" and model instance is passed in, uses the topics in the
                instance to populate the list. If no instance, puts empty strings
@@ -1008,7 +1038,7 @@ class CsvArticleOutput():
 
             Params:
             - output_type_IN - output type, either "values" or "headers".
-            - article_IN - optional - Article model instance to use to populate topics values for this article.
+            - article_data_IN - optional - Article_Data model instance to use to populate topics values for this article.
             - header_prefix_IN - optional - prefix to append to the beginning of each header.
 
             Returns:
@@ -1042,10 +1072,10 @@ class CsvArticleOutput():
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
             # outputting values.  Got an article?
-            if ( article_IN is not None ):
+            if ( article_data_IN is not None ):
 
                 # also can deal with topics and locations.
-                article_topics = article_IN.topics.all()
+                article_topics = article_data_IN.topics.all()
                 article_topics_count = article_topics.count()
 
             else:
@@ -1140,20 +1170,19 @@ class CsvArticleOutput():
     #-- END method create_topic_list() --#
 
 
-    def render_article_author_per_line( self, article_IN, output_csv_IN = None ):
+    def render_article_author_per_line( self, article_data_IN, output_csv_IN = None ):
 
         """
             Method: render_article_per_line
 
-            Purpose: Accepts an article, renders that article all on one line.
-               Returns the list of elements to add to a CSV file for this
-               article, in the order they should be appended.
+            Purpose: Accepts an Article_Data instance, renders an output line per
+               author in the article, including all article information on each
+               line.  Does not return anything.  Appends each line directly to
+               output.
 
             Params:
-            - article_IN - article that we are going to render in CSV.
-
-            Returns:
-            - list - list of the information for this article, ready to be added to a csv instance.
+            - article_data_IN - article that we are going to render in CSV.
+            - output_csv_IN - optional way to pass in a CSV output object to which you want each line appended.
         """
 
         # return reference
@@ -1189,7 +1218,7 @@ class CsvArticleOutput():
         #-- END check to see if we have output_csv. --#
 
         # make sure we have an article.
-        if ( article_IN is not None ):
+        if ( article_data_IN is not None ):
 
             # grab max_authors_IN and max_sources_IN.
             max_authors_IN = self.max_authors
@@ -1207,22 +1236,22 @@ class CsvArticleOutput():
             #    - reset article_list_OUT and begin again.
 
             # render information actually held in article.
-            article_list_pre_author.extend( self.create_article_list( list_output_type, article_IN ) )
+            article_list_pre_author.extend( self.create_article_list( list_output_type, article_data_IN ) )
 
             #-------------------------------------------------------------------
             # source type counts
             #-------------------------------------------------------------------
 
             # Output counts of sources - total, and broken out by source type.
-            article_list_post_author.extend( self.create_source_count_list( list_output_type, article_IN, '' ) )
+            article_list_post_author.extend( self.create_source_count_list( list_output_type, article_data_IN, '' ) )
 
             #-------------------------------------------------------------------
             # source information
             #-------------------------------------------------------------------
 
             # loop over sources
-            article_source_count = article_IN.article_source_set.count()
-            article_sources = article_IN.article_source_set.order_by( 'person' )
+            article_sources = article_data_IN.article_source_set.order_by( 'person' )
+            article_source_count = article_sources.count()
             for current_source in article_sources:
 
                 # append source to list
@@ -1243,8 +1272,8 @@ class CsvArticleOutput():
             #-------------------------------------------------------------------
 
             # first, see how many authors this article has.
-            article_author_count = article_IN.article_author_set.count()
-            article_authors = article_IN.article_author_set.order_by( 'person' )
+            article_authors = article_data_IN.article_author_set.order_by( 'person' )
+            article_author_count = article_authors.count()
 
             # add author count to pre-author output.
             article_list_pre_author.append( article_author_count )
@@ -1294,20 +1323,20 @@ class CsvArticleOutput():
     #-- END method render_article_author_per_line() --#
 
 
-    def render_article_per_line( self, article_IN ):
+    def render_article_per_line( self, article_data_IN ):
 
         """
             Method: render_article_per_line
 
-            Purpose: Accepts an article, renders that article all on one line.
-               Returns the list of elements to add to a CSV file for this
+            Purpose: Accepts an Article_Data row, renders that article all on one
+               line.  Returns the list of elements to add to a CSV file for this
                article, in the order they should be appended.
 
             Params:
-            - article_IN - article that we are going to render in CSV.
+            - article_data_IN - article that we are going to render in CSV.
 
             Returns:
-            - list - list of the information for this article, ready to be added to a csv instance.
+            - article_list_OUT - list of the information for this article, ready to be added to a csv instance.
         """
 
         # return reference
@@ -1328,22 +1357,22 @@ class CsvArticleOutput():
         list_output_type = CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES
 
         # make sure we have an article.
-        if ( article_IN is not None ):
+        if ( article_data_IN is not None ):
 
             # grab max_authors_IN and max_sources_IN.
             max_authors_IN = self.max_authors
             max_sources_IN = self.max_sources
 
             # render information actually held in article.
-            article_list_OUT.extend( self.create_article_list( list_output_type, article_IN ) )
+            article_list_OUT.extend( self.create_article_list( list_output_type, article_data_IN ) )
 
             #-------------------------------------------------------------------
             # author information
             #-------------------------------------------------------------------
 
             # first, see how many authors this article has.
-            article_author_count = article_IN.article_author_set.count()
-            article_authors = article_IN.article_author_set.order_by( 'person' )
+            article_authors = article_data_IN.article_author_set.order_by( 'person' )
+            article_author_count = article_authors.count()
 
             # add count to output.
             article_list_OUT.append( article_author_count )
@@ -1369,15 +1398,15 @@ class CsvArticleOutput():
             #-------------------------------------------------------------------
 
             # Output counts of sources - total, and broken out by source type.
-            article_list_OUT.extend( self.create_source_count_list( list_output_type, article_IN, '' ) )
+            article_list_OUT.extend( self.create_source_count_list( list_output_type, article_data_IN, '' ) )
 
             #-------------------------------------------------------------------
             # source information
             #-------------------------------------------------------------------
 
             # loop over sources
-            article_source_count = article_IN.article_source_set.count()
-            article_sources = article_IN.article_source_set.order_by( 'person' )
+            article_source_count = article_data_IN.article_source_set.count()
+            article_sources = article_data_IN.article_source_set.order_by( 'person' )
             for current_source in article_sources:
 
                 # append source to list
@@ -1400,20 +1429,19 @@ class CsvArticleOutput():
     #-- END method render_article_per_line() --#
 
 
-    def render_article_source_per_line( self, article_IN, output_csv_IN = None ):
+    def render_article_source_per_line( self, article_data_IN, output_csv_IN = None ):
 
         """
-            Method: render_article_per_line
+            Method: render_article_source_per_line
 
-            Purpose: Accepts an article, renders that article all on one line.
-               Returns the list of elements to add to a CSV file for this
-               article, in the order they should be appended.
+            Purpose: Accepts an Article_Data instance, renders an output line per
+               source in the article, including all article information on each
+               line.  Does not return anything.  Appends each line directly to
+               output.
 
             Params:
-            - article_IN - article that we are going to render in CSV.
-
-            Returns:
-            - list - list of the information for this article, ready to be added to a csv instance.
+            - article_data_IN - article that we are going to render in CSV.
+            - output_csv_IN - optional way to pass in a CSV output object to which you want each line appended.
         """
 
         # return reference
@@ -1448,7 +1476,7 @@ class CsvArticleOutput():
         #-- END check to see if we have output_csv. --#
 
         # make sure we have an article.
-        if ( article_IN is not None ):
+        if ( article_data_IN is not None ):
 
             # grab max_authors_IN and max_sources_IN.
             max_authors_IN = self.max_authors
@@ -1464,15 +1492,15 @@ class CsvArticleOutput():
             #    - reset article_list_OUT and begin again.
 
             # render information actually held in article.
-            article_list_pre_source.extend( self.create_article_list( list_output_type, article_IN ) )
+            article_list_pre_source.extend( self.create_article_list( list_output_type, article_data_IN ) )
 
             #-------------------------------------------------------------------
             # author information
             #-------------------------------------------------------------------
 
             # first, see how many authors this article has.
-            article_author_count = article_IN.article_author_set.count()
-            article_authors = article_IN.article_author_set.order_by( 'person' )
+            article_authors = article_data_IN.article_author_set.order_by( 'person' )
+            article_author_count = article_authors.count()
 
             # add count to output.
             article_list_pre_source.append( article_author_count )
@@ -1498,15 +1526,15 @@ class CsvArticleOutput():
             #-------------------------------------------------------------------
 
             # Output counts of sources - total, and broken out by source type.
-            article_list_pre_source.extend( self.create_source_count_list( list_output_type, article_IN, '' ) )
+            article_list_pre_source.extend( self.create_source_count_list( list_output_type, article_data_IN, '' ) )
 
             #-------------------------------------------------------------------
             # source information
             #-------------------------------------------------------------------
 
             # loop over sources, outputting a row for each.
-            article_source_count = article_IN.article_source_set.count()
-            article_sources = article_IN.article_source_set.order_by( 'person' )
+            article_sources = article_data_IN.article_source_set.order_by( 'person' )
+            article_source_count = article_sources.count()
 
             # check if we have any sources.  Should output article even if no
             #    sources.
@@ -1576,7 +1604,7 @@ class CsvArticleOutput():
         csv_OUT = ''
 
         # declare variables
-        article_query_set = None
+        article_data_query_set = None
         current_topic_count = -1
         current_location_count = -1
         current_author_count = -1
@@ -1594,7 +1622,7 @@ class CsvArticleOutput():
         #magic_source_max = -1
 
         header_list = None
-        current_article = None
+        current_article_data = None
         output_string_buffer = None
         output_csv = None
         current_article_list = None
@@ -1602,17 +1630,17 @@ class CsvArticleOutput():
 
         # first, get an article query set based on the input parameters.
         #article_query_set = output_create_network_query_set( request_IN )
-        article_query_set = self.query_set
+        article_data_query_set = self.query_set
 
         # first, need to figure out max number of authors, sources - Loop over the
         #    article query set to figure out the max of each.
-        for current_article in article_query_set:
+        for current_article_data in article_data_query_set:
 
             # retrieve source and author counts.
-            current_topic_count = current_article.topics.count()
-            current_location_count = current_article.locations.count()
-            current_author_count = current_article.article_author_set.count()
-            current_source_count = current_article.article_source_set.count()
+            current_topic_count = current_article_data.topics.count()
+            current_location_count = current_article_data.locations.count()
+            current_author_count = current_article_data.article_author_set.count()
+            current_source_count = current_article_data.article_source_set.count()
 
             # compare current counts to max counts, update max if current is
             #    greater.
@@ -1679,11 +1707,11 @@ class CsvArticleOutput():
         if ( output_type_IN == CsvArticleOutput.ARTICLE_OUTPUT_TYPE_ARTICLE_PER_LINE ):
 
             # loop over articles.
-            for current_article in article_query_set:
+            for current_article_data in article_data_query_set:
 
                 # pass current_article to render_article_per_line, place result
                 #    in the output csv file.
-                current_article_list = self.render_article_per_line( current_article )
+                current_article_list = self.render_article_per_line( current_article_data )
 
                 # got something back?
                 if ( current_article_list ):
@@ -1698,24 +1726,24 @@ class CsvArticleOutput():
         elif ( output_type_IN == CsvArticleOutput.ARTICLE_OUTPUT_TYPE_SOURCE_PER_LINE ):
 
             # loop over articles.
-            for current_article in article_query_set:
+            for current_article_data in article_data_query_set:
 
                 # pass current_article CSV output buffer to
                 #    render_article_source_per_line, let it deal with placing
                 #    each source's row in the CSV output.
-                self.render_article_source_per_line( current_article, output_csv )
+                self.render_article_source_per_line( current_article_data, output_csv )
 
             #-- END loop over articles to output to CSV.
 
         elif ( output_type_IN == CsvArticleOutput.ARTICLE_OUTPUT_TYPE_AUTHOR_PER_LINE ):
 
             # loop over articles.
-            for current_article in article_query_set:
+            for current_article_data in article_data_query_set:
 
                 # pass current_article CSV output buffer to
                 #    render_article_author_per_line, let it deal with placing
                 #    each author's row in the CSV output.
-                self.render_article_author_per_line( current_article, output_csv )
+                self.render_article_author_per_line( current_article_data, output_csv )
 
             #-- END loop over articles to output to CSV.
 

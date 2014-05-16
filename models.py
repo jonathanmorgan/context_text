@@ -766,21 +766,24 @@ class Newspaper( models.Model ):
 
 
 # Article_Topic model
+#@python_2_unicode_compatible
 #class Article_Topic( models.Model ):
 
-#    topic = models.ForeignKey( Topic )
-#    rank = models.IntegerField()
+    #topic = models.ForeignKey( Topic )
+    #rank = models.IntegerField()
 
     #----------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------
 
-#    def __str__( self ):
-#        string_OUT = '%d - %s' % ( self.rank, self.topic.name )
-#        return string_OUT
+    #def __str__( self ):
+
+    #    string_OUT = '%d - %s' % ( self.rank, self.topic.name )
+    #    return string_OUT
+        
+    #-- END __str__() method --#
 
 #= End Article_Topic Model ======================================================
-
 
 # Article model
 @python_2_unicode_compatible
@@ -864,6 +867,9 @@ class Article( models.Model ):
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
+    # we have the option of adding these relations here, at an article level,
+    #    but for now assuming they are to be coded in Article_Data, not here, so
+    #    we can track agreement, compare coding from different coders.
     #topics = models.ManyToManyField( Article_Topic )
     #authors = models.ManyToManyField( Article_Author )
     #sources = models.ManyToManyField( Article_Source )
@@ -1831,10 +1837,14 @@ class Article_Data( models.Model ):
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
-    #topics = models.ManyToManyField( Article_Topic )
+    # Was saving topics and location per article, not referencing shared topic
+    #    or location tables.  No longer (see topics and locations above).
+    #topics = models.ManyToManyField( Article_Topic, blank = True, null = True )
+    #locations = models.ManyToManyField( Article_Location, blank = True, null = True )
+
+    # Changed to having a separate join table, not ManyToMany auto-generated one.
     #authors = models.ManyToManyField( Article_Author )
     #sources = models.ManyToManyField( Article_Source )
-    #locations = models.ManyToManyField( Article_Location, blank = True )
 
     # Meta-data for this class.
     class Meta:
