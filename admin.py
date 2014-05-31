@@ -84,7 +84,7 @@ class Person_OrganizationInline( admin.TabularInline ):
 
 class PersonAdmin( admin.ModelAdmin ):
     fieldsets = [
-        ( None,                 { 'fields' : [ 'first_name', 'middle_name', 'last_name', 'gender', 'title', 'notes' ] } ),
+        ( None,                 { 'fields' : [ 'first_name', 'middle_name', 'last_name', 'gender', 'title', 'is_ambiguous', 'notes' ] } ),
     ]
 
     # removing the organizational affiliation from the person area, for now, to
@@ -186,7 +186,7 @@ class ArticleSourceInline( admin.StackedInline ):
     extra = 2
     fk_name = 'article_data'
     fieldsets = [
-        ( None,                 { 'fields' : [ 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
+        ( None,                 { 'fields' : [ 'source_type', 'person', 'title', 'more_title', 'organization', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
         ( "Notes (Optional)",
             {
                 'fields' : [ 'notes' ],

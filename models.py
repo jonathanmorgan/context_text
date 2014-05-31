@@ -353,6 +353,7 @@ class Person( models.Model ):
     gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
     title = models.CharField( max_length = 255, blank = True )
     nameparser_pickled = models.TextField( blank = True, null = True )
+    is_ambiguous = models.BooleanField( default = False )
     notes = models.TextField( blank = True )
 
     # Meta-data for this class.
@@ -1831,8 +1832,8 @@ class Article_Data( models.Model ):
     topics = models.ManyToManyField( Topic, blank = True, null = True )
     locations = models.ManyToManyField( Location, blank = True )
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
-    is_sourced = models.BooleanField( default = 1 )
-    can_code = models.BooleanField( default = 1 )
+    is_sourced = models.BooleanField( default = True )
+    can_code = models.BooleanField( default = True )
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -3971,8 +3972,8 @@ class Articles_To_Migrate( models.Model ):
     page = models.IntegerField( blank = True )
     headline = models.CharField( max_length = 255 )
     text = models.TextField( blank = True )
-    is_sourced = models.BooleanField( default = 1 )
-    can_code = models.BooleanField( default = 1 )
+    is_sourced = models.BooleanField( default = True )
+    can_code = models.BooleanField( default = True )
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
 
     #----------------------------------------------------------------------------
