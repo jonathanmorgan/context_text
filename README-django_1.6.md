@@ -8,10 +8,10 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - required python modules (install with pip):
 
-    - django - `(sudo) pip install django` - should install 1.7 (latest)
     - nameparser - `(sudo) pip install nameparser`
     - django - `(sudo) pip install django` (1.6.X preferred, latest 1.4.X or 1.5.X should work, too)
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
+    - south - `(sudo) pip install south`
     - django-ajax-selects
 
 ### Install "research" django project
@@ -46,6 +46,26 @@ sourcenet is a django application for capturing and analyzing networks of news b
         - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
         - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
+    - add 'south' to your list of INSTALLED\_APPS:
+
+            INSTALLED_APPS = (
+                'django.contrib.auth',
+                'django.contrib.contenttypes',
+                'django.contrib.sessions',
+                'django.contrib.sites',
+                'django.contrib.messages',
+                'django.contrib.staticfiles',
+                # Uncomment the next line to enable the admin:
+                # 'django.contrib.admin',
+                # Uncomment the next line to enable admin documentation:
+                # 'django.contrib.admindocs',
+                'south',
+            )
+
+    - initialize the database - go into directory where manage.py is installed, and run `python manage.py syncdb`.
+    
+        - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
+
     - add 'sourcenet' to your list of INSTALLED\_APPS:
 
             INSTALLED_APPS = (
@@ -56,18 +76,16 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
                 # Uncomment the next line to enable the admin:
-                'django.contrib.admin',
+                # 'django.contrib.admin',
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
+                'south',
                 'sourcenet',
             )
 
-    - initialize the database - go into directory where manage.py is installed, and run `python manage.py syncdb`.
+    - Initialize the sourcenet tables using south:
     
-            python manage.py migrate
-
-        - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
-
+            python manage.py migrate sourcenet
 
 ### Enable django admins:
         
@@ -77,7 +95,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         (sudo) apt-get install libapache2-mod-wsgi
 
-- configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
+- configure your web server so it knows of research/research/wsgi.py.  If apache, add something like this to the apache config (in ubuntu, for example, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`):
 
         WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
         WSGIProcessGroup sourcenet-1
@@ -99,17 +117,15 @@ sourcenet is a django application for capturing and analyzing networks of news b
             </Files>
         </Directory>
 
-    - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
+- If you are using apache 2.4 on ubuntu 13.10:
 
-    - If you are using apache 2.4 on ubuntu 13.10 or greater:
-
-        - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
-        
-        - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
-        
-        - enable it with the a2enconf command:
+    - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
     
-                (sudo) a2enconf django-sourcenet
+    - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
+    
+    - enable it with the a2enconf command:
+
+            (sudo) a2enconf django-sourcenet
 
 - Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
 
@@ -119,39 +135,41 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - open up the `settings.py` file in `<project_folder>/research` and:
 
-    - make sure the following are in the INSTALLED_APPLICATIONS list to get the admins to work.
+    - follow the instructions there for uncommenting lines in INSTALLED_APPLICATIONS to get the admins to work.
 
+            # Uncomment the next line to enable the admin:
             'django.contrib.admin',
+            # Uncomment the next line to enable admin documentation:
             'django.contrib.admindocs',
             
-    - In django 1.6 and up, the django.contrib.admin line should already be present and uncommented, and you'll have to just add the admindocs line.
+    - In django 1.6, the django.contrib.admin line should already be uncommented, and you'll have to just add the admindocs line.
             
-- if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py migrate`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
+- if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py syncdb`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
     
-    - In django 1.6 and up, the django.contrib.admin application will already be uncommented by default, so you'll have done this above.
+    - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have done this above.
 
-- open up the `urls.py` file in the folder where settings.py lives and add the following line to the urlpatterns variable to complete admin documentation setup:
-
-        url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
-    urls.py should look like the following once you are done:
+- open up the `urls.py` file in the folder where settings.py lives and follow the instructions there for uncommenting lines to get the admins to work.
 
         from django.conf.urls import patterns, include, url
         
+        # Uncomment the next two lines to enable the admin:
         from django.contrib import admin
         admin.autodiscover()
         
         urlpatterns = patterns('',
-
             # Examples:
             # url(r'^$', 'research.views.home', name='home'),
-            # url(r'^blog/', include('blog.urls')),
+            # url(r'^research/', include('research.foo.urls')),
         
-            url( r'^admin/', include( admin.site.urls ) ),
-            url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
+            # Uncomment the admin/doc line below to enable admin documentation:
+            url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+        
+            # Uncomment the next line to enable the admin:
+            url(r'^admin/', include(admin.site.urls)),
         )
 
+    - In django 1.6, the admin.site.urls line should already be uncommented, and you'll have to just add the admindocs line.
+        
 #### Static file support:
 
 - [https://docs.djangoproject.com/en/dev/howto/static-files/](https://docs.djangoproject.com/en/dev/howto/static-files/)
@@ -180,18 +198,22 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - add the following to resesarch/settings.py:
 
-    - add 'ajax_select' to your list of INSTALLED\_APPS.  Result:
+    - add 'django-ajax-selects' to your list of INSTALLED\_APPS.  Result:
 
             INSTALLED_APPS = (
-                'django.contrib.admin',
-                'django.contrib.admindocs',
                 'django.contrib.auth',
                 'django.contrib.contenttypes',
                 'django.contrib.sessions',
+                'django.contrib.sites',
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
+                # Uncomment the next line to enable the admin:
+                # 'django.contrib.admin',
+                # Uncomment the next line to enable admin documentation:
+                # 'django.contrib.admindocs',
+                'south',
                 'sourcenet',
-                'ajax_select',
+                'django-ajax-selects',
             )
         
     - add the following to the bottom of the file:
@@ -215,17 +237,15 @@ sourcenet is a django application for capturing and analyzing networks of news b
             AJAX_SELECT_BOOTSTRAP = True
             AJAX_SELECT_INLINES = 'inline'    
 
-- add the following to resesarch/urls.py to enable django-ajax-selects URL lookups.
+- add the following to resesarch/urls.py to enable djang-ajax-selects URL lookups.
 
     - Add:
 
-            # django-ajax-selects URLs
             from ajax_select import urls as ajax_select_urls
             
         and
 
-            # django-ajax-select URLs
-            url( r'^admin/lookups/', include( ajax_select_urls ) ),
+            url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
 
     - Example Result:
 

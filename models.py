@@ -68,6 +68,9 @@ True!
 '''
 
 # Django core imports
+#import django
+#django.setup()
+
 #from django.core.exceptions import DoesNotExist
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import MultipleObjectsReturned
@@ -796,7 +799,11 @@ class Article( models.Model ):
     
     
     CODER_USERNAME_AUTOMATED = "automated"
-    CODER_USER_AUTOMATED = User.objects.get( username = "automated" )
+    # Can't reference django models in class context anymore in models files:
+    #    http://stackoverflow.com/questions/25537905/django-1-7-throws-django-core-exceptions-appregistrynotready-models-arent-load
+    # Added class method get_automated_coding_user(), call that to get User
+    #    instance instead of referencing this variable.
+    CODER_USER_AUTOMATED = None
     
     # parameters that can be passed in to class methods 
     PARAM_AUTOPROC_ALL = "autoproc_all"
@@ -1140,6 +1147,40 @@ class Article( models.Model ):
 
         
     @classmethod
+    def get_automated_coding_user( cls, *args, **kwargs ):
+    
+        '''
+        Can't reference django models in class context anymore in models files:
+            http://stackoverflow.com/questions/25537905/django-1-7-throws-django-core-exceptions-appregistrynotready-models-arent-load
+        So, this method gets User instance for automated user username instead.
+        '''
+        
+        # return reference
+        user_OUT = None
+
+        # declare variables
+        temp_user = None
+        
+        # User already retrieved?
+        if ( cls.CODER_USER_AUTOMATED == None ):
+        
+            # get user
+            temp_user = User.objects.get( username = cls.CODER_USERNAME_AUTOMATED )
+            
+            # store it
+            cls.CODER_USER_AUTOMATED = temp_user
+            
+        #-- END check to see if user already stored in class. --#
+
+        # return it.
+        user_OUT = cls.CODER_USER_AUTOMATED
+
+        return user_OUT
+        
+    #-- END class method get_automated_coding_user() --#
+    
+    
+    @classmethod
     def process_articles( cls, *args, **kwargs ):
 
         '''
@@ -1343,7 +1384,7 @@ class Article( models.Model ):
         output_debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"", me, "--- " )
         
         # first, see if we have article data for automated coder.
-        automated_user = self.CODER_USER_AUTOMATED
+        automated_user = self.get_automated_coding_user()
         my_article_data = self.get_article_data_for_coder( automated_user )
         
         if ( my_article_data ):
