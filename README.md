@@ -2,15 +2,14 @@
 
 # sourcenet
 
-sourcenet is a django application for capturing and analyzing networks of news based on articles.
+sourcenet is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7.  south_migrations are present, but they won't be updated going forward.
 
 ## Installation and configuration
 
 - required python modules (install with pip):
 
-    - django - `(sudo) pip install django` - should install 1.7 (latest)
+    - django - `(sudo) pip install django` - 1.7.X - latest 1.4.X, 1.5.X, or 1.6.X should work, too, but migrations won't - south migrations are no longer being updated.
     - nameparser - `(sudo) pip install nameparser`
-    - django - `(sudo) pip install django` (1.6.X preferred, latest 1.4.X or 1.5.X should work, too)
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects
 
@@ -62,7 +61,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 'sourcenet',
             )
 
-    - initialize the database - go into directory where manage.py is installed, and run `python manage.py syncdb`.
+    - initialize the database - go into directory where manage.py is installed, and run `python manage.py migrate`.
     
             python manage.py migrate
 
