@@ -11,7 +11,11 @@ sourcenet is a django application for capturing and analyzing networks of news b
     - django - `(sudo) pip install django` - 1.7.X - latest 1.4.X, 1.5.X, or 1.6.X should work, too, but migrations won't - south migrations are no longer being updated.
     - nameparser - `(sudo) pip install nameparser`
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
-    - django-ajax-selects
+    - django-ajax-selects - `(sudo) pip install django-ajax-selects`
+    
+- python modules that I find helpful:
+
+    - ipython - `(sudo) pip install ipython`
 
 ### Install "research" django project
 
