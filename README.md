@@ -339,7 +339,7 @@ Once you have coded your articles, you can output network data from them by goin
         - _"Publications"_ - `publications` - list of IDs of newspapers you want included.
         - _"Coders"_ - `coders` - list of IDs of coders whose data you want included.
         - _"Topics"_ - `topics` - list of IDs of topics whose data you want included.
-        - _"Unique Identifier List (comma-delimited)" - `unique_identifiers` - list of unique identifiers of articles whose data you want included.
+        - _"Unique Identifier List (comma-delimited)"_ - `unique_identifiers` - list of unique identifiers of articles whose data you want included.
         - _"Allow duplicate articles"_ - `allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
         - _"Output Type"_ - `output_type` - type of output you want, currently only CSV for UCINet is supported ("Simple Matrix").
         - _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
@@ -356,7 +356,7 @@ Once you have coded your articles, you can output network data from them by goin
         - _"Person Publications"_ - `person_publications` - list of IDs of newspapers you want included.
         - _"Person Coders"_ - `person_coders` - list of IDs of coders whose data you want included.
         - _"Person Topics"_ - `person_topics` - list of IDs of topics whose data you want included.
-        - _"Unique Identifier List (comma-delimited)" - `person_unique_identifiers` - list of unique identifiers of articles whose data you want included.
+        - _"Unique Identifier List (comma-delimited)"_ - `person_unique_identifiers` - list of unique identifiers of articles whose data you want included.
         - _"Person Allow duplicate articles"_ - `person_allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
 
 ## License
