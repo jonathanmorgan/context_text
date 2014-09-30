@@ -331,33 +331,37 @@ Once you have coded your articles, you can output network data from them by goin
 
 - Parameters you can set to filter network creation can be seen on the web page for outputting network data.  If you want to interact programmatically, they are listed in the class /export/network_output.py, and you can see the expected values in the method `create_query_set()`.
 
-    - Article parameters - For convenience, here is a list that was current at the time of this update of parameters you can use.  For each, the list contains the string displayed on the web page, then the actual parameter names:
+### Article selection parameters
+
+Article parameters - For convenience, here is a list that was current at the time of this update of parameters you can use.  For each, the list contains the string displayed on the web page, then the actual parameter names:
     
-        - _"Start Date (YYYY-MM-DD)"_ - `start_date` - publication date - articles will be included that were published on or after this date.
-        - _"End Date (YYYY-MM-DD)"_ - `end_date` - publication date - articles will be included that were published on or before this date.
-        - _"* Fancy date range"_ - `date_range` - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
-        - _"Publications"_ - `publications` - list of IDs of newspapers you want included.
-        - _"Coders"_ - `coders` - list of IDs of coders whose data you want included.
-        - _"Topics"_ - `topics` - list of IDs of topics whose data you want included.
-        - _"Unique Identifier List (comma-delimited)"_ - `unique_identifiers` - list of unique identifiers of articles whose data you want included.
-        - _"Allow duplicate articles"_ - `allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
-        - _"Output Type"_ - `output_type` - type of output you want, currently only CSV for UCINet is supported ("Simple Matrix").
-        - _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
-        - _"Include headers"_ - `?` - ?
-        - _"Include capacities"_ - `?` - ?
-        - _"Exclude capacities"_ - `?` - ?
-        - _not on form_ - `header_prefix` -  for output, optional prefix you want appended to front of column header names.
+- _"Start Date (YYYY-MM-DD)"_ - `start_date` - publication date - articles will be included that were published on or after this date.
+- _"End Date (YYYY-MM-DD)"_ - `end_date` - publication date - articles will be included that were published on or before this date.
+- _"* Fancy date range"_ - `date_range` - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+- _"Publications"_ - `publications` - list of IDs of newspapers you want included.
+- _"Coders"_ - `coders` - list of IDs of coders whose data you want included.
+- _"Topics"_ - `topics` - list of IDs of topics whose data you want included.
+- _"Unique Identifier List (comma-delimited)"_ - `unique_identifiers` - list of unique identifiers of articles whose data you want included.
+- _"Allow duplicate articles"_ - `allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
+- _"Output Type"_ - `output_type` - type of output you want, currently only CSV for UCINet is supported ("Simple Matrix").
+- _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
+- _"Include headers"_ - `?` - ?
+- _"Include capacities"_ - `?` - ?
+- _"Exclude capacities"_ - `?` - ?
+- _not on form_ - `header_prefix` -  for output, optional prefix you want appended to front of column header names.
 
-    - Person parameters - When using the "Select People" area to specify separate filter criteria for the people to include in the network data, it will filter out unknown people.  If you leave the "Select people" fields empty, your network data will include people of all types ("unknown", "source", "reporter").  Unknowns are probaby not useful for network data, so I'll probably eventually add a flag to filter out unknowns.  You can use the following fields to filter the people who are included in your network data:
+### Person selection parameters
 
-        - _"People from (YYYY-MM-DD)"_ - `person_start_date` - publication date - articles will be included that were published on or after this date.
-        - _"People to (YYYY-MM-DD)"_ - `person_end_date` - publication date - articles will be included that were published on or before this date.
-        - _"* Fancy person date range"_ - `person_date_range` - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
-        - _"Person Publications"_ - `person_publications` - list of IDs of newspapers you want included.
-        - _"Person Coders"_ - `person_coders` - list of IDs of coders whose data you want included.
-        - _"Person Topics"_ - `person_topics` - list of IDs of topics whose data you want included.
-        - _"Unique Identifier List (comma-delimited)"_ - `person_unique_identifiers` - list of unique identifiers of articles whose data you want included.
-        - _"Person Allow duplicate articles"_ - `person_allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
+Person parameters - When using the "Select People" area to specify separate filter criteria for the people to include in the network data, it will filter out unknown people.  If you leave the "Select people" fields empty, your network data will include people of all types ("unknown", "source", "reporter").  Unknowns are probaby not useful for network data, so I'll probably eventually add a flag to filter out unknowns.  You can use the following fields to filter the people who are included in your network data:
+
+- _"People from (YYYY-MM-DD)"_ - `person_start_date` - publication date - articles will be included that were published on or after this date.
+- _"People to (YYYY-MM-DD)"_ - `person_end_date` - publication date - articles will be included that were published on or before this date.
+- _"* Fancy person date range"_ - `person_date_range` - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+- _"Person Publications"_ - `person_publications` - list of IDs of newspapers you want included.
+- _"Person Coders"_ - `person_coders` - list of IDs of coders whose data you want included.
+- _"Person Topics"_ - `person_topics` - list of IDs of topics whose data you want included.
+- _"Unique Identifier List (comma-delimited)"_ - `person_unique_identifiers` - list of unique identifiers of articles whose data you want included.
+- _"Person Allow duplicate articles"_ - `person_allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
 
 ## License
 
