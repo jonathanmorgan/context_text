@@ -1,10 +1,10 @@
-<!-- TOC -->
-
 # sourcenet
+
+<!-- TOC -->
 
 sourcenet is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7.  south_migrations are present, but they won't be updated going forward.
 
-## Installation and configuration
+# Installation and configuration
 
 - required python modules (install with pip):
 
@@ -17,7 +17,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
     - ipython - `(sudo) pip install ipython`
 
-### Install "research" django project
+## Install "research" django project
 
 - install a django project named "research".
 
@@ -40,7 +40,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
             git clone https://github.com/jonathanmorgan/python_utilities.git
 
-### Configure database, applications:
+## Configure database, applications:
 
 - in research/research/settings.py:
 
@@ -72,7 +72,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
         - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
 
-### Enable django admins:
+## Enable django admins:
         
 - you need to install a web server on your machine (apache works well).
 
@@ -155,7 +155,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         )
 
-#### Static file support:
+### Static file support:
 
 - [https://docs.djangoproject.com/en/dev/howto/static-files/](https://docs.djangoproject.com/en/dev/howto/static-files/)
 
@@ -171,13 +171,13 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         (sudo) python manage.py collectstatic
         
-#### Test!
+### Test!
 
 - test by going to the URL:
 
         http://<your_server>/sourcenet/admin/
 
-### Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
+## Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
 
 - get the admins working.
 
@@ -258,7 +258,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
             )
             
-### Enable sourcenet network data output pages
+## Enable sourcenet network data output pages
 
 - get the admins working.
 
@@ -283,23 +283,23 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 url( r'^admin/', include( admin.site.urls ) ),
             )
             
-#### Test!
+### Test!
 
 - test by going to the URL:
 
         http://<your_server>/sourcenet/sourcenet/output/network
 
-## Collecting Articles
+# Collecting Articles
 
 There is an example application in sourcenet/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
 
-## Coding articles:
+# Coding articles:
 
 To code articles by hand, use the django admin pages (access to which should have been enabled once you configured your web server so it knows of the wsgi.py file above).  The article model's admin page has been implemented so it is relatively easy to use to code articles, and if you want to refine or alter what is collected, you can alter it in sourcenet/admins.py.
 
 A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in sourcenet/protocol/sourcenet_CA_protocol.pdf.
 
-## Creating Network Data
+# Creating Network Data
 
 - The Article model contains code for processing articles and creating network data from them.
 
@@ -317,7 +317,7 @@ A draft content analysis protocol for assessing sources in a way that can be use
 
         - Article.PARAM\_AUTOPROC\_AUTHORS - if this is set to true, processes the authors/bylines of an article.
 
-## Outputting Network Data
+# Outputting Network Data
 
 Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/sourcenet/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
 
@@ -331,7 +331,7 @@ Once you have coded your articles, you can output network data from them by goin
 
 - Parameters you can set to filter network creation can be seen on the web page for outputting network data.  If you want to interact programmatically, they are listed in the class /export/network_output.py, and you can see the expected values in the method `create_query_set()`.
 
-### Article selection parameters
+## Article selection parameters
 
 Article parameters - For convenience, here is a list that was current at the time of this update of parameters you can use.  For each, the list contains the string displayed on the web page, then the actual parameter names:
     
@@ -350,7 +350,7 @@ Article parameters - For convenience, here is a list that was current at the tim
 - _"Exclude capacities"_ - `?` - ?
 - _not on form_ - `header_prefix` -  for output, optional prefix you want appended to front of column header names.
 
-### Person selection parameters
+## Person selection parameters
 
 Person parameters - When using the "Select People" area to specify separate filter criteria for the people to include in the network data, it will filter out unknown people.  If you leave the "Select people" fields empty, your network data will include people of all types ("unknown", "source", "reporter").  Unknowns are probaby not useful for network data, so I'll probably eventually add a flag to filter out unknowns.  You can use the following fields to filter the people who are included in your network data:
 
@@ -363,7 +363,25 @@ Person parameters - When using the "Select People" area to specify separate filt
 - _"Unique Identifier List (comma-delimited)"_ - `person_unique_identifiers` - list of unique identifiers of articles whose data you want included.
 - _"Person Allow duplicate articles"_ - `person_allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
 
-## License
+## What gets output
+
+The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
+
+- _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
+- _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+- _network data output_ - Actual delimited network matrix (values in a row are separated by two spaces - "  ") and labels for each column (and row - the matrix is symmetric).  More precisely, contains:
+    - N - count of people (rows/columns) in the network matrix.
+    - delimited network data matrix, one row to a line, with values in the row separated by two spaces ("  ").  There will be N rows and columns.
+    - list of length N of person type ID for each person in the matrix.  Can be used in UCINet to assign person type values to each node for analysis.
+    - labels for each column/row.  The label consists of a counter of the people, each person's system ID, and then the type of the person.  There are two different versions of this list included:
+        - list of column/row labels (ordered top-to-bottom for columns, left-to-right for rows) for each column/row, one to a line.
+        - list of column/row labels all in one line, values in quotation marks, each value separated by a comma, for use in analysis (inclusion in a spreadsheet, etc.).
+
+## Importing data into UCINet
+
+
+
+# License
 
 Copyright 2010-present (2014) Jonathan Morgan
 

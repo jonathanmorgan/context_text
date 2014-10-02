@@ -600,7 +600,11 @@ class NetworkOutput( object ):
         param_value = ''
         param_value_list = None
         param_output_string = ''
-        output_string_list = []
+        article_output_string_list = []
+        article_output_string = ""
+        person_output_string_list = []
+        person_output_string = ""
+        list_separator_string = ""
 
         # retrieve request
         request_IN = self.request
@@ -610,7 +614,7 @@ class NetworkOutput( object ):
 
             # get list of expected params
             expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
-
+            
             # loop over expected parameters, grabbing each and adding it to the
             #    output string.
             for param_name, param_type in expected_params.items():
@@ -638,16 +642,37 @@ class NetworkOutput( object ):
 
                 #-- END handle different types of parameters appropriately --#
 
-                # append closing double quote, then append output string to
-                #    output string list.
-                param_output_string += "\""
-                output_string_list.append( param_output_string )
+                # append closing double quote and newline.
+                param_output_string += "\";"
 
-            # END loop over expected parameters
+                # then append output string to appropriate output string list,
+                #    depending on type.  To check, see if param name starts with
+                #    "person_" (stored in self.PARAM_PERSON_PREFIX).
+                if ( param_name.startswith( self.PARAM_PERSON_PREFIX ) == True ):
+                
+                    # person param.
+                    person_output_string_list.append( param_output_string )
+                    
+                else:
+                
+                    # article param.
+                    article_output_string_list.append( param_output_string )                    
+                
+                #-- END Check to see which list we append to. --#
 
-            # now, join the parameters together, separated by "; ".
-            string_OUT = "; "
-            string_OUT = string_OUT.join( output_string_list )
+            #-- END loop over expected parameters --#
+
+            # initialize article and person parameter output strings.
+            article_output_string = "Article selection parameters:\n-----------------------------\n"
+            person_output_string = "Person selection parameters:\n----------------------------\n"
+
+            # now, join the parameters together for each, separated by "\n".
+            list_separator_string = "\n"
+            article_output_string += list_separator_string.join( article_output_string_list )
+            person_output_string += list_separator_string.join( person_output_string_list )
+            
+            # And, finally, add them all together.
+            string_OUT = article_output_string + "\n\n" + person_output_string
 
         #-- END check to see if we have a request --#
 

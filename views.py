@@ -318,7 +318,11 @@ def output_network( request_IN ):
             network_outputter.set_request( request_IN )
 
             # For now, output plain string
-            output_string = network_outputter.debug_parameters()
+            output_string += "=======================\n"
+            output_string += "parameter overview:\n"
+            output_string += "=======================\n"
+            output_string += "\n"
+            output_string += network_outputter.debug_parameters()
 
             #-------------------------------------------------------------------
             # summary info.
@@ -330,14 +334,18 @@ def output_network( request_IN ):
             # get count of queryset return items
             article_data_count = network_query_set.count()
 
-            output_string += "\n\nTotal article data rows returned: " + str( article_data_count ) + "\n\n\n"
+            output_string += "\n\n\n"
+            output_string += "=======================\n"
+            output_string += "article overview:\n"
+            output_string += "=======================\n"
+            output_string += "\nTotal article data rows returned: " + str( article_data_count ) + "\n\n"
 
             # loop over the query set.
             query_counter = 0
             for current_item in network_query_set:
 
                 query_counter += 1
-                output_string += "- ( " + str( query_counter ) + " ) " + current_item.article.headline + "\n"
+                output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
 
             #-- END loop over articles to list out headlines. --#
 

@@ -291,13 +291,18 @@ class NetworkDataOutput( object ):
     def create_label_string( self, delimiter_IN = OUTPUT_END_OF_LINE, quote_character_IN = '' ):
 
         """
-            Method: create_row_header_string()
+            Method: create_label_string()
 
             Purpose: retrieves the master person list from the instance, uses it
                to output a list of the person IDS and their source types, one to
                a line, that could be pasted into a column next to the attributes
                or data to make it more readily understandable for someone
-               eye-balling it.
+               eye-balling it.  Each person's label consists of:
+               "<person_counter>__<person_id>__<person_type>"
+               WHERE:
+               - <person_counter> is the simple integer count of people in list, incremented as each person is added.
+               - <person_id> is the ID of the person's Person record in the system.
+               - <person_type> is the string person type of the person, then a hyphen, then the person type ID of that type.
 
             Returns:
             - string representation of labels for each row in network and attributes.
@@ -493,23 +498,16 @@ class NetworkDataOutput( object ):
     def create_person_type_attribute_string( self ):
 
         """
-            Method: add_reciprocal_relation()
+            Method: create_person_type_attribute_string()
 
-            Purpose: Accepts two person IDs.  For each, goes into the nested
-               connection map, grabs that person's connection dictionary, and
-               checks if the other person is in the map.  If so, grabs the
-               counter for number of contacts and increments it by one.  If not,
-               adds the person and sets counter to 1.
+            Purpose: 
 
             Preconditions: connection_map must be initialized to a dictionary.
 
-            Params:
-            - person_1_id_IN - person ID of 1st person to connect.
-            - person_2_id_IN - person ID of 2nd person to connect.
+            Params: none
 
             Returns:
-            - string status message, either STATUS_OK if success, or
-               STATUS_ERROR_PREFIX followed by descriptive error message.
+            - ?
         """
 
         # return reference
@@ -1110,7 +1108,7 @@ class NetworkDataOutput( object ):
 
         """
             Assumes query set of articles has been placed in this instance.
-               Uses the query set to output CSV data in the format specified in
+               Uses the query set to output delimited data in the format specified in
                the output_type instance variable.  If one line per article, has
                sets of columns for as many authors and sources as are present in
                the articles with the most authors and sources, respectively.
@@ -1118,13 +1116,15 @@ class NetworkDataOutput( object ):
             Preconditions: assumes that we have a query set of articles stored
                in the instance.  If not, does nothing, returns empty string.
 
-            Postconditions: returns the CSV network data, in a string.
+            Postconditions: returns the delimited network data, each column separated by two spaces, in a string.
 
-            Parameters:
-            - request_IN - django HTTP request instance that contains parameters we use to generate network data.
+            Parameters - all inputs are stored in instance variables:
+            - self.query_set - Query set of articles for which we want to create network data.
+            - self.person_dictionary - QuerySet of people we want included in our network (can include people not mentioned in an article, in case we want to include all people from two different time periods, for example).
+            - self.inclusion_params
 
             Returns:
-            - String - CSV output for the network described by the articles selected based on the parameters passed in.
+            - String - delimited output (two spaces separate each column value in a row) for the network described by the articles selected based on the parameters passed in.
         """
 
         # return reference
@@ -1147,6 +1147,10 @@ class NetworkDataOutput( object ):
         # make sure each of these has something in it.
         if ( ( article_data_query_set ) and ( person_dict ) ):
 
+            #--------------------------------------------------------------------
+            # create ties
+            #--------------------------------------------------------------------
+            
             # loop over the articles.
             for current_article_data in article_data_query_set:
 
@@ -1182,6 +1186,10 @@ class NetworkDataOutput( object ):
 
             #-- END loop over articles.
 
+            #--------------------------------------------------------------------
+            # build person list (list of network matrix rows/columns)
+            #--------------------------------------------------------------------
+            
             # now that all relations are mapped, need to build our master person
             #    list, so we can loop to build out the network.  All people who
             #    need to be included should be in the person_dictionary passed
@@ -1197,6 +1205,10 @@ class NetworkDataOutput( object ):
                 self.debug += "\n\nParam list:\n" + str( self.inclusion_params ) + "\n\n"
             #-- END DEBUG --#
 
+            #--------------------------------------------------------------------
+            # render network data based on people and ties.
+            #--------------------------------------------------------------------
+            
             # then, need to output.  For each network, output the network, then also
             #    output an attribute file that says, for all people whether each
             #    person was a reporter or a source.
