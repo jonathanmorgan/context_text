@@ -52,6 +52,7 @@ from sourcenet.models import Article_Data
 # Import sourcenet export classes.
 from sourcenet.export.csv_article_output import CsvArticleOutput
 from sourcenet.export.network_data_output import NetworkDataOutput
+from sourcenet.export.ndo_simple_matrix import NDO_SimpleMatrix
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -124,13 +125,21 @@ class NetworkOutput( object ):
     ]
 
     # variables for choosing yes or no.
-    CHOICE_YES = NetworkDataOutput.CHOICE_YES
-    CHOICE_NO = NetworkDataOutput.CHOICE_NO
+    CHOICE_YES = 'yes'
+    CHOICE_NO = 'no'
 
     # choices for yes or no decision.
     CHOICES_YES_OR_NO_LIST = [
         ( CHOICE_NO, "No" ),
         ( CHOICE_YES, "Yes" )
+    ]
+
+    # Network output types
+    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = "simple_matrix"
+    NETWORK_OUTPUT_TYPE_DEFAULT = NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX
+    
+    NETWORK_OUTPUT_TYPE_CHOICES_LIST = [
+        ( NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX, "Simple Matrix" ),
     ]
 
     #---------------------------------------------------------------------------
@@ -681,6 +690,57 @@ class NetworkOutput( object ):
     #-- end method debug_parameters() ------------------------------------------
 
 
+    def get_string_property( self, prop_name_IN, default_IN = '' ):
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        
+        # try to retrieve value - for now, reference nested request.POST
+        value_OUT = self.request.POST.get( prop_name_IN, default_IN )
+        
+        return value_OUT
+        
+    #-- END method get_string_property() --#
+    
+
+    def get_NDO_instance( self ):
+
+        '''
+        Assumes there is an output type property specified in the POST parameters
+           passed in as part of the current request.  Retrieves this output type,
+           creates a NetworkDataOutput implementer instance to match the type,
+           then returns the instance.  If no type or unknown type, returns None.
+        '''
+        
+        # return reference
+        NDO_instance_OUT = None
+
+        # declare variables
+        output_type_IN = ""
+
+        # get output type.
+        output_type_IN = self.get_string_property( self.PARAM_OUTPUT_TYPE )
+        
+        # make instance for output type.
+        if ( output_type_IN == self.NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX ):
+        
+            # simple matrix.
+            NDO_instance_OUT = NDO_SimpleMatrix()
+        
+        else:
+        
+            # no output type, or unknown.  Make simple output matrix.
+            NDO_instance_OUT = NDO_SimpleMatrix()
+        
+        #-- END check to see what type we have. --#
+
+        return NDO_instance_OUT
+
+    #-- END get_NDO_instance() --#
+
+
     def render_csv_article_data( self, query_set_IN ):
 
         """
@@ -857,7 +917,7 @@ class NetworkOutput( object ):
         # declare variables
         network_data_outputter = None
         person_dictionary = None
-        #output_type_IN = ''
+        output_type_IN = ''
         network_label_IN = ''
         output_headers_IN = ''
 
@@ -868,7 +928,7 @@ class NetworkOutput( object ):
             person_dictionary = self.create_person_dict()
 
             # create instance of NetworkDataOutput.
-            network_data_outputter = NetworkDataOutput()
+            network_data_outputter = self.get_NDO_instance()
 
             # initialize it.
             network_data_outputter.set_query_set( query_set_IN )

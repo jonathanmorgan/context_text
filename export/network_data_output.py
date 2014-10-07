@@ -1,5 +1,5 @@
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2014 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -20,6 +20,8 @@ if __name__ == "__main__":
 # imports (in alphabetical order by package, then by name)
 #===============================================================================
 
+# python libraries
+from abc import ABCMeta, abstractmethod
 
 #import copy
 
@@ -34,12 +36,19 @@ from sourcenet.models import Article_Source
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
 
-
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
 class NetworkDataOutput( object ):
+
+    
+    #---------------------------------------------------------------------------
+    # META!!!
+    #---------------------------------------------------------------------------
+
+    
+    __metaclass__ = ABCMeta
 
 
     #---------------------------------------------------------------------------
@@ -48,7 +57,7 @@ class NetworkDataOutput( object ):
 
 
     # article output type constants
-    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = 'matrix'
+    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = 'simple_matrix'
 
     OUTPUT_TYPE_CHOICES_LIST = [
         ( NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX, "Simple Matrix" ),
@@ -76,22 +85,12 @@ class NetworkDataOutput( object ):
     CHOICE_YES = 'yes'
     CHOICE_NO = 'no'
 
-    # choices for yes or no decision.
-    CHOICES_YES_OR_NO_LIST = [
-        ( CHOICE_NO, "No" ),
-        ( CHOICE_YES, "Yes" )
-    ]
-
     # source types
     SOURCE_TYPE_INDIVIDUAL = 'individual'
 
     # source contact types
     SOURCE_CONTACT_TYPE_DIRECT = 'direct'
     SOURCE_CONTACT_TYPE_EVENT = 'event'
-
-    # output constants
-    OUTPUT_END_OF_LINE = "\n"
-    OUTPUT_DEFAULT_COLUMN_SEPARATOR = "  "
 
     # DEBUG constant
     DEBUG = False
@@ -286,264 +285,6 @@ class NetworkDataOutput( object ):
         return status_OUT
 
     #-- END method add_reciprocal_relation --#
-
-
-    def create_label_string( self, delimiter_IN = OUTPUT_END_OF_LINE, quote_character_IN = '' ):
-
-        """
-            Method: create_label_string()
-
-            Purpose: retrieves the master person list from the instance, uses it
-               to output a list of the person IDS and their source types, one to
-               a line, that could be pasted into a column next to the attributes
-               or data to make it more readily understandable for someone
-               eye-balling it.  Each person's label consists of:
-               "<person_counter>__<person_id>__<person_type>"
-               WHERE:
-               - <person_counter> is the simple integer count of people in list, incremented as each person is added.
-               - <person_id> is the ID of the person's Person record in the system.
-               - <person_type> is the string person type of the person, then a hyphen, then the person type ID of that type.
-
-            Returns:
-            - string representation of labels for each row in network and attributes.
-        """
-
-        # return reference
-        string_OUT = ""
-
-        # declare variables
-        master_list = None
-        my_label = ''
-        current_person_id = -1
-        person_count = -1
-        current_type = ''
-        current_type_id = -1
-        current_value = ''
-        delimiter = delimiter_IN
-        unknown_count = 0
-        author_count = 0
-        source_count = 0
-        both_count = 0
-
-        # get master list
-        master_list = self.get_master_person_list()
-
-        # got something?
-        if ( master_list ):
-
-            # loop over sorted person list, building label line for each person.
-            person_count = 0
-            for current_person_id in sorted( master_list ):
-
-                person_count += 1
-
-                # get current person type and type ID
-                current_type = self.get_person_type( current_person_id )
-                current_type_id = self.get_person_type_id( current_person_id )
-
-                # increment count
-                if ( current_type == NetworkDataOutput.PERSON_TYPE_UNKNOWN ):
-                    unknown_count += 1
-                elif ( current_type == NetworkDataOutput.PERSON_TYPE_AUTHOR ):
-                    author_count += 1
-                elif ( current_type == NetworkDataOutput.PERSON_TYPE_SOURCE ):
-                    source_count += 1
-                elif ( current_type == NetworkDataOutput.PERSON_TYPE_BOTH ):
-                    both_count += 1
-
-                # append the person's row to the output string.
-                current_value = str( person_count ) + "__" + str( current_person_id ) + "__" + current_type + "-" + str( current_type_id )
-
-                # do we want quotes?
-                if ( quote_character_IN != '' ):
-
-                    # yes.  Add quotes around the value.
-                    current_value = quote_character_IN + current_value + quote_character_IN
-
-                #-- END quote values check --#
-
-                # append to output
-                string_OUT += current_value + delimiter
-
-            #-- END loop over persons.
-
-            # append counts
-            string_OUT += "\n\ntotals: unknown=" + str( unknown_count ) + "; author=" + str( author_count ) + "; source=" + str( source_count ) + "; both=" + str( both_count ) + "\n\n"
-
-        #-- END check to make sure we have a person list. --#
-
-        return string_OUT
-
-    #-- END method create_network_string --#
-
-
-    def create_network_string( self ):
-
-        """
-            Method: create_network_string()
-
-            Purpose: retrieves the master person list from the instance, uses it
-               to output a square matrix where rows and columns are people, by
-               person ID, and the value at the intersection between two people
-               is the number of time they were linked in articles during the
-               time period that the network was drawn from.
-
-            Returns:
-            - string representation of network.
-        """
-
-        # return reference
-        network_string_OUT = ""
-
-        # declare variables
-        master_list = None
-        my_label = ''
-        current_person_id = -1
-        end_of_line = NetworkDataOutput.OUTPUT_END_OF_LINE
-
-        # get master list
-        master_list = self.get_master_person_list()
-
-        # got something?
-        if ( master_list ):
-
-            # got one.  Do we have a label to append?
-            my_label = self.network_label
-
-            if ( my_label != '' ):
-
-                # we have a label.  Add it as the first line of the output.
-                network_string_OUT += my_label + end_of_line
-
-            #-- END check for label. --#
-
-            # loop over sorted person list, calling method to output network
-            #    row for each person.
-            for current_person_id in sorted( master_list ):
-
-                # append the person's row to the output string.
-                network_string_OUT += self.create_person_row_string( current_person_id ) + end_of_line
-
-            #-- END loop over persons.
-
-        #-- END check to make sure we have a person list. --#
-
-        return network_string_OUT
-
-    #-- END method create_network_string --#
-
-
-    def create_person_row_string( self, person_id_IN ):
-
-        """
-            Method: create_person_row_string()
-
-            Purpose: retrieves the master person list from the instance, uses it
-               to output a square matrix where rows and columns are people, by
-               person ID, and the value at the intersection between two people
-               is the number of time they were linked in articles during the
-               time period that the network was drawn from.
-
-            Returns:
-            - string representation of network.
-        """
-
-        # return reference
-        string_OUT = ""
-
-        # declare variables
-        master_list = None
-        current_person_relations = None
-        current_other_id = -1
-        current_other_count = -1
-        delimiter = NetworkDataOutput.OUTPUT_DEFAULT_COLUMN_SEPARATOR
-
-        # get person ID?
-        if ( person_id_IN ):
-
-            # get master list
-            master_list = self.get_master_person_list()
-
-            # get relations for this person.
-            current_person_relations = self.get_relations_for_person( person_id_IN )
-
-            # loop over master list, checking for relations with each person.
-            for current_other_id in sorted( master_list ):
-
-                # try to retrieve relation count from relations
-                if current_other_id in current_person_relations:
-
-                    # they are related.  Get count.
-                    current_other_count = current_person_relations[ current_other_id ]
-
-                else:
-
-                    # no relation.  Set current count to 0
-                    current_other_count = 0
-
-                #-- END check to see if related.
-
-                # output the count for the current person.
-                string_OUT += delimiter + str( current_other_count )
-
-            #-- END loop over master list --#
-
-        #-- END check to make sure we have a person --#
-
-        return string_OUT
-
-    #-- END method create_person_row_string --#
-
-
-    def create_person_type_attribute_string( self ):
-
-        """
-            Method: create_person_type_attribute_string()
-
-            Purpose: 
-
-            Preconditions: connection_map must be initialized to a dictionary.
-
-            Params: none
-
-            Returns:
-            - ?
-        """
-
-        # return reference
-        string_OUT = ""
-
-        # declare variables
-        master_list = None
-        current_person_id = -1
-        current_person_type = ''
-
-        # get master list
-        master_list = self.get_master_person_list()
-
-        # got it?
-        if ( master_list ):
-
-            # output the name of this attribute
-            string_OUT += "person_type\n"
-
-            # loop over the master list, look for each in the map of person to
-            #    type.  If found, append type.  If not found, append "unknown".
-            for current_person_id in sorted( master_list ):
-
-                # get person's type
-                current_person_type = self.get_person_type_id( current_person_id )
-
-                # append to output string.
-                string_OUT += str( current_person_type ) + "\n"
-
-            #-- END loop over people --#
-
-        #-- END check to make sure we have list.
-
-        return string_OUT
-
-    #-- END method create_person_type_attribute_string --#
 
 
     def generate_master_person_list( self ):
@@ -1209,37 +950,29 @@ class NetworkDataOutput( object ):
             # render network data based on people and ties.
             #--------------------------------------------------------------------
             
-            # then, need to output.  For each network, output the network, then also
-            #    output an attribute file that says, for all people whether each
-            #    person was a reporter or a source.
-
-            # output the N of the network.
-            network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
-
-            # output network.
-            network_data_OUT += self.create_network_string()
-
-            # Add a couple of new lines
-            network_data_OUT += "\n\n"
-
-            # output reporter type attribute file.
-            network_data_OUT += self.create_person_type_attribute_string()
-
-            # Add a divider, then row headers and column headers for matrix,
-            #    attribute list.
-            network_data_OUT += "\n-------------------------------\nColumn and row labels (in the order the rows appear from top to bottom in the network matrix and attribute vector above, and in the order the columns apear from left to right) \n\n"
-
-            # create column of headers
-            network_data_OUT += self.create_label_string( "\n" )
-            network_data_OUT += "\n\nLabel array, for use in analysis:\n"
-            network_data_OUT += self.create_label_string( ",", '"' ) + "\n"
-
+            network_data_OUT += self.render_network_data()
+            
         #-- END check to make sure we have the data we need. --#
 
         return network_data_OUT
 
     #-- END render() --#
 
+
+    @abstractmethod
+    def render_network_data( self ):
+
+        '''
+        Invoked from render(), after ties have been generated based on articles
+           and people passed in.  Returns a string.  This string can contain the
+           rendered data (CSV file, etc.), or it can just contain a status
+           message if the data is rendered to a file or a database.
+        '''
+
+        pass
+
+    #-- END abstract method render_network_data() --#
+    
 
     def set_output_type( self, value_IN ):
 

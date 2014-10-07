@@ -19,7 +19,8 @@ from django.contrib.auth.models import User
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput
 from sourcenet.export.csv_article_output import CsvArticleOutput
-from sourcenet.export.network_data_output import NetworkDataOutput
+from sourcenet.export.network_output import NetworkOutput
+#from sourcenet.export.network_data_output import NetworkDataOutput
 from sourcenet.models import Article_Source
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
@@ -54,7 +55,7 @@ class ArticleSelectForm( forms.Form ):
     unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
 
     # allow duplicate articles?
-    allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkDataOutput.CHOICES_YES_OR_NO_LIST )
+    allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
     
 #-- END ArticleSelectForm -----------------------------------------------------#
 
@@ -97,7 +98,7 @@ class PersonSelectForm( forms.Form ):
     person_unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
 
     # allow duplicate articles?
-    person_allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkDataOutput.CHOICES_YES_OR_NO_LIST )
+    person_allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
 #-- end Form model PersonSelectForm -------------------------------------------
 
@@ -107,13 +108,13 @@ class PersonSelectForm( forms.Form ):
 class NetworkOutputForm( forms.Form ):
 
     # just contains the output type field for outputting network data.
-    output_type = forms.ChoiceField( label = "Output Type", choices = NetworkDataOutput.OUTPUT_TYPE_CHOICES_LIST )
+    output_type = forms.ChoiceField( label = "Output Type", choices = NetworkOutput.OUTPUT_TYPE_CHOICES_LIST )
 
     # do we want a label at the top of the network file?
     network_label = forms.CharField( required = False, label = "Network Label" )
 
     # do we want to output row and column headers?
-    network_include_headers = forms.ChoiceField( required = False, label = "Include headers", choices = NetworkDataOutput.CHOICES_YES_OR_NO_LIST )
+    network_include_headers = forms.ChoiceField( required = False, label = "Include headers", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
     # include and exclude source capacities
     include_capacities = forms.MultipleChoiceField( required = False, choices = Article_Source.SOURCE_CAPACITY_CHOICES )

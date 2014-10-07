@@ -365,6 +365,8 @@ Person parameters - When using the "Select People" area to specify separate filt
 
 ## What gets output
 
+### type: Simple Matrix
+
 The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
 
 - _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
@@ -377,6 +379,37 @@ The results of network generation are output in a text box at the top of the pag
         - list of column/row labels (ordered top-to-bottom for columns, left-to-right for rows) for each column/row, one to a line.
         - list of column/row labels all in one line, values in quotation marks, each value separated by a comma, for use in analysis (inclusion in a spreadsheet, etc.).
 
+## Adding a new output type
+
+To add a new output type, do the following:
+
+- create a new class that extends NetworkDataOutputter.
+- in this new class:
+    - _see class `NDO_SimpleMatrix` in file `export/ndo_simple_matrix.py` for an example._
+    - make sure to import the NetworkDataOutputter abstract class:
+
+            from sourcenet.export.network_data_output import NetworkDataOutput
+
+    - implement the render_network_data() method.  A few notes:
+        - this method will be called by the `render()` method in class `NetworkDataOutput` (file `export/network_data_output.py`).  That method takes care of figuring out what people should be in the network and figuring out ties based on included articles.  You just need to take this information and render network data.
+        - how to get important data:
+            - `self.get_master_person_list()` - retrieves list of all people (nodes) that must be included in the network data that you output, sorted by ID.  Could be more people here than are in the set of articles (for the case of data that will be compared across time periods).
+            - `self.get_person_type( person_id )` - retrieves person type for a given person (node).
+            - `self.get_person_type_id( person_id )` - retrieves person type ID for a given person (node).
+            - `self.get_relations_for_person( person_id )` - retrieves list of relations for a given person (node).
+        - if you are creating network data, you'll want to use the master person list to see what nodes are in the network, then the results of get_relations_for_person() to see what ties are present for each person.  So, if you are making a matrix:
+            - loop over a copy of the master person list as your control for making rows, one per person.  Then, for each person:
+                - retrieve a new copy of the master person list.
+                - loop over it to generate columns for the row.  For each person:
+                    - see if there is a relation.
+                        - If yes, set column value to 1 (or a weight, or whatever you are doing...).
+                        - If no, set column value to 0.
+    - add a constant for the output type this class will implement, and in an overridden `__init__()` method, set `self.output_type` to that value.
+- In the `NetworkOutput` class, in file `export/network_output.py`):
+    - add an import statement to import your new class to the imports section, near the top of the file.
+    - add the output type value for your new output class as a constant-ish at the top, named `NETWORK_OUTPUT_TYPE_<TYPE>`.
+    - in the method `get_NDO_instance()`, add an `elif` to the conditional that maps types to instantiation of objects for each type that creates an instance of your new class when type matches the constant you created in the step above.
+    
 ## Importing data into UCINet
 
 
