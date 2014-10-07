@@ -408,6 +408,7 @@ To add a new output type, do the following:
 - In the `NetworkOutput` class, in file `export/network_output.py`):
     - add an import statement to import your new class to the imports section, near the top of the file.
     - add the output type value for your new output class as a constant-ish at the top, named `NETWORK_OUTPUT_TYPE_<TYPE>`.
+    - add the output type and its display string to the list of tuples stored in NETWORK_OUTPUT_TYPE_CHOICES_LIST.
     - in the method `get_NDO_instance()`, add an `elif` to the conditional that maps types to instantiation of objects for each type that creates an instance of your new class when type matches the constant you created in the step above.
     
 ## Importing data into UCINet

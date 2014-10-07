@@ -108,7 +108,7 @@ class PersonSelectForm( forms.Form ):
 class NetworkOutputForm( forms.Form ):
 
     # just contains the output type field for outputting network data.
-    output_type = forms.ChoiceField( label = "Output Type", choices = NetworkOutput.OUTPUT_TYPE_CHOICES_LIST )
+    output_type = forms.ChoiceField( label = "Output Type", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST )
 
     # do we want a label at the top of the network file?
     network_label = forms.CharField( required = False, label = "Network Label" )
