@@ -1,5 +1,5 @@
 '''
-Copyright 2010-2014 Jonathan Morgan
+Copyright 2014 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -118,6 +118,7 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
         person_count = -1
         current_type = ''
         current_type_id = -1
+        current_label = ""
         current_value = ''
         delimiter = delimiter_IN
         unknown_count = 0
@@ -136,7 +137,7 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
             for current_person_id in sorted( master_list ):
 
                 person_count += 1
-
+                
                 # get current person type and type ID
                 current_type = self.get_person_type( current_person_id )
                 current_type_id = self.get_person_type_id( current_person_id )
@@ -151,8 +152,11 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
                 elif ( current_type == NetworkDataOutput.PERSON_TYPE_BOTH ):
                     both_count += 1
 
+                # get label
+                current_label = self.get_person_label( current_person_id )
+
                 # append the person's row to the output string.
-                current_value = str( person_count ) + "__" + str( current_person_id ) + "__" + current_type + "-" + str( current_type_id )
+                current_value = str( person_count ) + "__" + current_label
 
                 # do we want quotes?
                 if ( quote_character_IN != '' ):
@@ -297,48 +301,42 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
 
     def create_person_type_attribute_string( self ):
 
-        """
+        '''
             Method: create_person_type_attribute_string()
 
-            Purpose: 
+            Purpose: Create a string list of person type IDs for the people in
+               master list, for use in assigning person type attributes to the
+               corresponding people/nodes.
 
-            Preconditions: connection_map must be initialized to a dictionary.
+            Preconditions: Master person list must be present.
 
             Params: none
 
             Returns:
-            - ?
-        """
+            - string_OUT - list of person IDs, in sorted master person list order, one to a line.
+        '''
 
         # return reference
         string_OUT = ""
 
         # declare variables
-        master_list = None
-        current_person_id = -1
-        current_person_type = ''
+        person_type_id_list = None
 
-        # get master list
-        master_list = self.get_master_person_list()
+        # get person type ID list
+        person_type_id_list = self.create_person_type_id_list( True )
 
         # got it?
-        if ( master_list ):
+        if ( person_type_id_list ):
 
             # output the name of this attribute
             string_OUT += "person_type\n"
 
-            # loop over the master list, look for each in the map of person to
-            #    type.  If found, append type.  If not found, append "unknown".
-            for current_person_id in sorted( master_list ):
-
-                # get person's type
-                current_person_type = self.get_person_type_id( current_person_id )
-
-                # append to output string.
-                string_OUT += str( current_person_type ) + "\n"
-
-            #-- END loop over people --#
-
+            # join the list into a string, separated by newlines.
+            string_OUT += "\n".join( person_type_id_list )
+            
+            # add a newline to the end.
+            string_OUT += "\n"
+            
         #-- END check to make sure we have list.
 
         return string_OUT

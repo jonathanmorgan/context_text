@@ -93,7 +93,7 @@ class NetworkDataOutput( object ):
     SOURCE_CONTACT_TYPE_EVENT = 'event'
 
     # DEBUG constant
-    DEBUG = False
+    DEBUG_FLAG = False
 
     # parameter constants
     PARAM_OUTPUT_TYPE = 'output_type'
@@ -218,7 +218,7 @@ class NetworkDataOutput( object ):
 
         #-- END check to make sure we have IDs. --#
 
-        if ( NetworkDataOutput.DEBUG == True ):
+        if ( self.DEBUG_FLAG == True ):
             # output the author map
             self.debug += "\n\n*** in add_directional_relation, after adding relations, my_relation_map:\n" + str( my_relation_map ) + "\n\n"
         #-- END DEBUG --#
@@ -256,7 +256,7 @@ class NetworkDataOutput( object ):
         # make sure we have two values.
         if ( person_1_id_IN and person_2_id_IN ):
 
-            if ( NetworkDataOutput.DEBUG == True ):
+            if ( self.DEBUG_FLAG == True ):
                 # output the author map
                 self.debug += "\n\nin add_reciprocal_relation, got two IDs: " + str( person_1_id_IN ) + "; " + str( person_2_id_IN ) + ".\n\n"
             #-- END DEBUG --#
@@ -265,7 +265,7 @@ class NetworkDataOutput( object ):
             self.add_directed_relation( person_1_id_IN, person_2_id_IN )
             self.add_directed_relation( person_2_id_IN, person_1_id_IN )
 
-            if ( NetworkDataOutput.DEBUG == True ):
+            if ( self.DEBUG_FLAG == True ):
                 # output the author map
                 self.debug += "\n\n*** in add_reciprocal_relation, after adding relations, relation_map:\n" + str( self.relation_map ) + "\n\n"
             #-- END DEBUG --#
@@ -275,7 +275,7 @@ class NetworkDataOutput( object ):
             # error, something is missing.
             status_OUT = NetworkDataOutput.STATUS_ERROR_PREFIX + "in add_reciprocal relationship, one or more IDs is missing, so can't create relationship."
 
-            if ( NetworkDataOutput.DEBUG == True ):
+            if ( self.DEBUG_FLAG == True ):
                 # output the author map
                 self.debug += "\n\n" + status_OUT + "\n\n"
             #-- END DEBUG --#
@@ -287,7 +287,154 @@ class NetworkDataOutput( object ):
     #-- END method add_reciprocal_relation --#
 
 
-    def generate_master_person_list( self ):
+    def create_label_list( self, quote_character_IN = '' ):
+
+        """
+            Method: create_label_list()
+
+            Purpose: retrieves the master person list from the instance, uses it
+               to output a list of the person IDS and their source types.  Each
+               person's label consists of:
+               "<person_counter>__<person_id>__<person_type>"
+               WHERE:
+               - <person_counter> is the simple integer count of people in list, incremented as each person is added.
+               - <person_id> is the ID of the person's Person record in the system.
+               - <person_type> is the string person type of the person, then a hyphen, then the person type ID of that type.
+
+            Returns:
+            - list of string representation of labels for each row in network.
+        """
+
+        # return reference
+        list_OUT = []
+
+        # declare variables
+        master_list = None
+        my_label = ''
+        current_person_id = -1
+        person_count = -1
+        current_type = ''
+        current_type_id = -1
+        current_label = ""
+        current_value = ''
+        unknown_count = 0
+        author_count = 0
+        source_count = 0
+        both_count = 0
+
+        # get master list
+        master_list = self.get_master_person_list()
+
+        # got something?
+        if ( master_list ):
+
+            # loop over sorted person list, building label line for each person.
+            person_count = 0
+            for current_person_id in sorted( master_list ):
+
+                person_count += 1
+                
+                # get current person type and type ID
+                current_type = self.get_person_type( current_person_id )
+                current_type_id = self.get_person_type_id( current_person_id )
+
+                # increment count
+                if ( current_type == NetworkDataOutput.PERSON_TYPE_UNKNOWN ):
+                    unknown_count += 1
+                elif ( current_type == NetworkDataOutput.PERSON_TYPE_AUTHOR ):
+                    author_count += 1
+                elif ( current_type == NetworkDataOutput.PERSON_TYPE_SOURCE ):
+                    source_count += 1
+                elif ( current_type == NetworkDataOutput.PERSON_TYPE_BOTH ):
+                    both_count += 1
+
+                # get label
+                current_label = self.get_person_label( current_person_id )
+
+                # append the person's row to the output string.
+                current_value = str( person_count ) + "__" + current_label
+
+                # do we want quotes?
+                if ( quote_character_IN != '' ):
+
+                    # yes.  Add quotes around the value.
+                    current_value = quote_character_IN + current_value + quote_character_IN
+
+                #-- END quote values check --#
+
+                # append to output
+                list_OUT.append( current_value )
+
+            #-- END loop over persons. --#
+
+            # append counts
+            #string_OUT += "\n\ntotals: unknown=" + str( unknown_count ) + "; author=" + str( author_count ) + "; source=" + str( source_count ) + "; both=" + str( both_count ) + "\n\n"
+
+        #-- END check to make sure we have a person list. --#
+
+        return list_OUT
+
+    #-- END method create_label_list --#
+
+
+    def create_person_type_id_list( self, as_string_IN = True ):
+
+        """
+            Method: create_person_type_id_list()
+
+            Purpose: Create a list of person type IDs for the people in master
+               list, for use in assigning person type attributes to the
+               corresponding people/nodes.
+
+            Preconditions: Master person list must be present.
+
+            Params: none
+
+            Returns:
+            - list_OUT - list of person IDs, in sorted master person list order.
+        """
+
+        # return reference
+        list_OUT = []
+
+        # declare variables
+        person_list = None
+        current_person_id = -1
+        current_person_type_id = -1
+
+        # get master list
+        person_list = self.get_master_person_list()
+
+        # got it?
+        if ( person_list ):
+
+            # loop over the master list, look for each in the map of person to
+            #    type.  If found, append type.  If not found, append "unknown".
+            for current_person_id in sorted( person_list ):
+
+                # get person's type
+                current_person_type_id = self.get_person_type_id( current_person_id )
+
+                # append as a string?
+                if ( as_string_IN == True ):
+
+                    current_person_type_id = str( current_person_type_id )
+
+                #-- END check to see if append as string --#
+
+                # append to output list.
+                list_OUT.append( current_person_type_id )
+
+            #-- END loop over people --#
+
+        #-- END check to make sure we have list.
+
+        return list_OUT
+
+    #-- END method create_person_type_id_list --#
+
+
+    def generate_master_person_list( self, is_sorted_IN = True ):
 
         """
             Method: generate_master_person_list()
@@ -332,18 +479,26 @@ class NetworkDataOutput( object ):
         #    as your list of people to iterate over as you create actual
         #    output.
         merged_person_id_list = merged_person_types.keys()
+        
+        # do we want it sorted?
+        if ( is_sorted_IN == True ):
+        
+            # we want it sorted.
+            merged_person_id_list = sorted( merged_person_id_list )
+        
+        #-- END check to see if we want the list sorted. --#
 
         # save this as the master person list.
         self.master_person_list = merged_person_id_list
 
-        list_OUT = merged_person_id_list
+        list_OUT = self.master_person_list
 
         return list_OUT
 
-    #-- END method add_reciprocal_relation --#
+    #-- END method generate_master_person_list() --#
 
 
-    def get_master_person_list( self ):
+    def get_master_person_list( self, is_sorted_IN = True ):
 
         """
             Method: get_master_person_list()
@@ -387,13 +542,53 @@ class NetworkDataOutput( object ):
         if ( is_ok == False ):
 
             # not OK.  Try generating list.
-            list_OUT = self.generate_master_person_list()
+            list_OUT = self.generate_master_person_list( is_sorted_IN )
 
         #-- END check if list is OK. --#
-
+        
         return list_OUT
 
-    #-- END method add_reciprocal_relation --#
+    #-- END method get_master_person_list() --#
+
+
+    def get_person_label( self, person_id_IN ):
+
+        """
+            Method: get_person_label()
+
+            Purpose: accepts a person ID, retrieves that person's type and type
+               ID, combines the three pieces of information to create label for
+               that user.
+
+            Params:
+            - person_id_IN - ID of person whose type we want to check.
+
+            Returns:
+            - String - label for the current person that combines person ID, person type, and person type ID.
+        """
+
+        # return reference
+        value_OUT = ""
+
+        # declare variables
+        person_type = ""
+        person_type_id = ""
+
+        # got a value?
+        if ( person_id_IN ):
+
+            # get current person type and type ID
+            person_type = self.get_person_type( person_id_IN )
+            person_type_id = self.get_person_type_id( person_id_IN )
+
+            # append the person's row to the output string.
+            value_OUT = str( person_id_IN ) + "__" + person_type + "-" + str( person_type_id )
+
+        #-- END check to see if we have a person ID --#
+
+        return value_OUT
+
+    #-- END method get_person_label() --#
 
 
     def get_person_type( self, person_id_IN ):
@@ -707,7 +902,7 @@ class NetworkDataOutput( object ):
 
             #-- END loop over authors to build map. --#
 
-            if ( NetworkDataOutput.DEBUG == True ):
+            if ( self.DEBUG_FLAG == True ):
                 # output the author map
                 self.debug += "\n\nauthor map:\n" + str( author_map ) + "\n\n"
             #-- END DEBUG --#
@@ -719,7 +914,7 @@ class NetworkDataOutput( object ):
             # loop over keys.
             for current_person_id in author_id_list:
 
-                if ( NetworkDataOutput.DEBUG == True ):
+                if ( self.DEBUG_FLAG == True ):
                     # output the author map
                     self.debug += "\n\nauthor person ID:\n" + str( current_person_id ) + "\n\n"
                 #-- END DEBUG --#
@@ -729,7 +924,7 @@ class NetworkDataOutput( object ):
                 # del author_map[ current_author_id ]
                 current_author = author_map.pop( current_person_id )
 
-                if ( NetworkDataOutput.DEBUG == True ):
+                if ( self.DEBUG_FLAG == True ):
                     # output the author map
                     self.debug += "\n\nauthor map:\n" + str( author_map ) + "\n\n"
                 #-- END DEBUG --#
@@ -813,7 +1008,7 @@ class NetworkDataOutput( object ):
                         # yes! get source's person ID
                         current_person_id = current_source.get_person_id()
 
-                        if ( NetworkDataOutput.DEBUG == True ):
+                        if ( self.DEBUG_FLAG == True ):
                             # output the author map
                             self.debug += "\n\nin process_source_relations, source " + str( source_counter ) + " has ID: " + str( current_person_id ) + ".\n\n"
                         #-- END DEBUG --#
@@ -827,7 +1022,7 @@ class NetworkDataOutput( object ):
 
                     else:
 
-                        if ( NetworkDataOutput.DEBUG == True ):
+                        if ( self.DEBUG_FLAG == True ):
                             # output the author map
                             self.debug += "\n\nin process_source_relations, source " + str( source_counter ) + " is not connected.\n\n"
                         #-- END DEBUG --#
@@ -897,7 +1092,7 @@ class NetworkDataOutput( object ):
 
                 article_data_counter += 1
 
-                if ( NetworkDataOutput.DEBUG == True ):
+                if ( self.DEBUG_FLAG == True ):
                     self.debug += "\n\n+++ Current article data = " + str( current_article_data.id ) + " +++\n\n"
                 #-- END DEBUG --#
 
@@ -918,7 +1113,7 @@ class NetworkDataOutput( object ):
                     # update the person types for sources
                     self.update_source_person_types( source_qs )
 
-                    if ( NetworkDataOutput.DEBUG == True ):
+                    if ( self.DEBUG_FLAG == True ):
                         # output the relation thinger
                         self.debug += "\n\nRelation Map after article " + str( article_counter ) + ":\n" + str( self.relation_map ) + "\n\n"
                     #-- END DEBUG --#
@@ -940,7 +1135,7 @@ class NetworkDataOutput( object ):
             #    included in the network are in the dict.
             self.generate_master_person_list()
 
-            if ( NetworkDataOutput.DEBUG == True ):
+            if ( self.DEBUG_FLAG == True ):
                 self.debug += "\n\nPerson Dictionary:\n" + str( self.person_dictionary ) + "\n\n"
                 self.debug += "\n\nMaster person list:\n" + str( self.master_person_list ) + "\n\n"
                 self.debug += "\n\nParam list:\n" + str( self.inclusion_params ) + "\n\n"

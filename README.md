@@ -379,6 +379,17 @@ The results of network generation are output in a text box at the top of the pag
         - list of column/row labels (ordered top-to-bottom for columns, left-to-right for rows) for each column/row, one to a line.
         - list of column/row labels all in one line, values in quotation marks, each value separated by a comma, for use in analysis (inclusion in a spreadsheet, etc.).
 
+### type: CSV Matrix
+
+The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
+
+- _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
+- _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+- _network data output_ - Actual delimited network matrix (one row to a line, first row and column are string node identifiers, values in each row separated by commas - ",").  More precisely, contains:
+    - N - count of people (rows/columns) in the network matrix.
+    - delimited network data matrix, one row to a line, with values in the row separated by commas (",").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
+    - Last row in CSV document is person type ID for each person in the matrix, organized by column.  Can be used in UCINet to assign person type values to each node for analysis, but you might have to play with it to get it in the right format (more details once I try it myself).
+
 ## Adding a new output type
 
 To add a new output type, do the following:
@@ -390,30 +401,80 @@ To add a new output type, do the following:
 
             from sourcenet.export.network_data_output import NetworkDataOutput
 
-    - implement the render_network_data() method.  A few notes:
+    - implement the `render_network_data()` method.  A few notes:
         - this method will be called by the `render()` method in class `NetworkDataOutput` (file `export/network_data_output.py`).  That method takes care of figuring out what people should be in the network and figuring out ties based on included articles.  You just need to take this information and render network data.
         - how to get important data:
             - `self.get_master_person_list()` - retrieves list of all people (nodes) that must be included in the network data that you output, sorted by ID.  Could be more people here than are in the set of articles (for the case of data that will be compared across time periods).
             - `self.get_person_type( person_id )` - retrieves person type for a given person (node).
             - `self.get_person_type_id( person_id )` - retrieves person type ID for a given person (node).
             - `self.get_relations_for_person( person_id )` - retrieves list of relations for a given person (node).
-        - if you are creating network data, you'll want to use the master person list to see what nodes are in the network, then the results of get_relations_for_person() to see what ties are present for each person.  So, if you are making a matrix:
+        - if you are creating network data, you'll want to use the master person list to see what nodes are in the network, then the results of `get_relations_for_person()` to see what ties are present for each person.  So, if you are making a matrix:
             - loop over a copy of the master person list as your control for making rows, one per person.  Then, for each person:
                 - retrieve a new copy of the master person list.
                 - loop over it to generate columns for the row.  For each person:
                     - see if there is a relation.
                         - If yes, set column value to 1 (or a weight, or whatever you are doing...).
                         - If no, set column value to 0.
-    - add a constant for the output type this class will implement, and in an overridden `__init__()` method, set `self.output_type` to that value.
+    - add a constant for the output type this class will implement named `MY_OUTPUT_TYPE`, and in an overridden `__init__()` method, set `self.output_type = MY_OUTPUT_TYPE`.
 - In the `NetworkOutput` class, in file `export/network_output.py`):
     - add an import statement to import your new class to the imports section, near the top of the file.
     - add the output type value for your new output class as a constant-ish at the top, named `NETWORK_OUTPUT_TYPE_<TYPE>`.
     - add the output type and its display string to the list of tuples stored in NETWORK_OUTPUT_TYPE_CHOICES_LIST.
     - in the method `get_NDO_instance()`, add an `elif` to the conditional that maps types to instantiation of objects for each type that creates an instance of your new class when type matches the constant you created in the step above.
     
+## Importing data into R
+
 ## Importing data into UCINet
 
+To import data into UCINet:
 
+- select your filter criteria, then choose the CSV Matrix output type and render output.
+- click in output text area, press Ctrl-A (Windows/linux) or Cmd-A (Mac) to select everything in the text area, then Ctrl-C (windows/linux) or Cmd-C (mac) to copy the entire contents.
+- open a text document and paste the entire contents into the text document.
+- If you want to keep the full original output:
+
+    - save that document and open another.
+    - in the original, just copy the portion of the file from after:
+    
+            =======================
+            network data output:
+            =======================
+            
+            N = 314
+            
+        to before (at the bottom of the file):
+
+            =======================
+            END network data output
+            =======================
+        
+    - save this portion into another file with file extension ".csv".
+- If you don't care about the full original output:
+
+    - delete everything from the following up:
+    
+            =======================
+            network data output:
+            =======================
+            
+            N = 314
+
+        and remove the following from the bottom of the file:
+        
+            =======================
+            END network data output
+            =======================
+        
+    - save the file with the file extension ".csv".
+    
+- Open Microsoft Excel, and use it to open your .csv file.
+- Save the resulting document as an Excel file.
+- Open UCINet.
+- Open the "Excel Matrix Editor".
+- Open the Excel file you created.
+- Select and remove the bottom row for now (it is person types, not ties.
+- Click "Save" in the menu bar, then choose "Save active sheet as UCINET dataset".
+- Choose a name and location to save, and you are done!
 
 # License
 
