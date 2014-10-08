@@ -472,7 +472,7 @@ To import data into UCINet:
 - Open UCINet.
 - Open the "Excel Matrix Editor".
 - Open the Excel file you created.
-- Select and remove the bottom row for now (it is person types, not ties.
+- Select and remove the bottom row for now (it is person types, not ties).
 - Click "Save" in the menu bar, then choose "Save active sheet as UCINET dataset".
 - Choose a name and location to save, and you are done!
 
