@@ -390,6 +390,17 @@ The results of network generation are output in a text box at the top of the pag
     - delimited network data matrix, one row to a line, with values in the row separated by commas (",").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
     - Last row in CSV document is person type ID for each person in the matrix, organized by column.  Can be used in UCINet to assign person type values to each node for analysis, but you might have to play with it to get it in the right format (more details once I try it myself).
 
+### type: Tab-Delimited Matrix
+
+The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
+
+- _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
+- _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+- _network data output_ - Actual delimited network matrix (one row to a line, first row and column are string node identifiers, values in each row separated by tabs - "\t").  More precisely, contains:
+    - N - count of people (rows/columns) in the network matrix.
+    - delimited network data matrix, one row to a line, with values in the row separated by tabs ("\t").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
+    - Last row in document is person type ID for each person in the matrix, organized by column.  Can be used in UCINet to assign person type values to each node for analysis, but you might have to play with it to get it in the right format (more details once I try it myself).
+
 ## Adding a new output type
 
 To add a new output type, do the following:
