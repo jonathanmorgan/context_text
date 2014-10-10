@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
 # python libraries
 import csv
+# documentation: https://docs.python.org/2/library/csv.html
 import StringIO
 
 # Django DB classes, just to play with...
@@ -63,6 +64,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
 
     csv_string_buffer = None
     csv_writer = None
+    csv_delimiter = ","
 
     
     #---------------------------------------------------------------------------
@@ -82,6 +84,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         # initialize variables.
         self.csv_string_buffer = None
         self.csv_writer = None
+        self.csv_delimiter = ","
 
     #-- END method __init__() --#
 
@@ -429,7 +432,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         output_string_buffer = StringIO.StringIO()
         
         # Use it to create writer.
-        output_writer = csv.writer( output_string_buffer )
+        output_writer = csv.writer( output_string_buffer, delimiter=self.delimiter )
 
         # store off these instances.
         self.csv_string_buffer = output_string_buffer

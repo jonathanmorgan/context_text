@@ -54,6 +54,7 @@ from sourcenet.export.csv_article_output import CsvArticleOutput
 from sourcenet.export.network_data_output import NetworkDataOutput
 from sourcenet.export.ndo_simple_matrix import NDO_SimpleMatrix
 from sourcenet.export.ndo_csv_matrix import NDO_CSVMatrix
+from sourcenet.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -138,11 +139,13 @@ class NetworkOutput( object ):
     # Network output types
     NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = "simple_matrix"
     NETWORK_OUTPUT_TYPE_CSV_MATRIX = "csv_matrix"
+    NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
     NETWORK_OUTPUT_TYPE_DEFAULT = NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX
     
     NETWORK_OUTPUT_TYPE_CHOICES_LIST = [
         ( NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX, "Simple Matrix" ),
         ( NETWORK_OUTPUT_TYPE_CSV_MATRIX, "CSV Matrix" ),
+        ( NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
     ]
 
     #---------------------------------------------------------------------------
@@ -736,6 +739,11 @@ class NetworkOutput( object ):
         
             # CSV matrix.
             NDO_instance_OUT = NDO_CSVMatrix()
+        
+        elif ( output_type_IN == self.NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX ):
+        
+            # Tab-delimited matrix.
+            NDO_instance_OUT = NDO_TabDelimitedMatrix()
         
         else:
         
