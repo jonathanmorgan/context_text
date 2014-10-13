@@ -433,8 +433,93 @@ To add a new output type, do the following:
     - add the output type and its display string to the list of tuples stored in NETWORK_OUTPUT_TYPE_CHOICES_LIST.
     - in the method `get_NDO_instance()`, add an `elif` to the conditional that maps types to instantiation of objects for each type that creates an instance of your new class when type matches the constant you created in the step above.
     
-## Importing data into R
+## Working with network data in R
 
+To work with network data into R, first you read either a CSV or tab-delimited network matrix in as a data frame.  Then, convert to an R matrix object.  From there, you can load the matrix into your SNA package of choice (examples for igraph and statnet below).
+
+### Import a CSV file
+
+To read in a CSV matrix file:
+
+    # comma-delimited:
+    csv_test1 <- read.csv( "csv-test1.csv", header = TRUE, row.names = 1, check.names = FALSE )
+    
+    # just use the first 314 rows (omit the person_type row for now).
+    csv_test1_clean <- csv_test1[ 1 : 314, ]
+    
+    # convert to a matrix
+    csv_test1_matrix <- as.matrix( csv_test1_clean )
+
+### Import a tab-delimited file
+
+To read in a tab-delimited matrix file:
+
+    # tab-delimited:
+    tab_test1 <- read.delim( "tab-test1-data.txt", header = TRUE, row.names = 1, check.names = FALSE )
+    
+    # just use the first 314 rows (omit the person_type row for now).
+    tab_test1_clean <- tab_test1[ 1 : 314, ]
+    
+    # convert to a matrix
+    tab_test1_matrix <- as.matrix( tab_test1_clean )
+        
+### Load matrix into igraph
+
+To load an imported matrix into igraph ([http://igraph.org/index.html](http://igraph.org/index.html)):
+
+    library( igraph )
+
+    # convert matrix to igraph graph object instance.
+    test1_igraph <- graph.adjacency( tab_test1_matrix, mode = "undirected", weighted = TRUE )
+    
+    # more details on graph.adjacency(): http://igraph.org/r/doc/graph.adjacency.html
+    
+    # to see count of nodes and edges, just type the object name:
+    test1_igraph
+    
+    # Will output something like:
+    #
+    # IGRAPH UNW- 314 309 -- 
+    # + attr: name (v/c), weight (e/n)
+    #
+    # in the first line, "UNW-" are traits of graph:
+    # - 1 - U = undirected ( directed would be "D" )
+    # - 2 - N = named or not ( "-" instead of "N" )
+    # - 3 - W = weighted
+    # - 4 - B = bipartite ( "-" = not bipartite )
+    # 314 is where node count goes, 309 is edge count.
+    # The second line gives you information about the 'attributes' associated with the graph. In this case, there is only one attribute, called 'name', which is associated with the vertex set. 
+    # - based on: http://www.shizukalab.com/toolkits/sna/sna_data
+
+### Load matrix into statnet
+
+To load an imported matrix into statnet ([http://www.statnet.org/](http://www.statnet.org/)):
+
+    library( statnet )
+    
+    # convert matrix to statnet network object instance.
+    test1_statnet <- network( tab_test1_matrix, matrix.type = "adjacency", directed = FALSE )
+
+    # to see information about network, just type the object name:
+    test1_statnet
+    
+    # Output example:
+    # Network attributes:
+    #  vertices = 314 
+    #  directed = FALSE 
+    #  hyper = FALSE 
+    #  loops = FALSE 
+    #  multiple = FALSE 
+    #  bipartite = FALSE 
+    #  total edges= 309 
+    #    missing edges= 0 
+    #    non-missing edges= 309 
+    #
+    # Vertex attribute names: 
+    #    vertex.names 
+    #
+    # No edge attributes
+        
 ## Importing data into UCINet
 
 To import data into UCINet:
