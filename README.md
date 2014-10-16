@@ -542,6 +542,17 @@ To load an imported matrix into statnet ([http://www.statnet.org/](http://www.st
     #
     # No edge attributes
         
+    # If you have a file of attributes (each attribute is a column, with attribute name the column name), you can associate those attributes when you create the network.
+    
+    # load attribute file:
+    tab_attribute_test1 <- read.delim( "tab-test1-attribute_data.txt", header = TRUE, row.names = 1, check.names = FALSE )
+    
+    # convert matrix to statnet network object instance.
+    test1_statnet <- network( tab_test1_matrix, matrix.type = "adjacency", directed = FALSE, vertex.attr = tab_attribute_test1 )
+    
+    # look at information now.
+    test1_statnet
+
 ## Importing data into UCINet
 
 To import data into UCINet:
