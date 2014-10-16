@@ -343,12 +343,24 @@ Article parameters - For convenience, here is a list that was current at the tim
 - _"Topics"_ - `topics` - list of IDs of topics whose data you want included.
 - _"Unique Identifier List (comma-delimited)"_ - `unique_identifiers` - list of unique identifiers of articles whose data you want included.
 - _"Allow duplicate articles"_ - `allow_duplicate_articles` - allow duplicate articles.  There can be multiple coders and they might have coded the same article.  If this is set to "No", then it will only include one instance of coding for a given article.
-- _"Output Type"_ - `output_type` - type of output you want, currently only CSV for UCINet is supported ("Simple Matrix").
-- _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
-- _"Include headers"_ - `?` - ?
 - _"Include capacities"_ - `?` - ?
 - _"Exclude capacities"_ - `?` - ?
 - _not on form_ - `header_prefix` -  for output, optional prefix you want appended to front of column header names.
+
+## Output configuration parameters
+
+- _"Include Render Details"_ - `include_render_details` - If "Yes", includes detail on articles and people included in network in output.  If "No", just outputs network data.
+- _"Data Format"_ - `output_type` - type of output you want.  Currently support:
+    - Simple Matrix - custom format for UCINet
+    - CSV Matrix - network matrix rendered as CSV data, with first row and first column containing node labels.
+    - Tab-Delimited Matrix - network matrix rendered as tab-delimited text data, with first row and first column containing node labels.
+- _"Data Output Type"_ - `data_output_type` - What exactly you want included in the rendered data.  Choices:
+    - Just Network - just the network data, no attribute data.
+    - Just Attributes - just the node attribute data, no network data.
+    - Network + Attribute Columns - network data, plus attributes as additional columns in the matrix.
+    - Network + Attribute Rows - network data, plus attributes as additional rows in the matrix.
+- _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
+- _"Include headers"_ - `?` - ?
 
 ## Person selection parameters
 
@@ -369,8 +381,13 @@ Person parameters - When using the "Select People" area to specify separate filt
 
 The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
 
+If render details are requested:
+
 - _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
 - _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+
+Network data:
+
 - _network data output_ - Actual delimited network matrix (values in a row are separated by two spaces - "  ") and labels for each column (and row - the matrix is symmetric).  More precisely, contains:
     - N - count of people (rows/columns) in the network matrix.
     - delimited network data matrix, one row to a line, with values in the row separated by two spaces ("  ").  There will be N rows and columns.
@@ -383,23 +400,35 @@ The results of network generation are output in a text box at the top of the pag
 
 The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
 
+If render details are requested:
+
 - _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
 - _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+
+Network data:
+
 - _network data output_ - Actual delimited network matrix (one row to a line, first row and column are string node identifiers, values in each row separated by commas - ",").  More precisely, contains:
-    - N - count of people (rows/columns) in the network matrix.
-    - delimited network data matrix, one row to a line, with values in the row separated by commas (",").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
-    - Last row in CSV document is person type ID for each person in the matrix, organized by column.  Can be used in UCINet to assign person type values to each node for analysis, but you might have to play with it to get it in the right format (more details once I try it myself).
+    - If render details requested: N - count of people (rows/columns) in the network matrix.
+    - If network requested: delimited network data matrix, one row to a line, with values in the row separated by commas (",").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
+    - If attribute columns requested: Last column in each row in the CSV document contains person type ID for each person in the matrix.
+    - If attribute rows requested: Last row in CSV document is person type ID for each person in the matrix, organized by column.
 
 ### type: Tab-Delimited Matrix
 
 The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
 
+If render details are requested:
+
 - _parameter overview_ - this is a list of the "Article selection parameters" and "Person selection parameters" that were passed to the network data creation process, for use in debugging.
 - _article overview_ - count of and list of articles included in the analysis.  For each article, outputs a counter, the ID of the article, and the article's headline.
+
+Network data:
+
 - _network data output_ - Actual delimited network matrix (one row to a line, first row and column are string node identifiers, values in each row separated by tabs - "\t").  More precisely, contains:
-    - N - count of people (rows/columns) in the network matrix.
-    - delimited network data matrix, one row to a line, with values in the row separated by tabs ("\t").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
-    - Last row in document is person type ID for each person in the matrix, organized by column.  Can be used in UCINet to assign person type values to each node for analysis, but you might have to play with it to get it in the right format (more details once I try it myself).
+    - If render details requested: N - count of people (rows/columns) in the network matrix.
+    - If network requested: delimited network data matrix, one row to a line, with values in the row separated by tabs ("\t").  There will be N+1 rows and columns - first row is a header row, containing labels for the person each column represents; first column is labels for the person each row represents.  The matrix is symmetric.
+    - If attribute columns requested: Last column in each row in the document contains person type ID for each person in the matrix.
+    - If attribute rows requested: Last row in document is person type ID for each person in the matrix, organized by column.
 
 ## Adding a new output type
 
