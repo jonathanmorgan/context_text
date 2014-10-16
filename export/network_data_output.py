@@ -56,14 +56,33 @@ class NetworkDataOutput( object ):
     #---------------------------------------------------------------------------
 
 
-    # article output type constants
-    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = 'simple_matrix'
-
-    OUTPUT_TYPE_CHOICES_LIST = [
-        ( NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX, "Simple Matrix" ),
+    # network output type constants
+    
+    # Network data format output types
+    NETWORK_DATA_FORMAT_SIMPLE_MATRIX = "simple_matrix"
+    NETWORK_DATA_FORMAT_CSV_MATRIX = "csv_matrix"
+    NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
+    NETWORK_DATA_FORMAT_DEFAULT = NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
+    
+    NETWORK_DATA_FORMAT_CHOICES_LIST = [
+        ( NETWORK_DATA_FORMAT_SIMPLE_MATRIX, "Simple Matrix" ),
+        ( NETWORK_DATA_FORMAT_CSV_MATRIX, "CSV Matrix" ),
+        ( NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
     ]
 
-    DEFAULT_NETWORK_OUTPUT_TYPE = NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX
+    # Network data output types
+    NETWORK_DATA_OUTPUT_TYPE_NETWORK = "network"
+    NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES = "attributes"
+    NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS = "net_and_attr_cols"
+    NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS = "net_and_attr_rows"
+    NETWORK_DATA_OUTPUT_TYPE_DEFAULT = NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
+    
+    NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST = [
+        ( NETWORK_DATA_OUTPUT_TYPE_NETWORK, "Just Network" ),
+        ( NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES, "Just Attributes" ),
+        ( NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS, "Network + Attribute Columns" ),
+        ( NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS, "Network + Attribute Rows" ),
+    ]
 
     # person types
     PERSON_TYPE_UNKNOWN = 'unknown'
@@ -98,9 +117,17 @@ class NetworkDataOutput( object ):
     # parameter constants
     PARAM_OUTPUT_TYPE = 'output_type'
     PARAM_NETWORK_LABEL = 'network_label'
+    PARAM_NETWORK_DATA_OUTPUT_TYPE = 'network_data_output_type'   # type of data you want to output - either just the network, just node attributes, or network with attributes in same table, either with attributes as additional rows or additional columns.
     PARAM_NETWORK_INCLUDE_HEADERS = 'network_include_headers'
+    PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
+    
+    # node attributes
+    NODE_ATTRIBUTE_PERSON_TYPE = "person_type"
+    NODE_ATTRIBUTE_LIST = [
+        NODE_ATTRIBUTE_PERSON_TYPE,
+    ]
 
 
     #---------------------------------------------------------------------------
@@ -112,12 +139,15 @@ class NetworkDataOutput( object ):
 
         # declare variables
         self.query_set = None
-        self.output_type = NetworkDataOutput.DEFAULT_NETWORK_OUTPUT_TYPE
+        self.output_type = NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT
+        self.data_format = NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT
+        self.data_output_type = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT
+        self.include_render_details = False
         self.person_dictionary = {}
         self.network_label = '' # heading to put in first line of network data.
         self.relation_map = {}
         self.include_row_and_column_headers = False
-
+        
         # need a way to keep track of who is a reporter and who is a source.
         # person ID to person type map
         self.person_type_dict = {}
@@ -287,6 +317,70 @@ class NetworkDataOutput( object ):
     #-- END method add_reciprocal_relation --#
 
 
+    def create_header_list( self ):
+
+        """
+            Method: create_header_list()
+
+            Purpose: checks data_output_type, renders header list based on what
+               data we are outputting.  Returns list of headers.
+
+            Returns:
+            - List of headers for our CSV document.
+        """
+
+        # return reference
+        header_list_OUT = None
+
+        # declare variables
+        my_data_output_type = ""
+        node_attribute_list = []
+        current_attr_name = ""
+
+        # get the data output type.
+        my_data_output_type = self.data_output_type
+        
+        # only need to get list of labels if we are outputting network as well as attributes.
+
+        # include network?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ) ):
+
+            # yes.  Start with list of labels.
+            header_list_OUT = self.create_label_list()
+            
+        else:
+        
+            # not outputting whole network.  Start with empty list.
+            header_list_OUT = []
+            
+        #-- END check to see if outputting network. --#
+        
+        # add "id" to the beginning of list (header for column of labels that
+        #    starts each row).
+        header_list_OUT.insert( 0, "id" )
+        
+        # Are we outputting attributes in columns, either just attributes, or network plus attributes as columns?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS ) ):
+
+            # we are - add column headers for attributes - loop over NODE_ATTRIBUTE_LIST.
+            node_attribute_list = NetworkDataOutput.NODE_ATTRIBUTE_LIST
+            for current_attr_name in node_attribute_list:
+            
+                # add the attribute name to the list.
+                header_list_OUT.append( current_attr_name )
+            
+            #-- END loop over attributes
+            
+        #-- END check to see if output attributes as columns --#
+
+        return header_list_OUT
+
+    #-- END method create_header_list --#
+
+
     def create_label_list( self, quote_character_IN = '' ):
 
         """
@@ -432,6 +526,135 @@ class NetworkDataOutput( object ):
         return list_OUT
 
     #-- END method create_person_type_id_list --#
+
+
+    def do_output_attribute_columns( self ):
+
+        """
+            Method: do_output_attribute_columns()
+
+            Purpose: Examines self.data_output_type to see if we are to output
+               node attribute rows.  If so, returns True, if not, returns False.
+               Values that mean we output attribute columns:
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
+
+            Returns:
+            - boolean - If we are to output attribute columns, returns True.  If not, returns False.
+        """
+
+        # return reference
+        do_it_OUT = False
+
+        # declare variables
+        my_data_output_type = ""
+
+        # get data output type
+        my_data_output_type = self.data_output_type
+        
+        # do the output?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS ) ):
+
+            # yes.
+            do_it_OUT = True
+
+        else:
+        
+            # no.
+            do_it_OUT = False
+    
+        #-- END check to see if include network matrix --#
+
+        return do_it_OUT
+
+    #-- END method do_output_attribute_columns() --#
+
+
+    def do_output_attribute_rows( self ):
+
+        """
+            Method: do_output_attribute_rows()
+
+            Purpose: Examines self.data_output_type to see if we are to output
+               node attribute rows.  If so, returns True, if not, returns False.
+               Values that mean we output attribute rows:
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS
+
+            Returns:
+            - boolean - If we are to output attribute rows, returns True.  If not, returns False.
+        """
+
+        # return reference
+        do_it_OUT = False
+
+        # declare variables
+        my_data_output_type = ""
+
+        # get data output type
+        my_data_output_type = self.data_output_type
+        
+        # do the output?
+        if ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ):
+
+            # yes.
+            do_it_OUT = True
+
+        else:
+        
+            # no.
+            do_it_OUT = False
+    
+        #-- END check to see if include network matrix --#
+
+        return do_it_OUT
+
+    #-- END method do_output_attribute_rows() --#
+
+
+    def do_output_network( self ):
+
+        """
+            Method: do_output_network()
+
+            Purpose: Examines self.data_output_type to see if we are to output
+               network data.  If so, returns True, if not, returns False.
+               Values that mean we output network data:
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
+               - NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS
+
+            Returns:
+            - boolean - If we are to output network data, returns True.  If not, returns False.
+        """
+
+        # return reference
+        do_it_OUT = False
+
+        # declare variables
+        my_data_output_type = ""
+
+        # get data output type
+        my_data_output_type = self.data_output_type
+        
+        # include network?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ) ):
+
+            # yes, we output network.
+            do_it_OUT = True
+
+        else:
+        
+            # no, not outputting network.
+            do_it_OUT = False
+    
+        #-- END check to see if include network matrix --#
+
+        return do_it_OUT
+
+    #-- END method do_output_network() --#
 
 
     def generate_master_person_list( self, is_sorted_IN = True ):
@@ -763,19 +986,37 @@ class NetworkDataOutput( object ):
 
         # declare variables
         output_type_IN = ''
+        data_output_type_IN = ''
+        include_render_details_IN = ''
         network_label_IN = ''
         source_capacity_include_list_IN = None
         source_capacity_exclude_list_IN = None
 
         # retrieve info.
-        output_type_IN = request_IN.POST.get( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.DEFAULT_NETWORK_OUTPUT_TYPE )
+        output_type_IN = request_IN.POST.get( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT )
+        data_output_type_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_DATA_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
+        include_render_details_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS, NetworkDataOutput.CHOICE_NO )
         network_label_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_LABEL, '' )
         source_capacity_include_list_IN = request_IN.POST.getlist( NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST )
         source_capacity_exclude_list_IN = request_IN.POST.getlist( NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST )
 
         # store
-        self.output_type = output_type_IN
+        self.set_output_type( output_type_IN )
+        self.data_output_type = data_output_type_IN
         self.network_label = network_label_IN
+
+        # convert include_render_details_IN to boolean
+        if ( include_render_details_IN == NetworkDataOutput.CHOICE_YES ):
+        
+            # yes - True
+            self.include_render_details = True
+
+        else:
+        
+            # not yes, so False.
+            self.include_render_details = False
+        
+        #-- END check to see whether we include render details --#
 
         # got include list?
         if ( source_capacity_include_list_IN ):
@@ -1185,6 +1426,7 @@ class NetworkDataOutput( object ):
 
             # store value
             self.output_type = value_IN
+            self.data_format = value_IN
 
         #-- END check to see if we have a value --#
 

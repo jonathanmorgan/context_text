@@ -376,30 +376,48 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
         network_data_OUT = ''
 
         # declare variables
+        data_output_type = ""
 
         #--------------------------------------------------------------------
         # render network data based on people and ties.
         #--------------------------------------------------------------------
         
+        # get data output type
+        my_data_output_type = self.data_output_type
+        
         # then, need to output.  For each network, output the network, then also
         #    output an attribute file that says, for all people whether each
         #    person was a reporter or a source.
+        
+        # include network?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ) ):
 
-        # output the N of the network.
-        network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
+            # output the N of the network.
+            network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
+    
+            # output network.
+            network_data_OUT += self.create_network_string()
+    
+            # Add a couple of new lines
+            network_data_OUT += "\n\n"
+    
+        #-- END check to see if include network matrix --#
 
-        # output network.
-        network_data_OUT += self.create_network_string()
+        # include person type attributes?
+        if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS )
+            or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ) ):
 
-        # Add a couple of new lines
-        network_data_OUT += "\n\n"
-
-        # output reporter type attribute file.
-        network_data_OUT += self.create_person_type_attribute_string()
+            # yes - append the attribute string.
+            network_data_OUT += self.create_person_type_attribute_string()
+            
+        #-- END check to see if include attributes. --#
 
         # Add a divider, then row headers and column headers for matrix,
         #    attribute list.
-        network_data_OUT += "\n-------------------------------\nColumn and row labels (in the order the rows appear from top to bottom in the network matrix and attribute vector above, and in the order the columns apear from left to right) \n\n"
+        network_data_OUT += "\n-------------------------------\nColumn and row labels (in the order the rows appear from top to bottom in the network matrix and attribute vector above, and in the order the columns appear from left to right) \n\n"
 
         # create column of headers
         network_data_OUT += self.create_label_string( "\n" )

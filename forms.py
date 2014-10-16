@@ -107,8 +107,15 @@ class PersonSelectForm( forms.Form ):
 #    that are used to create output.
 class NetworkOutputForm( forms.Form ):
 
-    # just contains the output type field for outputting network data.
-    output_type = forms.ChoiceField( label = "Output Type", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST )
+    # include render details? 
+    # do we want to output row and column headers?
+    network_include_render_details = forms.ChoiceField( required = False, label = "Include render details", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+
+    # just contains the format you want the network data outputted as.
+    output_type = forms.ChoiceField( label = "Data Format", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_OUTPUT_TYPE_DEFAULT )
+
+    # data to output - either just network, just node attributes, both with attributes in columns, or both with attributes in rows.
+    network_data_output_type = forms.ChoiceField( label = "Data Output Type", choices = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
 
     # do we want a label at the top of the network file?
     network_label = forms.CharField( required = False, label = "Network Label" )

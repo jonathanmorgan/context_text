@@ -64,7 +64,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
 
     csv_string_buffer = None
     csv_writer = None
-    csv_delimiter = ","
+    delimiter = ","
 
     
     #---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         # initialize variables.
         self.csv_string_buffer = None
         self.csv_writer = None
-        self.csv_delimiter = ","
+        self.delimiter = ","
 
     #-- END method __init__() --#
 
@@ -118,11 +118,14 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         # declare variables
         current_person_label = ""
         person_list = None
+        do_output_network = False
         current_person_relations = None
         current_other_id = -1
         current_other_count = -1
         column_value_list = []
         csv_writer = None
+        do_output_attrs = False
+        person_type_id = -1
 
         # get person ID?
         if ( person_id_IN ):
@@ -137,32 +140,50 @@ class NDO_CSVMatrix( NetworkDataOutput ):
             # make it first column in row.
             column_value_list.append( current_person_label )
             
-            # get person list
-            person_list = self.get_master_person_list()
+            # are we outputting network?
+            do_output_network = self.do_output_network()
+            if ( do_output_network == True ):
 
-            # get relations for this person.
-            current_person_relations = self.get_relations_for_person( person_id_IN )
+                # get person list
+                person_list = self.get_master_person_list()
+    
+                # get relations for this person.
+                current_person_relations = self.get_relations_for_person( person_id_IN )
+    
+                # loop over master list, checking for relations with each person.
+                for current_other_id in sorted( person_list ):
+    
+                    # try to retrieve relation count from relations
+                    if current_other_id in current_person_relations:
+    
+                        # they are related.  Get count.
+                        current_other_count = current_person_relations[ current_other_id ]
+    
+                    else:
+    
+                        # no relation.  Set current count to 0
+                        current_other_count = 0
+    
+                    #-- END check to see if related.
+    
+                    # output the count for the current person.
+                    column_value_list.append( str( current_other_count ) )
+    
+                #-- END loop over master list --#
+                
+            #-- END check to see if we output network data. --#
+            
+            # do we append node attributes to the end of each row?
+            do_output_attrs = self.do_output_attribute_columns()
+            if ( do_output_attrs == True ):
 
-            # loop over master list, checking for relations with each person.
-            for current_other_id in sorted( person_list ):
-
-                # try to retrieve relation count from relations
-                if current_other_id in current_person_relations:
-
-                    # they are related.  Get count.
-                    current_other_count = current_person_relations[ current_other_id ]
-
-                else:
-
-                    # no relation.  Set current count to 0
-                    current_other_count = 0
-
-                #-- END check to see if related.
-
-                # output the count for the current person.
-                column_value_list.append( str( current_other_count ) )
-
-            #-- END loop over master list --#
+                # yes - append attributes.
+                
+                # get current person's person type and append it.
+                person_type_id = self.get_person_type_id( person_id_IN )
+                column_value_list.append( str( person_type_id ) )
+                            
+            #-- END check to see if we append attributes to the end of rows. --#
             
             # append row to CSV
             self.append_row_to_csv( column_value_list )
@@ -282,13 +303,10 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         current_person_id = -1
         person_counter = -1
         my_csv_buffer = None
-        
-        # get list of labels, for column headers.
-        header_label_list = self.create_label_list()
-        
-        # add "id" to the beginning of list (header for column of labels that
-        #    starts each row).
-        header_label_list.insert( 0, "id" )
+        do_output_attr_rows = False
+
+        # get list of column headers.
+        header_label_list = self.create_header_list()
         
         # add header label row to csv document.
         self.append_row_to_csv( header_label_list )
@@ -316,8 +334,14 @@ class NDO_CSVMatrix( NetworkDataOutput ):
 
         #-- END check to make sure we have a person list. --#
         
-        # add a row of person type IDs
-        self.append_person_type_id_row()
+        # add attributes as rows?
+        do_output_attr_rows = self.do_output_attribute_rows()
+        if ( do_output_attr_rows == True ):
+
+            # yes - append the attribute string.
+            self.append_person_type_id_row()
+            
+        #-- END check to see if include attributes. --#
 
     #-- END method create_csv_document --#
 
@@ -473,6 +497,10 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         network_data_OUT = ''
 
         # declare variables
+        include_render_details = False
+        
+        # include render details?
+        include_render_details = self.include_render_details
 
         #--------------------------------------------------------------------
         # render network data based on people and ties.
@@ -482,9 +510,13 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         #    output an attribute file that says, for all people whether each
         #    person was a reporter or a source.
 
-        # output the N of the network.
-        network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
+        if ( include_render_details == True ):
 
+            # output the N of the network.
+            network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
+            
+        #-- END check to see if include render details. --#
+    
         # output network.
         network_data_OUT += self.create_csv_string()
         

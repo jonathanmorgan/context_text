@@ -76,12 +76,14 @@ class NetworkOutput( object ):
     PARAM_TOPICS = 'topics'   # list of IDs of topics whose data you want included.
     PARAM_UNIQUE_IDS = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
     PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
-    PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, currently only CSV for UCINet is supported.
+    PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
     PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
 
     # parameters specific to network output
     PARAM_NETWORK_LABEL = NetworkDataOutput.PARAM_NETWORK_LABEL
     PARAM_NETWORK_INCLUDE_HEADERS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_HEADERS
+    PARAM_NETWORK_INCLUDE_RENDER_DETAILS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS
+    PARAM_NETWORK_DATA_OUTPUT_TYPE = NetworkDataOutput.PARAM_NETWORK_DATA_OUTPUT_TYPE
 
     # prefix for person-selection params - same as network selection parameters
     #    above, but with this prefix appended to the front.
@@ -106,7 +108,9 @@ class NetworkOutput( object ):
         PARAM_TOPICS : PARAM_TYPE_LIST,
         PARAM_UNIQUE_IDS : PARAM_TYPE_STRING,
         PARAM_HEADER_PREFIX : PARAM_TYPE_STRING,
+        PARAM_NETWORK_INCLUDE_RENDER_DETAILS : PARAM_TYPE_STRING,
         PARAM_OUTPUT_TYPE : PARAM_TYPE_STRING,
+        PARAM_NETWORK_DATA_OUTPUT_TYPE : PARAM_TYPE_STRING,
         PARAM_ALLOW_DUPLICATE_ARTICLES : PARAM_TYPE_STRING,
         PARAM_NETWORK_LABEL : PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_HEADERS : PARAM_TYPE_STRING,
@@ -136,17 +140,22 @@ class NetworkOutput( object ):
         ( CHOICE_YES, "Yes" )
     ]
 
-    # Network output types
-    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = "simple_matrix"
-    NETWORK_OUTPUT_TYPE_CSV_MATRIX = "csv_matrix"
-    NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
-    NETWORK_OUTPUT_TYPE_DEFAULT = NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX
+    # Network data format output types
+    NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_SIMPLE_MATRIX
+    NETWORK_OUTPUT_TYPE_CSV_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_CSV_MATRIX
+    NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
+    NETWORK_OUTPUT_TYPE_DEFAULT = NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT
     
-    NETWORK_OUTPUT_TYPE_CHOICES_LIST = [
-        ( NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX, "Simple Matrix" ),
-        ( NETWORK_OUTPUT_TYPE_CSV_MATRIX, "CSV Matrix" ),
-        ( NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
-    ]
+    NETWORK_OUTPUT_TYPE_CHOICES_LIST = NetworkDataOutput.NETWORK_DATA_FORMAT_CHOICES_LIST
+
+    # Network data output types
+    NETWORK_DATA_OUTPUT_TYPE_NETWORK = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK
+    NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES
+    NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
+    NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS
+    NETWORK_DATA_OUTPUT_TYPE_DEFAULT = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT
+    
+    NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST
 
     #---------------------------------------------------------------------------
     # __init__() method

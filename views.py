@@ -280,6 +280,8 @@ def output_network( request_IN ):
     article_select_form = None
     network_output_form = None
     person_select_form = None
+    include_render_details_IN = ''
+    include_render_details = False
     output_string = ''
     network_outputter = None
     current_item = None
@@ -312,52 +314,83 @@ def output_network( request_IN ):
 
             # retrieve articles specified by the input parameters, then create
             #   string output, then pass it and form on to the output form.
+            
+            # do we include details?
+            include_render_details_IN = request_IN.POST.get( NetworkOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS, NetworkOutput.CHOICE_NO )
+
+            # convert include_render_details_IN to boolean
+            if ( include_render_details_IN == NetworkOutput.CHOICE_YES ):
+            
+                # yes - True
+                include_render_details = True
+    
+            else:
+            
+                # not yes, so False.
+                include_render_details = False
+            
+            #-- END check to see whether we include render details --#
 
             # initialize the NetworkOutput instance.
             network_outputter = NetworkOutput()
             network_outputter.set_request( request_IN )
-
-            # For now, output plain string
-            output_string += "=======================\n"
-            output_string += "parameter overview:\n"
-            output_string += "=======================\n"
-            output_string += "\n"
-            output_string += network_outputter.debug_parameters()
-
-            #-------------------------------------------------------------------
-            # summary info.
-            #-------------------------------------------------------------------
-
+            
+            # prepare data
+            
             # retrieve Article_Data QuerySet based on parameters passed in.
             network_query_set = network_outputter.create_network_query_set()
 
             # get count of queryset return items
             article_data_count = network_query_set.count()
 
-            output_string += "\n\n\n"
-            output_string += "=======================\n"
-            output_string += "article overview:\n"
-            output_string += "=======================\n"
-            output_string += "\nTotal article data rows returned: " + str( article_data_count ) + "\n\n"
+            # include render details?
+            if ( include_render_details == True ):
 
-            # loop over the query set.
-            query_counter = 0
-            for current_item in network_query_set:
-
-                query_counter += 1
-                output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
-
-            #-- END loop over articles to list out headlines. --#
-
-            # render and output networkd data.
-            output_string += "\n\n"
-            output_string += "=======================\n"
-            output_string += "network data output:\n"
-            output_string += "=======================\n"
+                # For now, output plain string
+                output_string += "=======================\n"
+                output_string += "parameter overview:\n"
+                output_string += "=======================\n"
+                output_string += "\n"
+                output_string += network_outputter.debug_parameters()
+    
+                #-------------------------------------------------------------------
+                # summary info.
+                #-------------------------------------------------------------------
+    
+                output_string += "\n\n\n"
+                output_string += "=======================\n"
+                output_string += "article overview:\n"
+                output_string += "=======================\n"
+                output_string += "\nTotal article data rows returned: " + str( article_data_count ) + "\n\n"
+    
+                # loop over the query set.
+                query_counter = 0
+                for current_item in network_query_set:
+    
+                    query_counter += 1
+                    output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
+    
+                #-- END loop over articles to list out headlines. --#
+    
+                # render and output networkd data.
+                output_string += "\n\n"
+                output_string += "=======================\n"
+                output_string += "network data output:\n"
+                output_string += "=======================\n"
+                
+            #-- END check to see if we include render details. --#
+            
+            # render the actual network data.
             output_string += network_outputter.render_network_data( network_query_set )
-            output_string += "=======================\n"
-            output_string += "END network data output\n"
-            output_string += "=======================\n"
+
+            # include render details?
+            if ( include_render_details == True ):
+
+                output_string += "=======================\n"
+                output_string += "END network data output\n"
+                output_string += "=======================\n"
+    
+            #-- END check to see if we output render details --#
 
             # Prepare parameters for view.
             response_dictionary[ 'output_string' ] = output_string
@@ -369,6 +402,7 @@ def output_network( request_IN ):
         else:
 
             # not valid - render the form again
+            response_dictionary[ 'output_string' ] = "Invalid Form"
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'network_output_form' ] = network_output_form
             response_dictionary[ 'person_select_form' ] = person_select_form
