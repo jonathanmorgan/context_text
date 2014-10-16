@@ -488,8 +488,30 @@ To load an imported matrix into igraph ([http://igraph.org/index.html](http://ig
     # - 3 - W = weighted
     # - 4 - B = bipartite ( "-" = not bipartite )
     # 314 is where node count goes, 309 is edge count.
-    # The second line gives you information about the 'attributes' associated with the graph. In this case, there is only one attribute, called 'name', which is associated with the vertex set. 
+    # The second line gives you information about the 'attributes' associated with the graph. In this case, there are two attributes, name and weight.  Next to each attribute name is a two-character construct that looks like "(v/c)".  The first letter is the thing the attribute is associated with (g = graph, v = vertex or node, e = edge).  The second is the type of the attribute (c = character data, n = numeric data).  So, in this case:
+    # - name (v/c) - the name attribute is a vertex/node attribute - the "v" in "(v/c)" - where the values are character data - the "c" in "(v/c)".
+    # - weight (e/n) - the weight attribute is an edge attribute - the "e" in "(e/n)" - where the values are numeric data - the "n" in "(e/n)".
     # - based on: http://www.shizukalab.com/toolkits/sna/sna_data
+    
+    # to reference a vertex attribute's values, use V( <network> )$<attribute_name>
+
+    # output the names for the nodes in the graph:
+    V( test1_igraph )$name
+
+    # use last row in original data file to make person_type an attribute of each node.
+
+    # first, get just the data frame row with person types (the last row):
+    person_types_row <- tab_test1[ 315, ]
+
+    # Convert to a list of numbers.
+    person_types_list <- as.numeric( person_types_row )
+
+    # set vertex/node attribute person_type
+    V( test1_igraph )$person_type <- person_types_list
+    
+    # look at graph and person_type attribute values
+    test1_igraph
+    V( test1_igraph )$person_type
 
 ### Load matrix into statnet
 
