@@ -18,7 +18,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # import Python libraries for CSV output
 #import csv
-from StringIO import StringIO
+import datetime
+#from StringIO import StringIO
 #import pickle
 
 # include the django conf settings
@@ -292,7 +293,7 @@ def output_network( request_IN ):
     query_counter = ''
     my_content_type = ""
     my_file_extension = ""
-    my_string_writer = None
+    current_date_time = ""
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -422,10 +423,13 @@ def output_network( request_IN ):
                 my_content_type = network_outputter.mime_type
                 my_file_extension = network_outputter.file_extension
                 
+                # time stamp to append to file name
+                current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
+                
                 # Create the HttpResponse object with the appropriate content
                 #    type and disposition.
                 response_OUT = HttpResponse( content = output_string, content_type = my_content_type )
-                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="sourcenet_data.' + my_file_extension + '"'
+                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="sourcenet_data-' + current_date_time + '.' + my_file_extension + '"'
             
             else:
 

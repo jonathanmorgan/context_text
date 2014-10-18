@@ -497,10 +497,10 @@ To read in a CSV matrix file:
     csv_test1 <- read.csv( "csv-test1.csv", header = TRUE, row.names = 1, check.names = FALSE )
     
     # just use the first 314 rows (omit the person_type row, the last row, for now).
-    csv_test1_clean <- csv_test1[ -nrow( csv_test1 ), ]
+    csv_test1_network <- csv_test1[ -nrow( csv_test1 ), ]
     
     # convert to a matrix
-    csv_test1_matrix <- as.matrix( csv_test1_clean )
+    csv_test1_matrix <- as.matrix( csv_test1_network )
 
 ### Import a tab-delimited file
 
@@ -510,10 +510,10 @@ To read in a tab-delimited matrix file:
     tab_test1 <- read.delim( "tab-test1-data.txt", header = TRUE, row.names = 1, check.names = FALSE )
     
     # just use the first 314 rows (omit the person_type row, the last row, for now).
-    tab_test1_clean <- tab_test1[ -nrow( tab_test1 ), ]
+    tab_test1_network <- tab_test1[ -nrow( tab_test1 ), ]
     
     # convert to a matrix
-    tab_test1_matrix <- as.matrix( tab_test1_clean )
+    tab_test1_matrix <- as.matrix( tab_test1_network )
         
 ### Load matrix into igraph
 
