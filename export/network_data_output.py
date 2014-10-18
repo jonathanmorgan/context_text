@@ -116,6 +116,7 @@ class NetworkDataOutput( object ):
 
     # parameter constants
     PARAM_OUTPUT_TYPE = 'output_type'
+    PARAM_NETWORK_DOWNLOAD_AS_FILE = 'network_download_as_file'
     PARAM_NETWORK_LABEL = 'network_label'
     PARAM_NETWORK_DATA_OUTPUT_TYPE = 'network_data_output_type'   # type of data you want to output - either just the network, just node attributes, or network with attributes in same table, either with attributes as additional rows or additional columns.
     PARAM_NETWORK_INCLUDE_HEADERS = 'network_include_headers'
@@ -147,6 +148,10 @@ class NetworkDataOutput( object ):
         self.network_label = '' # heading to put in first line of network data.
         self.relation_map = {}
         self.include_row_and_column_headers = False
+        
+        # variables for outputting result as file
+        self.mime_type = ""
+        self.file_extension = ""
         
         # need a way to keep track of who is a reporter and who is a source.
         # person ID to person type map

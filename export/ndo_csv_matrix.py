@@ -86,6 +86,10 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         self.csv_writer = None
         self.delimiter = ","
 
+        # variables for outputting result as file
+        self.mime_type = "text/csv"
+        self.file_extension = "csv"
+
     #-- END method __init__() --#
 
 

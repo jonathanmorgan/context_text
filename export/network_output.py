@@ -80,6 +80,7 @@ class NetworkOutput( object ):
     PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
 
     # parameters specific to network output
+    PARAM_NETWORK_DOWNLOAD_AS_FILE = NetworkDataOutput.PARAM_NETWORK_DOWNLOAD_AS_FILE
     PARAM_NETWORK_LABEL = NetworkDataOutput.PARAM_NETWORK_LABEL
     PARAM_NETWORK_INCLUDE_HEADERS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_HEADERS
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS
@@ -108,6 +109,7 @@ class NetworkOutput( object ):
         PARAM_TOPICS : PARAM_TYPE_LIST,
         PARAM_UNIQUE_IDS : PARAM_TYPE_STRING,
         PARAM_HEADER_PREFIX : PARAM_TYPE_STRING,
+        PARAM_NETWORK_DOWNLOAD_AS_FILE : PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_RENDER_DETAILS : PARAM_TYPE_STRING,
         PARAM_OUTPUT_TYPE : PARAM_TYPE_STRING,
         PARAM_NETWORK_DATA_OUTPUT_TYPE : PARAM_TYPE_STRING,
@@ -168,6 +170,10 @@ class NetworkOutput( object ):
         self.request = None
         self.params_dictionary = {}
 
+        # variables for outputting result as file
+        self.mime_type = ""
+        self.file_extension = ""
+        
     #-- END method __init__() --#
 
 
@@ -760,6 +766,10 @@ class NetworkOutput( object ):
             NDO_instance_OUT = NDO_SimpleMatrix()
         
         #-- END check to see what type we have. --#
+        
+        # set mime type and file extension from instance
+        self.mime_type = NDO_instance_OUT.mime_type
+        self.file_extension = NDO_instance_OUT.file_extension
 
         return NDO_instance_OUT
 

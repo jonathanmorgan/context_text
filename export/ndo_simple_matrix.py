@@ -79,6 +79,10 @@ class NDO_SimpleMatrix( NetworkDataOutput ):
         # override things set in parent.
         self.output_type = self.MY_OUTPUT_TYPE
         self.debug = "NDO_SimpleMatrix debug:\n\n"
+        
+        # variables for outputting result as file
+        self.mime_type = "text/plain"
+        self.file_extension = "txt"
 
     #-- END method __init__() --#
 

@@ -107,9 +107,11 @@ class PersonSelectForm( forms.Form ):
 #    that are used to create output.
 class NetworkOutputForm( forms.Form ):
 
+    # do we want to download result as file?
+    network_download_as_file = forms.ChoiceField( required = False, label = "Download As File?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+
     # include render details? 
-    # do we want to output row and column headers?
-    network_include_render_details = forms.ChoiceField( required = False, label = "Include render details", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+    network_include_render_details = forms.ChoiceField( required = False, label = "Include Render Details?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
     # just contains the format you want the network data outputted as.
     output_type = forms.ChoiceField( label = "Data Format", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_OUTPUT_TYPE_DEFAULT )
@@ -121,7 +123,7 @@ class NetworkOutputForm( forms.Form ):
     network_label = forms.CharField( required = False, label = "Network Label" )
 
     # do we want to output row and column headers?
-    network_include_headers = forms.ChoiceField( required = False, label = "Include headers", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+    network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
     # include and exclude source capacities
     include_capacities = forms.MultipleChoiceField( required = False, choices = Article_Source.SOURCE_CAPACITY_CHOICES )

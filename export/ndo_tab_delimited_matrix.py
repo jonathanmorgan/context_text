@@ -80,6 +80,10 @@ class NDO_TabDelimitedMatrix( NDO_CSVMatrix ):
         self.csv_writer = None
         self.delimiter = "\t"
 
+        # variables for outputting result as file
+        self.mime_type = "text/tab-separated-values"
+        self.file_extension = "tab"
+
     #-- END method __init__() --#
 
 

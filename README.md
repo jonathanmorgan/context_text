@@ -349,7 +349,8 @@ Article parameters - For convenience, here is a list that was current at the tim
 
 ## Output configuration parameters
 
-- _"Include Render Details"_ - `include_render_details` - If "Yes", includes detail on articles and people included in network in output.  If "No", just outputs network data.
+- _"Download As File?"_ - `network_download_as_file` - If "Yes", result of rendering network data is downloaded by browser.  If "No", just outputs network data in text box at top of page.
+- _"Include Render Details?"_ - `include_render_details` - If "Yes", includes detail on articles and people included in network in output.  If "No", just outputs network data.
 - _"Data Format"_ - `output_type` - type of output you want.  Currently support:
     - Simple Matrix - custom format for UCINet
     - CSV Matrix - network matrix rendered as CSV data, with first row and first column containing node labels.
@@ -360,7 +361,7 @@ Article parameters - For convenience, here is a list that was current at the tim
     - Network + Attribute Columns - network data, plus attributes as additional columns in the matrix.
     - Network + Attribute Rows - network data, plus attributes as additional rows in the matrix.
 - _"Network Label"_ - `?` - When outputting CSV for UCINet, this is the line before the start of the lines of CSV data, which UCINet reads as the network name for display inside the program.
-- _"Include headers"_ - `?` - ?
+- _"Include headers?"_ - `?` - ?
 
 ## Person selection parameters
 
@@ -440,6 +441,28 @@ To add a new output type, do the following:
     - make sure to import the NetworkDataOutputter abstract class:
 
             from sourcenet.export.network_data_output import NetworkDataOutput
+
+    - implement a `__init__()` method that calls parent method, and overrides fields specific to your output type, especially output type, mime type, and file extension.  Example from `NDO_CSVMatrix` (file `export/ndo_csv_matrix.py`):
+
+            def __init__( self ):
+        
+                # call parent's __init__()
+                super( NDO_CSVMatrix, self ).__init__()
+        
+                # override things set in parent.
+                self.output_type = self.MY_OUTPUT_TYPE
+                self.debug = "NDO_CSVMatrix debug:\n\n"
+        
+                # initialize variables.
+                self.csv_string_buffer = None
+                self.csv_writer = None
+                self.delimiter = ","
+        
+                # variables for outputting result as file
+                self.mime_type = "text/csv"
+                self.file_extension = "csv"
+        
+            #-- END method __init__() --#
 
     - implement the `render_network_data()` method.  A few notes:
         - this method will be called by the `render()` method in class `NetworkDataOutput` (file `export/network_data_output.py`).  That method takes care of figuring out what people should be in the network and figuring out ties based on included articles.  You just need to take this information and render network data.

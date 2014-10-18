@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # import Python libraries for CSV output
 #import csv
-#import StringIO
+from StringIO import StringIO
 #import pickle
 
 # include the django conf settings
@@ -29,7 +29,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # Import objects from the django.http library.
 #from django.http import Http404
-#from django.http import HttpResponse
+from django.http import HttpResponse
 #from django.http import HttpResponseRedirect
 
 # import django code for csrf security stuff.
@@ -282,12 +282,17 @@ def output_network( request_IN ):
     person_select_form = None
     include_render_details_IN = ''
     include_render_details = False
+    download_as_file_IN = ""
+    download_as_file = False
     output_string = ''
     network_outputter = None
     current_item = None
     network_query_set = None
     article_count = ''
     query_counter = ''
+    my_content_type = ""
+    my_file_extension = ""
+    my_string_writer = None
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -296,8 +301,26 @@ def output_network( request_IN ):
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
-    # set my teplate
+    # set my template
     default_template = 'sourcenet_output_network.html'
+    
+    # output parameters
+ 
+    # does user want to download the result as a file?
+    download_as_file_IN = request_IN.POST.get( NetworkOutput.PARAM_NETWORK_DOWNLOAD_AS_FILE, NetworkOutput.CHOICE_NO )
+
+    # convert download_as_file_IN to boolean
+    if ( download_as_file_IN == NetworkOutput.CHOICE_YES ):
+    
+        # yes - True
+        download_as_file = True
+
+    else:
+    
+        # not yes, so False.
+        download_as_file = False
+    
+    #-- END check to see whether user wants to download the results as a file --#
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -392,12 +415,28 @@ def output_network( request_IN ):
     
             #-- END check to see if we output render details --#
 
-            # Prepare parameters for view.
-            response_dictionary[ 'output_string' ] = output_string
-            response_dictionary[ 'article_select_form' ] = article_select_form
-            response_dictionary[ 'network_output_form' ] = network_output_form
-            response_dictionary[ 'person_select_form' ] = person_select_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            # download as file, or render view?
+            if ( download_as_file == True ):
+            
+                # figure out the content type and content disposition.
+                my_content_type = network_outputter.mime_type
+                my_file_extension = network_outputter.file_extension
+                
+                # Create the HttpResponse object with the appropriate content
+                #    type and disposition.
+                response_OUT = HttpResponse( content = output_string, content_type = my_content_type )
+                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="sourcenet_data.' + my_file_extension + '"'
+            
+            else:
+
+                # Prepare parameters for view.
+                response_dictionary[ 'output_string' ] = output_string
+                response_dictionary[ 'article_select_form' ] = article_select_form
+                response_dictionary[ 'network_output_form' ] = network_output_form
+                response_dictionary[ 'person_select_form' ] = person_select_form
+                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+                
+            #-- END check to see if we return result as a file --#
 
         else:
 
