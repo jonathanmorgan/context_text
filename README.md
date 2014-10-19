@@ -489,6 +489,8 @@ To add a new output type, do the following:
 
 To work with network data into R, first you read either a CSV or tab-delimited network matrix in as a data frame.  Then, convert to an R matrix object.  From there, you can load the matrix into your SNA package of choice (examples for igraph and statnet below).
 
+For more detailed examples, see the `*.r` R source code files in `sourcenet/R/`.
+
 ### Import a CSV file
 
 To read in a CSV matrix file:
@@ -594,7 +596,10 @@ To load an imported matrix into statnet ([http://www.statnet.org/](http://www.st
     #
     # No edge attributes
         
-    # If you have a file of attributes (each attribute is a column, with attribute name the column name), you can associate those attributes when you create the network.
+    # If you have a file of attributes (each attribute is a column, with
+    #    attribute name the column name), you can associate those attributes
+    #    when you create the network.
+    # attribute help: http://www.inside-r.org/packages/cran/network/docs/loading.attributes
     
     # load attribute file:
     tab_attribute_test1 <- read.delim( "tab-test1-attribute_data.txt", header = TRUE, row.names = 1, check.names = FALSE )
@@ -604,6 +609,28 @@ To load an imported matrix into statnet ([http://www.statnet.org/](http://www.st
     
     # look at information now.
     test1_statnet
+
+    # Network attributes:
+    #  vertices = 314 
+    #  directed = FALSE 
+    #  hyper = FALSE 
+    #  loops = FALSE 
+    #  multiple = FALSE 
+    #  bipartite = FALSE 
+    #  total edges= 309 
+    #    missing edges= 0 
+    #    non-missing edges= 309 
+    #
+    # Vertex attribute names: 
+    #    person_type vertex.names 
+    #
+    # No edge attributes
+    
+    # - OR - you can just add the attribute values to an existing network.
+    test1_statnet%v%"person_type" <- tab_attribute_test1$person_type
+    
+    # list out the person_type attribute values
+    test1_statnet%v%"person_type"
 
 ## Importing data into UCINet
 
