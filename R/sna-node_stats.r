@@ -31,6 +31,10 @@ avg_degree <- mean( degree_vector )
 # append the degrees to the network as a vertex attribute.
 V( test1_igraph )$degree <- degree_vector
 
+# if you want to just work with the traits of the nodes/vertexes, you can
+#    combine the attribute vectors into a data frame.
+node_attribute_df <- data.frame( id = V( test1_igraph )$name, person_type = V( test1_igraph )$person_type, degree = V( test1_igraph )$degree )
+
 #==============================================================================#
 # statnet
 #==============================================================================#
@@ -67,3 +71,7 @@ above_mean_vector <- degree_vector[ degree_vector > avg_degree ]
 # Take the degree and associate it with each node as a node attribute.
 #    (%v% is a shortcut for the get.vertex.attribute command)
 test1_statnet %v% "degree" <- degree_vector
+
+# if you want to just work with the traits of the nodes/vertexes, you can
+#    combine the attribute vectors into a data frame.
+node_attribute_df <- data.frame( id = test1_statnet %v% "vertex.names", person_type = test1_statnet %v% "person_type", degree = test1_statnet %v% "degree" )
