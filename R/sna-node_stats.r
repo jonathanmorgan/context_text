@@ -33,6 +33,11 @@ V( test1_igraph )$degree <- degree_vector
 
 # if you want to just work with the traits of the nodes/vertexes, you can
 #    combine the attribute vectors into a data frame.
+
+# first, output igraph object to see what attributes you have
+test1_igraph
+
+# then, combine them into a data frame.
 node_attribute_df <- data.frame( id = V( test1_igraph )$name, person_type = V( test1_igraph )$person_type, degree = V( test1_igraph )$degree )
 
 #==============================================================================#
@@ -74,4 +79,9 @@ test1_statnet %v% "degree" <- degree_vector
 
 # if you want to just work with the traits of the nodes/vertexes, you can
 #    combine the attribute vectors into a data frame.
+
+# first, output network object to see what attributes you have
+test1_statnet
+
+# then, combine them into a data frame.
 node_attribute_df <- data.frame( id = test1_statnet %v% "vertex.names", person_type = test1_statnet %v% "person_type", degree = test1_statnet %v% "degree" )
