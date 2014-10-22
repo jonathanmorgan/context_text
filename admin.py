@@ -15,6 +15,7 @@ from ajax_select import make_ajax_form
 from ajax_select.admin import AjaxSelectAdmin
 
 # Import models
+from sourcenet.models import Project
 from sourcenet.models import Location
 from sourcenet.models import Topic
 from sourcenet.models import Person
@@ -34,6 +35,7 @@ from sourcenet.models import Article
 from sourcenet.models import Article_Data
 from django.contrib import admin
 
+admin.site.register( Project )
 admin.site.register( Location )
 admin.site.register( Topic )
 #admin.site.register( Person )
@@ -215,7 +217,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
     fieldsets = [
         ( None,
             {
-                'fields' : [ 'article', 'coder', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
+                'fields' : [ 'article', 'coder', 'projects', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
             }
         ),
         ( "Article Locations (Optional)",

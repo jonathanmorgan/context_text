@@ -36,6 +36,7 @@ import re
 
 # HTML parsing
 from bs4 import BeautifulSoup
+from bs4 import NavigableString
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 
 # django model for article
@@ -141,6 +142,167 @@ class NewsBankHelper( object ):
     #============================================================================
 
 
+    def clean_article_body( self, bs_body_tag_IN ):
+
+        '''
+        Accepts article body nested in BeautifulSoup instance (assumes it is the
+           body copy of the article, perhaps with some HTML mixed in, but not the
+           full HTML of the article).  Looks for paragraph breaks (two <br> tags
+           on two subsequent lines), uses these to split document into a list of
+           paragraphs, stripping all HTML out of each paragraph and swapping
+           contiguous runs of white space more than 1 character long for a single
+           space.  Counts paragraphs, then wraps each paragraph string in a <p>
+           tag with paragraph number stored in "id" attribute of <p> tag, then
+           combines all paragraph strings into one string and returns the string.
+           
+        Preconditions: Article body must have been parsed into a BeautifulSoup
+            element instance.  Shouldn't be the entire HTML, just the article
+            body.
+           
+        Postconditions: Returns article body as a string with all HTML removed
+           except for <p> tags wrapping each paragraph, and all runs of white
+           space longer than 1 character converted to a single space.  Does not
+           alter the BeautifulSoup instance passed in.
+           
+        Parameters:
+        - bs_body_element_IN - BeautifulSoup 4 element instance that contains HTML body copy of article.
+        
+        Returns:
+        - String - Returns article with all HTML removed except for <p> tags wrapping each paragraph, and all runs of white space longer than 1 character converted to a single space.
+        '''
+        
+        # return reference
+        body_string_OUT = ""
+        
+        # declare variables
+        my_bs_helper = None
+        paragraph_list = []
+        current_element_list = []
+        current_name = ""
+        paragraph_counter = -1
+        paragraph_text = ""
+        paragraph_text_list = []
+        current_paragraph_text = ""
+        bs_helper = None
+        graf_counter = -1
+        graf_count = -1
+        article_string = ""
+        
+        # initialize BS helper
+        my_bs_helper = self.get_bs_helper()
+        
+        # loop over the contents of this div.
+        paragraph_counter = 1
+        current_element_list = []
+        for current_content in bs_body_tag_IN.contents:
+        
+            # get name of element - <br> elements are divider between paragraphs.
+            current_name = current_content.name
+            
+            # see if name is br.
+            if ( current_name == "br" ):
+            
+                # yes - paragraph break!
+                
+                #output a message, and the string contents of the tag (just in case).
+                #print( "=======> paragraph break! - End of paragraph " + str( paragraph_counter ) + ".  HTML element Contents: \"" + str( current_content ) + "\"" )
+                
+                # process elements of previous paragraph, add to paragraph list.
+                paragraph_text_list = []
+                for paragraph_element in current_element_list:
+                
+                    # convert current element to just text.  Is it NavigableString?
+                    if ( isinstance( paragraph_element, NavigableString) ):
+                    
+                        # it is NavigableString - convert it to string.
+                        current_paragraph_text = unicode( paragraph_element )
+                    
+                    else:
+                    
+                        # not text - just grab all the text out of it.
+                        #current_paragraph_text = ' '.join( paragraph_element.findAll( text = True ) )
+                        current_paragraph_text = paragraph_element.get_text( " ", strip = True )
+                        
+                    #-- END check to see if current element is text. --#
+        
+                    # clean up - convert HTML entities
+                    current_paragraph_text = my_bs_helper.convert_html_entities( current_paragraph_text )
+                    
+                    # strip out extra white space
+                    current_paragraph_text = ' '.join( current_paragraph_text.split() )
+                    
+                    # got any paragraph text?
+                    current_paragraph_text = current_paragraph_text.strip()
+                    if ( ( current_paragraph_text != None ) and ( current_paragraph_text != "" ) ):
+                    
+                        # yes.  Add to paragraph text.
+                        paragraph_text_list.append( current_paragraph_text )
+                        
+                    #-- END check to see if any text. --#
+                
+                #-- END loop over paragraph elements. --#
+                
+                # convert paragraph list to string
+                paragraph_text = ' '.join( paragraph_text_list )
+                
+                # got any text in this paragraph?
+                if ( ( paragraph_text != None ) and ( paragraph_text != "" ) ):
+        
+                    # yes - Add paragraph text to paragraph_list
+                    paragraph_list.append( paragraph_text )
+                            
+                    # increment paragraph counter
+                    paragraph_counter += 1
+                    
+                #-- END check to see if paragraph text. --#
+        
+                # output paragraph text.
+                #print( "=======> paragraph text: " + paragraph_text )
+                
+                # reset current_element_list
+                current_element_list = []
+            
+            else: 
+            
+                # no. Add current element to list
+                current_element_list.append( current_content )
+            
+            #-- END check to see if <br> --#
+        
+        #-- END loop over contents. --#
+        
+        #print( "\n\n\n~~~~~~~~~~ After paragraph loop:\n\n\n" )
+        
+        # how many paragraphs?
+        graf_count = len( paragraph_list )
+        if ( graf_count > 0 ):
+        
+            # Got at least one. loop over paragraphs
+            graf_counter = 0
+            body_string_OUT = ""
+            for graf in paragraph_list:
+            
+                # increment counter, output paragraph.
+                graf_counter += 1
+                
+                # print our paragraphs in paragraph list.
+                #print( "- graf " + str( graf_counter ) + ": \"" + graf + "\"" )
+                
+                # put the paragraph in <p> tags.
+                current_paragraph_text = "<p id=\"" + str( graf_counter ) + "\">" + graf + "</p>"
+                
+                # add to article text.
+                body_string_OUT += current_paragraph_text
+            
+            #-- END loop over paragraphs. --#
+            
+        #-- END check to see if anything in paragraph list --#
+        
+        return body_string_OUT
+        
+    #-- END method clean_article_body() --#
+
+            
     def create_article_request( self, article_path_IN ):
     
         '''
@@ -1005,11 +1167,9 @@ class NewsBankHelper( object ):
                     # get div with class "mainText"
                     bs_temp_tag = bs_div_docBody.find( "div", self.HTML_CLASS_MAIN_TEXT )
                     
-                    # for body of article, for now, just grabbing actual text, no markup,
-                    #    to ease text processing.
-                    my_text = ' '.join( bs_temp_tag.findAll( text = True ) )
-                    my_text = bs_helper.convert_html_entities( my_text )
-        
+                    # clean up the article body text.
+                    my_text = self.clean_article_body( bs_temp_tag )
+
                     self.output_debug( "<<< text: " + my_text )
                     
                     # Next we get stuff that is in tags.  First, retrieve sourceInfo div

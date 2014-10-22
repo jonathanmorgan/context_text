@@ -90,6 +90,8 @@ import django.db
 import django.utils.encoding
 from django.utils.encoding import python_2_unicode_compatible
 
+# text cleanup
+import bleach
 
 #================================================================================
 # Shared variables and functions
@@ -197,6 +199,36 @@ def get_dict_value( dict_IN, name_IN, default_IN = None ):
 '''
 Models for SourceNet, including some that are specific to the Grand Rapids Press.
 '''
+
+# Locations
+@python_2_unicode_compatible
+class Project( models.Model ):
+
+    # Django model properties.
+    name = models.CharField( max_length = 255 )
+    description = models.TextField( blank = True, null = True )
+
+    # Meta-data for this class.
+    class Meta:
+        ordering = [ 'name' ]
+
+    #----------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------
+
+    def __str__( self ):
+        # return reference
+        string_OUT = ''
+        delimiter = ''
+        
+        string_OUT = str( self.id ) + ": " + self.name
+
+        return string_OUT
+        
+    #-- END method __str__() --#
+
+#= End Project Model ===========================================================
+
 
 # Locations
 @python_2_unicode_compatible
@@ -314,6 +346,7 @@ class Location( models.Model ):
         return string_OUT
 
 #= End Location Model ===========================================================
+
 
 # Topic model
 @python_2_unicode_compatible
@@ -1542,7 +1575,7 @@ class Article( models.Model ):
             # Nothing.  Make new one.
             instance_OUT = Article_Notes()
             instance_OUT.article = self
-            instance_OUT.type = "text"
+            instance_OUT.content_type = "text"
             
         else:
             
@@ -1608,7 +1641,7 @@ class Article( models.Model ):
             # Nothing.  Make new one.
             instance_OUT = Article_RawData()
             instance_OUT.article = self
-            instance_OUT.type = "html"
+            instance_OUT.content_type = "html"
             
         else:
             
@@ -1637,7 +1670,7 @@ class Article( models.Model ):
     #-- END method set_raw_html() --#
     
 
-    def set_text( self, text_IN = "", do_save_IN = True, *args, **kwargs ):
+    def set_text( self, text_IN = "", do_save_IN = True, clean_text_IN = True, *args, **kwargs ):
         
         '''
         Accepts a piece of text.  Adds it as a related Article_Text instance.
@@ -1658,6 +1691,7 @@ class Article( models.Model ):
         current_qs = None
         current_count = -1
         current_content = None
+        cleaned_text = ""
         
         # get current text QuerySet
         current_qs = self.article_text_set
@@ -1674,7 +1708,7 @@ class Article( models.Model ):
             # Nothing.  Make new one.
             instance_OUT = Article_Text()
             instance_OUT.article = self
-            instance_OUT.type = "text"
+            instance_OUT.content_type = "canonical"
             
         else:
             
@@ -1686,7 +1720,7 @@ class Article( models.Model ):
         if ( instance_OUT ):
 
             # set the text in the instance.
-            instance_OUT.content = text_IN
+            instance_OUT.set_content( text_IN, clean_text_IN )
             
             # save?
             if ( do_save_IN == True ):
@@ -1710,7 +1744,10 @@ class Article( models.Model ):
 @python_2_unicode_compatible
 class Article_Content( models.Model ):
 
+    # Content types:
+    
     CONTENT_TYPE_CHOICES = (
+        ( "canonical", "Canonical" ),
         ( "html", "HTML" ),
         ( "text", "Text" ),
         ( "other", "Other" ),
@@ -1722,7 +1759,7 @@ class Article_Content( models.Model ):
     #----------------------------------------------------------------------
 
     article = models.ForeignKey( Article, unique = True )
-    type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
+    content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -1736,11 +1773,38 @@ class Article_Content( models.Model ):
     # instance variables
     #----------------------------------------------------------------------
 
+
     content_description = "content"
     
+
     #----------------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------------
+
+
+    def get_content( self, *args, **kwargs ):
+        
+        '''
+        Returns content nested in this instance.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns the content exactly as it is stored in the instance.
+        '''
+        
+        # return reference
+        content_OUT = None
+
+        # declare variables
+        me = "get_content"
+
+        # return the content.
+        content_OUT = self.content
+                
+        return text_OUT
+
+    #-- END method get_content() --#
+
 
     def to_string( self ):
 
@@ -1755,9 +1819,9 @@ class Article_Content( models.Model ):
              
         string_OUT += self.content_description
         
-        if ( self.type ):
+        if ( self.content_type ):
             
-            string_OUT += " of type \"" + self.type + "\""
+            string_OUT += " of type \"" + self.content_type + "\""
             
         #-- END check to see if there is a type --#
              
@@ -1766,6 +1830,7 @@ class Article_Content( models.Model ):
         return string_OUT
 
     #-- END method __str__() --#
+
 
     def __str__( self ):
 
@@ -1777,6 +1842,7 @@ class Article_Content( models.Model ):
         return string_OUT
 
     #-- END method __str__() --#
+
 
 #-- END abstract Article_Content model --#
 
@@ -1829,6 +1895,61 @@ class Article_RawData( Article_Content ):
 @python_2_unicode_compatible
 class Article_Text( Article_Content ):
 
+    #----------------------------------------------------------------------------
+    # Constants-ish
+    #----------------------------------------------------------------------------
+    
+
+    # Body Text Cleanup
+    #==================
+    
+    BODY_TEXT_ALLOWED_TAGS = [ 'p', ]
+    BODY_TEXT_ALLOWED_ATTRS = {
+        'p' : [ 'id', ],
+    }
+    
+ 
+    #----------------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------------
+
+
+    @classmethod
+    def clean_body_text( cls, body_text_IN = "", *args, **kwargs ):
+    
+        '''
+        Accepts body text string.  Removes extra white space, then removes HTML
+           other than <p> tags.  Returns cleaned string.
+        '''
+        
+        # return reference
+        body_text_OUT = ""
+        
+        # declare variables
+        allowed_tags = None
+        allowed_attrs = None
+        
+        # start with text passed in.
+        body_text_OUT = body_text_IN
+        
+        # first, compact white space
+        body_text_OUT = ' '.join( body_text_OUT.split() )
+
+        # use bleach to strip out HTML.
+        allowed_tags = cls.BODY_TEXT_ALLOWED_TAGS
+        allowed_attrs = cls.BODY_TEXT_ALLOWED_ATTRS
+        body_text_OUT = bleach.clean( body_text_OUT, allowed_tags, allowed_attrs, strip = True )
+        
+        return body_text_OUT
+        
+    #-- END class method clean_body_text() --#
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
     def __str__( self ):
 
         # return reference
@@ -1843,6 +1964,76 @@ class Article_Text( Article_Content ):
         return string_OUT
 
     #-- END method __str__() --#
+
+
+    def get_content_sans_html( self, *args, **kwargs ):
+        
+        '''
+        Returns content nested in this instance but with ALL HTML removed.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns the content exactly as it is stored in the instance.
+        '''
+        
+        # return reference
+        content_OUT = None
+
+        # declare variables
+        me = "get_content"
+
+        # return the content.
+        content_OUT = self.content
+        
+        # strip all HTML
+        
+                
+        return text_OUT
+
+    #-- END method get_content_sans_html() --#
+
+
+    def set_content( self, text_IN = "", clean_text_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a piece of text.  If asked, we clean the text, then we store
+           it in this instance's content variable.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns the text as it is stored in the instance.
+        '''
+        
+        # return reference
+        text_OUT = None
+
+        # declare variables
+        me = "set_content"
+        text_value = ""
+
+        # clean text?
+        if ( clean_text_IN == True ):
+        
+            # yes.
+            text_value = self.clean_body_text( text_IN )
+                            
+        else:
+        
+            # no just use what was passed in.
+            text_value = text_IN
+        
+        #-- END check to see if we clean... --#
+
+        # set the text in the instance.
+        self.content = text_value
+        
+        # return the content.
+        text_OUT = self.content
+                
+        return text_OUT
+
+    #-- END method set_content() --#
+    
 
 #-- END Article_Text model --#
 
@@ -1887,6 +2078,9 @@ class Article_Data( models.Model ):
     # Changed to having a separate join table, not ManyToMany auto-generated one.
     #authors = models.ManyToManyField( Article_Author )
     #sources = models.ManyToManyField( Article_Source )
+    
+    # related projects:
+    projects = models.ManyToManyField( Project )
 
     # Meta-data for this class.
     class Meta:
@@ -2469,6 +2663,19 @@ class Article_Source( Article_Person ):
     #count_other_use_of_source = models.IntegerField( "Count other uses of source", default = 0 )
     localness = models.CharField( max_length = 255, choices = LOCALNESS_CHOICES, blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
+    
+    # fields to track locations of data this coding was based on within
+    #    article.  References are based on results of ParsedArticle.parse().
+    attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_speaker_name_string = models.TextField( blank = True, null = True )
+    is_speaker_name_pronoun = models.BooleanField( default = False )
+    attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
+    attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
+    
+    # field to capture 
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
 
     #----------------------------------------------------------------------
     # methods
