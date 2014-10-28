@@ -91,7 +91,8 @@ import django.utils.encoding
 from django.utils.encoding import python_2_unicode_compatible
 
 # text cleanup
-import bleach
+from python_utilities.strings.html_helper import HTMLHelper
+from python_utilities.strings.string_helper import StringHelper
 
 #================================================================================
 # Shared variables and functions
@@ -1587,7 +1588,7 @@ class Article( models.Model ):
         if ( instance_OUT ):
 
             # set the text in the instance.
-            instance_OUT.content = text_IN
+            instance_OUT.set_content( text_IN )
             
             # save?
             if ( do_save_IN == True ):
@@ -1653,7 +1654,7 @@ class Article( models.Model ):
         if ( instance_OUT ):
 
             # set the text in the instance.
-            instance_OUT.content = text_IN
+            instance_OUT.set_content( text_IN )
             
             # save?
             if ( do_save_IN == True ):
@@ -1720,7 +1721,7 @@ class Article( models.Model ):
         if ( instance_OUT ):
 
             # set the text in the instance.
-            instance_OUT.set_content( text_IN, clean_text_IN )
+            instance_OUT.set_text( text_IN, clean_text_IN )
             
             # save?
             if ( do_save_IN == True ):
@@ -1805,6 +1806,33 @@ class Article_Content( models.Model ):
 
     #-- END method get_content() --#
 
+
+    def set_content( self, value_IN = "", *args, **kwargs ):
+        
+        '''
+        Accepts a piece of text.  Stores it in this instance's content variable.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns the content as it is stored in the instance.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_content"
+
+        # set the text in the instance.
+        self.content = value_IN
+        
+        # return the content.
+        value_OUT = self.content
+                
+        return value_OUT
+
+    #-- END method set_content() --#
+    
 
     def to_string( self ):
 
@@ -1932,14 +1960,14 @@ class Article_Text( Article_Content ):
         # start with text passed in.
         body_text_OUT = body_text_IN
         
-        # first, compact white space
-        body_text_OUT = ' '.join( body_text_OUT.split() )
-
         # use bleach to strip out HTML.
         allowed_tags = cls.BODY_TEXT_ALLOWED_TAGS
         allowed_attrs = cls.BODY_TEXT_ALLOWED_ATTRS
-        body_text_OUT = bleach.clean( body_text_OUT, allowed_tags, allowed_attrs, strip = True )
+        body_text_OUT = HTMLHelper.remove_html( body_text_OUT, allowed_tags, allowed_attrs )
         
+        # compact white space
+        body_text_OUT = StringHelper.replace_white_space( body_text_OUT, ' ' )
+
         return body_text_OUT
         
     #-- END class method clean_body_text() --#
@@ -1980,20 +2008,143 @@ class Article_Text( Article_Content ):
         content_OUT = None
 
         # declare variables
-        me = "get_content"
+        me = "get_content_sans_html"
 
-        # return the content.
+        # get the content.
         content_OUT = self.content
         
         # strip all HTML
-        
+        content_OUT = HTMLHelper.remove_html( content_OUT )
                 
-        return text_OUT
+        return content_OUT
 
     #-- END method get_content_sans_html() --#
 
 
-    def set_content( self, text_IN = "", clean_text_IN = True, *args, **kwargs ):
+    def get_paragraph_list( self, *args, **kwargs ):
+        
+        '''
+        Looks in nested content for paragraph tags.  Returns a list of the text
+           in paragraph tags, in the same order as they appeared in the content,
+           with no nested HTML.  If no <p> tags, returns a list with a single item - all of the text.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns a list of the paragraphs in the content.
+        '''
+        
+        # return reference
+        list_OUT = []
+
+        # declare variables
+        me = "get_paragraph_list"
+        my_content = ""
+        content_bs = None
+        p_tag_list = []
+        current_p_tag = None
+        current_p_tag_id = ""
+        current_p_tag_contents = ""
+
+        # get the content.
+        my_content = self.content
+        
+        # create a BeautifulSoup instance that contains it.
+        content_bs = BeautifulSoup( my_content )
+        
+        # get all the <p> tags.
+        p_tag_list = content_bs.find_all( 'p' )
+        
+        # got any at all?
+        if ( len( p_tag_list > 0 ) ):
+
+            # yes - loop!
+            for current_p_tag in p_tag_list:
+            
+                # get id attribute value and contents.
+                current_p_tag_id = int( current_p_tag[ "id" ] )
+                current_p_tag_contents = str( current_p_tag.contents )
+        
+                # add contents to output list at position of "id".
+                list_OUT[ current_p_tag_id ] = current_p_tag_contents
+                
+            #-- END loop over p-tags. --#
+            
+        else:
+        
+            # none at all.  Just return content in first item of list.
+            list_OUT.append( my_content )
+        
+        #-- END check to see if any p-tags
+        
+        return list_OUT
+
+    #-- END method get_paragraph_list() --#
+
+
+    def get_word_list( self, *args, **kwargs ):
+        
+        '''
+        Creates list of words contained in nested content.  Returns a list of
+           the words in the Article_Text, with each word added as an item in the
+           list, in the same order as they appeared in the content, with no
+           nested HTML.
+        Preconditions: None
+        Postconditions: None
+        
+        Returns a list of the words in the content.
+        '''
+        
+        # return reference
+        list_OUT = []
+
+        # declare variables
+        me = "get_paragraph_list"
+        my_content = ""
+        cleaned_content = ""
+        word_list = []
+        word_counter = -1
+        current_word = ""
+
+        # get the content.
+        my_content = self.content
+        
+        # get the content with no HTML.
+        cleaned_content = HtmlHelper.remove_html( my_content )
+        
+        # and clean up white space.
+        cleaned_content = StringHelper.replace_white_space( my_content, )
+        
+        # split the string on white space.
+        word_list = cleaned_content.split()
+        
+        # chek to see that we have some words.
+        if ( len( word_list > 0 ) ):
+
+            # yes - loop!
+            word_counter = 0
+            for current_word in word_list:
+            
+                # add word to list
+                list_OUT[ word_counter ] = current_word
+                
+                # increment word counter
+                word_counter = word_counter + 1
+                
+            #-- END loop over words. --#
+            
+        else:
+        
+            # none at all.  Just return content in first item of list.
+            list_OUT.append( my_content )
+        
+        #-- END check to see if any words
+        
+        return list_OUT
+
+    #-- END method get_word_list() --#
+
+
+    def set_text( self, text_IN = "", clean_text_IN = True, *args, **kwargs ):
         
         '''
         Accepts a piece of text.  If asked, we clean the text, then we store
@@ -2024,15 +2175,12 @@ class Article_Text( Article_Content ):
         
         #-- END check to see if we clean... --#
 
-        # set the text in the instance.
-        self.content = text_value
-        
-        # return the content.
-        text_OUT = self.content
+        # set the text in the instance and return the content.
+        text_OUT = self.set_content( text_value )
                 
         return text_OUT
 
-    #-- END method set_content() --#
+    #-- END method set_text() --#
     
 
 #-- END Article_Text model --#

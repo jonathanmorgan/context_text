@@ -11,7 +11,11 @@ from bs4 import NavigableString
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 
 # import bleach for HTML cleaning
-import bleach
+# import bleach
+
+# import classes for HTML cleaning
+from python_utilities.strings.html_helper import HTMLHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # declare variables
 test_raw = None
