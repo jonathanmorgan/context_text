@@ -76,7 +76,7 @@ for current_content in bs_temp_tag.contents:
             
                 # not text - just grab all the text out of it.
                 #current_paragraph_text = ' '.join( paragraph_element.findAll( text = True ) )
-                current_paragraph_text = paragraph_element.get_text( " ", strip = True )
+                current_paragraph_text = HTMLHelper.remove_html( str( paragraph_element ) )
                 
             #-- END check to see if current element is text. --#
 
@@ -84,7 +84,7 @@ for current_content in bs_temp_tag.contents:
             current_paragraph_text = bs_helper.convert_html_entities( current_paragraph_text )
             
             # strip out extra white space
-            current_paragraph_text = ' '.join( current_paragraph_text.split() )
+            current_paragraph_text = StringHelper.replace_white_space( current_paragraph_text )
             
             # got any paragraph text?
             current_paragraph_text = current_paragraph_text.strip()
