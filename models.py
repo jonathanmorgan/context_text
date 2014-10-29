@@ -29,6 +29,10 @@ import re
 # http://pypi.python.org/pypi/nameparser
 from nameparser import HumanName
 
+# BeautifulSoup import
+from bs4 import BeautifulSoup
+from bs4 import NavigableString
+
 '''
 Code sample:
 
@@ -90,7 +94,8 @@ import django.db
 import django.utils.encoding
 from django.utils.encoding import python_2_unicode_compatible
 
-# text cleanup
+# python_utilities - text cleanup
+from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
 
@@ -1775,12 +1780,37 @@ class Article_Content( models.Model ):
     #----------------------------------------------------------------------
 
 
+    bs_helper = None
     content_description = "content"
     
 
     #----------------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------------
+
+
+    def get_bs_helper( self ):
+    
+        # return reference
+        instance_OUT = None
+        
+        # get instance.
+        instance_OUT = self.bs_helper
+                
+        # got one?
+        if ( not( instance_OUT ) ):
+        
+            # no.  Create and store.
+            self.bs_helper = BeautifulSoupHelper()
+            
+            # try again.  If nothing this time, nothing we can do.  Return it.
+            instance_OUT = self.bs_helper
+            
+        #-- END check to see if regex is stored in instance --#
+
+        return instance_OUT
+    
+    #-- END method get_bs_helper() --#
 
 
     def get_content( self, *args, **kwargs ):
@@ -1802,7 +1832,7 @@ class Article_Content( models.Model ):
         # return the content.
         content_OUT = self.content
                 
-        return text_OUT
+        return content_OUT
 
     #-- END method get_content() --#
 
@@ -1973,6 +2003,90 @@ class Article_Text( Article_Content ):
     #-- END class method clean_body_text() --#
 
 
+    @classmethod
+    def process_paragraph_contents( cls, paragraph_element_list_IN, bs_helper_IN = None, *args, **kwargs ):
+  
+        '''
+        Accepts a list of the contents of a paragraph.  Loops over them and
+           pulls them all together into one string.  Returns the string.
+           
+        Params:
+        - paragraph_element_list_IN - list of BeautifulSoup4 elements that from an article paragraph.
+        '''
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        paragraph_text_list = []
+        current_paragraph_text = ""
+        my_bs_helper = ""
+        
+        # initialize BeautifulSoup helper
+        if ( bs_helper_IN != None ):
+        
+            # BSHelper passed in.
+            my_bs_helper = bs_helper_IN
+        
+        else:
+
+            # no helper passed in.  Create one.
+            my_bs_helper = BeautifulSoupHelper()
+            
+        #-- END BeautifulSoupHelper init. --#
+
+        # got anything in list?
+        if ( len( paragraph_element_list_IN ) > 0 ):
+
+            # yes - process elements of paragraph, add to paragraph list.
+            paragraph_text_list = []
+            for paragraph_element in paragraph_element_list_IN:
+            
+                # convert current element to just text.  Is it NavigableString?
+                if ( isinstance( paragraph_element, NavigableString ) ):
+                
+                    # it is NavigableString - convert it to string.
+                    current_paragraph_text = unicode( paragraph_element )
+                
+                else:
+                
+                    # not text - just grab all the text out of it.
+                    #current_paragraph_text = ' '.join( paragraph_element.findAll( text = True ) )
+                    #current_paragraph_text = paragraph_element.get_text( " ", strip = True )
+                    current_paragraph_text = HTMLHelper.remove_html( str( paragraph_element ) )                        
+
+                #-- END check to see if current element is text. --#
+    
+                # clean up - convert HTML entities
+                current_paragraph_text = my_bs_helper.convert_html_entities( current_paragraph_text )
+                
+                # strip out extra white space
+                current_paragraph_text = StringHelper.replace_white_space( current_paragraph_text )
+                
+                # got any paragraph text?
+                current_paragraph_text = current_paragraph_text.strip()
+                if ( ( current_paragraph_text != None ) and ( current_paragraph_text != "" ) ):
+                
+                    # yes.  Add to paragraph text.
+                    paragraph_text_list.append( current_paragraph_text )
+                    
+                #-- END check to see if any text. --#
+            
+            #-- END loop over paragraph elements. --#
+            
+            # convert paragraph list to string
+            paragraph_text = ' '.join( paragraph_text_list )
+            
+            # return paragraph text
+            string_OUT = paragraph_text
+                
+        #-- END check to see if anything in list. --#
+        
+        return string_OUT
+        
+    #-- END method process_paragraph_contents() --#
+
+
     #----------------------------------------------------------------------------
     # instance methods
     #----------------------------------------------------------------------------
@@ -2041,6 +2155,7 @@ class Article_Text( Article_Content ):
         my_content = ""
         content_bs = None
         p_tag_list = []
+        p_tag_count = -1
         current_p_tag = None
         current_p_tag_id = ""
         current_p_tag_contents = ""
@@ -2054,18 +2169,25 @@ class Article_Text( Article_Content ):
         # get all the <p> tags.
         p_tag_list = content_bs.find_all( 'p' )
         
+        # how many?
+        p_tag_count = len( p_tag_list )
+        
         # got any at all?
-        if ( len( p_tag_list > 0 ) ):
+        if ( p_tag_count > 0 ):
 
-            # yes - loop!
+            # yes - prepopulate list, so we can assign positions based on "id"
+            #    attribute values.
+            list_OUT = [ None ] * p_tag_count
+            
+            # loop!
             for current_p_tag in p_tag_list:
             
                 # get id attribute value and contents.
                 current_p_tag_id = int( current_p_tag[ "id" ] )
-                current_p_tag_contents = str( current_p_tag.contents )
+                current_p_tag_contents = self.make_paragraph_string( current_p_tag.contents )
         
                 # add contents to output list at position of "id".
-                list_OUT[ current_p_tag_id ] = current_p_tag_contents
+                list_OUT[ current_p_tag_id - 1 ] = current_p_tag_contents
                 
             #-- END loop over p-tags. --#
             
@@ -2102,6 +2224,7 @@ class Article_Text( Article_Content ):
         my_content = ""
         cleaned_content = ""
         word_list = []
+        word_count = -1
         word_counter = -1
         current_word = ""
 
@@ -2109,18 +2232,25 @@ class Article_Text( Article_Content ):
         my_content = self.content
         
         # get the content with no HTML.
-        cleaned_content = HtmlHelper.remove_html( my_content )
+        cleaned_content = HTMLHelper.remove_html( my_content )
         
         # and clean up white space.
-        cleaned_content = StringHelper.replace_white_space( my_content, )
+        cleaned_content = StringHelper.replace_white_space( cleaned_content )
         
         # split the string on white space.
         word_list = cleaned_content.split()
         
-        # chek to see that we have some words.
-        if ( len( word_list > 0 ) ):
+        # how many we got?
+        word_count = len( word_list )
+        
+        # check to see that we have some words.
+        if ( word_count > 0 ):
 
-            # yes - loop!
+            # yes - prepopulate list, so we can assign positions based on "id"
+            #    attribute values.
+            list_OUT = [ None ] * word_count
+            
+            # loop!
             word_counter = 0
             for current_word in word_list:
             
@@ -2142,6 +2272,33 @@ class Article_Text( Article_Content ):
         return list_OUT
 
     #-- END method get_word_list() --#
+
+
+    def make_paragraph_string( self, paragraph_element_list_IN, *args, **kwargs ):
+  
+        '''
+        Accepts a list of the contents of a paragraph.  Loops over them and
+           pulls them all together into one string.  Returns the string.
+           
+        Params:
+        - paragraph_element_list_IN - list of BeautifulSoup4 elements that from an article paragraph.
+        '''
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        my_bs_helper = ""
+        
+        # initialize BeautifulSoup helper
+        my_bs_helper = self.get_bs_helper()
+
+        # call class method
+        string_OUT = self.process_paragraph_contents( paragraph_element_list_IN, my_bs_helper )
+        
+        return string_OUT
+        
+    #-- END method make_paragraph_string() --#
 
 
     def set_text( self, text_IN = "", clean_text_IN = True, *args, **kwargs ):

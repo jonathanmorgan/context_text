@@ -37,13 +37,18 @@ import re
 # HTML parsing
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
+
+# Python Utilities
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
+from python_utilities.strings.html_helper import HTMLHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # django model for article
 #os.environ.setdefault( "DJANGO_SETTINGS_MODULE", "research.settings" )
 #sys.path.append( '/home/jonathanmorgan/Documents/django-dev/research' )
 #from sourcenet.models import Article
 from sourcenet.models import Article
+from sourcenet.models import Article_Text
 
 #================================================================================
 # Package constants-ish
@@ -181,8 +186,6 @@ class NewsBankHelper( object ):
         current_name = ""
         paragraph_counter = -1
         paragraph_text = ""
-        paragraph_text_list = []
-        current_paragraph_text = ""
         bs_helper = None
         graf_counter = -1
         graf_count = -1
@@ -206,44 +209,9 @@ class NewsBankHelper( object ):
                 
                 #output a message, and the string contents of the tag (just in case).
                 #print( "=======> paragraph break! - End of paragraph " + str( paragraph_counter ) + ".  HTML element Contents: \"" + str( current_content ) + "\"" )
-                
-                # process elements of previous paragraph, add to paragraph list.
-                paragraph_text_list = []
-                for paragraph_element in current_element_list:
-                
-                    # convert current element to just text.  Is it NavigableString?
-                    if ( isinstance( paragraph_element, NavigableString) ):
-                    
-                        # it is NavigableString - convert it to string.
-                        current_paragraph_text = unicode( paragraph_element )
-                    
-                    else:
-                    
-                        # not text - just grab all the text out of it.
-                        #current_paragraph_text = ' '.join( paragraph_element.findAll( text = True ) )
-                        current_paragraph_text = paragraph_element.get_text( " ", strip = True )
-                        
-                    #-- END check to see if current element is text. --#
-        
-                    # clean up - convert HTML entities
-                    current_paragraph_text = my_bs_helper.convert_html_entities( current_paragraph_text )
-                    
-                    # strip out extra white space
-                    current_paragraph_text = ' '.join( current_paragraph_text.split() )
-                    
-                    # got any paragraph text?
-                    current_paragraph_text = current_paragraph_text.strip()
-                    if ( ( current_paragraph_text != None ) and ( current_paragraph_text != "" ) ):
-                    
-                        # yes.  Add to paragraph text.
-                        paragraph_text_list.append( current_paragraph_text )
-                        
-                    #-- END check to see if any text. --#
-                
-                #-- END loop over paragraph elements. --#
-                
-                # convert paragraph list to string
-                paragraph_text = ' '.join( paragraph_text_list )
+                                
+                # convert paragraph element list to string
+                paragraph_text = self.process_paragraph_contents( current_element_list )
                 
                 # got any text in this paragraph?
                 if ( ( paragraph_text != None ) and ( paragraph_text != "" ) ):
@@ -270,6 +238,27 @@ class NewsBankHelper( object ):
             #-- END check to see if <br> --#
         
         #-- END loop over contents. --#
+        
+        # Check for last paragraph - Anything in the current_element_list?
+        if ( len( current_element_list ) > 0 ):
+        
+            # yes - convert to text, add to list.
+
+            # convert paragraph element list to string
+            paragraph_text = self.process_paragraph_contents( current_element_list )
+            
+            # got any text in this paragraph?
+            if ( ( paragraph_text != None ) and ( paragraph_text != "" ) ):
+    
+                # yes - Add paragraph text to paragraph_list
+                paragraph_list.append( paragraph_text )
+                        
+                # increment paragraph counter
+                paragraph_counter += 1
+                
+            #-- END check to see if paragraph text. --#
+            
+        #-- END check to see if last paragraph --#
         
         #print( "\n\n\n~~~~~~~~~~ After paragraph loop:\n\n\n" )
         
@@ -1265,6 +1254,33 @@ class NewsBankHelper( object ):
         return status_OUT
                 
     #-- END method process_file_contents() --#
+    
+    
+    def process_paragraph_contents( self, paragraph_element_list_IN ):
   
+        '''
+        Accepts a list of the contents of a paragraph.  Loops over them and
+           pulls them all together into one string.  Returns the string.
+           
+        Params:
+        - paragraph_element_list_IN - list of BeautifulSoup4 elements that from an article paragraph.
+        '''
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        my_bs_helper = ""
+        
+        # initialize BeautifulSoup helper
+        my_bs_helper = self.get_bs_helper()
+
+        # call method on Article_Text (can always make special logic later).
+        string_OUT = Article_Text.process_paragraph_contents( paragraph_element_list_IN )
+        
+        return string_OUT
+        
+    #-- END method process_paragraph_contents() --#
+
 
 #-- END class NewsBankHelper --#
