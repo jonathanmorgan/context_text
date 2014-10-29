@@ -147,6 +147,8 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
             </Files>
         </Directory>
 
+    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the WSGIPythonPath directive in addition to the site directory, with the paths separated by a colon.  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
+
     - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
 
     - If you are using apache 2.4 on ubuntu 13.10 or greater:
@@ -159,9 +161,65 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     
                 (sudo) a2enconf django-sourcenet
 
-- Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
+- Update the wsgi.py file:
 
-        sys.path.append( '<project_folder>/research' )
+    - Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
+
+            # Add the app's directory to the PYTHONPATH
+            sys.path.append( '<django_project_dir>/research' )
+        
+    - If you are using virtualenv, update wsgi.py:
+    
+        - import the `site` packge:
+        
+                import site
+                
+        - Add the `site-packages` of the desired virtualenv:
+                
+                # Add the site-packages of the desired virtualenv
+                site.addsitedir( '<virtualenv_home_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+        
+        - Activate your virtualenv:
+        
+                # Activate your virtualenv
+                activate_env = os.path.expanduser( "<virtualenv_home_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                execfile( activate_env, dict( __file__ = activate_env ) )
+        
+        - here's how it all should look:
+    
+                """
+                WSGI config for research project.
+                
+                It exposes the WSGI callable as a module-level variable named ``application``.
+                
+                For more information on this file, see
+                https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                """
+                
+                # imports
+                import os
+                import sys
+                import site
+                
+                # Add the site-packages of the desired virtualenv
+                site.addsitedir( '<virtualenv_home_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                
+                # Add the app's directory to the PYTHONPATH
+                sys.path.append( '<django_project_dir>/research' )
+                
+                os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
+                
+                # Activate your virtualenv
+                activate_env = os.path.expanduser( "<virtualenv_home_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                execfile( activate_env, dict( __file__ = activate_env ) )
+                
+                from django.core.wsgi import get_wsgi_application
+                application = get_wsgi_application()
+                
+            make sure to replace:
+            
+                - `<virtualenv_home_dir>` with the full path to the directory where your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
+                - `<django_project_dir>` with the full path to the directory where you installed your django project.
 
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
 
