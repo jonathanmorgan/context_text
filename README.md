@@ -161,14 +161,14 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     
                 (sudo) a2enconf django-sourcenet
 
-- Update the wsgi.py file:
+- Update the wsgi.py file (`<django_project_dir>/research/wsgi.py`):
 
-    - Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
+    - Add a line that adds your project's directory to the python path:
 
             # Add the app's directory to the PYTHONPATH
             sys.path.append( '<django_project_dir>/research' )
         
-    - If you are using virtualenv, update wsgi.py:
+    - If you are using virtualenv:
     
         - import the `site` packge:
         
@@ -218,8 +218,8 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 
             make sure to replace:
             
-                - `<virtualenv_home_dir>` with the full path to the directory where your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
-                - `<django_project_dir>` with the full path to the directory where you installed your django project.
+            - `<virtualenv_home_dir>` with the full path to the directory where your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
+            - `<django_project_dir>` with the full path to the directory where you installed your django project.
 
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
 
