@@ -6,6 +6,41 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 # Installation and configuration
 
+## virtualenv and virtualenvwrapper
+
+if you are on a shared or complicated server (and who isn't, really?), using virtualenv and virtualenvwrapper to create isolated python environments for specific applications can save lots of headaches.  To do this:
+
+- Detailed documentation: [http://virtualenvwrapper.readthedocs.org/en/latest/install.html](http://virtualenvwrapper.readthedocs.org/en/latest/install.html)
+
+- first, install virtualenv and virtualenvwrapper in all the versions of python you might use:
+
+    - `(sudo) pip install virtualenv`
+    - `(sudo) pip install virtualenvwrapper`
+    
+- next, you'll need to update environment variables (assuming linux, for other OS, see documentation at link above).  Add the following to your shell startup file (on ubuntu, .bashrc is invoked by .profile, so I do this in .bashrc):
+
+        export WORKON_HOME=$HOME/.virtualenvs
+        export PROJECT_HOME=$HOME/work/virtualenvwrapper-projects
+        source /usr/local/bin/virtualenvwrapper.sh
+
+- restart your shell so these settings take effect.
+
+- use virtualenvwrapper to create a virtualenv for sourcenet:
+
+        # for system python:
+        mkvirtualenv sourcenet --no-site-packages
+
+        # if your system python is python 3, and you want to use python 2 (since sourcenet is python 2 at the moment):
+        mkvirtualenv sourcenet --no-site-packages -p /usr/bin/python2.7
+
+- activate the virtualenv
+
+        workon sourcenet
+        
+- now you are in a virtual python environment independent of the system's.  If you do this, in the examples below, you don't need to use `sudo` when you use pip, etc.
+
+## Python packages
+
 - required python modules (install with pip):
 
     - django - `(sudo) pip install django` - 1.7.X - latest 1.4.X, 1.5.X, or 1.6.X should work, too, but migrations won't - south migrations are no longer being updated.
@@ -14,9 +49,18 @@ sourcenet is a django application for capturing and analyzing networks of news b
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
     
+- depending on database:
+
+    - postgresql - psycopg2
+    - mysql - ?
+
 - python modules that I find helpful:
 
     - ipython - `(sudo) pip install ipython`
+
+- requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt:
+
+    - `(sudo) pip install -r sourcenet/requirements.txt`
 
 ## Install "research" django project
 

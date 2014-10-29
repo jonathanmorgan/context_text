@@ -1,0 +1,7 @@
+django
+nameparser
+bleach
+beautifulsoup4
+django-ajax-selects
+ipython
+psycopg2
