@@ -897,7 +897,10 @@ class Article( models.Model ):
     author_varchar = models.CharField( max_length = 255, blank = True, null = True )
     headline = models.CharField( max_length = 255 )
     # What is this? - author = models.CharField( max_length = 255, blank = True, null = True )
+
     # text = models.TextField( blank = True ) - moved to related Article_Text instance.
+    # - to retrieve Article_Text instance for this Article: self.article_text_set.get()
+
     corrections = models.TextField( blank = True, null = True )
     edition = models.CharField( max_length = 255, blank = True, null = True )
     index_terms = models.TextField( blank = True, null = True )
@@ -905,8 +908,13 @@ class Article( models.Model ):
     archive_id = models.CharField( max_length = 255, blank = True, null = True )
     permalink = models.TextField( blank = True, null = True )
     copyright = models.TextField( blank = True, null = True )
+
     # notes = models.TextField( blank = True, null = True ) - moved to related Article_Notes instance.
+    # - to retrieve Article_Notes instance for this Article: self.article_notes_set.get()
+
     # raw_html = models.TextField( blank = True, null = True ) - moved to related Article_RawData instance.
+    # - to retrieve Article_RawData instance for this Article: self.article_rawdata_set.get()
+
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     is_local_news = models.BooleanField( default = 0 )
     is_sports = models.BooleanField( default = 0 )
