@@ -1775,6 +1775,7 @@ class Article_Content( models.Model ):
     article = models.ForeignKey( Article, unique = True )
     content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
+    status = models.CharField( max_length = 255, blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 

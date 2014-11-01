@@ -29,6 +29,11 @@ no_raw_data_list = []
 multiple_raw_data_list = []
 no_text_list = []
 multiple_text_list = []
+done_counter = -1
+
+# memory management
+mem_counter = -1
+mem_counter_limit = 1000
 
 # variables - text processing
 bs = None
@@ -52,16 +57,21 @@ article_count = articles_to_process_qs.count()
 #article_qs = articles_to_process_qs
 article_qs = QuerySetHelper.queryset_generator( articles_to_process_qs )
 
-# loop over the articles
+# set up loop variables.
 article_counter = 0
+mem_counter = 0
 no_raw_data_list = []
 multiple_raw_data_list = []
 no_text_list = []
 multiple_text_list = []
+done_counter = 0
+
+# loop over the articles
 for article in article_qs:
 
-    # increment counter
+    # increment counters
     article_counter += 1
+    mem_counter += 1
     
     # output article summary
     print ( "- Article " + str( article_counter ) + " of " + str( article_count ) + ": " + str( article ) )
@@ -115,55 +125,69 @@ for article in article_qs:
         
         #-- END check to see how many rawdata records --#
 
-        # got Article_Text
+        # got Article_Text?
         if ( article_text != None ):
+            
+            # already done?
+            if ( article_text.status != "done" ):
 
-            # yes.  Re-process raw HTML to derive new, better text.
-
-            # load raw content into a BeautifulSoup instance
-            article_raw_content = article_raw_data.content
-            bs = BeautifulSoup( article_raw_content )
-            
-            # retrieve main content <div> for a NewsBank HTML article.
-            bs_div_docBody = bs.find( "div", NewsBankHelper.HTML_CLASS_DOC_BODY )
-            
-            # get nested <div> that contains article content.
-            bs_div_mainText = bs_div_docBody.find( "div", NewsBankHelper.HTML_CLASS_MAIN_TEXT )
-            
-            # print the original HTML
-            if ( DEBUG_FLAG == True ):
-                print( "Original HTML:" )
-                print( str( bs_div_mainText ) )
-            #-- END DEBUG --#
-                        
-            # clean it up with NewsBankHelper
-            my_newsbank_helper = NewsBankHelper()
-            cleaned_article_body = my_newsbank_helper.clean_article_body( bs_div_mainText )
-            
-            # print the original HTML
-            if ( DEBUG_FLAG == True ):
-                # output
-                print( "\n\n\nCleaned article body:" )
-                print( cleaned_article_body )
-
-                # retrieve and print the original
-                original_text = article_text.get_content()
-                print( "\n\n\nOriginal content:" )
-                print( original_text )
+                # no.  Re-process raw HTML to derive new, better text.
+    
+                # load raw content into a BeautifulSoup instance
+                article_raw_content = article_raw_data.content
+                bs = BeautifulSoup( article_raw_content )
                 
-                # same?
-                if ( cleaned_article_body == original_text ):
-                    print( "====> SAME!" )
-                else:
-                    print( "====> DIFFERENT!" )
-                #-- END check to see if same? --#
-            #-- END DEBUG --#
+                # retrieve main content <div> for a NewsBank HTML article.
+                bs_div_docBody = bs.find( "div", NewsBankHelper.HTML_CLASS_DOC_BODY )
+                
+                # get nested <div> that contains article content.
+                bs_div_mainText = bs_div_docBody.find( "div", NewsBankHelper.HTML_CLASS_MAIN_TEXT )
+                
+                # print the original HTML
+                if ( DEBUG_FLAG == True ):
+                    print( "Original HTML:" )
+                    print( str( bs_div_mainText ) )
+                #-- END DEBUG --#
+                            
+                # clean it up with NewsBankHelper
+                my_newsbank_helper = NewsBankHelper()
+                cleaned_article_body = my_newsbank_helper.clean_article_body( bs_div_mainText )
+                
+                # print the original HTML
+                if ( DEBUG_FLAG == True ):
+                    # output
+                    print( "\n\n\nCleaned article body:" )
+                    print( cleaned_article_body )
+    
+                    # retrieve and print the original
+                    original_text = article_text.get_content()
+                    print( "\n\n\nOriginal content:" )
+                    print( original_text )
+                    
+                    # same?
+                    if ( cleaned_article_body == original_text ):
+                        print( "====> SAME!" )
+                    else:
+                        print( "====> DIFFERENT!" )
+                    #-- END check to see if same? --#
+                #-- END DEBUG --#
+                
+                # set text
+                article_text.set_text( cleaned_article_body )
+                
+                # set status
+                article_text.status = "done"
+                
+                # save
+                article_text.save()
+                
+            else:
             
-            # set text
-            article_text.set_text( cleaned_article_body )
+                # Already done.
+                print( "====> ALREADY DONE" )
+                done_counter += 1
             
-            # save
-            article_text.save()
+            #-- END check to see if article already done. --#
             
         else:
             
@@ -179,6 +203,17 @@ for article in article_qs:
         
     #-- END check to see if raw data --#
     
+    # time to garbage collect?
+    if ( mem_counter == mem_counter_limit ):
+    	
+    	# manage memory
+    	DjangoMemoryHelper.free_memory()
+    	
+    	# reset mem_counter
+    	mem_counter = 0
+    	
+    #-- END check to see if we manage memory now --#
+    
 #-- END loop over articles --#
 
 # End of loop book-keeping.
@@ -188,6 +223,9 @@ my_summary_helper.set_stop_time()
 # add info. to summary outputter.
 my_summary_helper.set_prop_value( "article_count", article_counter )
 my_summary_helper.set_prop_desc( "article_count", "Article count" )
+
+my_summary_helper.set_prop_value( "done_counter", done_counter )
+my_summary_helper.set_prop_desc( "done_counter", "Article DONE count" )
 
 my_summary_helper.set_prop_value( "no_text_list", ", ".join( no_text_list ) )
 my_summary_helper.set_prop_desc( "no_text_list", "Articles with no text" )
