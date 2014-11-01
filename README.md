@@ -48,6 +48,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - bleach - `(sudo) pip install bleach`
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
+    - requests
     
 - depending on database:
 

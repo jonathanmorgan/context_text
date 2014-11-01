@@ -140,46 +140,56 @@ for article in article_qs:
                 # retrieve main content <div> for a NewsBank HTML article.
                 bs_div_docBody = bs.find( "div", NewsBankHelper.HTML_CLASS_DOC_BODY )
                 
-                # get nested <div> that contains article content.
-                bs_div_mainText = bs_div_docBody.find( "div", NewsBankHelper.HTML_CLASS_MAIN_TEXT )
+                # Got a <div id="docBody"> tag?
+                if ( bs_div_docBody != None ):
                 
-                # print the original HTML
-                if ( DEBUG_FLAG == True ):
-                    print( "Original HTML:" )
-                    print( str( bs_div_mainText ) )
-                #-- END DEBUG --#
-                            
-                # clean it up with NewsBankHelper
-                my_newsbank_helper = NewsBankHelper()
-                cleaned_article_body = my_newsbank_helper.clean_article_body( bs_div_mainText )
-                
-                # print the original HTML
-                if ( DEBUG_FLAG == True ):
-                    # output
-                    print( "\n\n\nCleaned article body:" )
-                    print( cleaned_article_body )
-    
-                    # retrieve and print the original
-                    original_text = article_text.get_content()
-                    print( "\n\n\nOriginal content:" )
-                    print( original_text )
+                    # get nested <div> that contains article content.
+                    bs_div_mainText = bs_div_docBody.find( "div", NewsBankHelper.HTML_CLASS_MAIN_TEXT )
                     
-                    # same?
-                    if ( cleaned_article_body == original_text ):
-                        print( "====> SAME!" )
-                    else:
-                        print( "====> DIFFERENT!" )
-                    #-- END check to see if same? --#
-                #-- END DEBUG --#
+                    # print the original HTML
+                    if ( DEBUG_FLAG == True ):
+                        print( "Original HTML:" )
+                        print( str( bs_div_mainText ) )
+                    #-- END DEBUG --#
+                                
+                    # clean it up with NewsBankHelper
+                    my_newsbank_helper = NewsBankHelper()
+                    cleaned_article_body = my_newsbank_helper.clean_article_body( bs_div_mainText )
+                    
+                    # print the original HTML
+                    if ( DEBUG_FLAG == True ):
+                        # output
+                        print( "\n\n\nCleaned article body:" )
+                        print( cleaned_article_body )
+        
+                        # retrieve and print the original
+                        original_text = article_text.get_content()
+                        print( "\n\n\nOriginal content:" )
+                        print( original_text )
+                        
+                        # same?
+                        if ( cleaned_article_body == original_text ):
+                            print( "====> SAME!" )
+                        else:
+                            print( "====> DIFFERENT!" )
+                        #-- END check to see if same? --#
+                    #-- END DEBUG --#
+                    
+                    # set text
+                    article_text.set_text( cleaned_article_body )
+                    
+                    # set status
+                    article_text.status = "done"
+                    
+                    # save
+                    article_text.save()
+                    
+                else:
                 
-                # set text
-                article_text.set_text( cleaned_article_body )
+                    # No document body - moving on.
+                    print( "====> NO <div id=\"docBody\">" )
                 
-                # set status
-                article_text.status = "done"
-                
-                # save
-                article_text.save()
+                #-- END check to see if <div id="docBody"> --#
                 
             else:
             
@@ -227,16 +237,16 @@ my_summary_helper.set_prop_desc( "article_count", "Article count" )
 my_summary_helper.set_prop_value( "done_counter", done_counter )
 my_summary_helper.set_prop_desc( "done_counter", "Article DONE count" )
 
-my_summary_helper.set_prop_value( "no_text_list", ", ".join( no_text_list ) )
+my_summary_helper.set_prop_value( "no_text_list", ", ".join( map( str, no_text_list ) ) )
 my_summary_helper.set_prop_desc( "no_text_list", "Articles with no text" )
 
-my_summary_helper.set_prop_value( "multiple_text_list", ", ".join( multiple_text_list ) )
+my_summary_helper.set_prop_value( "multiple_text_list", ", ".join( map( str, multiple_text_list ) ) )
 my_summary_helper.set_prop_desc( "multiple_text_list", "Articles with multiple text" )
 
-my_summary_helper.set_prop_value( "no_raw_data_list", ", ".join( no_raw_data_list ) )
+my_summary_helper.set_prop_value( "no_raw_data_list", ", ".join( map( str, no_raw_data_list ) ) )
 my_summary_helper.set_prop_desc( "no_raw_data_list", "Articles with no raw data" )
 
-my_summary_helper.set_prop_value( "multiple_raw_data_list", ", ".join( multiple_raw_data_list ) )
+my_summary_helper.set_prop_value( "multiple_raw_data_list", ", ".join( map( str, multiple_raw_data_list ) ) )
 my_summary_helper.set_prop_desc( "multiple_raw_data_list", "Articles with multiple raw data" )
 
 # generate summary string.
