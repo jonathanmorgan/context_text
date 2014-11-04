@@ -41,27 +41,48 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 ## Python packages
 
-- required python modules (install with pip):
+- required python packages (install with pip):
 
     - django - `(sudo) pip install django` - 1.7.X - latest 1.4.X, 1.5.X, or 1.6.X should work, too, but migrations won't - south migrations are no longer being updated.
     - nameparser - `(sudo) pip install nameparser`
     - bleach - `(sudo) pip install bleach`
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
-    - requests
+    - requests - `(sudo) pip install requests`
     
 - depending on database:
 
-    - postgresql - psycopg2
-    - mysql - ?
+    - postgresql - psycopg2 - Before you can connect to Postgresql with this code, you need to do the following (based on [http://initd.org/psycopg/install/](http://initd.org/psycopg/install/)):
 
-- python modules that I find helpful:
+        - install the PostgreSQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libpq-dev) ( [source](http://initd.org/psycopg/install/) ).
+        - install the psycopg2 python package.  Install using pip (`sudo pip install psycopg2`).  
+        
+    - mysql - MySQL-python - Before you can connect to MySQL with this code, you need to do the following:
+    
+        - install the MySQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libmysqlclient-dev) ( [source](http://codeinthehole.com/writing/how-to-set-up-mysql-for-python-on-ubuntu/) ).
+        - install the MySQLdb python package.  To install, you can either install through your operating system's package manager (ubuntu, for example, has package "python-mysqldb") or using pip (`sudo pip install MySQL-python`).
+
+
+- python packages that I find helpful:
 
     - ipython - `(sudo) pip install ipython`
 
 - requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt:
 
     - `(sudo) pip install -r sourcenet/requirements.txt`
+    
+- Natural Language Processing (NLP):
+
+    - To use Alchemy API, clone the `Alchemy_API` python client into your django project's root folder:
+    
+        - `git clone https://github.com/alchemyapi/alchemyapi_python`
+        
+    - To use OpenCalais's REST API, clone the pycalais git repository into your django project directory, then copy the calais folder into your django project directory:
+    
+        - `git clone https://github.com/ubergrape/pycalais`
+        - `cp ./calais ../`
+        
+        - You can also use python_utilities.network.http_helper.Http_Helper to connect directly (or requests package) see the sample code in /examples/NLP/OpenCalais_API.py for more details.
 
 ## Install "research" django project
 
