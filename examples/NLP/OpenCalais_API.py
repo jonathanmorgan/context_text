@@ -148,6 +148,7 @@ my_http_helper = Http_Helper()
 my_http_helper.set_http_header( "x-calais-licenseID", calais_api_key, None )
 my_http_helper.set_http_header( "Content-Type", "TEXT/RAW", None )
 my_http_helper.set_http_header( "outputformat", "Application/JSON", None )
+my_http_helper.set_http_header( "submitter", "sourcenet testing", None )
 
 # request type
 my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST
