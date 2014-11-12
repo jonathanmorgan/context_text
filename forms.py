@@ -25,6 +25,15 @@ from sourcenet.models import Article_Source
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
 
+# create a form to let a user lookup an article to view its contents.
+class ArticleLookupForm( forms.Form ):
+
+    # Article ID
+    article_id = forms.IntegerField( required = True, label = "Article ID" )
+
+#-- END ArticleLookupForm --#
+
+
 # create a form to let a user specify the criteria used to limit the articles
 #    that are used to create output.
 class ArticleSelectForm( forms.Form ):

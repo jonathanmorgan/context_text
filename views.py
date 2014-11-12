@@ -22,19 +22,24 @@ import datetime
 #from StringIO import StringIO
 #import pickle
 
+# import django authentication code.
+from django.contrib import auth
+from django.contrib.auth.decorators import login_required
+
 # include the django conf settings
 #from django.conf import settings
 
 # django core imports
+
+# import django code for csrf security stuff.
+from django.core.context_processors import csrf
+
 #from django.core.urlresolvers import reverse
 
 # Import objects from the django.http library.
 #from django.http import Http404
 from django.http import HttpResponse
-#from django.http import HttpResponseRedirect
-
-# import django code for csrf security stuff.
-from django.core.context_processors import csrf
+from django.http import HttpResponseRedirect
 
 # import the render_to_response() method from django.shortcuts
 #from django.shortcuts import get_object_or_404
@@ -55,7 +60,7 @@ from sourcenet.forms import NetworkOutputForm
 from sourcenet.export.network_output import NetworkOutput
 
 # Import the classes for our SourceNet application
-#from sourcenet.models import Article
+from sourcenet.models import Article
 #from sourcenet.models import Article_Author
 #from sourcenet.models import Article_Source
 #from sourcenet.models import Person
@@ -83,7 +88,7 @@ from sourcenet.export.network_output import NetworkOutput
 
 #    return render_to_response( 'polls/detail.html', { 'poll' : poll_instance }, context_instance = RequestContext( request_IN ) )
 
-#-- end method detail() --------------------------------------------------------
+#-- end method detail() --#
 
 
 #def index( request_IN ):
@@ -115,7 +120,7 @@ from sourcenet.export.network_output import NetworkOutput
 
 #    return response_OUT
 
-#-- end method index() ---------------------------------------------------------
+#-- end method index() --#
 
 
 #def results( request_IN, poll_id_IN ):
@@ -134,9 +139,122 @@ from sourcenet.export.network_output import NetworkOutput
 
 #    return response_OUT
 
-#-- end method results() -------------------------------------------------------
+#-- end view method results() --#
 
 
+def logout( request_IN ):
+
+    # log out the user.
+    auth.logout( request_IN )
+
+    # Redirect to server home page for now.
+    return HttpResponseRedirect( "/" )
+    
+#-- END view method logout() --#
+
+
+@login_required
+def display_article( request_IN ):
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    my_context_instance = None
+    response_dictionary = {}
+    default_template = ''
+    article_lookup_form = None
+    article_id = -1
+    article_qs = None
+    article_count = -1
+    article_instance = None
+    
+    # configure context instance
+    my_context_instance = RequestContext( request_IN )
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
+    # set my default rendering template
+    default_template = 'articles/article-display.html'
+
+    # variables for building, populating person array that is used to control
+    #    building of network data matrices.
+
+    # do we have output parameters?
+    if request_IN.method == 'POST':
+
+        article_lookup_form = ArticleLookupForm( request_IN.POST )
+
+        if ( article_lookup_form.is_valid() == True ):
+
+            # retrieve article specified by the input parameter, then create
+            #   HTML output of article plus Article_Text.
+            
+            # get article ID.
+            article_id = request_IN.POST.get( "article_id", -1 )
+
+            # retrieve QuerySet that contains that article.
+            article_qs = Article.objects.filter( pk = article_id )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # should only be one.
+                if ( article_count == 1 ):
+                
+                    # get article instance
+                    article_instance = article_qs.get()
+                    
+                    # seed response dictionary.
+                    response_dictionary[ 'article_instance' ] = article_instance
+                    
+                else:
+                
+                    # error - none or multiple articles found for ID. --#
+                    print( "No article returned for ID passed in." )
+                    
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # either no matches, or multiple.
+                response_dictionary[ 'output_string' ] = "ERROR - either no matching article or more than one two many."
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, make an empty instance of network output form.
+        article_lookup_form = ArticleLookupForm()
+        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+        # render
+        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+
+    #-- END check to see if new request or POST --#
+
+
+    return response_OUT
+
+#-- END view method display_article() --#
+
+
+@login_required
 def output_articles( request_IN ):
 
     #return reference
@@ -194,7 +312,7 @@ def output_articles( request_IN ):
             network_query_set = network_outputter.create_network_query_set()
 
             # get count of queryset return items
-            if ( ( network_query_set != None ) or ( network_query_set != "" ) ):
+            if ( ( network_query_set != None ) and ( network_query_set != "" ) ):
 
                 # get count of articles
                 article_data_count = network_query_set.count()
@@ -258,7 +376,7 @@ def output_articles( request_IN ):
         response_dictionary[ 'article_select_form' ] = article_select_form
         response_dictionary[ 'output_type_form' ] = output_type_form
 
-        # declare variables
+        # render
         response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
     #-- END check to see if new request or POST --#
@@ -266,9 +384,10 @@ def output_articles( request_IN ):
 
     return response_OUT
 
-#-- END method output_articles() -------------------------------------------------------
+#-- END view method output_articles() --#
 
 
+@login_required
 def output_network( request_IN ):
 
     #return reference
@@ -471,4 +590,4 @@ def output_network( request_IN ):
 
     return response_OUT
 
-#-- END method output_network() -------------------------------------------------------
+#-- END view method output_network() --#

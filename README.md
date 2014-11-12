@@ -132,11 +132,20 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 'sourcenet',
             )
 
-    - initialize the database - go into directory where manage.py is installed, and run `python manage.py migrate`.
-    
-            python manage.py migrate
+    - add settings properties that tell django how to log people in and out.
 
-        - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
+            # login configuration
+            LOGIN_URL = '/sourcenet/sourcenet/accounts/login/'
+            LOGIN_REDIRECT_URL = '/sourcenet/sourcenet/output/network/'
+            LOGOUT_URL = '/'
+
+    - save the file.
+        
+- initialize the database - go into directory where manage.py is installed, and run `python manage.py migrate`.
+
+        python manage.py migrate
+
+    - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
 
 ## Enable django admins:
