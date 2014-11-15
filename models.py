@@ -2310,6 +2310,28 @@ class Article_Text( Article_Content ):
     #-- END method make_paragraph_string() --#
 
 
+    def save(self, *args, **kwargs):
+        
+        '''
+        Overriding save() method so that we always clean self.content before
+           storing it in database.
+        '''
+        
+        # declare variables
+        my_content = ""
+        
+        # get content
+        my_content = self.get_content()
+        
+        # clean that content
+        self.set_text( my_content, True )
+        
+        # call parent save() method
+        super( Article_Text, self).save( *args, **kwargs )
+
+    #-- END overriden save() method --#
+
+
     def set_text( self, text_IN = "", clean_text_IN = True, *args, **kwargs ):
         
         '''

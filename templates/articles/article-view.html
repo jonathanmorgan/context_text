@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}View Article{% endblock %}
+
+{% block content %}
+
+    <h1>View Article</h1>
+    
+    {# got an output_string? #}
+    {% if output_string %}
+    
+        <div id="article_message" name="article_message" style="background-color: yellow; border: 1px solid black;">
+            <p>{{ output_string }}</p>
+        </div>
+    
+    {% endif %}
+    
+    <div id="article_form" name="article_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+                
+            <p>
+                {# output article lookup form #}
+                {{ article_lookup_form }}
+            </p>
+                
+            <p>
+                <input type="submit" />
+            </p>
+            
+        </form>
+        
+    </div>
+    
+    {% if article_instance %}
+    
+        <hr />
+        <div id="article_view" name="article_view">
+            <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
+            {{ article_text.get_content|safe }}
+        </div>
+
+    {% endif %}
+
+{% endblock %}

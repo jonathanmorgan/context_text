@@ -67,6 +67,10 @@ urlpatterns = patterns( '',
     # link the default authentication page to the admin login page.
     url( r'^accounts/login/$', auth_views.login ),
     
+    # created a view to log people out that redirects to server root.    
     url( r'^accounts/logout/$', 'sourcenet.views.logout' ),
+
+    # article views
+    url( r'^article/view/$', 'sourcenet.views.article_view' ),
 
 )

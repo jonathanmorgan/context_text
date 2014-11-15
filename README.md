@@ -166,7 +166,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         # no virualenv
         WSGIPythonPath <path_to_django_project>/research
         # virtualenv (or any other paths, each separated by colons)
-        #WSGIPythonPath /path/to/mysite.com:/path/to/your/venv/lib/python2.X/site-packages
+        #WSGIPythonPath <path_to_django_project>/research:<path_to_.virtualenv>/<virtualenv_name>/local/lib/python2.7/site-packages
         
         <Directory <path_to_django_project>/research/research>
             <Files wsgi.py>
@@ -188,9 +188,10 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         
         - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
         
-        - enable it with the a2enconf command:
+        - enable it with the a2enconf command, then restart apache (just to be safe):
     
                 (sudo) a2enconf django-sourcenet
+                (sudo) service apache2 restart
 
 - Update the wsgi.py file (`<django_project_dir>/research/wsgi.py`):
 

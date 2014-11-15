@@ -147,7 +147,7 @@ class ArticleLookup( LookupParent ):
         # return reference
         query_set_OUT = None
 
-        # is the q a number and is it the ID of an contributor?
+        # is the q a number and is it the ID of an article?
         query_set_OUT = self.get_instance_query( q, request, self.my_class )
 
         # got anything back?

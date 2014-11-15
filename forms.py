@@ -16,11 +16,15 @@ from django import forms
 # import django user authentication User object, for limiting to certain users.
 from django.contrib.auth.models import User
 
+# import from AJAX selects, for looking up articles.
+from ajax_select.fields import AutoCompleteSelectField
+
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput
 from sourcenet.export.csv_article_output import CsvArticleOutput
 from sourcenet.export.network_output import NetworkOutput
 #from sourcenet.export.network_data_output import NetworkDataOutput
+from sourcenet.models import Article
 from sourcenet.models import Article_Source
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
@@ -30,6 +34,7 @@ class ArticleLookupForm( forms.Form ):
 
     # Article ID
     article_id = forms.IntegerField( required = True, label = "Article ID" )
+    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
 
 #-- END ArticleLookupForm --#
 

@@ -51,8 +51,9 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 # Import the form class for network output
-from sourcenet.forms import ArticleSelectForm
+from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
+from sourcenet.forms import ArticleSelectForm
 from sourcenet.forms import PersonSelectForm
 from sourcenet.forms import NetworkOutputForm
 
@@ -154,7 +155,7 @@ def logout( request_IN ):
 
 
 @login_required
-def display_article( request_IN ):
+def article_view( request_IN ):
 
     #return reference
     response_OUT = None
@@ -164,6 +165,7 @@ def display_article( request_IN ):
     response_dictionary = {}
     default_template = ''
     article_lookup_form = None
+    is_form_ready = False
     article_id = -1
     article_qs = None
     article_count = -1
@@ -175,17 +177,32 @@ def display_article( request_IN ):
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'article_instance' ] = None
+    response_dictionary[ 'article_text' ] = None
 
     # set my default rendering template
-    default_template = 'articles/article-display.html'
+    default_template = 'articles/article-view.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
 
     # do we have output parameters?
-    if request_IN.method == 'POST':
+    if ( request_IN.method == 'POST' ):
 
         article_lookup_form = ArticleLookupForm( request_IN.POST )
+        article_id = request_IN.POST.get( "article_id", -1 )
+        is_form_ready = True
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        article_lookup_form = ArticleLookupForm( request_IN.GET )
+        article_id = request_IN.GET.get( "article_id", -1 )
+        is_form_ready = True
+        
+    #-- END check to see request type so we initialize form correctly. --#
+    
+    # form ready?
+    if ( is_form_ready == True ):
 
         if ( article_lookup_form.is_valid() == True ):
 
@@ -210,22 +227,28 @@ def display_article( request_IN ):
                     # get article instance
                     article_instance = article_qs.get()
                     
+                    # retrieve article text.
+                    article_text = article_instance.article_text_set.get()
+                    
                     # seed response dictionary.
                     response_dictionary[ 'article_instance' ] = article_instance
+                    response_dictionary[ 'article_text' ] = article_text
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     
                 else:
                 
                     # error - none or multiple articles found for ID. --#
                     print( "No article returned for ID passed in." )
+                    response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     
                 #-- END check to see if there is one or other than one. --#
 
             else:
             
-                # either no matches, or multiple.
-                response_dictionary[ 'output_string' ] = "ERROR - either no matching article or more than one two many."
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
                 response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
             
             #-- END check to see if query set is None --#
 
@@ -233,7 +256,6 @@ def display_article( request_IN ):
 
             # not valid - render the form again
             response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         #-- END check to see whether or not form is valid. --#
 
@@ -243,15 +265,14 @@ def display_article( request_IN ):
         article_lookup_form = ArticleLookupForm()
         response_dictionary[ 'article_lookup_form' ] = article_lookup_form
 
-        # render
-        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
-
     #-- END check to see if new request or POST --#
-
+    
+    # render response
+    response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
     return response_OUT
 
-#-- END view method display_article() --#
+#-- END view method article_view() --#
 
 
 @login_required
