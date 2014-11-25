@@ -49,6 +49,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
     - requests - `(sudo) pip install requests`
+    - django-taggit - `(sudo) pip install django-taggit`
     
 - depending on database:
 
@@ -116,7 +117,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
         - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
-    - add 'sourcenet' to your list of INSTALLED\_APPS:
+    - add 'sourcenet' and 'taggit' to your list of INSTALLED\_APPS:
 
             INSTALLED_APPS = (
                 'django.contrib.auth',
@@ -130,6 +131,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
                 'sourcenet',
+                'taggit',
             )
 
     - add settings properties that tell django how to log people in and out.
@@ -160,7 +162,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
         WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
         WSGIProcessGroup sourcenet-1
-        WSGIScriptAlias /sourcenet <path_to_django_project>/research/research/wsgi.py
+        WSGIScriptAlias /sourcenet <path_to_django_project_parent>/research/research/wsgi.py
         
         # Python path
         # no virualenv
@@ -199,7 +201,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 (sudo) a2enconf django-sourcenet
                 (sudo) service apache2 restart
 
-- Update the wsgi.py file (`<django_project_dir>/research/wsgi.py`):
+- Update the wsgi.py file (`<path_to_django_project_parent>/research/wsgi.py`):
 
     - Add a line that adds your project's directory to the python path:
 
@@ -300,13 +302,21 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 - [https://docs.djangoproject.com/en/dev/howto/static-files/](https://docs.djangoproject.com/en/dev/howto/static-files/)
 
-- in your web root, create a folder named "static" directly in your webroot to hold static files for applications (in ubuntu, the default webroot is /var/www):
+- in your web root, create a folder named "static" directly in your webroot to hold static files for applications (in ubuntu 14.04 and greater, the default webroot is /var/www/html):
 
         (sudo) mkdir static
         
+- update the permissions on the static directory so you update them if not root.  You can either do this by making it world readable (potentially a security risk), or you can change the ownership to a group that your user is a member of, then change the permissions to 775 (so group writable, but not world-writable).
+
+        (sudo) chmod 777 static
+        
+        # OR
+        (sudo) chgrp <group_name> static
+        (sudo) chmod 775 static
+
 - open up the `settings.py` file in `<project_folder>/research` and update the STATIC_ROOT variable so it contains the path to the "static" directory you created in teh step above.  Ubuntu example:
 
-        STATIC_ROOT = '/var/www/static'
+        STATIC_ROOT = '/var/www/html/static'
     
 - run the following command to initialize static files for your applications (have to sudo if the folder is in webroot, owned by root):
 
@@ -335,6 +345,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
                 'sourcenet',
+                'taggit',
                 'ajax_select',
             )
         
@@ -403,7 +414,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 - get the admins working.
 
-- add a line to resesarch/urls.py to enable the sourcenet URLs (in `research.sourcenet.urls`) to the urlpatterns structure.
+- add a line to resesarch/urls.py to enable the sourcenet URLs (in `sourcenet.urls`) to the urlpatterns structure.
 
     - Add:
 
@@ -412,16 +423,23 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - Result:
 
             urlpatterns = patterns('',
+
                 # Examples:
                 # url(r'^$', 'research.views.home', name='home'),
                 # url(r'^research/', include('research.foo.urls')),
-                url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
-            
+                
+                # django-ajax-select URLs
+                url( r'^admin/lookups/', include( ajax_select_urls ) ),
+                
                 # Uncomment the admin/doc line below to enable admin documentation:
                 url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
             
                 # Uncomment the next line to enable the admin:
                 url( r'^admin/', include( admin.site.urls ) ),
+                
+                # sourcenet URLs:
+                url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+
             )
             
 ### Test!

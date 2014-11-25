@@ -132,7 +132,7 @@ class ArticleAdmin( admin.ModelAdmin ):
     fieldsets = [
         ( None,
             {
-                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status' ]
+                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'tags' ]
             }
         ),
     ]

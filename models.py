@@ -33,6 +33,9 @@ from nameparser import HumanName
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
 
+# taggit tagging APIs
+from taggit.managers import TaggableManager
+
 '''
 Code sample:
 
@@ -914,6 +917,9 @@ class Article( models.Model ):
 
     # raw_html = models.TextField( blank = True, null = True ) - moved to related Article_RawData instance.
     # - to retrieve Article_RawData instance for this Article: self.article_rawdata_set.get()
+
+    # tags!
+    tags = TaggableManager( blank = True )
 
     status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
     is_local_news = models.BooleanField( default = 0 )
