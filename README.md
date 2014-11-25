@@ -164,20 +164,26 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         
         # Python path
         # no virualenv
-        WSGIPythonPath <path_to_django_project>/research
+        #WSGIPythonPath <path_to_django_project_parent>/research
         # virtualenv (or any other paths, each separated by colons)
-        #WSGIPythonPath <path_to_django_project>/research:<path_to_.virtualenv>/<virtualenv_name>/local/lib/python2.7/site-packages
+        WSGIPythonPath <path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages
         
-        <Directory <path_to_django_project>/research/research>
+        <Directory <path_to_django_project_parent>/research/research>
             <Files wsgi.py>
-                Order deny,allow
                 # apache 2.4:
-                #Require all granted
+                Require all granted
                 # apache 2.2 or earlier:
-                Allow from all
+                #Order deny,allow
+                #Allow from all
             </Files>
         </Directory>
 
+    - WHERE:
+        
+        - `<path_to_django_project_parent>` is the directory in which you created the "research" django project.
+        
+        - `<.virtualenvs_parent_dir>` is usually the home directory of your user (`/home/<username>`).
+    
     - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the WSGIPythonPath directive in addition to the site directory, with the paths separated by a colon.  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
 
     - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
@@ -198,7 +204,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - Add a line that adds your project's directory to the python path:
 
             # Add the app's directory to the PYTHONPATH
-            sys.path.append( '<django_project_dir>/research' )
+            sys.path.append( '<path_to_django_project_parent>/research' )
         
     - If you are using virtualenv:
     
@@ -209,12 +215,12 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         - Add the `site-packages` of the desired virtualenv:
                 
                 # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<virtualenv_home_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
         
         - Activate your virtualenv:
         
                 # Activate your virtualenv
-                activate_env = os.path.expanduser( "<virtualenv_home_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
                 execfile( activate_env, dict( __file__ = activate_env ) )
         
         - here's how it all should look:
@@ -234,15 +240,15 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 import site
                 
                 # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<virtualenv_home_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
                 
                 # Add the app's directory to the PYTHONPATH
-                sys.path.append( '<django_project_dir>/research' )
+                sys.path.append( '<path_to_django_project_parent>/research' )
                 
                 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
                 
                 # Activate your virtualenv
-                activate_env = os.path.expanduser( "<virtualenv_home_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
                 execfile( activate_env, dict( __file__ = activate_env ) )
                 
                 from django.core.wsgi import get_wsgi_application
@@ -250,8 +256,8 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 
             make sure to replace:
             
-            - `<virtualenv_home_dir>` with the full path to the directory where your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
-            - `<django_project_dir>` with the full path to the directory where you installed your django project.
+            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
+            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
 
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
 
