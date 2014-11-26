@@ -50,6 +50,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
     - requests - `(sudo) pip install requests`
     - django-taggit - `(sudo) pip install django-taggit`
+    - mechanize - `(sudo) pip install mechanize`
     
 - depending on database:
 
