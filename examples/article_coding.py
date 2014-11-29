@@ -2,60 +2,39 @@
 
 # sourcenet imports
 from sourcenet.models import Article
+from sourcenet.article_coding.article_coding import ArticleCoding
 
 # declare variables
-article_qs = None
 start_pub_date = None # should be datetime instance
 end_pub_date = None # should be datetime instance
 tag_in_list = []
 paper_id_in_list = []
+params = {}
+my_article_coding = None
+article_qs = None
 
 # first, get a list of articles to code.
+start_pub_date = "2009-12-06"
+end_pub_date = "2009-12-12"
+tag_in_list = "prelim,horse"
+paper_id_in_list = "1"
 
-# start with all articles.
-article_list = Article.objects.all()
+# filter parameters
+params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date
+params[ ArticleCoding.PARAM_END_DATE ] = end_pub_date
+#params[ ArticleCoding.PARAM_TAG_LIST ] = tag_in_list
+params[ ArticleCoding.PARAM_PUBLICATION_LIST ] = paper_id_in_list
 
-# filter using ArticleCoding...
+# filter using ArticleCoding
 
-'''
+# get instance of ArticleCoding
+my_article_coding = ArticleCoding()
 
-# filter on publication date?
-if ( ( start_pub_date != None ) or ( end_pub_date != None ) ):
+# set params
+my_article_coding.set_parameters( params )
 
-    # there is one or the other of the date range filters.
-    if start_pub_date != None:
-    
-        # get articles with publication date greater than or equal to date.
-        article_list = article_list.filter( pub_date_gte = start_pub_date )
-    
-    #-- END check to see if start date filter --#
-
-    if end_pub_date != None:
-    
-        # get articles with publication date less than or equal to date.
-        article_list = article_list.filter( pub_date_lte = end_pub_date )
-    
-    #-- END check to see if start date filter --#
-
-#-- END check to see if publication date filters. --#
-
-# filter on tags assigned to article?
-if ( ( tag_in_list != None ) and ( len( tag_in_list ) > 0 ) ):
-
-    # filter down to just Articles with tags in list.
-    pass
-
-#-- END check to see if list of tags to filter on --#
-
-# filter on paper?
-if ( ( paper_id_in_list != None ) and ( len( paper_id_in_list ) > 0 ) ):
-
-    # filter to just articles associated with papers whose IDs are in list.
-    pass
-    
-#-- END check to see if list of paper IDs is populated. --#
-
-'''
+# create query set
+article_qs = my_article_coding.create_article_query_set()
 
 # make instance of article coder - also ArticleCoding...
 

@@ -73,6 +73,7 @@ class ArticleCoder( object ):
     def __init__( self ):
 
         # declare variables
+        pass
 
     #-- END method __init__() --#
 
