@@ -45,6 +45,9 @@ import pickle
 # django database classes
 from django.db.models import Q
 
+# python_utilities
+from python_utilities.parameters.param_container import ParamContainer
+
 # Import the classes for our SourceNet application
 from sourcenet.models import Article
 from sourcenet.models import Article_Data
@@ -96,8 +99,8 @@ class NetworkOutput( object ):
     PARAM_DATE_RANGE_DATE_FORMAT = '%Y-%m-%d'
 
     # types of params.
-    PARAM_TYPE_LIST = 'list'
-    PARAM_TYPE_STRING = 'string'
+    PARAM_TYPE_LIST = ParamContainer.PARAM_TYPE_LIST
+    PARAM_TYPE_STRING = ParamContainer.PARAM_TYPE_STRING
 
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
@@ -107,7 +110,7 @@ class NetworkOutput( object ):
         PARAM_PUBLICATIONS : PARAM_TYPE_LIST,
         PARAM_CODERS : PARAM_TYPE_LIST,
         PARAM_TOPICS : PARAM_TYPE_LIST,
-        PARAM_UNIQUE_IDS : PARAM_TYPE_STRING,
+        PARAM_UNIQUE_IDS : PARAM_TYPE_LIST,
         PARAM_HEADER_PREFIX : PARAM_TYPE_STRING,
         PARAM_NETWORK_DOWNLOAD_AS_FILE : PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_RENDER_DETAILS : PARAM_TYPE_STRING,
@@ -122,7 +125,7 @@ class NetworkOutput( object ):
         PARAM_PERSON_PREFIX + PARAM_PUBLICATIONS : PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODERS : PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_TOPICS : PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_UNIQUE_IDS : PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + PARAM_UNIQUE_IDS : PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_ALLOW_DUPLICATE_ARTICLES : PARAM_TYPE_STRING
     }
 
@@ -168,11 +171,14 @@ class NetworkOutput( object ):
 
         # declare variables
         self.request = None
-        self.params_dictionary = {}
+        self.parameters = ParamContainer()
 
         # variables for outputting result as file
         self.mime_type = ""
         self.file_extension = ""
+        
+        # define parameters
+        self.define_parameters()
         
     #-- END method __init__() --#
 
@@ -404,213 +410,189 @@ class NetworkOutput( object ):
         unique_id_clean = ''
         #unique_id_in_string = ''
 
-        # get the request
-        request_IN = self.request
+        # retrieve the incoming parameters
+        start_date_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_START_DATE, '' )
+        end_date_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_END_DATE, '' )
+        date_range_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_DATE_RANGE, '' )
+        publications_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_PUBLICATIONS )
+        coders_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODERS )
+        topics_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_TOPICS )
+        unique_ids_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_UNIQUE_IDS )
+        allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, NetworkOutput.CHOICE_NO )
 
-        # got a request?
-        if ( request_IN ):
+        # get all articles to start
+        query_set_OUT = Article_Data.objects.all()
 
-            # retrieve the incoming parameters
-            start_date_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_START_DATE, '' )
-            end_date_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_END_DATE, '' )
-            date_range_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_DATE_RANGE, '' )
-            publications_IN = request_IN.POST.getlist( param_prefix_IN + NetworkOutput.PARAM_PUBLICATIONS )
-            coders_IN = request_IN.POST.getlist( param_prefix_IN + NetworkOutput.PARAM_CODERS )
-            topics_IN = request_IN.POST.getlist( param_prefix_IN + NetworkOutput.PARAM_TOPICS )
-            unique_ids_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_UNIQUE_IDS, '' )
-            allow_duplicate_articles_IN = request_IN.POST.get( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, NetworkOutput.CHOICE_NO )
+        # now filter based on parameters passed in.
+        # start date
+        if ( start_date_IN != '' ):
 
-            # get all articles to start
-            query_set_OUT = Article_Data.objects.all()
+            # set up query instance
+            current_query = Q( article__pub_date__gte = start_date_IN )
 
-            # now filter based on parameters passed in.
-            # start date
-            if ( start_date_IN != '' ):
+            # add it to list of queries
+            query_list.append( current_query )
+
+        #-- END processing of start_date --#
+
+        # end date
+        if ( end_date_IN != '' ):
+
+            # set up query instance
+            current_query = Q( article__pub_date__lte = end_date_IN )
+
+            # add it to list of queries
+            query_list.append( current_query )
+
+        #-- END processing of end_date --#
+
+        # date range?
+        if ( date_range_IN != '' ):
+
+            # first, break up the string into a list of start and end dates.
+            date_range_list = self.parse_date_range( date_range_IN )
+            date_range_q_list = []
+
+            # loop over the date ranges, create a Q for each, and then store
+            #    that Q in our Q list.
+            for date_range_pair in date_range_list:
+
+                # get start and end datetime.date instances.
+                range_start_date = date_range_pair[ 0 ]
+                range_end_date = date_range_pair[ 1 ]
+
+                # make Q
+                date_range_q = Q( article__pub_date__gte = range_start_date ) & Q( article__pub_date__lte = range_end_date )
+
+                # add Q to Q list.
+                date_range_q_list.append( date_range_q )
+
+            #-- END loop over date range items. --#
+
+            # see if there is anything in date_range_q_list.
+            if ( len( date_range_q_list ) > 0 ):
+
+                # There is something.  Convert it to one big ORed together
+                #    Q and add that to the list.
+                current_query = reduce( operator.__or__, date_range_q_list )
+
+                # add this to the query list.
+                query_list.append( current_query )
+
+            #-- END check to see if we have any valid date ranges.
+
+        #-- END processing of date range --#
+
+        # publications
+        #if ( publications_IN ):
+        if ( ( publications_IN is not None ) and ( len( publications_IN ) > 0 ) ):
+
+            # loop over the publications, adding a Q object for each to the
+            #    aggregated set of things we will pass to filter function.
+            for current_item in publications_IN:
 
                 # set up query instance
-                current_query = Q( article__pub_date__gte = start_date_IN )
+                current_query = Q( article__newspaper__id = current_item )
 
-                # add it to list of queries
-                query_list.append( current_query )
+                # see if we already have a query.  If not, make one.
+                if ( compound_query is None ):
+                    compound_query = current_query
 
-            #-- END processing of start_date --#
+                else:
+                    compound_query = compound_query | current_query
 
-            # end date
-            if ( end_date_IN != '' ):
+            #-- end loop over newspapers for which we are building a network. --#
+
+            # add it to the query list
+            query_list.append( compound_query )
+            compound_query = None
+
+        #-- END processing of publications --#
+
+        # coders
+        #if ( coders_IN ):
+        if ( ( coders_IN is not None ) and ( len( coders_IN ) > 0 ) ):
+
+            # loop over the coders, adding a Q object for each to the
+            #    aggregated set of things we will pass to filter function.
+            for current_item in coders_IN:
 
                 # set up query instance
-                current_query = Q( article__pub_date__lte = end_date_IN )
+                current_query = Q( coder__id = current_item )
 
-                # add it to list of queries
-                query_list.append( current_query )
+                # see if we already have a query.  If not, make one.
+                if ( compound_query is None ):
+                    compound_query = current_query
 
-            #-- END processing of end_date --#
+                else:
+                    compound_query = compound_query | current_query
 
-            # date range?
-            if ( date_range_IN != '' ):
+            #-- end loop over coders whose articles we are including in network. --#
 
-                # first, break up the string into a list of start and end dates.
-                date_range_list = self.parse_date_range( date_range_IN )
-                date_range_q_list = []
+            # add it to the query list
+            query_list.append( compound_query )
+            compound_query = None
 
-                # loop over the date ranges, create a Q for each, and then store
-                #    that Q in our Q list.
-                for date_range_pair in date_range_list:
+        #-- END processing of coders --#
 
-                    # get start and end datetime.date instances.
-                    range_start_date = date_range_pair[ 0 ]
-                    range_end_date = date_range_pair[ 1 ]
+        # topics
+        #if ( topics_IN ):
+        if ( ( topics_IN is not None ) and ( len( topics_IN ) > 0 ) ):
 
-                    # make Q
-                    date_range_q = Q( article__pub_date__gte = range_start_date ) & Q( article__pub_date__lte = range_end_date )
+            # loop over the topics, adding a Q object for each to the
+            #    aggregated set of things we will pass to filter function.
+            for current_item in topics_IN:
 
-                    # add Q to Q list.
-                    date_range_q_list.append( date_range_q )
+                # set up query instance
+                current_query = Q( topics__id = current_item )
 
-                #-- END loop over date range items. --#
+                # see if we already have a query.  If not, make one.
+                if ( compound_query is None ):
+                    compound_query = current_query
 
-                # see if there is anything in date_range_q_list.
-                if ( len( date_range_q_list ) > 0 ):
+                else:
+                    compound_query = compound_query & current_query
 
-                    # There is something.  Convert it to one big ORed together
-                    #    Q and add that to the list.
-                    current_query = reduce( operator.__or__, date_range_q_list )
+            #-- end loop over topics we are including in network. --#
 
-                    # add this to the query list.
-                    query_list.append( current_query )
+            # add it to the query list
+            query_list.append( compound_query )
+            compound_query = None
 
-                #-- END check to see if we have any valid date ranges.
-
-            #-- END processing of date range --#
-
-            # publications
-            if ( publications_IN ):
-
-                # loop over the publications, adding a Q object for each to the
-                #    aggregated set of things we will pass to filter function.
-                for current_item in publications_IN:
-
-                    # set up query instance
-                    current_query = Q( article__newspaper__id = current_item )
-
-                    # see if we already have a query.  If not, make one.
-                    if ( compound_query is None ):
-                        compound_query = current_query
-
-                    else:
-                        compound_query = compound_query | current_query
-
-                #-- end loop over newspapers for which we are building a network. --#
-
-                # add it to the query list
-                query_list.append( compound_query )
-                compound_query = None
-
-            #-- END processing of publications --#
-
-            # coders
-            if ( coders_IN ):
-
-                # loop over the coders, adding a Q object for each to the
-                #    aggregated set of things we will pass to filter function.
-                for current_item in coders_IN:
-
-                    # set up query instance
-                    current_query = Q( coder__id = current_item )
-
-                    # see if we already have a query.  If not, make one.
-                    if ( compound_query is None ):
-                        compound_query = current_query
-
-                    else:
-                        compound_query = compound_query | current_query
-
-                #-- end loop over coders whose articles we are including in network. --#
-
-                # add it to the query list
-                query_list.append( compound_query )
-                compound_query = None
-
-            #-- END processing of coders --#
-
-            # topics
-            if ( topics_IN ):
-
-                # loop over the topics, adding a Q object for each to the
-                #    aggregated set of things we will pass to filter function.
-                for current_item in topics_IN:
-
-                    # set up query instance
-                    current_query = Q( topics__id = current_item )
-
-                    # see if we already have a query.  If not, make one.
-                    if ( compound_query is None ):
-                        compound_query = current_query
-
-                    else:
-                        compound_query = compound_query & current_query
-
-                #-- end loop over topics we are including in network. --#
-
-                # add it to the query list
-                query_list.append( compound_query )
-                compound_query = None
-
-            #-- END processing of topics --#
+        #-- END processing of topics --#
 
 
-            # unique identifiers IN list
-            if ( unique_ids_IN ):
+        # unique identifiers IN list
+        # if ( unique_ids_IN ):
+        if ( ( unique_ids_IN is not None ) and ( len( unique_ids_IN ) > 0 ) ):
 
-                # convert to an array, delimited on commas.
-                unique_id_IN_list = unique_ids_IN.split( ',' )
+            # set up query instance to look for articles with
+            #    unique_identifier in the list of values passed in.  Not
+            #    quoting, since django should do that.
+            current_query = Q( article__unique_identifier__in = unique_ids_IN )
 
-                # loop over the IDs, strip()-ing each, enclosing it in quotes,
-                #    then appending it to our unique_id_in_string.
-                unique_id_list = []
-                for unique_id in unique_id_IN_list:
+            # add it to list of queries
+            query_list.append( current_query )
 
-                    # strip, then enclose in quotes
-                    unique_id_clean = unique_id.strip()
-                    #unique_id = '"' + unique_id_clean + '"'
-                    unique_id_list.append( unique_id_clean )
+        #-- END processing of unique_identifiers --#
 
-                #-- END loop over unique IDs passed in --#
+        # now, add them all to the QuerySet - try a loop
+        for query_item in query_list:
 
-                # set up query instance to look for articles with
-                #    unique_identifier in the list of values passed in.  Not
-                #    quoting, since django should do that.
-                current_query = Q( article__unique_identifier__in = unique_id_list )
+            # append each filter to query set.
+            query_set_OUT = query_set_OUT.filter( query_item )
 
-                # add it to list of queries
-                query_list.append( current_query )
+        #-- END loop over query set items --#
 
-            #-- END processing of unique_identifiers --#
+        # see if we are omitting duplicates - can only do this if no unique
+        #    IDs specified.  Those take precedence (and django can't handle
+        #    multiple IN statements).
+        if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
 
-            # now, add them all to the QuerySet - try a loop
-            for query_item in query_list:
+            # remove duplicate articles.
+            query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
 
-                # append each filter to query set.
-                query_set_OUT = query_set_OUT.filter( query_item )
-
-            #-- END loop over query set items --#
-
-            # see if we are omitting duplicates - can only do this if no unique
-            #    IDs specified.  Those take precedence (and django can't handle
-            #    multiple IN statements).
-            if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
-
-                # remove duplicate articles.
-                query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
-
-            #-- END check to see if we allow duplicates --#
-
-        else:
-        
-            # no request set.  Error.
-            query_set_OUT = None
-        
-        #-- END check to make sure we have a request. --#
+        #-- END check to see if we allow duplicates --#
 
         return query_set_OUT
 
@@ -636,94 +618,172 @@ class NetworkOutput( object ):
         person_output_string = ""
         list_separator_string = ""
 
-        # retrieve request
-        request_IN = self.request
+        # get list of expected params
+        expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
         
-        # got a request?
-        if ( request_IN ):
+        # loop over expected parameters, grabbing each and adding it to the
+        #    output string.
+        for param_name, param_type in expected_params.items():
 
-            # get list of expected params
-            expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
+            # initialize this param's output string.
+            param_output_string = param_name + " = \""
+
+            # see if we have a string or a list.
+            if ( param_type == NetworkOutput.PARAM_TYPE_STRING ):
+
+                # get param value
+                param_value = self.get_param_as_str( param_name, '' )
+
+                # append to output string list.
+                param_output_string += param_value
+
+            elif ( param_type == NetworkOutput.PARAM_TYPE_LIST ):
+
+                # get param value list
+                param_value_list = self.get_param_as_list( param_name )
+
+                # output list of values
+                for param_value in param_value_list:
+                    param_output_string += param_value + ", "
+
+            #-- END handle different types of parameters appropriately --#
+
+            # append closing double quote and newline.
+            param_output_string += "\";"
+
+            # then append output string to appropriate output string list,
+            #    depending on type.  To check, see if param name starts with
+            #    "person_" (stored in self.PARAM_PERSON_PREFIX).
+            if ( param_name.startswith( self.PARAM_PERSON_PREFIX ) == True ):
             
-            # loop over expected parameters, grabbing each and adding it to the
-            #    output string.
-            for param_name, param_type in expected_params.items():
-
-                # initialize this param's output string.
-                param_output_string = param_name + " = \""
-
-                # see if we have a string or a list.
-                if ( param_type == NetworkOutput.PARAM_TYPE_STRING ):
-
-                    # get param value
-                    param_value = request_IN.POST.get( param_name, '' )
-
-                    # append to output string list.
-                    param_output_string += param_value
-
-                elif ( param_type == NetworkOutput.PARAM_TYPE_LIST ):
-
-                    # get param value list
-                    param_value_list = request_IN.POST.getlist( param_name )
-
-                    # output list of values
-                    for param_value in param_value_list:
-                        param_output_string += param_value + ", "
-
-                #-- END handle different types of parameters appropriately --#
-
-                # append closing double quote and newline.
-                param_output_string += "\";"
-
-                # then append output string to appropriate output string list,
-                #    depending on type.  To check, see if param name starts with
-                #    "person_" (stored in self.PARAM_PERSON_PREFIX).
-                if ( param_name.startswith( self.PARAM_PERSON_PREFIX ) == True ):
+                # person param.
+                person_output_string_list.append( param_output_string )
                 
-                    # person param.
-                    person_output_string_list.append( param_output_string )
-                    
-                else:
-                
-                    # article param.
-                    article_output_string_list.append( param_output_string )                    
-                
-                #-- END Check to see which list we append to. --#
-
-            #-- END loop over expected parameters --#
-
-            # initialize article and person parameter output strings.
-            article_output_string = "Article selection parameters:\n-----------------------------\n"
-            person_output_string = "Person selection parameters:\n----------------------------\n"
-
-            # now, join the parameters together for each, separated by "\n".
-            list_separator_string = "\n"
-            article_output_string += list_separator_string.join( article_output_string_list )
-            person_output_string += list_separator_string.join( person_output_string_list )
+            else:
             
-            # And, finally, add them all together.
-            string_OUT = article_output_string + "\n\n" + person_output_string
+                # article param.
+                article_output_string_list.append( param_output_string )                    
+            
+            #-- END Check to see which list we append to. --#
 
-        #-- END check to see if we have a request --#
+        #-- END loop over expected parameters --#
+
+        # initialize article and person parameter output strings.
+        article_output_string = "Article selection parameters:\n-----------------------------\n"
+        person_output_string = "Person selection parameters:\n----------------------------\n"
+
+        # now, join the parameters together for each, separated by "\n".
+        list_separator_string = "\n"
+        article_output_string += list_separator_string.join( article_output_string_list )
+        person_output_string += list_separator_string.join( person_output_string_list )
+        
+        # And, finally, add them all together.
+        string_OUT = article_output_string + "\n\n" + person_output_string
 
         return string_OUT
 
     #-- end method debug_parameters() ------------------------------------------
 
 
-    def get_string_property( self, prop_name_IN, default_IN = '' ):
+    def define_parameters( self ):
+
+        # return reference
+        params_OUT = None
+
+        # declare variables
+        my_param_container = None
+        request_IN = None
+        expected_params = None
+        param_name = ''
+        param_type = ''
+
+        # retrieve ParamContainer instance
+        my_param_container = self.get_param_container()
+        
+        # get anything back?
+        if ( my_param_container ):
+
+            # get list of expected params
+            expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
+            
+            # loop over expected parameters, grabbing each and adding it to the
+            #    parameter container.
+            for param_name, param_type in expected_params.items():
+
+                # define in parameter container.
+                my_param_container.define_parameter( param_name, param_type )
+
+            #-- END loop over expected parameters --#
+
+        #-- END check to see if we have a request --#
+        
+        # set parameter container back.
+        self.set_param_container( my_param_container )
+        
+        params_OUT = self.get_param_container()
+
+        return params_OUT
+
+    #-- end method define_parameters() ------------------------------------------
+
+
+    def get_param_container( self ):
+        
+        # return reference
+        value_OUT = None
+        
+        # try to retrieve value - for now, reference nested request.POST
+        value_OUT = self.parameters
+        
+        # got one?
+        if ( value_OUT is None ):
+        
+            # no.  Make one, store it, then return it.
+            value_OUT = ParamContainer()
+            self.set_param_conatiner( value_OUT )
+
+            # return container.
+            value_OUT = self.parameters
+        
+        #-- END check to see if param container --#
+        
+        return value_OUT
+        
+    #-- END method get_param_container() --#
+    
+
+    def get_param_as_list( self, param_name_IN, default_IN = [], delimiter_IN = ',' ):
+        
+        # return reference
+        list_OUT = []
+        
+        # declare variables
+        my_params = None
+        
+        # call get_param_as_list()
+        my_params = self.get_param_container()
+        list_OUT = my_params.get_param_as_list( param_name_IN, default_IN, delimiter_IN )
+        
+        return list_OUT
+
+    #-- END method get_param_as_list() --#
+    
+
+    def get_param_as_str( self, param_name_IN, default_IN = '' ):
         
         # return reference
         value_OUT = ""
         
         # declare variables
+        my_params = None
         
-        # try to retrieve value - for now, reference nested request.POST
-        value_OUT = self.request.POST.get( prop_name_IN, default_IN )
+        # call get_param_as_str()
+        my_params = self.get_param_container()
+        value_OUT = my_params.get_param_as_str( param_name_IN, default_IN )
         
         return value_OUT
         
-    #-- END method get_string_property() --#
+    #-- END method get_param_as_str() --#
     
 
     def get_NDO_instance( self ):
@@ -742,7 +802,7 @@ class NetworkOutput( object ):
         output_type_IN = ""
 
         # get output type.
-        output_type_IN = self.get_string_property( self.PARAM_OUTPUT_TYPE )
+        output_type_IN = self.get_param_as_str( self.PARAM_OUTPUT_TYPE )
         
         # make instance for output type.
         if ( output_type_IN == self.NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX ):
@@ -809,6 +869,7 @@ class NetworkOutput( object ):
         csv_OUT = ''
 
         # declare variables
+        my_params = None
         csv_outputter = None
         output_type_IN = ''
         header_prefix_IN = ''
@@ -817,8 +878,9 @@ class NetworkOutput( object ):
         if ( query_set_IN ):
 
             # retrieve the output type and header_prefix.
-            output_type_IN = self.request.POST.get( NetworkOutput.PARAM_OUTPUT_TYPE, '' )
-            header_prefix_IN = self.request.POST.get( NetworkOutput.PARAM_HEADER_PREFIX, '' )
+            my_params = self.get_param_container()
+            output_type_IN = my_params.get_param_as_str( NetworkOutput.PARAM_OUTPUT_TYPE, '' )
+            header_prefix_IN = my_params.get_param_as_str( NetworkOutput.PARAM_HEADER_PREFIX, '' )
 
             # create instance of CsvArticleOutput.
             csv_outputter = CsvArticleOutput()
@@ -952,9 +1014,7 @@ class NetworkOutput( object ):
         # declare variables
         network_data_outputter = None
         person_dictionary = None
-        output_type_IN = ''
-        network_label_IN = ''
-        output_headers_IN = ''
+        my_params = None
 
         # do we have a query set?
         if ( query_set_IN ):
@@ -969,8 +1029,9 @@ class NetworkOutput( object ):
             network_data_outputter.set_query_set( query_set_IN )
             network_data_outputter.set_person_dictionary( person_dictionary )
 
-            # initialize NetworkDataOutput instance from request.
-            network_data_outputter.initialize_from_request( self.request )
+            # initialize NetworkDataOutput instance from params.
+            my_params = self.get_param_container()
+            network_data_outputter.initialize_from_params( my_params )
 
             # render and return the result.
             network_OUT = network_data_outputter.render()
@@ -1068,6 +1129,25 @@ class NetworkOutput( object ):
     #-- END parse_date_range() --#
 
 
+    def set_param_container( self, param_container_IN ):
+
+        """
+            Method: set_param_container()
+
+            Purpose: accepts a ParamContainer instance, stores it in instance.
+
+            Params:
+            - param_container_IN - ParamContainer instance.
+        """
+
+        # declare variables
+
+        # store the parameter container
+        self.parameters = param_container_IN
+
+    #-- END method set_param_container() --#
+
+
     def set_request( self, request_IN ):
 
         """
@@ -1082,22 +1162,46 @@ class NetworkOutput( object ):
 
         # declare variables
         params_IN = None
+        my_param_container = None
 
         # got a request?
         if ( request_IN ):
-
-            # store request
+        
+            # store the request
             self.request = request_IN
 
-            # get params
-            params_IN = request_IN.POST
+            # get the parameter container
+            my_param_container = self.get_param_container()
 
-            # store params
-            self.params_dictionary = params_IN
+            # set request in container.
+            my_param_container.set_request( request_IN )
 
         #-- END check to see if we have a request --#
 
     #-- END method set_request() --#
+
+
+    def store_parameters( self, params_IN ):
+
+        """
+            Method: set_param_container()
+
+            Purpose: accepts a ParamContainer instance, stores it in instance.
+
+            Params:
+            - param_container_IN - ParamContainer instance.
+        """
+
+        # declare variables
+        my_param_container = None
+
+        # get the parameter container
+        my_parameter_container = self.get_param_container()
+        
+        # store parameters in the container.
+        my_parameter_container.set_parameters( params_IN )
+
+    #-- END method store_parameters() --#
 
 
 #-- END class NetworkOutput --#

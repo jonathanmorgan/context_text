@@ -29,6 +29,9 @@ from abc import ABCMeta, abstractmethod
 #from django.db.models import Count # for aggregating counts of authors, sources.
 #from django.db.models import Max   # for getting max value of author, source counts.
 
+# python_utilities
+from python_utilities.parameters.param_container import ParamContainer
+
 # Import the classes for our SourceNet application
 #from sourcenet.models import Article
 #from sourcenet.models import Article_Author
@@ -987,7 +990,7 @@ class NetworkDataOutput( object ):
     #-- END method get_relations_for_person() --#
 
 
-    def initialize_from_request( self, request_IN ):
+    def initialize_from_params( self, param_container_IN ):
 
         # declare variables
         output_type_IN = ''
@@ -998,12 +1001,12 @@ class NetworkDataOutput( object ):
         source_capacity_exclude_list_IN = None
 
         # retrieve info.
-        output_type_IN = request_IN.POST.get( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT )
-        data_output_type_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_DATA_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
-        include_render_details_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS, NetworkDataOutput.CHOICE_NO )
-        network_label_IN = request_IN.POST.get( NetworkDataOutput.PARAM_NETWORK_LABEL, '' )
-        source_capacity_include_list_IN = request_IN.POST.getlist( NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST )
-        source_capacity_exclude_list_IN = request_IN.POST.getlist( NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST )
+        output_type_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT )
+        data_output_type_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_NETWORK_DATA_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
+        include_render_details_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS, NetworkDataOutput.CHOICE_NO )
+        network_label_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_NETWORK_LABEL, '' )
+        source_capacity_include_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST )
+        source_capacity_exclude_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST )
 
         # store
         self.set_output_type( output_type_IN )
@@ -1039,7 +1042,7 @@ class NetworkDataOutput( object ):
 
         #-- END check to see if anything in list. --#
 
-    #-- END method initialize_from_request() --#
+    #-- END method initialize_from_params() --#
 
 
     def is_source_connected( self, source_IN ):
@@ -1447,7 +1450,7 @@ class NetworkDataOutput( object ):
                POST from the request and stores that as the params.
 
             Params:
-            - request_IN - django QuerySet instance that contains the articles
+            - value_IN - django QuerySet instance that contains the articles
                from which we are to build our network data.
         """
 

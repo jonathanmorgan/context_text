@@ -317,7 +317,7 @@ class ArticleCoding( object ):
             if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
 
                 # set up query instance
-                current_query = Q( tags__name__IN = tag_list_IN )
+                current_query = Q( tags__name__in = tag_list_IN )
 
                 # add it to the query list
                 query_list.append( current_query )
@@ -526,48 +526,69 @@ class ArticleCoding( object ):
         
         # declare variables
         list_param_value = ""
+        param_type = ""
         working_list = []
         current_value = ""
         current_value_clean = ""
         missing_string = "get_list_param-missing"
         
-        # get list param's original value
-        list_param_value = self.get_string_param( param_name_IN, missing_string )
+        # first, try getting raw param, see if it is already a list.
         
-        # print( "====> list param value: " + list_param_value )
+        # get raw value
+        list_param_value = self.get_param( param_name_IN, None )
         
-        # got a value?
-        if ( ( list_param_value != "" ) and ( list_param_value != missing_string ) ):
+        # get type string
+        param_type = type( list_param_value )
         
-            # yes - split on delimiter into a list
-            working_list = list_param_value.split( delimiter_IN )
-            
-            # loop over the IDs, strip()-ing each then appending it to list_OUT.
-            list_OUT = []
-            for current_value in working_list:
-    
-                # strip
-                current_value_clean = current_value.strip()
-                list_OUT.append( current_value_clean )
-    
-            #-- END loop over unique IDs passed in --#
+        # check if list
+        if param_type == list:
         
-        elif list_param_value == "":
-        
-            # return empty list.
-            list_OUT = []
-            
-        elif list_param_value == missing_string:
-        
-            # return default
-            list_OUT = default_IN
+            # already a list - return it.
+            list_OUT = list_param_value
             
         else:
         
-            # not sure how we got here - return default.
-            list_OUT = default_IN
+            # not a list.  assume string.
         
-        #-- END check to see what was in value. --#
+            # get list param's original value
+            list_param_value = self.get_string_param( param_name_IN, missing_string )
+            
+            # print( "====> list param value: " + list_param_value )
+            
+            # got a value?
+            if ( ( list_param_value != "" ) and ( list_param_value != missing_string ) ):
+            
+                # yes - split on delimiter into a list
+                working_list = list_param_value.split( delimiter_IN )
+                
+                # loop over the IDs, strip()-ing each then appending it to list_OUT.
+                list_OUT = []
+                for current_value in working_list:
+             
+                    # strip
+                    current_value_clean = current_value.strip()
+                    list_OUT.append( current_value_clean )
+        
+                #-- END loop over unique IDs passed in --#
+            
+            elif list_param_value == "":
+            
+                # return empty list.
+                list_OUT = []
+                
+            elif list_param_value == missing_string:
+            
+                # return default
+                list_OUT = default_IN
+                
+            else:
+            
+                # not sure how we got here - return default.
+                list_OUT = default_IN
+            
+            #-- END check to see what was in value. --#
+            
+        #-- END check to see if already a list --#
         
         return list_OUT
         

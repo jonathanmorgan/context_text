@@ -505,7 +505,15 @@ def output_network( request_IN ):
             network_query_set = network_outputter.create_network_query_set()
 
             # get count of queryset return items
-            article_data_count = network_query_set.count()
+            if ( network_query_set is not None ):
+            
+                article_data_count = network_query_set.count()
+                
+            else:
+            
+                article_data_count = -1
+                
+            #-- END check to see if None --#
 
             # include render details?
             if ( include_render_details == True ):
@@ -516,6 +524,10 @@ def output_network( request_IN ):
                 output_string += "=======================\n"
                 output_string += "\n"
                 output_string += network_outputter.debug_parameters()
+                output_string += "\n"
+                output_string += "\n"
+                my_param_container = network_outputter.get_param_container()
+                output_string += my_param_container.debug_parameters()
     
                 #-------------------------------------------------------------------
                 # summary info.
@@ -529,12 +541,17 @@ def output_network( request_IN ):
     
                 # loop over the query set.
                 query_counter = 0
-                for current_item in network_query_set:
-    
-                    query_counter += 1
-                    output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
-    
-                #-- END loop over articles to list out headlines. --#
+                
+                if ( network_query_set is not None ):
+
+                    for current_item in network_query_set:
+        
+                        query_counter += 1
+                        output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
+        
+                    #-- END loop over articles to list out headlines. --#
+                    
+                #-- END check to see if network_query_set is None --#
     
                 # render and output networkd data.
                 output_string += "\n\n"
