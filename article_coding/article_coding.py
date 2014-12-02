@@ -361,10 +361,10 @@ class ArticleCoding( object ):
 
         else:
         
-            # no request set.  Error.
+            # no param container present.  Error.
             query_set_OUT = None
         
-        #-- END check to make sure we have a request. --#
+        #-- END check to make sure we have a param container. --#
 
         return query_set_OUT
 

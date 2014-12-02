@@ -404,11 +404,7 @@ class NetworkOutput( object ):
         compound_query = None
         current_query = None
         query_list = []
-        unique_id_IN_list = None
-        unique_id_list = None
-        unique_id = ''
-        unique_id_clean = ''
-        #unique_id_in_string = ''
+        has_unique_id_list = False
 
         # retrieve the incoming parameters
         start_date_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_START_DATE, '' )
@@ -564,6 +560,7 @@ class NetworkOutput( object ):
 
         # unique identifiers IN list
         # if ( unique_ids_IN ):
+        has_unique_id_list = False
         if ( ( unique_ids_IN is not None ) and ( len( unique_ids_IN ) > 0 ) ):
 
             # set up query instance to look for articles with
@@ -573,6 +570,9 @@ class NetworkOutput( object ):
 
             # add it to list of queries
             query_list.append( current_query )
+            
+            # set flag so we know there were indeed unique IDs. --#
+            has_unique_id_list = True
 
         #-- END processing of unique_identifiers --#
 
@@ -587,7 +587,8 @@ class NetworkOutput( object ):
         # see if we are omitting duplicates - can only do this if no unique
         #    IDs specified.  Those take precedence (and django can't handle
         #    multiple IN statements).
-        if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
+        #if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( unique_ids_IN == '' ) ):
+        if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( has_unique_id_list == False ) ):
 
             # remove duplicate articles.
             query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
