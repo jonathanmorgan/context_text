@@ -38,9 +38,6 @@ if __name__ == "__main__":
 #from datetime import date
 from datetime import datetime
 import operator
-import StringIO
-import pickle
-#from operator import __or__
 
 # django database classes
 from django.db.models import Q
@@ -59,25 +56,31 @@ from sourcenet.export.ndo_simple_matrix import NDO_SimpleMatrix
 from sourcenet.export.ndo_csv_matrix import NDO_CSVMatrix
 from sourcenet.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 
+# Import sourcenet shared classes.
+from sourcenet.shared.sourcenet_base import SourcenetBase
+
+
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkOutput( object ):
+class NetworkOutput( SourcenetBase ):
 
 
     #---------------------------------------------------------------------------
     # CONSTANTS-ish
     #---------------------------------------------------------------------------
 
-    # network selection parameters we expect.
-    PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
-    PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
-    PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
-    PARAM_PUBLICATIONS = 'publications'   # list of IDs of newspapers you want included.
-    PARAM_CODERS = 'coders'   # list of IDs of coders whose data you want included.
-    PARAM_TOPICS = 'topics'   # list of IDs of topics whose data you want included.
-    PARAM_UNIQUE_IDS = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
+    # network selection parameters we expect - moved to parent.
+    #PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
+    #PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
+    #PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+    #PARAM_PUBLICATION_LIST = 'publications'   # list of IDs of newspapers you want included.
+    #PARAM_TOPIC_LIST = 'topics'   # list of IDs of topics whose data you want included.
+    #PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
+
+    # network selection parameters unique to this class.
+    PARAM_CODER_LIST = 'coders'   # list of IDs of coders whose data you want included.
     PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
     PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
     PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
@@ -93,40 +96,31 @@ class NetworkOutput( object ):
     #    above, but with this prefix appended to the front.
     PARAM_PERSON_PREFIX = 'person_'
 
-    # constants for parsing date range string
-    PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
-    PARAM_DATE_RANGE_DATE_SEPARATOR = ' to '
-    PARAM_DATE_RANGE_DATE_FORMAT = '%Y-%m-%d'
-
-    # types of params.
-    PARAM_TYPE_LIST = ParamContainer.PARAM_TYPE_LIST
-    PARAM_TYPE_STRING = ParamContainer.PARAM_TYPE_STRING
-
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
-        PARAM_START_DATE : PARAM_TYPE_STRING,
-        PARAM_END_DATE : PARAM_TYPE_STRING,
-        PARAM_DATE_RANGE : PARAM_TYPE_STRING,
-        PARAM_PUBLICATIONS : PARAM_TYPE_LIST,
-        PARAM_CODERS : PARAM_TYPE_LIST,
-        PARAM_TOPICS : PARAM_TYPE_LIST,
-        PARAM_UNIQUE_IDS : PARAM_TYPE_LIST,
-        PARAM_HEADER_PREFIX : PARAM_TYPE_STRING,
-        PARAM_NETWORK_DOWNLOAD_AS_FILE : PARAM_TYPE_STRING,
-        PARAM_NETWORK_INCLUDE_RENDER_DETAILS : PARAM_TYPE_STRING,
-        PARAM_OUTPUT_TYPE : PARAM_TYPE_STRING,
-        PARAM_NETWORK_DATA_OUTPUT_TYPE : PARAM_TYPE_STRING,
-        PARAM_ALLOW_DUPLICATE_ARTICLES : PARAM_TYPE_STRING,
-        PARAM_NETWORK_LABEL : PARAM_TYPE_STRING,
-        PARAM_NETWORK_INCLUDE_HEADERS : PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + PARAM_START_DATE : PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + PARAM_END_DATE : PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + PARAM_DATE_RANGE : PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + PARAM_PUBLICATIONS : PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_CODERS : PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_TOPICS : PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_UNIQUE_IDS : PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_ALLOW_DUPLICATE_ARTICLES : PARAM_TYPE_STRING
+        SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
+        SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_HEADER_PREFIX : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_NETWORK_DOWNLOAD_AS_FILE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_NETWORK_INCLUDE_RENDER_DETAILS : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_NETWORK_DATA_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_NETWORK_LABEL : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING
     }
 
     OUTPUT_TYPE_CHOICES_LIST = [
@@ -135,15 +129,15 @@ class NetworkOutput( object ):
         ( CsvArticleOutput.ARTICLE_OUTPUT_TYPE_AUTHOR_PER_LINE, "One author per line" )
     ]
 
-    # variables for choosing yes or no.
-    CHOICE_YES = 'yes'
-    CHOICE_NO = 'no'
+    # variables for choosing yes or no. - moved to parent.
+    #CHOICE_YES = 'yes'
+    #CHOICE_NO = 'no'
 
     # choices for yes or no decision.
-    CHOICES_YES_OR_NO_LIST = [
-        ( CHOICE_NO, "No" ),
-        ( CHOICE_YES, "Yes" )
-    ]
+    #CHOICES_YES_OR_NO_LIST = [
+    #    ( CHOICE_NO, "No" ),
+    #    ( CHOICE_YES, "Yes" )
+    #]
 
     # Network data format output types
     NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_SIMPLE_MATRIX
@@ -169,16 +163,19 @@ class NetworkOutput( object ):
 
     def __init__( self ):
 
-        # declare variables
-        self.request = None
-        self.parameters = ParamContainer()
+        # call parent's __init__()
+        super( NetworkOutput, self ).__init__()
 
+        # declare variables - moved to parent
+        #self.request = None
+        #self.parameters = ParamContainer()
+
+        # define parameters - moved to parent
+        #self.define_parameters( NetworkOutput.PARAM_NAME_TO_TYPE_MAP )
+        
         # variables for outputting result as file
         self.mime_type = ""
         self.file_extension = ""
-        
-        # define parameters
-        self.define_parameters()
         
     #-- END method __init__() --#
 
@@ -389,10 +386,10 @@ class NetworkOutput( object ):
         start_date_IN = ''
         end_date_IN = ''
         date_range_IN = ''
-        publications_IN = None
-        coders_IN = None
-        topics_IN = None
-        unique_ids_IN = ''
+        publication_list_IN = None
+        coder_list_IN = None
+        topic_list_IN = None
+        unique_id_list_IN = ''
         allow_duplicate_articles_IN = ''
         date_range_list = None
         date_range_pair = None
@@ -401,20 +398,19 @@ class NetworkOutput( object ):
         date_range_q = None
         date_range_q_list = None
         current_item = None
-        compound_query = None
         current_query = None
         query_list = []
         has_unique_id_list = False
 
         # retrieve the incoming parameters
-        start_date_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_START_DATE, '' )
-        end_date_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_END_DATE, '' )
-        date_range_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_DATE_RANGE, '' )
-        publications_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_PUBLICATIONS )
-        coders_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODERS )
-        topics_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_TOPICS )
-        unique_ids_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_UNIQUE_IDS )
-        allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, NetworkOutput.CHOICE_NO )
+        start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, '' )
+        end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, '' )
+        date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
+        publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
+        coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+        topic_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TOPIC_LIST )
+        unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST )
+        allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, SourcenetBase.CHOICE_NO )
 
         # get all articles to start
         query_set_OUT = Article_Data.objects.all()
@@ -480,93 +476,51 @@ class NetworkOutput( object ):
         #-- END processing of date range --#
 
         # publications
-        #if ( publications_IN ):
-        if ( ( publications_IN is not None ) and ( len( publications_IN ) > 0 ) ):
+        #if ( publication_list_IN ):
+        if ( ( publication_list_IN is not None ) and ( len( publication_list_IN ) > 0 ) ):
 
-            # loop over the publications, adding a Q object for each to the
-            #    aggregated set of things we will pass to filter function.
-            for current_item in publications_IN:
-
-                # set up query instance
-                current_query = Q( article__newspaper__id = current_item )
-
-                # see if we already have a query.  If not, make one.
-                if ( compound_query is None ):
-                    compound_query = current_query
-
-                else:
-                    compound_query = compound_query | current_query
-
-            #-- end loop over newspapers for which we are building a network. --#
+            # set up query instance
+            current_query = Q( article__newspaper__id__in = publication_list_IN )
 
             # add it to the query list
-            query_list.append( compound_query )
-            compound_query = None
+            query_list.append( current_query )
 
         #-- END processing of publications --#
 
         # coders
-        #if ( coders_IN ):
-        if ( ( coders_IN is not None ) and ( len( coders_IN ) > 0 ) ):
+        #if ( coder_list_IN ):
+        if ( ( coder_list_IN is not None ) and ( len( coder_list_IN ) > 0 ) ):
 
-            # loop over the coders, adding a Q object for each to the
-            #    aggregated set of things we will pass to filter function.
-            for current_item in coders_IN:
-
-                # set up query instance
-                current_query = Q( coder__id = current_item )
-
-                # see if we already have a query.  If not, make one.
-                if ( compound_query is None ):
-                    compound_query = current_query
-
-                else:
-                    compound_query = compound_query | current_query
-
-            #-- end loop over coders whose articles we are including in network. --#
+            # set up query instance
+            current_query = Q( coder__id__in = coder_list_IN )
 
             # add it to the query list
-            query_list.append( compound_query )
-            compound_query = None
+            query_list.append( current_query )
 
         #-- END processing of coders --#
 
         # topics
-        #if ( topics_IN ):
-        if ( ( topics_IN is not None ) and ( len( topics_IN ) > 0 ) ):
+        #if ( topic_list_IN ):
+        if ( ( topic_list_IN is not None ) and ( len( topic_list_IN ) > 0 ) ):
 
-            # loop over the topics, adding a Q object for each to the
-            #    aggregated set of things we will pass to filter function.
-            for current_item in topics_IN:
-
-                # set up query instance
-                current_query = Q( topics__id = current_item )
-
-                # see if we already have a query.  If not, make one.
-                if ( compound_query is None ):
-                    compound_query = current_query
-
-                else:
-                    compound_query = compound_query & current_query
-
-            #-- end loop over topics we are including in network. --#
+            # set up query instance
+            current_query = Q( topics__id__in = topic_list_IN )
 
             # add it to the query list
-            query_list.append( compound_query )
-            compound_query = None
+            query_list.append( current_query )
 
         #-- END processing of topics --#
 
 
         # unique identifiers IN list
-        # if ( unique_ids_IN ):
+        # if ( unique_id_list_IN ):
         has_unique_id_list = False
-        if ( ( unique_ids_IN is not None ) and ( len( unique_ids_IN ) > 0 ) ):
+        if ( ( unique_id_list_IN is not None ) and ( len( unique_id_list_IN ) > 0 ) ):
 
             # set up query instance to look for articles with
             #    unique_identifier in the list of values passed in.  Not
             #    quoting, since django should do that.
-            current_query = Q( article__unique_identifier__in = unique_ids_IN )
+            current_query = Q( article__unique_identifier__in = unique_id_list_IN )
 
             # add it to list of queries
             query_list.append( current_query )
@@ -685,107 +639,6 @@ class NetworkOutput( object ):
 
     #-- end method debug_parameters() ------------------------------------------
 
-
-    def define_parameters( self ):
-
-        # return reference
-        params_OUT = None
-
-        # declare variables
-        my_param_container = None
-        request_IN = None
-        expected_params = None
-        param_name = ''
-        param_type = ''
-
-        # retrieve ParamContainer instance
-        my_param_container = self.get_param_container()
-        
-        # get anything back?
-        if ( my_param_container ):
-
-            # get list of expected params
-            expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
-            
-            # loop over expected parameters, grabbing each and adding it to the
-            #    parameter container.
-            for param_name, param_type in expected_params.items():
-
-                # define in parameter container.
-                my_param_container.define_parameter( param_name, param_type )
-
-            #-- END loop over expected parameters --#
-
-        #-- END check to see if we have a request --#
-        
-        # set parameter container back.
-        self.set_param_container( my_param_container )
-        
-        params_OUT = self.get_param_container()
-
-        return params_OUT
-
-    #-- end method define_parameters() ------------------------------------------
-
-
-    def get_param_container( self ):
-        
-        # return reference
-        value_OUT = None
-        
-        # try to retrieve value - for now, reference nested request.POST
-        value_OUT = self.parameters
-        
-        # got one?
-        if ( value_OUT is None ):
-        
-            # no.  Make one, store it, then return it.
-            value_OUT = ParamContainer()
-            self.set_param_conatiner( value_OUT )
-
-            # return container.
-            value_OUT = self.parameters
-        
-        #-- END check to see if param container --#
-        
-        return value_OUT
-        
-    #-- END method get_param_container() --#
-    
-
-    def get_param_as_list( self, param_name_IN, default_IN = [], delimiter_IN = ',' ):
-        
-        # return reference
-        list_OUT = []
-        
-        # declare variables
-        my_params = None
-        
-        # call get_param_as_list()
-        my_params = self.get_param_container()
-        list_OUT = my_params.get_param_as_list( param_name_IN, default_IN, delimiter_IN )
-        
-        return list_OUT
-
-    #-- END method get_param_as_list() --#
-    
-
-    def get_param_as_str( self, param_name_IN, default_IN = '' ):
-        
-        # return reference
-        value_OUT = ""
-        
-        # declare variables
-        my_params = None
-        
-        # call get_param_as_str()
-        my_params = self.get_param_container()
-        value_OUT = my_params.get_param_as_str( param_name_IN, default_IN )
-        
-        return value_OUT
-        
-    #-- END method get_param_as_str() --#
-    
 
     def get_NDO_instance( self ):
 
@@ -1049,160 +902,6 @@ class NetworkOutput( object ):
         return network_OUT
 
     #-- END render_network_data() --#
-
-
-    def parse_date_range( self, date_range_IN ):
-        
-        """
-            Method: parse_date_range()
-            
-            Purpose: Accepts a date range string, parses it, and returns a list
-               of date ranges that need to be OR-ed together.  The text in date
-               range field can be parsed out into date ranges - semi-colon
-               delimited, " to " between dates that bound a range.  Could add
-               more complexity later.  As soon as we start doing that, need an
-               object for date ranges.  For now, not so much.
-
-            Ex.:
-                2009-12-01 to 2009-12-31;2010-02-01 to 2010-02-28
-                
-            Params:
-            - date_range_IN - date range string we need to parse.
-            
-            Returns:
-            - List of Lists - List of pairs of date instances (two item lists) that are to be OR-ed together.
-        """
-        
-        # return reference
-        date_range_list_OUT = []
-        
-        # declare variables
-        date_range_list = None
-        date_range_string = ''
-        date_range_date_list = ''
-        from_string = ''
-        to_string = ''
-        from_date = None
-        to_date = None
-        date_pair_list = None
-        
-        # got a date range value?
-        if ( date_range_IN != '' ):
-        
-            # got something - break it up on ";"
-            date_range_list = date_range_IN.split( NetworkOutput.PARAM_DATE_RANGE_ITEM_SEPARATOR )
-
-            # iterate over list, splitting each item on " to " and then if two
-            #    things found, place them in a list and append that list to the
-            #    output list.
-            for date_range_string in date_range_list:
-
-                # split on " to "
-                date_range_date_list = date_range_string.split( NetworkOutput.PARAM_DATE_RANGE_DATE_SEPARATOR )
-
-                # grab dates
-                from_string = date_range_date_list[ 0 ]
-                to_string = date_range_date_list[ 1 ]
-
-                # make sure we have two values.  If not, do nothing.
-                if ( ( from_string != '' ) and ( to_string != '' ) ):
-
-                    # convert to date instances
-                    from_date = datetime.strptime( from_string, NetworkOutput.PARAM_DATE_RANGE_DATE_FORMAT )
-                    from_date = from_date.date()
-                    to_date = datetime.strptime( to_string, NetworkOutput.PARAM_DATE_RANGE_DATE_FORMAT )
-                    to_date = to_date.date()
-
-                    # put the date()s in a list.
-                    date_pair_list = [ from_date, to_date ]
-
-                    # add list to output list.
-                    date_range_list_OUT.append( date_pair_list )
-
-                #-- END check to see if we have two values. --#
-
-            #-- END loop over date range strings --#
-        
-        #-- END check to see if date range value set. --#
-        
-        return date_range_list_OUT
-
-    #-- END parse_date_range() --#
-
-
-    def set_param_container( self, param_container_IN ):
-
-        """
-            Method: set_param_container()
-
-            Purpose: accepts a ParamContainer instance, stores it in instance.
-
-            Params:
-            - param_container_IN - ParamContainer instance.
-        """
-
-        # declare variables
-
-        # store the parameter container
-        self.parameters = param_container_IN
-
-    #-- END method set_param_container() --#
-
-
-    def set_request( self, request_IN ):
-
-        """
-            Method: set_request()
-
-            Purpose: accepts a request, stores it in instance, then grabs the
-                POST from the request and stores that as the params.
-
-            Params:
-            - request_IN - django HTTPRequest instance.
-        """
-
-        # declare variables
-        params_IN = None
-        my_param_container = None
-
-        # got a request?
-        if ( request_IN ):
-        
-            # store the request
-            self.request = request_IN
-
-            # get the parameter container
-            my_param_container = self.get_param_container()
-
-            # set request in container.
-            my_param_container.set_request( request_IN )
-
-        #-- END check to see if we have a request --#
-
-    #-- END method set_request() --#
-
-
-    def store_parameters( self, params_IN ):
-
-        """
-            Method: set_param_container()
-
-            Purpose: accepts a ParamContainer instance, stores it in instance.
-
-            Params:
-            - param_container_IN - ParamContainer instance.
-        """
-
-        # declare variables
-        my_param_container = None
-
-        # get the parameter container
-        my_parameter_container = self.get_param_container()
-        
-        # store parameters in the container.
-        my_parameter_container.set_parameters( params_IN )
-
-    #-- END method store_parameters() --#
 
 
 #-- END class NetworkOutput --#
