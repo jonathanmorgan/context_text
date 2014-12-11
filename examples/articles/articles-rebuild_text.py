@@ -1,6 +1,7 @@
 # sourcenet imports
 from sourcenet.collectors.newsbank.newsbank_helper import NewsBankHelper
 from sourcenet.models import Article
+from sourcenet.models import Article_Content
 from sourcenet.models import Article_RawData
 
 # python utilities
@@ -180,6 +181,9 @@ for article in article_qs:
                     
                     # set status
                     article_text.status = "done"
+                    
+                    # set type to 'canonical'
+                    article_text.content_type = Article_Content.CONTENT_TYPE_CANONICAL
                     
                     # save
                     article_text.save()

@@ -1765,13 +1765,19 @@ class Article( models.Model ):
 class Article_Content( models.Model ):
 
     # Content types:
+    CONTENT_TYPE_CANONICAL = 'canonical'
+    CONTENT_TYPE_HTML = 'html'
+    CONTENT_TYPE_TEXT = 'text'
+    CONTENT_TYPE_OTHER = 'other'
+    CONTENT_TYPE_NONE = 'none'
+    CONTENT_TYPE_DEFAULT = CONTENT_TYPE_TEXT
     
     CONTENT_TYPE_CHOICES = (
-        ( "canonical", "Canonical" ),
-        ( "html", "HTML" ),
-        ( "text", "Text" ),
-        ( "other", "Other" ),
-        ( "none", "None" )
+        ( CONTENT_TYPE_CANONICAL, "Canonical" ),
+        ( CONTENT_TYPE_HTML, "HTML" ),
+        ( CONTENT_TYPE_TEXT, "Text" ),
+        ( CONTENT_TYPE_OTHER, "Other" ),
+        ( CONTENT_TYPE_NONE, "None" )
     )
 
     #----------------------------------------------------------------------

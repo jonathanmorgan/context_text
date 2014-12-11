@@ -47,7 +47,7 @@ admin.site.register( Newspaper )
 admin.site.register( Article_Notes )
 admin.site.register( Article_RawData )
 #admin.site.register( Article_Source )
-admin.site.register( Article_Text )
+#admin.site.register( Article_Text )
 #admin.site.register( Article_Topic )
 #admin.site.register( Source_Organization )
 #admin.site.register( Article_Location )
@@ -135,6 +135,12 @@ class ArticleAdmin( admin.ModelAdmin ):
                 'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'tags' ]
             }
         ),
+        ( "More details (Optional)",
+            {
+                'fields' : [ 'index_terms'  ],
+                'classes' : ( "collapse", )
+            }
+        ),
     ]
 
     inlines = [
@@ -198,6 +204,28 @@ class ArticleSourceInline( admin.StackedInline ):
     ]
 
 #-- END class ArticleSourceInline --#
+
+
+#-------------------------------------------------------------------------------
+# Article Data admin definition
+#-------------------------------------------------------------------------------
+
+class Article_TextAdmin( admin.ModelAdmin ):
+    fieldsets = [
+        ( None,
+            {
+                'fields' : [ 'article', 'content', 'content_type', 'status' ]
+            }
+        ),
+    ]
+
+    list_display = ( 'id', 'content_type', 'status', 'article' )
+    list_display_links = ( 'id', 'article', )
+    list_filter = [ 'content_type', 'status' ]
+    search_fields = [ 'article', 'content', 'id' ]
+    #date_hierarchy = 'pub_date'
+
+admin.site.register( Article_Text, Article_TextAdmin )
 
 
 #-------------------------------------------------------------------------------
