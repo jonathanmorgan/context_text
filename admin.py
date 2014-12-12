@@ -10,6 +10,11 @@ sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
 '''
 
+# IMPORTANT!!! Any admin that contains a reference to an article should use
+#    django-ajax-selects to include the article.  In a large set of articles,
+#    the normal way of including a reference (a dropdown) will send the admin app
+#    out to lunch trying to pull in all the entries for the dropdown.
+
 # import code for AJAX select
 from ajax_select import make_ajax_form
 from ajax_select.admin import AjaxSelectAdmin
@@ -211,6 +216,15 @@ class ArticleSourceInline( admin.StackedInline ):
 #-------------------------------------------------------------------------------
 
 class Article_TextAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+
     fieldsets = [
         ( None,
             {
