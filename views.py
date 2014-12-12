@@ -161,6 +161,7 @@ def article_view( request_IN ):
     response_OUT = None
 
     # declare variables
+    me = "article_view"
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
@@ -267,6 +268,9 @@ def article_view( request_IN ):
 
     #-- END check to see if new request or POST --#
     
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
     # render response
     response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
@@ -282,6 +286,7 @@ def output_articles( request_IN ):
     response_OUT = None
 
     # declare variables
+    me = "output_articles"
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
@@ -397,6 +402,9 @@ def output_articles( request_IN ):
         response_dictionary[ 'article_select_form' ] = article_select_form
         response_dictionary[ 'output_type_form' ] = output_type_form
 
+        # add on the "me" property.
+        response_dictionary[ 'current_view' ] = me        
+
         # render
         response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
@@ -415,6 +423,7 @@ def output_network( request_IN ):
     response_OUT = None
 
     # declare variables
+    me = "output_network"
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
@@ -619,6 +628,9 @@ def output_network( request_IN ):
         response_dictionary[ 'article_select_form' ] = article_select_form
         response_dictionary[ 'network_output_form' ] = network_output_form
         response_dictionary[ 'person_select_form' ] = person_select_form
+        
+        # add on the "me" property.
+        response_dictionary[ 'current_view' ] = me        
 
         # declare variables
         response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
