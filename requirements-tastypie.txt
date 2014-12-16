@@ -1,0 +1,6 @@
+python-mimeparse
+python-dateutil
+lxml
+defusedxml
+pyyaml
+django-tastypie

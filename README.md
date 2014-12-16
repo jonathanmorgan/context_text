@@ -6,6 +6,24 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 # Installation and configuration
 
+## OS packages
+
+If you want to make use of a tastypie XML API for sourcenet information, you'll need to install the "lxml" python package, and to do that, you might need some operating system libraries installed so it will compile.
+
+On Ubuntu, for example, you'll need:
+
+- libxml2
+- libxml2-dev
+- libxslt1-dev
+
+to install:
+
+    sudo apt-get install libxml2 libxml2-dev libxslt1-dev
+
+If you want to use a YAML API, you'll also need to install libyaml and libyaml-dev:
+
+    sudo apt-get install libyaml-dev
+
 ## virtualenv and virtualenvwrapper
 
 if you are on a shared or complicated server (and who isn't, really?), using virtualenv and virtualenvwrapper to create isolated python environments for specific applications can save lots of headaches.  To do this:
@@ -86,6 +104,21 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         
         - You can also use python_utilities.network.http_helper.Http_Helper to connect directly (or requests package) see the sample code in /examples/NLP/OpenCalais_API.py for more details.
 
+- Tastypie, REST APIs, and user-friendly coding pages
+
+    Some pages that make it easy for users to code up sourcing in articles use angular JS for presentation, and reference a REST-ful API implemented using TastyPie - [http://tastypieapi.org/](http://tastypieapi.org/).  TastyPie requires the following python packages:
+
+    - python-mimeparse
+    - python-dateutil
+    - lxml
+    - defusedxml
+    - pyyaml
+    - django-tastypie
+    
+    requirements-tastypie.txt contains all of these packages, can be used to install them all at once:
+    
+    - `(sudo) pip install -r sourcenet/requirements-tastypie.txt`
+
 ## Install "research" django project
 
 - install a django project named "research".
@@ -118,7 +151,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
         - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
-    - add 'sourcenet' and 'taggit' to your list of INSTALLED\_APPS:
+    - add 'sourcenet', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
 
             INSTALLED_APPS = (
                 'django.contrib.auth',
@@ -133,6 +166,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 # 'django.contrib.admindocs',
                 'sourcenet',
                 'taggit',
+                'tastypie',
             )
 
     - add settings properties that tell django how to log people in and out.

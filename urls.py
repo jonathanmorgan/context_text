@@ -15,6 +15,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 # import djanfgo.conf.urls.defaults stuff.
 #from django.conf.urls.defaults import *
 from django.conf.urls import patterns
+from django.conf.urls import include
 from django.conf.urls import url
 
 # and import stuff to use the admin's login page for all authentication.
@@ -22,6 +23,16 @@ from django.contrib.auth import views as auth_views
 
 # import polls from mysite
 from sourcenet.models import Article
+
+# import tastypie stuff, so we can make REST-ful API
+from tastypie.api import Api
+from sourcenet.tastypie_api.sourcenet_api import ArticleResource
+
+# initialize sourcenet API, v1
+v1_api = Api( api_name='v1' )
+
+# register resources
+v1_api.register( ArticleResource() )
 
 # polls-specific URL settings, intended to be included in master urls.py file.
 #urlpatterns = patterns( 'mysite.polls.views',
@@ -72,5 +83,11 @@ urlpatterns = patterns( '',
 
     # article views
     url( r'^article/view/$', 'sourcenet.views.article_view' ),
+
+    # article coding page
+    url( r'^article/code/', 'sourcenet.views.article_code' ),
+
+    # APIs
+    url( r'^api/', include( v1_api.urls) ),
 
 )
