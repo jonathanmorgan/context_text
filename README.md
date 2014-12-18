@@ -176,6 +176,10 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
             LOGIN_REDIRECT_URL = '/sourcenet/sourcenet/output/network/'
             LOGOUT_URL = '/'
 
+    - set the SESSION_COOKIE_NAME to sourcenet.
+    
+            SESSION_COOKIE_NAME = 'sourcenet'
+    
     - save the file.
         
 - initialize the database - go into directory where manage.py is installed, and run `python manage.py migrate`.
@@ -195,15 +199,16 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
-        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
-        WSGIProcessGroup sourcenet-1
-        WSGIScriptAlias /sourcenet <path_to_django_project_parent>/research/research/wsgi.py
-        
-        # Python path
+        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages 
+
+        # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess sourcenet-1 ... python-path=
         # no virualenv
-        #WSGIPythonPath <path_to_django_project_parent>/research
+        # ... python-path=<path_to_django_project_parent>/research
         # virtualenv (or any other paths, each separated by colons)
-        WSGIPythonPath <path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages
+        # ... python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages
+
+        WSGIProcessGroup sourcenet-1
+        WSGIScriptAlias /sourcenet <path_to_django_project_parent>/research/research/wsgi.py process-group=sourcenet-1
         
         <Directory <path_to_django_project_parent>/research/research>
             <Files wsgi.py>
@@ -221,7 +226,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         
         - `<.virtualenvs_parent_dir>` is usually the home directory of your user (`/home/<username>`).
     
-    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the WSGIPythonPath directive in addition to the site directory, with the paths separated by a colon.  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
+    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the python-path directive in addition to the site directory, with the paths separated by a colon.  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
 
     - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
 
