@@ -307,7 +307,7 @@ def article_code( request_IN ):
     response_dictionary[ 'article_text' ] = None
 
     # set my default rendering template
-    default_template = 'articles/article-view.html'
+    default_template = 'articles/article-code.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.

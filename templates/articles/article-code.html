@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}View Article{% endblock %}
+{% block title %}Code Article{% endblock %}
+
+{%block inside-head %}
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
+<script src="/static/sourcenet/angular/coding/app.js"></script>
+<script src="/static/sourcenet/angular/coding/main.ctrl.js"></script>
+{% endblock %}
 
 {% block content %}
 
-    <h1>View article</h1>
+    <h1>Code article</h1>
     
     {# got an output_string? #}
     {% if output_string %}
@@ -37,6 +43,32 @@
     
     {% if article_instance %}
     
+{% verbatim %}
+        <hr />
+        <div ng-app="sourcenet_coding" ng-controller="MainController as main">
+
+            <p>
+                Title: 
+                    {{ main.title }}
+                <br />
+                <br />
+                <input type="text" class="form-control" ng-model="main.searchInput">
+                <br />
+                <br />
+                
+            </p>
+            <p>{{ main.searchInput }}</p>
+                    
+            <h3>A list of TV shows</h3>
+            <ul class="list-group">
+                <li class="list-group-item" ng-repeat="show in main.shows | filter:main.searchInput | orderBy:main.order.key:main.order.reverse"><span ng-if="show.favorite">FAV  </span>{{show.title}} <span class="badge">{{show.year}}</span></li>
+            </ul>
+            
+            <select ng-model="main.order" ng-options="order as order.title for order in main.orders"></select>
+        
+        </div>
+{% endverbatim %}
+
         <hr />
         <div id="article_view" name="article_view">
             <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
