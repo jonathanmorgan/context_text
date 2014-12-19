@@ -12,6 +12,8 @@ paper_id_in_list = []
 params = {}
 my_article_coding = None
 article_qs = None
+article_count = -1
+coding_status = ""
 
 # first, get a list of articles to code.
 start_pub_date = "2009-12-06"
@@ -38,8 +40,14 @@ my_article_coding.store_parameters( params )
 # create query set
 article_qs = my_article_coding.create_article_query_set()
 
-# make instance of article coder - also ArticleCoding...
+# make sure we have at least one article
+article_count = article_qs.count()
+if ( article_count > 0 ):
 
-# give it list of articles.
-
-# ready go!
+    # invoke the code_article_data( self, query_set_IN ) method.
+    coding_status = my_article_coding.code_article_data( article_qs )
+    
+    # output status
+    print( "==> Coding status: " + coding_status )
+    
+#-- END check to see if article count. --#

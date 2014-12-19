@@ -171,6 +171,7 @@ def article_view( request_IN ):
     article_qs = None
     article_count = -1
     article_instance = None
+    article_paragraph_list = None
     
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -235,6 +236,9 @@ def article_view( request_IN ):
                     response_dictionary[ 'article_instance' ] = article_instance
                     response_dictionary[ 'article_text' ] = article_text
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                    
+                    # get paragraph list
+                    #article_paragraph_list = article_text.get_paragraph_list()
                     
                 else:
                 

@@ -18,6 +18,7 @@ from django.contrib.auth.models import User
 
 # import from AJAX selects, for looking up articles.
 from ajax_select.fields import AutoCompleteSelectField
+from ajax_select import make_ajax_field
 
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput

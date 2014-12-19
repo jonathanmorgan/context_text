@@ -161,6 +161,7 @@ class ArticleCoding( SourcenetBase ):
 
         # declare variables
         article_coder = None
+        current_status = ""
 
         # do we have a query set?
         if ( query_set_IN ):
@@ -168,24 +169,27 @@ class ArticleCoding( SourcenetBase ):
             # create instance of ArticleCoder.
             article_coder = self.get_coder_instance()
 
-            # initialize it.
-            article_coder.set_query_set( query_set_IN )
-            article_coder.set_person_dictionary( person_dictionary )
-
             # initialize ArticleCoder instance from params.
             my_params = self.get_param_container()
             article_coder.initialize_from_params( my_params )
 
-            # render and return the result.
-            status_OUT = article_coder.code_articles()
+            # loop on the article list, passing each to the ArticleCoder for
+            #    processing.
+            for ( current_article in query_set_IN ):
+            
+                # code the article.
+                current_status = article_coder.code_article( current_article )
+            
+            #-- END loop over articles --#
 
             # add some debug?
             if ( ArticleCoder.DEBUG_FLAG == True ):
 
                 # yup.
-                status_OUT += "\n\n" + network_data_outputter.debug + "\n\n"
+                status_OUT += "\n\n" + article_coder.debug + "\n\n"
 
             #-- END check to see if we have debug to output. --#
+
         #-- END check to make sure we have a query set. --#
 
         return status_OUT
