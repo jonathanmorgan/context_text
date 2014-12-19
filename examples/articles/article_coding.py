@@ -29,7 +29,10 @@ params[ ArticleCoding.PARAM_TAG_LIST ] = tag_in_list
 #params[ ArticleCoding.PARAM_PUBLICATION_LIST ] = paper_id_in_list
 #params[ ArticleCoding.PARAM_SECTION_LIST ] = section_list
 
-# filter using ArticleCoding
+# set coder you want to use.
+
+# OpenCalais REST API
+params[ ArticleCoding.PARAM_CODER_TYPE ] = ArticleCoding.ARTICLE_CODING_IMPL_OPEN_CALAIS_API
 
 # get instance of ArticleCoding
 my_article_coding = ArticleCoding()
@@ -37,7 +40,7 @@ my_article_coding = ArticleCoding()
 # set params
 my_article_coding.store_parameters( params )
 
-# create query set
+# create query set - ArticleCoding does the filtering for you.
 article_qs = my_article_coding.create_article_query_set()
 
 # make sure we have at least one article

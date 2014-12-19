@@ -138,9 +138,13 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
             git clone https://github.com/jonathanmorgan/sourcenet.git
 
-    - If you might want to try to run the newsbank collector, you'll also need python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
+    - You'll also need python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
 
             git clone https://github.com/jonathanmorgan/python_utilities.git
+
+    - And you'll need django\_config.  Clone django\_config into the research folder alongside sourcenet:
+
+            git clone https://github.com/jonathanmorgan/django_config.git
 
 ## Configure database, applications:
 
@@ -151,7 +155,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
         - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
-    - add 'sourcenet', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
+    - add 'sourcenet', 'django\_config', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
 
             INSTALLED_APPS = (
                 'django.contrib.auth',
@@ -165,6 +169,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
                 'sourcenet',
+                'django_config',
                 'taggit',
                 'tastypie',
             )
@@ -496,7 +501,20 @@ There is an example application in sourcenet/collectors/newsbank that you can us
 
 To code articles by hand, use the django admin pages (access to which should have been enabled once you configured your web server so it knows of the wsgi.py file above).  The article model's admin page has been implemented so it is relatively easy to use to code articles, and if you want to refine or alter what is collected, you can alter it in sourcenet/admins.py.
 
-A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in sourcenet/protocol/sourcenet_CA_protocol.pdf.
+A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in `sourcenet/protocol/sourcenet_CA_protocol.pdf`.
+
+## Automated Coding
+
+### OpenCalais REST API
+
+To use the OpenCalais REST API to code articles, you'll need to first set up a few pieces of information in the django_config application.
+
+Create the following configuration properties, each with the Application value "OpenCalais_REST_API":
+
+    - `open_calais_api_key` - should contain your Open Calais API key.  For more information on getting an Open Calais API key, see: [http://www.opencalais.com/APIkey](http://www.opencalais.com/APIkey)
+    - `submitter` - string that identifies the program that is invoking the API - should start with "sourcenet-", then identify more specifically your project. 
+    
+Then, the most reliable way to code large numbers of articles is to use the file `sourcenet/examples/articles/article_coding.py` as a template to set up and run a set of articles through the coder.
 
 # Creating Network Data
 
