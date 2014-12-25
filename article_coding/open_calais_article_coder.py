@@ -131,7 +131,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         '''
 
         # return reference
-        status_OUT = STATUS_SUCCESS
+        status_OUT = self.STATUS_SUCCESS
         
         # declare variables
         article_text = None
@@ -154,7 +154,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             my_http_helper = self.get_http_helper()
             
             # make the request.
-            requests_response = my_http_helper.load_url_requests( OPEN_CALAIS_REST_API_URL, data_IN = article_body_html )
+            requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, data_IN = article_body_html )
             
             # raw text:
             requests_raw_text = requests_response.text

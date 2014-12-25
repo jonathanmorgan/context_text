@@ -161,6 +161,7 @@ class ArticleCoding( SourcenetBase ):
 
         # declare variables
         article_coder = None
+        param_dict = {}
         current_status = ""
 
         # do we have a query set?
@@ -170,12 +171,19 @@ class ArticleCoding( SourcenetBase ):
             article_coder = self.get_coder_instance()
 
             # initialize ArticleCoder instance from params.
+            
+            # Get parent parameter container.
             my_params = self.get_param_container()
-            article_coder.initialize_from_params( my_params )
+            
+            # retrieve the inner dictionary.
+            param_dict = my_params.get_parameters()
+            
+            # use the dictionary from the param container to initialize.
+            article_coder.initialize_from_params( param_dict )
 
             # loop on the article list, passing each to the ArticleCoder for
             #    processing.
-            for ( current_article in query_set_IN ):
+            for current_article in query_set_IN:
             
                 # code the article.
                 current_status = article_coder.code_article( current_article )
@@ -398,7 +406,9 @@ class ArticleCoding( SourcenetBase ):
         coder_type_IN = ""
 
         # get output type.
-        coder_type_IN = self.get_string_param( self.PARAM_CODER_TYPE, self.ARTICLE_CODING_IMPL_DEFAULT )
+        coder_type_IN = self.get_param_as_str( self.PARAM_CODER_TYPE, self.ARTICLE_CODING_IMPL_DEFAULT )
+        
+        print( "Coder Type: " + coder_type_IN )
         
         # make instance for coder type.
         if ( coder_type_IN == self.ARTICLE_CODING_IMPL_OPEN_CALAIS_API ):

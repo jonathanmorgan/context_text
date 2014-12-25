@@ -117,6 +117,25 @@ class ArticleCoder( object ):
     #-- END abstract method code_article() --#
     
 
+    def add_config_property( self, prop_name_IN ):
+        
+        # return reference
+        prop_name_OUT = ''
+        
+        # declare variables
+        prop_name_list = []
+        
+        # get property name list.
+        prop_name_list = self.get_config_property_list()
+        
+        # add the property name to the list.
+        prop_name_list.append( prop_name_IN )
+        
+        return prop_name_OUT
+        
+    #-- END method add_config_property() --#
+    
+    
     def get_config_application( self ):
 
         '''
@@ -277,7 +296,7 @@ class ArticleCoder( object ):
         '''
 
         # return reference
-        status_OUT = STATUS_OK
+        status_OUT = self.STATUS_OK
         
         # declare variables.
         config_application = ""
@@ -305,6 +324,29 @@ class ArticleCoder( object ):
     #-- END abstract method load_config_properties() --#
     
     
+    def set_config_application( self, value_IN ):
+
+        '''
+        Accepts an application string name, stores value passed in, returns the
+           value.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+
+        # store value.
+        self.config_application = value_IN
+        
+        # get return value
+        value_OUT = self.get_config_application()
+
+        return value_OUT
+
+    #-- END set_config_application() --#
+
+
     def set_config_property( self, name_IN, value_IN ):
         
         # return reference
