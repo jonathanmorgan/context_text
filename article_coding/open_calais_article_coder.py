@@ -90,8 +90,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #============================================================================
 
     
-    # debug
-    debug = False
+    # declare variables
     http_helper = None
     content_type = ""
     output_format = ""
@@ -111,7 +110,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         self.http_helper = None
         self.content_type = ""
         self.output_format = ""
-
+        
+        # rate-limiting
+        self.do_manage_time = True
+        self.rate_limit_in_seconds = 0.25
+        self.rate_limit_daily_limit = 10000
+    
     #-- END method __init__() --#
 
 

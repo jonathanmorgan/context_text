@@ -32,13 +32,16 @@ from abc import ABCMeta, abstractmethod
 # import basic django configuration application.
 from django_config.models import Config_Property
 
+# python_utilities
+from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
+
 # Import the classes for our SourceNet application
 
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class ArticleCoder( object ):
+class ArticleCoder( BasicRateLimited ):
 
     
     #---------------------------------------------------------------------------
@@ -57,6 +60,9 @@ class ArticleCoder( object ):
     # status variables
     STATUS_OK = "OK!"
     STATUS_ERROR_PREFIX = "Error: "
+    
+    # debug
+    DEBUG_FLAG = True
 
 
     #---------------------------------------------------------------------------
@@ -68,6 +74,14 @@ class ArticleCoder( object ):
     config_application = ""
     config_property_list = []
     config_properties = {}
+    
+    # rate-limiting - in BasicRateLimited
+    #do_manage_time = False
+    #rate_limit_in_seconds = -1
+    #rate_limit_daily_limit = -1
+    
+    # debug
+    debug = ""
 
 
     #---------------------------------------------------------------------------
@@ -77,10 +91,21 @@ class ArticleCoder( object ):
 
     def __init__( self ):
 
+        # call parent's __init__()
+        super( ArticleCoder, self ).__init__()
+
         # declare variables
         self.config_application = ""
         self.config_property_list = []
         self.config_properties = {}
+    
+        # rate-limiting
+        self.do_manage_time = False
+        self.rate_limit_in_seconds = -1
+        self.rate_limit_daily_limit = -1
+        
+        # debug
+        self.debug = ""
         
         # initialize configuration properties
         self.init_config_properties()

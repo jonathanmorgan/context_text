@@ -51,6 +51,6 @@ if ( article_count > 0 ):
     coding_status = my_article_coding.code_article_data( article_qs )
     
     # output status
-    print( "==> Coding status: " + coding_status )
+    print( "==> Coding status: \"" + coding_status + "\"" )
     
 #-- END check to see if article count. --#

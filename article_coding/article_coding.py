@@ -26,6 +26,8 @@ import operator
 from django.db.models import Q
 
 # python_utilities
+from python_utilities.exceptions.exception_helper import ExceptionHelper
+from python_utilities.logging.summary_helper import SummaryHelper
 from python_utilities.parameters.param_container import ParamContainer
 
 # Import the classes for our SourceNet application
@@ -33,7 +35,10 @@ from sourcenet.models import Article
 from sourcenet.models import Article_Data
 
 # Import other Article coder classes
+from sourcenet.article_coding.article_coder import ArticleCoder
 from sourcenet.article_coding.open_calais_article_coder import OpenCalaisArticleCoder
+from python_utilities.logging.summary_helper import SummaryHelper
+from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import sourcenet shared classes.
 from sourcenet.shared.sourcenet_base import SourcenetBase
@@ -102,6 +107,14 @@ class ArticleCoding( SourcenetBase ):
 
 
     #---------------------------------------------------------------------------
+    # instance variables
+    #---------------------------------------------------------------------------
+    
+    
+    # exception helper.
+    exception_helper = None
+    
+    #---------------------------------------------------------------------------
     # __init__() method
     #---------------------------------------------------------------------------
 
@@ -112,9 +125,11 @@ class ArticleCoding( SourcenetBase ):
         super( ArticleCoding, self ).__init__()
 
         # declare variables
+        self.set_exception_helper( ExceptionHelper() )
+        
+        # ==> moved to parent class SourcenetBase
         #self.request = None
         #self.parameters = ParamContainer()
-
         # define parameters
         #self.define_parameters( ArticleCoding.PARAM_NAME_TO_TYPE_MAP )
         
@@ -160,9 +175,27 @@ class ArticleCoding( SourcenetBase ):
         status_OUT = ''
 
         # declare variables
+        my_summary_helper = None
+        summary_string = ""
         article_coder = None
         param_dict = {}
         current_status = ""
+        my_exception_helper = None
+        exception_message = ""
+        
+        # rate-limiting variables
+        am_i_rate_limited = False
+        continue_work = True
+        
+        # auditing variables
+        article_counter = -1
+        exception_counter = -1
+        
+        # initialize summary helper
+        my_summary_helper = SummaryHelper()
+        
+        # init rate-limiting
+        am_i_rate_limited = self.do_manage_time
 
         # do we have a query set?
         if ( query_set_IN ):
@@ -183,11 +216,65 @@ class ArticleCoding( SourcenetBase ):
 
             # loop on the article list, passing each to the ArticleCoder for
             #    processing.
+            article_counter = 0
+            exception_counter = 0
+            continue_work = True
             for current_article in query_set_IN:
             
-                # code the article.
-                current_status = article_coder.code_article( current_article )
-            
+                # OK to continue work?
+                if ( continue_work == True ):
+
+                    # increment article counter
+                    article_counter += 1
+                    
+                    # rate-limited?
+                    if ( am_i_rate_limited == True ):
+                    
+                        # yes - start timer.
+                        self.start_request()
+                    
+                    #-- END pre-request check for rate-limiting --#
+                    
+                    # a little debugging to start
+                    print( "==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
+                    
+                    # add per-article exception handling, so we can get an idea of how
+                    #    many articles cause problems.
+                    try:
+                
+                        # code the article.
+                        current_status = article_coder.code_article( current_article )
+                        
+                    except Exception as e:
+                        
+                        # increment exception_counter
+                        exception_counter += 1
+                        
+                        # get exception helper.
+                        my_exception_helper = self.get_exception_helper()
+                        
+                        # log exception, no email or anything.
+                        exception_message = "Exception caught for article " + str( current_article.id )
+                        my_exception_helper.process_exception( e, exception_message )
+                        
+                    #-- END exception handling around individual article processing. --#
+                
+                    # rate-limited?
+                    if ( am_i_rate_limited == True ):
+                    
+                        # yes - check if we may continue.
+                        continue_work = self.may_i_continue()
+                    
+                    #-- END post-request check for rate-limiting --#
+                    
+                else:
+                
+                    # not OK to continue work.  Break?
+                    #break
+                    pass
+                
+                #-- END check to see if OK to continue.  If not... --#
+                
             #-- END loop over articles --#
 
             # add some debug?
@@ -199,6 +286,22 @@ class ArticleCoding( SourcenetBase ):
             #-- END check to see if we have debug to output. --#
 
         #-- END check to make sure we have a query set. --#
+        
+        # add stuff to summary and print the results.
+
+        # set stop time
+        my_summary_helper.set_stop_time()
+
+        # add stuff to summary
+        my_summary_helper.set_prop_value( "article_counter", article_counter )
+        my_summary_helper.set_prop_desc( "article_counter", "Articles processed" )
+
+        my_summary_helper.set_prop_value( "exception_counter", exception_counter )
+        my_summary_helper.set_prop_desc( "exception_counter", "Exception count" )
+
+        # output - set prefix if you want.
+        summary_string += my_summary_helper.create_summary_string( item_prefix_IN = "==> " )
+        print( summary_string )
 
         return status_OUT
 
@@ -404,6 +507,7 @@ class ArticleCoding( SourcenetBase ):
 
         # declare variables
         coder_type_IN = ""
+        is_coder_rate_limited = False
 
         # get output type.
         coder_type_IN = self.get_param_as_str( self.PARAM_CODER_TYPE, self.ARTICLE_CODING_IMPL_DEFAULT )
@@ -423,9 +527,75 @@ class ArticleCoding( SourcenetBase ):
         
         #-- END check to see what type we have. --#
         
+        # set up rate limiting
+        is_coder_rate_limited = coder_instance_OUT.do_manage_time
+        if ( is_coder_rate_limited == True ):
+        
+            # yes.  initialize variables.
+            self.do_manage_time = True
+            self.rate_limit_in_seconds = coder_instance_OUT.rate_limit_in_seconds
+        
+        else:
+        
+            # no.  initialize variables.
+            self.do_manage_time = False
+            self.rate_limit_in_seconds = -1
+        
+        #-- END check to see if rate-limited. --#
+        
         return coder_instance_OUT
 
     #-- END get_coder_instance() --#
+
+
+    def get_exception_helper( self ):
+
+        '''
+        Returns this instance's ExceptionHelper instance.  If no value, returns None.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+
+        # get value.
+        value_OUT = self.exception_helper
+        
+        # got anything?
+        if ( ( value_OUT is None ) or ( value_OUT == "" ) ):
+        
+            # no - return None.
+            value_OUT = None
+            
+        #-- END check to see if we have a value. --#
+
+        return value_OUT
+
+    #-- END get_exception_helper() --#
+
+
+    def set_exception_helper( self, value_IN ):
+
+        '''
+        Accepts an ExceptionHelper instance, stores value passed in, returns the
+           value.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+
+        # store value.
+        self.exception_helper = value_IN
+        
+        # get return value
+        value_OUT = self.get_exception_helper()
+
+        return value_OUT
+
+    #-- END set_exception_helper() --#
 
 
 #-- END class ArticleCoding --#

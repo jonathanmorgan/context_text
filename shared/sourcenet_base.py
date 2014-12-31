@@ -26,13 +26,14 @@ from django.db.models import Q
 
 # python_utilities
 from python_utilities.parameters.param_container import ParamContainer
+from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class SourcenetBase( object ):
+class SourcenetBase( BasicRateLimited ):
 
 
     #---------------------------------------------------------------------------
@@ -74,6 +75,19 @@ class SourcenetBase( object ):
     ]
 
 
+    #============================================================================
+    # instance variables
+    #============================================================================
+
+
+    # request variables
+    request = None
+    parameters = None
+    
+    # rate-limiting
+    is_rate_limited = False
+    
+    
     #---------------------------------------------------------------------------
     # __init__() method
     #---------------------------------------------------------------------------
@@ -81,9 +95,15 @@ class SourcenetBase( object ):
 
     def __init__( self ):
 
+        # call parent's __init__()
+        super( SourcenetBase, self ).__init__()
+
         # declare variables
         self.request = None
         self.parameters = ParamContainer()
+        
+        # rate limiting
+        is_rate_limited = False
 
         # define parameters - should do this in "child.__init__()".
         self.define_parameters( self.PARAM_NAME_TO_TYPE_MAP )        
