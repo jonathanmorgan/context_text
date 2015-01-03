@@ -62,7 +62,7 @@ class ArticleCoder( BasicRateLimited ):
     STATUS_ERROR_PREFIX = "Error: "
     
     # debug
-    DEBUG_FLAG = True
+    DEBUG_FLAG = False
 
 
     #---------------------------------------------------------------------------

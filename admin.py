@@ -236,7 +236,7 @@ class Article_TextAdmin( admin.ModelAdmin ):
     list_display = ( 'id', 'content_type', 'status', 'article' )
     list_display_links = ( 'id', 'article', )
     list_filter = [ 'content_type', 'status' ]
-    search_fields = [ 'article', 'content', 'id' ]
+    search_fields = [ 'content', ]
     #date_hierarchy = 'pub_date'
 
 admin.site.register( Article_Text, Article_TextAdmin )

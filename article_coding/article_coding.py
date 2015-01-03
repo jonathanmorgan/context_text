@@ -257,6 +257,8 @@ class ArticleCoding( SourcenetBase ):
                         exception_message = "Exception caught for article " + str( current_article.id )
                         my_exception_helper.process_exception( e, exception_message )
                         
+                        #print( "======> " + exception_message )
+                        
                     #-- END exception handling around individual article processing. --#
                 
                     # rate-limited?

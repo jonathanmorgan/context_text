@@ -144,6 +144,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         requests_response = None
         requests_raw_text = ""
         requests_response_json = None
+        debug_string = ""
 
         # got an article?
         if ( article_IN is not None ):
@@ -153,6 +154,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             
             # retrieve article body
             article_body_html = article_text.get_content()
+            
+            # print article body HTML
+            #print( "**** Article " + str( article_IN.id ) + " - " + article_IN.headline )
+            #print( "******** Body: " + article_body_html )
             
             # get Http_Helper instance
             my_http_helper = self.get_http_helper()
@@ -166,11 +171,16 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             # convert to a json object:
             requests_response_json = requests_response.json()
             
-            # loop over the stuff in the response:
-            print( "=============================================" )
-            print( "requests_response_json" )
-            print( "=============================================" )
-            self.print_calais_json( requests_response_json )
+            # render some of it as a string, for debug.
+            if ( self.DEBUG_FLAG == True ):
+            
+                # render and output debug string.
+                debug_string = self.print_calais_json( requests_response_json )
+                self.output_debug( debug_string )
+
+            #-- END debug --#
+
+            # process contents of response.
 
         #-- END check to see if article. --#
         
@@ -327,7 +337,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         if ( message_IN ):
         
             # only print if debug is on.
-            if ( self.debug == True ):
+            if ( self.DEBUG_FLAG == True ):
             
                 # debug is on.  For now, just print.
                 print( message_IN )
@@ -341,44 +351,53 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
     def print_calais_json( self, json_IN ):
     
+        '''
+        Accepts OpenCalais API JSON object, prints selected parts of it to a
+           string variable.  Returns that string.
+        '''
+    
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        properties_to_output_list = []
+        current_property = ""
+        
+        # set properties we want to output
+        properties_to_output_list = [ "_type", "_typeGroup", "commonname", "name", "person" ]
+        
         # loop over the stuff in the response:
         item_counter = 0
         current_container = json_IN
         for item in current_container.keys():
         
             item_counter += 1
-            print( "==> " + str( item_counter ) + ": " + item )
+            string_OUT += "==> " + str( item_counter ) + ": " + item + "\n"
             
-            current_property = "_type"
-            if ( current_property in current_container[ item ] ):
-                current_property_value = current_container[ item ][ current_property ]
-                print( "----> " + current_property + ": " + current_property_value )
-                if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
-                    print( current_container[ item ] )
-                #-- END check to see if type is "Quotation" --#
-            #-- END current_property --#
-            current_property = "_typeGroup"
-            if ( current_property in current_container[ item ] ):
-                current_property_value = current_container[ item ][ current_property ]
-                print( "----> " + current_property + ": " + current_property_value )
-            #-- END current_property --#
-            current_property = "commonname"
-            if ( current_property in current_container[ item ] ):
-                current_property_value = current_container[ item ][ current_property ]
-                print( "----> " + current_property + ": " + current_property_value )
-            #-- END current_property --#
-            current_property = "name"
-            if ( current_property in current_container[ item ] ):
-                current_property_value = current_container[ item ][ current_property ]
-                print( "----> " + current_property + ": " + current_property_value )
-            #-- END current_property --#
-            current_property = "person"
-            if ( current_property in current_container[ item ] ):
-                current_property_value = current_container[ item ][ current_property ]
-                print( "----> " + current_property + ": " + current_property_value )
-            #-- END current_property --#
+            # loop over properties that we care about.
+            for current_property in properties_to_output_list:
+                        
+                # is property in the current JSON item we are looking at?
+                if ( current_property in current_container[ item ] ):
+
+                    # yes - output.
+                    current_property_value = current_container[ item ][ current_property ]
+                    string_OUT += "----> " + current_property + ": " + current_property_value  + "\n"
+
+                    # is it a Quotation or a Person?
+                    if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
+
+                        string_OUT += str( current_container[ item ] ) + "\n"
+
+                    #-- END check to see if type is "Quotation" --#
+
+                #-- END current_property --#
+
+            #-- END loop over list of properties we want to output. --#
             
         #-- END loop over items --#
+        
+        return string_OUT
         
     #-- END function print_calais_json --#
 
