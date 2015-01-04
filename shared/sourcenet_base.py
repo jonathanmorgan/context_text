@@ -108,6 +108,9 @@ class SourcenetBase( BasicRateLimited ):
         # define parameters - should do this in "child.__init__()".
         self.define_parameters( self.PARAM_NAME_TO_TYPE_MAP )        
         
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase).
+        self.set_logger_name( "sourcenet.shared.sourcenet_base" )
+        
     #-- END method __init__() --#
 
 

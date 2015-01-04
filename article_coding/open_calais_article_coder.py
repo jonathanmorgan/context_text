@@ -116,6 +116,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         self.rate_limit_in_seconds = 0.25
         self.rate_limit_daily_limit = 10000
     
+        # set application string (for LoggingHelper parent class: (LoggingHelper -->
+        #    BasicRateLimited --> ArticleCoder --> OpenCalaisArticleCoder).
+        self.set_logger_name( "sourcenet.article_coding.open_calais_article_coder" )
+
     #-- END method __init__() --#
 
 
@@ -325,29 +329,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
     #-- END abstract method initialize_from_params() --#
     
-
-    def output_debug( self, message_IN ):
-    
-        '''
-        Accepts message string.  If debug is on, passes it to print().  If not,
-           does nothing for now.
-        '''
-    
-        # got a message?
-        if ( message_IN ):
-        
-            # only print if debug is on.
-            if ( self.DEBUG_FLAG == True ):
-            
-                # debug is on.  For now, just print.
-                print( message_IN )
-            
-            #-- END check to see if debug is on --#
-        
-        #-- END check to see if message. --#
-    
-    #-- END method output_debug() --#
-
 
     def print_calais_json( self, json_IN ):
     

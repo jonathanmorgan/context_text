@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
 # python libraries
 from abc import ABCMeta, abstractmethod
-
+import logging
 #import copy
 
 # django config, for pulling in any configuration needed to connect to APIs, etc.
@@ -113,6 +113,10 @@ class ArticleCoder( BasicRateLimited ):
         # load properties
         self.load_config_properties()
         
+        # set logger name (for LoggingHelper parent class: (LoggingHelper -->
+        #    BasicRateLimited --> ArticleCoder).
+        self.set_logger_name( "sourcenet.article_coding.article_coder" )
+
     #-- END method __init__() --#
 
 
@@ -349,6 +353,35 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method load_config_properties() --#
     
     
+    def output_debug( self, message_IN ):
+    
+        '''
+        Accepts message string.  If debug is on, passes it to print().  If not,
+           does nothing for now.
+        '''
+        
+        # declare variables
+        my_logger = None
+    
+        # got a message?
+        if ( message_IN ):
+        
+            # get logger
+            my_logger = self.get_logger()
+            
+            # only print if debug is on.
+            if ( self.DEBUG_FLAG == True ):
+            
+                # debug is on.  log it.
+                my_logger.debug( message_IN )
+            
+            #-- END check to see if debug is on --#
+        
+        #-- END check to see if message. --#
+    
+    #-- END method output_debug() --#
+
+
     def set_config_application( self, value_IN ):
 
         '''

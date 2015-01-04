@@ -146,52 +146,104 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
             git clone https://github.com/jonathanmorgan/django_config.git
 
-## Configure database, applications:
+## settings.py - Configure logging, database, applications:
 
-- in research/research/settings.py:
+The following are all changes to `research/research/settings.py`.  You'll configure logging, database information, and applications, then you'll save the file and initialize the database.  Make sure to save the file once you are done making changes.
 
-    - Edit the research/research/settings.py file and update it with details of your database configuration
+### logging
+
+Edit the `research/research/settings.py` file and update it with details of your logging configuration
     
-        - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
-        - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
+- Example that logs any messages INFO and above to standard out:
 
-    - add 'sourcenet', 'django\_config', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
+        import logging
 
-            INSTALLED_APPS = (
-                'django.contrib.auth',
-                'django.contrib.contenttypes',
-                'django.contrib.sessions',
-                'django.contrib.sites',
-                'django.contrib.messages',
-                'django.contrib.staticfiles',
-                # Uncomment the next line to enable the admin:
-                'django.contrib.admin',
-                # Uncomment the next line to enable admin documentation:
-                # 'django.contrib.admindocs',
-                'sourcenet',
-                'django_config',
-                'taggit',
-                'tastypie',
-            )
+        logging.basicConfig(
+            level = logging.INFO,
+            format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+        )
 
-    - add settings properties that tell django how to log people in and out.
+- Example that logs any messages INFO and above to a file:
 
-            # login configuration
-            LOGIN_URL = '/sourcenet/sourcenet/accounts/login/'
-            LOGIN_REDIRECT_URL = '/sourcenet/sourcenet/output/network/'
-            LOGOUT_URL = '/'
+        import logging
 
-    - set the SESSION_COOKIE_NAME to sourcenet.
+        logging.basicConfig(
+            level = logging.INFO,
+            format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+            filename = '<log_folder>/django-sourcenet.log',
+            filemode = 'w'
+        )
+
+    - WHERE `<log_folder>` is a folder that any users that will be used to interact with sourcenet have access to.  This includes the user your web server runs as (for admins and other django web pages) and the user you use to develop, and so that might run things from the python shell.
+
+        - the easiest way to get this working:
+
+            - make the `<log_folder>` somewhere outside the web root.
+            - set the permissions on `<log_folder>` to 777.
+            - create the file `django-sourcenet.log` there.
+            - set its permissions also to 777.
+
+        - This is not necessarily optimally secure, but truly securing this is beyond the scope of this README.
+
+- You can set `level` to any of the following, which are organized from most detail (`logging.DEBUG`) to least (`logging.CRITICAL`):
+
+    - `logging.DEBUG`
+    - `logging.INFO`
+    - `logging.WARNING`
+    - `logging.ERROR`
+    - `logging.CRITICAL`
+
+- Python logging HOWTO: [https://docs.python.org/2/howto/logging.html](https://docs.python.org/2/howto/logging.html)
+- Python logging cookbook: [https://docs.python.org/2/howto/logging-cookbook.html](https://docs.python.org/2/howto/logging-cookbook.html)
+
+### database
+
+Edit the research/research/settings.py file and update it with details of your database configuration
     
-            SESSION_COOKIE_NAME = 'sourcenet'
+- [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
+- [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
+
+### applications
+
+Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
+
+        INSTALLED_APPS = (
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.sites',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+            # Uncomment the next line to enable the admin:
+            'django.contrib.admin',
+            # Uncomment the next line to enable admin documentation:
+            # 'django.contrib.admindocs',
+            'sourcenet',
+            'django_config',
+            'taggit',
+            'tastypie',
+        )
+
+- add settings properties that tell django how to log people in and out.
+
+        # login configuration
+        LOGIN_URL = '/sourcenet/sourcenet/accounts/login/'
+        LOGIN_REDIRECT_URL = '/sourcenet/sourcenet/output/network/'
+        LOGOUT_URL = '/'
+
+- set the SESSION_COOKIE_NAME to sourcenet.
+
+        SESSION_COOKIE_NAME = 'sourcenet'
+
+- save the file.
     
-    - save the file.
-        
-- initialize the database - go into directory where manage.py is installed, and run `python manage.py migrate`.
+### initialize the database
 
-        python manage.py migrate
+Once you've made the changes above, save the `settings.py` file, then go into the `research` directory where manage.py is installed, and run `python manage.py migrate`.
 
-    - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
+    python manage.py migrate
+
+- the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
 
 ## Enable django admins:

@@ -20,6 +20,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 # python base imports
 #from datetime import date
 from datetime import datetime
+import logging
 import operator
 
 # django database classes
@@ -125,13 +126,20 @@ class ArticleCoding( SourcenetBase ):
         super( ArticleCoding, self ).__init__()
 
         # declare variables
-        self.set_exception_helper( ExceptionHelper() )
+        
+        # exception helper
+        my_exception_helper = ExceptionHelper()
+        #my_exception_helper.set_logging_level( logging.DEBUG )
+        self.set_exception_helper( my_exception_helper )
         
         # ==> moved to parent class SourcenetBase
         #self.request = None
         #self.parameters = ParamContainer()
         # define parameters
         #self.define_parameters( ArticleCoding.PARAM_NAME_TO_TYPE_MAP )
+        
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
+        self.set_logger_name( "sourcenet.article_coding.article_coding" )
         
     #-- END method __init__() --#
 
@@ -175,6 +183,7 @@ class ArticleCoding( SourcenetBase ):
         status_OUT = ''
 
         # declare variables
+        my_logger = None
         my_summary_helper = None
         summary_string = ""
         article_coder = None
@@ -190,6 +199,9 @@ class ArticleCoding( SourcenetBase ):
         # auditing variables
         article_counter = -1
         exception_counter = -1
+        
+        # grab a logger.
+        my_logger = self.get_logger()
         
         # initialize summary helper
         my_summary_helper = SummaryHelper()
@@ -236,7 +248,7 @@ class ArticleCoding( SourcenetBase ):
                     #-- END pre-request check for rate-limiting --#
                     
                     # a little debugging to start
-                    print( "==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
+                    my_logger.info( "==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
                     
                     # add per-article exception handling, so we can get an idea of how
                     #    many articles cause problems.
@@ -257,7 +269,7 @@ class ArticleCoding( SourcenetBase ):
                         exception_message = "Exception caught for article " + str( current_article.id )
                         my_exception_helper.process_exception( e, exception_message )
                         
-                        #print( "======> " + exception_message )
+                        my_logger.debug( "======> " + exception_message )
                         
                     #-- END exception handling around individual article processing. --#
                 
@@ -303,7 +315,7 @@ class ArticleCoding( SourcenetBase ):
 
         # output - set prefix if you want.
         summary_string += my_summary_helper.create_summary_string( item_prefix_IN = "==> " )
-        print( summary_string )
+        my_logger.info( summary_string )
 
         return status_OUT
 
@@ -508,13 +520,17 @@ class ArticleCoding( SourcenetBase ):
         coder_instance_OUT = None
 
         # declare variables
+        my_logger = None
         coder_type_IN = ""
         is_coder_rate_limited = False
+
+        # get logger
+        my_logger = self.get_logger()
 
         # get output type.
         coder_type_IN = self.get_param_as_str( self.PARAM_CODER_TYPE, self.ARTICLE_CODING_IMPL_DEFAULT )
         
-        print( "Coder Type: " + coder_type_IN )
+        my_logger.debug( "Coder Type: " + coder_type_IN )
         
         # make instance for coder type.
         if ( coder_type_IN == self.ARTICLE_CODING_IMPL_OPEN_CALAIS_API ):
