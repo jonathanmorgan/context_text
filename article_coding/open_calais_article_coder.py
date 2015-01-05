@@ -27,6 +27,7 @@ This code file contains a class that implements functions for interacting with
 
 
 # python utilities
+from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.network.http_helper import Http_Helper
 
 # parent abstract class.
@@ -144,6 +145,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # declare variables
         article_text = None
         article_body_html = ""
+        request_data = ""
         my_http_helper = None
         requests_response = None
         requests_raw_text = ""
@@ -163,11 +165,18 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             #print( "**** Article " + str( article_IN.id ) + " - " + article_IN.headline )
             #print( "******** Body: " + article_body_html )
             
+            # store whatever we are passing in the request_data variable.
+            request_data = article_body_html
+            
+            # encode the data, so (hopefully) HTTPHelper doesn't have to.
+            #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
+            # - moved this into load_url_requests().
+            
             # get Http_Helper instance
             my_http_helper = self.get_http_helper()
             
             # make the request.
-            requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, data_IN = article_body_html )
+            requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
             
             # raw text:
             requests_raw_text = requests_response.text
@@ -316,10 +325,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_submitter = self.get_config_property( self.CONFIG_PROP_SUBMITTER, "sourcenet" )
         
         # set http headers
-        my_http_helper.set_http_header( "x-calais-licenseID", my_open_calais_api_key, None )
-        my_http_helper.set_http_header( "Content-Type", my_content_type, None )
-        my_http_helper.set_http_header( "outputformat", my_output_format, None )
-        my_http_helper.set_http_header( "submitter", my_submitter, None )
+        my_http_helper.set_http_header( "x-calais-licenseID", my_open_calais_api_key )
+        my_http_helper.set_http_header( "Content-Type", my_content_type )
+        my_http_helper.set_http_header( "outputformat", my_output_format )
+        my_http_helper.set_http_header( "submitter", my_submitter )
         
         # request type
         my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST
