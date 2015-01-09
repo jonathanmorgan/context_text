@@ -40,6 +40,17 @@
         <hr />
         <div id="article_view" name="article_view">
             <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
+            <h4>Fields:</h4>
+            <ul>
+                <li><em>Pub-Date:</em> {{ article_instance.pub_date }}</li>
+                <li><em>Section:</em> {{ article_instance.section }}</li>
+                <li><em>Page:</em> {{ article_instance.page }}</li>                
+                <li><em>Edition:</em> {{ article_instance.edition }}</li>                
+                <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
+                <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
+                <li><em>Author:</em> {{ article_instance.author_string }}</li>
+            </ul>
+            <h4>Article Text</h4>
             {{ article_text.get_content|safe }}
         </div>
 

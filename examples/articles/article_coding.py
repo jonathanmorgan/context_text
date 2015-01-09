@@ -43,6 +43,9 @@ my_article_coding.store_parameters( params )
 # create query set - ArticleCoding does the filtering for you.
 article_qs = my_article_coding.create_article_query_set()
 
+# limit to one for an initial test?
+#article_qs = article_qs[ : 1 ]
+
 # make sure we have at least one article
 article_count = article_qs.count()
 if ( article_count > 0 ):
@@ -51,6 +54,6 @@ if ( article_count > 0 ):
     coding_status = my_article_coding.code_article_data( article_qs )
     
     # output status
-    print( "==> Coding status: \"" + coding_status + "\"" )
+    print( "\n\n==============================\n\nCoding status: \"" + coding_status + "\"" )
     
 #-- END check to see if article count. --#

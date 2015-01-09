@@ -40,6 +40,10 @@ class SourcenetBase( BasicRateLimited ):
     # CONSTANTS-ish
     #---------------------------------------------------------------------------
 
+    # status constants
+    STATUS_SUCCESS = "Success!"
+    STATUS_ERROR_PREFIX = "Error: "
+    
     # network selection parameters we expect.
     PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
     PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.

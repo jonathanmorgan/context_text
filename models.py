@@ -23,7 +23,7 @@ from decimal import getcontext
 import gc
 import logging
 import pickle
-import re
+#import re
 
 # nameparse import
 # http://pypi.python.org/pypi/nameparser
@@ -102,6 +102,9 @@ from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupH
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
 
+# python_utilities - logging
+from python_utilities.logging.logging_helper import LoggingHelper
+
 #================================================================================
 # Shared variables and functions
 #================================================================================
@@ -113,17 +116,19 @@ Gross debugging code, shared across all models.
 DEBUG = True
 STATUS_SUCCESS = "Success!"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
-REGEX_BEGINS_WITH_BY = re.compile( r'^BY ', re.IGNORECASE )
 
-def output_debug( message_IN, method_IN = "", indent_with_IN = "" ):
+
+def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
     
     '''
-    Accepts message string.  If debug is on, passes it to print().  If not,
+    Accepts message string.  If debug is on, logs it.  If not,
        does nothing for now.
     '''
     
     # declare variables
     my_message = ""
+    my_logger = None
+    my_logger_name = ""
 
     # got a message?
     if ( message_IN ):
@@ -148,9 +153,23 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "" ):
                 
             #-- END check to see if we indent. --#
         
-            # debug is on.  For now, just print.
-            print( my_message )
-            logging.debug( my_message )
+            # debug is on.  Start logging rather than using print().
+            #print( my_message )
+            
+            # got a logger name?
+            my_logger_name = "sourcenet.models"
+            if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
+            
+                # use logger name passed in.
+                my_logger_name = logger_name_IN
+                
+            #-- END check to see if logger name --#
+                
+            # get logger
+            my_logger = LoggingHelper.get_a_logger( my_logger_name )
+            
+            # log debug.
+            my_logger.debug( my_message )
         
         #-- END check to see if debug is on --#
     
@@ -208,6 +227,7 @@ def get_dict_value( dict_IN, name_IN, default_IN = None ):
 '''
 Models for SourceNet, including some that are specific to the Grand Rapids Press.
 '''
+
 
 # Locations
 @python_2_unicode_compatible
@@ -840,13 +860,6 @@ class Article( models.Model ):
     #----------------------------------------------------------------------------
     
     
-    CODER_USERNAME_AUTOMATED = "automated"
-    # Can't reference django models in class context anymore in models files:
-    #    http://stackoverflow.com/questions/25537905/django-1-7-throws-django-core-exceptions-appregistrynotready-models-arent-load
-    # Added class method get_automated_coding_user(), call that to get User
-    #    instance instead of referencing this variable.
-    CODER_USER_AUTOMATED = None
-    
     # parameters that can be passed in to class methods 
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
@@ -1198,148 +1211,6 @@ class Article( models.Model ):
         
     #-- END method filter_articles() --#
 
-        
-    @classmethod
-    def get_automated_coding_user( cls, *args, **kwargs ):
-    
-        '''
-        Can't reference django models in class context anymore in models files:
-            http://stackoverflow.com/questions/25537905/django-1-7-throws-django-core-exceptions-appregistrynotready-models-arent-load
-        So, this method gets User instance for automated user username instead.
-        '''
-        
-        # return reference
-        user_OUT = None
-
-        # declare variables
-        temp_user = None
-        
-        # User already retrieved?
-        if ( cls.CODER_USER_AUTOMATED == None ):
-        
-            # get user
-            temp_user = User.objects.get( username = cls.CODER_USERNAME_AUTOMATED )
-            
-            # store it
-            cls.CODER_USER_AUTOMATED = temp_user
-            
-        #-- END check to see if user already stored in class. --#
-
-        # return it.
-        user_OUT = cls.CODER_USER_AUTOMATED
-
-        return user_OUT
-        
-    #-- END class method get_automated_coding_user() --#
-    
-    
-    @classmethod
-    def process_articles( cls, *args, **kwargs ):
-
-        '''
-        Accepts parameters inside the kwargs argument.  Based on parameters,
-           creates a QuerySet of articles to process, then calls the
-           "do_automated_processing" on each, passing it the kwargs passed in to
-           this process.
-        Preconditions: dates passed in must be in "YYYY-MM-DD" format.
-        Postconditions: All kinds of things can happen because of this method.
-           There definitely are side-effects, database is updated.
-        '''
-        
-        # return reference
-        status_OUT = STATUS_SUCCESS
-        
-        # declare variables
-        me = "classmethod process_articles"
-        start_date_IN = None
-        end_date_IN = None
-        single_date_IN = None
-        article_qs = None
-        article_count = -1
-        current_article = None
-        current_status = ""
-        articles_processed = -1
-        
-        # pull in parameters.
-        start_date_IN = get_dict_value( kwargs, cls.PARAM_START_DATE )
-        end_date_IN = get_dict_value( kwargs, cls.PARAM_END_DATE )
-        single_date_IN = get_dict_value( kwargs, cls.PARAM_SINGLE_DATE )
-        
-        # build QuerySet
-        article_qs = cls.objects.all()
-        
-        # process dates.
-        # got a single date?
-        if ( single_date_IN ):
-            
-            # yes - convert to datetime, then filter to publication date of just
-            #    that day.
-            single_date_IN = datetime.datetime.strptime( single_date_IN, DEFAULT_DATE_FORMAT )
-            article_qs = article_qs.filter( pub_date = single_date_IN )
-            
-        # how about some sort of date range?
-        elif ( ( start_date_IN ) or ( end_date_IN ) ):
-            
-            # got at least a start or end date - filter.
-            if ( start_date_IN ):
-                
-                # filter on start date
-                start_date_IN = datetime.datetime.strptime( start_date_IN, DEFAULT_DATE_FORMAT )
-                article_qs = article_qs.filter( pub_date__gte = start_date_IN )
-                
-            #-- END check to see if start date. --#
-            
-            # end date.
-            if ( end_date_IN ):
-                
-                # filter on start date
-                end_date_IN = datetime.datetime.strptime( end_date_IN, DEFAULT_DATE_FORMAT )
-                article_qs = article_qs.filter( pub_date__lte = end_date_IN )
-                
-            #-- END check to see if start date. --#
-            
-        #-- END date conditional. --#
-        
-        # Done creating QuerySet.  Got anything to process?
-        article_count = article_qs.count()
-        articles_processed = 0
-        if ( article_count > 0 ):
-            
-            # Got something.  Loop over the QuerySet, calling the method
-            #    do_automated_processing() on each one.
-            for current_article in article_qs.iterator():
-                
-                # increment counter
-                articles_processed += 1
-                
-                # call the method.
-                current_status = current_article.do_automated_processing( *args, **kwargs )
-                
-                # see if status other than success
-                if ( current_status != STATUS_SUCCESS ):
-                    
-                    # error - output
-                    output_debug( "ERROR with article " + str( articles_processed ) + " of " + str( article_count ) + " - \"" + str( current_article ) + "\": " + current_status + "\n", me, "=== " )
-                    
-                else:
-                    
-                    # Success move on.
-                    output_debug( "SUCCESS - Processed article " + str( articles_processed ) + " of " + str( article_count ) + " - \"" + str( current_article ) + "\"\n", me, "=== " )
-                
-                #-- END status processing. --#
-                
-            #-- END loop over articles. --#
-            
-        else:
-            
-            status_OUT = "Article QuerySet did not contain any articles, so nothing to process."
-            
-        #-- END check to see if anything to process. --#
-                
-        return status_OUT
-
-    #-- END static method process_articles() --#
-
 
     #----------------------------------------------------------------------------
     # instance methods
@@ -1396,94 +1267,7 @@ class Article( models.Model ):
     #-- END method __str__() --#
     
     
-    def do_automated_processing( self, *args, **kwargs ):
-
-        '''
-        Accepts parameters to tell which parts of processing to implement, in
-           **kwargs.  Tries to pull in any existing automated coding.  If none
-           found, makes new coding record for user "automated".  Does requested
-           coding, either "all", or just individual parts of records.  Returns
-           status.
-        preconditions: None
-        postconditions: Updates related article_data record for "automated" user.
-           If multiple article_coding records found for automated user, outputs
-           error message, returns error status, does nothing.
-        '''
-    
-        # return reference
-        status_OUT = STATUS_SUCCESS
-        
-        # declare variables
-        me = "do_automated_processing"
-        process_all_IN = False
-        process_authors_IN = False
-        automated_user = None
-        my_article_data = None
-        latest_status = ""
-        do_save_article = True
-        do_save_data = False
-        
-        # parse params
-        process_all_IN = get_dict_value( kwargs, self.PARAM_AUTOPROC_ALL, True )
-        
-        # if not process all, do we process any?
-        if ( process_all_IN == False ):
-
-            # how about authors?
-            process_authors_IN = get_dict_value( kwargs, self.PARAM_AUTOPROC_AUTHORS, True )
-            
-        #-- END check to see if we set processing flags by item --#
-        
-        output_debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"", me, "--- " )
-        
-        # first, see if we have article data for automated coder.
-        automated_user = self.get_automated_coding_user()
-        my_article_data = self.get_article_data_for_coder( automated_user )
-        
-        if ( my_article_data ):
-        
-            # we do.  Process stuff.
-            
-            # process authors?
-            if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
-            
-                # process authors.
-                latest_status = my_article_data.process_author_string()
-                do_save_data = True
-                
-                output_debug( "After calling process_author_string() - " + latest_status, me, "--- " )
-                
-            #-- End check to see if we process authors --#
-            
-            # Save Article_Data instance?
-            if ( do_save_data ):
-                
-                my_article_data.save()
-                
-            #-- END check to see if we save article data --#
-            
-            # save the article, as well?
-            if ( do_save_article == True ):
-                
-                # We do also save the article itself.
-                self.save()
-                
-            #-- END check to see if we save article. --#
-            
-        else:
-        
-            # error making/retrieving article data.
-            status_OUT = "No article data returned for automated user ( " + str( automated_user ) + " ).  Doing nothing."
-            output_debug( status_OUT, me, "--- " )
-            
-        #-- END check to see if we have article data. --#
-        
-        return status_OUT
-    
-    #-- END method do_automated_processing() --#
-    
-    
-    def get_article_data_for_coder( self, coder_IN = None, *args, **kwargs ):
+    def get_article_data_for_coder( self, coder_IN = None, coder_type_IN = "", *args, **kwargs ):
 
         '''
         Checks to see if there is a nested article_data instance for the coder
@@ -1515,6 +1299,14 @@ class Article( models.Model ):
             # first, see if we have an associated article_data instance already.
             article_data_qs = self.article_data_set.filter( coder = coder_IN )
             
+            # got a coder type?
+            if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
+            
+                # yes.  filter on it, as well.
+                article_data_qs = article_data_qs.filter( coder_type = coder_type_IN )
+            
+            #-- END check to see if coder type present. --#
+            
             # what we got back?
             article_data_count = article_data_qs.count()
             
@@ -1527,6 +1319,14 @@ class Article( models.Model ):
                 # populate
                 instance_OUT.article = self
                 instance_OUT.coder = coder_IN
+
+                # got a coder type?
+                if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
+                
+                    # yes.  filter on it, as well.
+                    instance_OUT.coder_type = coder_type_IN
+                
+                #-- END check to see if coder type present. --#
 
                 # save article_data instance.
                 instance_OUT.save()
@@ -2406,15 +2206,20 @@ class Article_Data( models.Model ):
         ( "opinion", "Opinion" ),
         ( "other", "Other" )
     )
+    
+    STATUS_NEW = "new"
+    STATUS_SERVICE_ERROR = "service_error"
+    STATUS_DEFAULT = STATUS_NEW
 
     article = models.ForeignKey( Article )
     coder = models.ForeignKey( User )
+    coder_type = models.CharField( max_length = 255, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True, null = True )
     locations = models.ManyToManyField( Location, blank = True )
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
     is_sourced = models.BooleanField( default = True )
     can_code = models.BooleanField( default = True )
-    status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
+    status = models.CharField( max_length = 255, blank = True, null = True, default = STATUS_DEFAULT )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
@@ -2516,193 +2321,6 @@ class Article_Data( models.Model ):
         return counts_OUT
 
     #-- END method get_source_counts_by_type() --#
-
-
-    def process_author_string( self ):
-    
-        '''
-        This method parses the contents of the parent article's author_string
-           variable.  Breaks out the organizational affiliation portion of the
-           author string (the part after the "/", then splits on commas and
-           ampersands to detect multiple authors.  For each author, uses the
-           NameParse object to parse their name into prefix/title, first name,
-           middle name(s), last name, and suffix.  Looks first for an exact
-           person match.  If one found, creates an Article_Author instance to
-           link that person to this instance.  If none found, creates a new
-           Person, associates it with this instance, then searches for
-           potential duplicates, associating any found with the newly created
-           Person record.
-        preconditions: Assumes that there is an associated article.  If not,
-           there will be an exception.
-        '''
-        
-        # return reference
-        status_OUT = STATUS_SUCCESS
-        
-        # declare variables.
-        me = "process_author_string"
-        my_article = None
-        author_string = ""
-        author_parts = None
-        author_parts_length = -1
-        author_organization = ""
-        author_name_list = []
-        author_and_part = ""
-        author_comma_part = ""
-        author_name = ""
-        author_person = None
-        article_author = None
-        article_author_qs = None
-        
-        # get related article.
-        if ( self.article ):
-        
-            # got an article
-            my_article = self.article
-            
-            # get author_string
-            author_string = my_article.author_string
-            
-            # got an author string?
-            if ( author_string ):
-            
-                output_debug( "Processing author string: \"" + author_string + "\"", me, "--- " )
-                
-                # got an author string.  Parse it.  First, break out organization.
-                # split author string on "/"
-                author_parts = author_string.split( '/' )
-                
-                # got two parts?
-                author_parts_length = len( author_parts )
-                if ( author_parts_length == 2 ):
-                
-                    # we do.  2nd part = organization
-                    author_organization = author_parts[ 1 ]
-                    author_organization = author_organization.strip()
-                    
-                    # first part is author string we look at going forward.
-                    author_string = author_parts[ 0 ]
-                    author_string = author_string.strip()
-                    
-                    # also, if string starts with "By ", remove it.
-                    author_string = re.sub( REGEX_BEGINS_WITH_BY, "", author_string )
-                    
-                elif ( ( author_parts_length == 0 ) or ( author_parts_length > 2 ) ):
-                
-                    # error.  what to do?
-                    status_OUT = "ERROR - in " + me + ": splitting on '/' resulted in either an empty array or more than two things.  This isn't right ( " + my_article.author_string + " )."
-                    
-                #-- END check results of splitting on "/"
-                
-                # Got something in author_string?
-                if ( author_string ):
-
-                    # after splitting, we have a string.  Now need to split on
-                    #    "," and " and ".  First, split on " and ".
-                    for author_and_part in author_string.split( " and " ):
-                    
-                        # try splitting on comma.
-                        author_parts = author_and_part.split( "," )
-                        
-                        # got any?
-                        if ( len( author_parts ) > 0 ):
-                        
-                            # yes.  Add each as a name.
-                            for author_comma_part in author_parts:
-                            
-                                # add name to list of names.
-                                author_name_list.append( author_comma_part )
-                                
-                            #-- END loop over authors separated by commas. --#
-                            
-                        else:
-                        
-                            # no comma-delimited names.  Add current string to
-                            #    name list.
-                            author_name_list.append( author_and_part )
-                            
-                        #-- END check to see if comma-delimited names --#
-                        
-                    #-- END loop over and-delimited split of authors --#
-                    
-                    # time to start testing.  Print out the array.
-                    output_debug( "In " + me + ": Author list: " + str( author_name_list ) )
-
-                    # For each name in array, see if we already have a matching
-                    #    person.
-                    for author_name in author_name_list:
-                    
-                        # first, call Person method to find matching person for
-                        #    name.
-                        author_person = Person.get_person_for_name( author_name, True )
-                        
-                        # got a person?
-                        if ( author_person ):
-
-                            # if no ID, is new.  Save to database.
-                            if ( not( author_person.id ) ):
-                            
-                                # no ID.  Save the record.
-                                author_person.save()
-                                output_debug( "In " + me + ": saving new person - " + str( author_person ) )
-                                
-                            #-- END check to see if new Person. --#
-                            
-                            # Now, we need to deal with Article_Author instance.
-                            #    First, see if there already is one for this
-                            #    name.  If so, do nothing.  If not, make one.
-                            article_author_qs = self.article_author_set.filter( person = author_person )
-                            
-                            # got anything?
-                            if ( article_author_qs.count() == 0 ):
-                                                         
-                                # no - add - including organization string.
-                                article_author = Article_Author()
-                                article_author.article_data = self
-                                article_author.person = author_person
-                                article_author.organization_string = author_organization
-                                article_author.save()
-                                
-                                output_debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
-
-                            else:
-                            
-                                output_debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
-                                
-                            #-- END check if need new Article_Author instance --#
-    
-                        else:
-                        
-                            output_debug( "In " + me + ": error - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
-    
-                        #-- END check to see if person found. --#
-                    
-                    #-- END loop over author names. --#
-
-                else:                
-                    
-                    # error.  what to do?
-                    status_OUT = "ERROR - in " + me + ": after splitting on '/', no author string left.  Not a standard byline ( " + my_article.author_string + " )."
- 
-                #-- END check to see if anything in author string.
-            
-            else:
-            
-                # No author string - error.
-                status_OUT = "ERROR - in " + me + ": no author string, so nothing to do."
-            
-            #-- END check to see if author string. --#
-        
-        else:
-        
-            # No related article. Error.
-            status_OUT = "ERROR - in " + me + ": no related article, so nothing to do."
-        
-        #-- END check to see if we have a related article. --#
-        
-        return status_OUT
-    
-    #-- END method process_author_string() --#
     
 
 #= End Article_Data Model =======================================================

@@ -67,7 +67,7 @@ class ArticleCoding( SourcenetBase ):
     #PARAM_ARTICLE_ID_LIST = 'article_id_list'   # list of ids of articles whose data you want included.
 
     # parameters that are unique to this class.
-    PARAM_CODER_TYPE = 'coder_type'   # list of ids of articles whose data you want included.
+    PARAM_CODER_TYPE = 'coder_type'   # type of coder we want to use, in case there are multiple implementations.
 
     # constants for parsing date range string - moved to parent
     #PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
@@ -126,6 +126,7 @@ class ArticleCoding( SourcenetBase ):
         super( ArticleCoding, self ).__init__()
 
         # declare variables
+        my_exception_helper = None
         
         # exception helper
         my_exception_helper = ExceptionHelper()
@@ -316,6 +317,9 @@ class ArticleCoding( SourcenetBase ):
         # output - set prefix if you want.
         summary_string += my_summary_helper.create_summary_string( item_prefix_IN = "==> " )
         my_logger.info( summary_string )
+        
+        # output summary string as status.
+        status_OUT += "\n\n" + summary_string
 
         return status_OUT
 

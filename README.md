@@ -557,6 +557,23 @@ A draft content analysis protocol for assessing sources in a way that can be use
 
 ## Automated Coding
 
+### Setting up a user for the automated coding process
+
+Before you do automated coding, you'll need to create a django user named "automated" to which the coding can be attributed.  To do this:
+
+- Open the django admin: `http://<your_server>/sourcenet/admin/`
+
+- Log in with the admin user you created when you initialized the database above.
+
+- Once you are logged in, in the "Authentication and Administration" section of the admin, click on "Users".
+
+- You'll see a list of users that have been created in django.  If there is not one named "automated", you'll need to create one.  To start creating a user, click the "Add User +" button in the upper right hand corner of the page.
+
+- This will load a screen where you'll enter a username and a password twice.  Enter a username and password, and then click the "Save" button in the lower right corner.
+
+- Make sure the "automated" user appears in the list.  This user has no ability to access the admin.  It just exists so the automated coding process can link its coding to this user.
+
+
 ### OpenCalais REST API
 
 To use the OpenCalais REST API to code articles, you'll need to first set up a few pieces of information in the django_config application.

@@ -64,7 +64,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     
 
     # status constants
-    STATUS_SUCCESS = "Success!"
+    # in parent - STATUS_SUCCESS = "Success!"
     
     # config application
     CONFIG_APPLICATION = "OpenCalais_REST_API"
@@ -96,7 +96,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     content_type = ""
     output_format = ""
 
-    
+
     #============================================================================
     # Instance methods
     #============================================================================
@@ -106,6 +106,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
         # call parent's __init__() - I think...
         super( OpenCalaisArticleCoder, self ).__init__()
+        
+        # declare variables
         
         # initialize variables
         self.http_helper = None
@@ -124,7 +126,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method __init__() --#
 
 
-    def code_article( self, article_IN, *args, **kwargs ):
+    def process_article( self, article_IN, coding_user_IN = None, *args, **kwargs ):
 
         '''
         purpose: After the ArticleCoder is initialized, this method accepts one
@@ -143,6 +145,14 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         status_OUT = self.STATUS_SUCCESS
         
         # declare variables
+        me = "classmethod process_articles"
+        my_logger = None
+        my_exception_helper = None
+        exception_message = ""
+        debug_string = ""
+        process_all_IN = False
+        process_authors_IN = False
+        automated_coding_user = None
         article_text = None
         article_body_html = ""
         request_data = ""
@@ -150,56 +160,189 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         requests_response = None
         requests_raw_text = ""
         requests_response_json = None
-        debug_string = ""
+        is_response_OK = True
+        article_data = None
+        my_author_string = ""
+        latest_status = ""
+        do_save_article = True
+        do_save_data = False
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # get exception_helper
+        my_exception_helper = self.get_exception_helper()
+        
+        # parse params
+        process_all_IN = self.get_config_property( self.PARAM_AUTOPROC_ALL, True )
+        
+        # if not process all, do we process any?
+        if ( process_all_IN == False ):
 
-        # got an article?
-        if ( article_IN is not None ):
+            # how about authors?
+            process_authors_IN = self.get_config_property( self.PARAM_AUTOPROC_AUTHORS, True )
+            
+        #-- END check to see if we set processing flags by item --#
+        
+        my_logger.debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
+        
+        # get automated_coding_user
+        automated_coding_user = coding_user_IN
+        
+        # got a user?
+        if ( automated_coding_user is not None ):
 
-            # then, get text.
-            article_text = article_IN.article_text_set.get()
-            
-            # retrieve article body
-            article_body_html = article_text.get_content()
-            
-            # print article body HTML
-            #print( "**** Article " + str( article_IN.id ) + " - " + article_IN.headline )
-            #print( "******** Body: " + article_body_html )
-            
-            # store whatever we are passing in the request_data variable.
-            request_data = article_body_html
-            
-            # encode the data, so (hopefully) HTTPHelper doesn't have to.
-            #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
-            # - moved this into load_url_requests().
-            
-            # get Http_Helper instance
-            my_http_helper = self.get_http_helper()
-            
-            # make the request.
-            requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
-            
-            # raw text:
-            requests_raw_text = requests_response.text
-            
-            # convert to a json object:
-            requests_response_json = requests_response.json()
-            
-            # render some of it as a string, for debug.
-            if ( self.DEBUG_FLAG == True ):
-            
-                # render and output debug string.
-                debug_string = self.print_calais_json( requests_response_json )
-                self.output_debug( debug_string )
+            # got an article?
+            if ( article_IN is not None ):
+    
+                # get Article_Data instance for user and coder_type.  Grab it
+                #    first so we can store error information in it if problem
+                #    on OpenCalais side.
+                article_data = article_IN.get_article_data_for_coder( automated_coding_user, self.CONFIG_APPLICATION )
+                
+                # got article data?
+                if ( article_data is not None ):
+                
+                    # then, get text.
+                    article_text = article_IN.article_text_set.get()
+                    
+                    # retrieve article body
+                    article_body_html = article_text.get_content()
+                    
+                    # print article body HTML
+                    #print( "**** Article " + str( article_IN.id ) + " - " + article_IN.headline )
+                    #print( "******** Body: " + article_body_html )
+                    
+                    # store whatever we are passing in the request_data variable.
+                    request_data = article_body_html
+                    
+                    # encode the data, so (hopefully) HTTPHelper doesn't have to.
+                    #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
+                    # - moved this into load_url_requests().
+                    
+                    # get Http_Helper instance
+                    my_http_helper = self.get_http_helper()
+                    
+                    # make the request.
+                    requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
+                    
+                    # raw text:
+                    requests_raw_text = requests_response.text
+                    
+                    # convert to a json object, inside try since sometimes OpenCalais
+                    #    returns non-parsable stuff.
+                    try:
+                    
+                        # convert to JSON object
+                        requests_response_json = requests_response.json()
+                        
+                    except ValueError as ve:
+                    
+                        # problem parsing JSON - log body of article, response,
+                        #    and exception.
+                        exception_message = "ValueError parsing OpenCalais JSON."
+                        my_logger.debug( "\n ! " + exception_message )
+                        my_logger.debug( "\n ! article text:\n" + request_data )
+                        my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                        my_exception_helper.process_exception( ve, exception_message )
+                        
+                        # set status on article data to service_error
+                        article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                        
+                        # let rest of program know it is not OK to proceed.
+                        is_response_OK = False
+                    
+                    except Exception as e:
+                    
+                        # unknown problem parsing JSON - log body of article,
+                        #    response, and exception.
+                        exception_message = "Exception parsing OpenCalais JSON."
+                        my_logger.debug( "\n ! " + exception_message )
+                        my_logger.debug( "\n ! article text:\n" + request_data )
+                        my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                        my_exception_helper.process_exception( e, exception_message )
+                        
+                        # set status on article data to service_error
+                        article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                        
+                        # let rest of program know it is not OK to proceed.
+                        is_response_OK = False
+                    
+                    #-- END try/except around JSON processing. --#
+                    
+                    # render some of it as a string, for debug.
+                    if ( self.DEBUG_FLAG == True ):
+                    
+                        # render and output debug string.
+                        debug_string = self.print_calais_json( requests_response_json )
+                        self.output_debug( debug_string )
+        
+                    #-- END debug --#
+        
+                    # all parsed - OK to continue?
+                    if ( is_response_OK == True ):
+        
+                        # process contents of response.
+                    
+                        # Process authors?
+                        if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
+                        
+                            # process authors.  Get author string
+                            my_author_string = article_IN.author_string
+                            
+                            my_logger.info( "Article author string: " + my_author_string )
+                            
+                            # process author string.
+                            #latest_status = self.process_author_string( article_data, my_author_string )
+                            
+                            #do_save_data = True
+                            
+                            my_logger.debug( "After calling process_author_string() - " + latest_status )
+                            
+                        #-- End check to see if we process authors --#
+                        
+                        # parse response, find all quotations, people they are tied to.
+                        # for each quotation:
+                        # - look up those people, create if doubt about identity.
+                        # - add sources to data.
+                        # - save.
+                        
+                    #-- END check to see if OK to process information returned from OpenCalais. --#
+                        
+                    # regardless, Save Article_Data instance if flag indicates
+                    #    we are to save.
+                    if ( do_save_data == True ):
+                        
+                        article_data.save()
+                        
+                    #-- END check to see if we save article data --#
+                    
+                    # not saving article at this point - shouldn't be changing anything there.
+                    # save the article, as well?
+                    #if ( do_save_article == True ):
+                        
+                        # We do also save the article itself.
+                    #    article_IN.save()
+                        
+                    #-- END check to see if we save article. --#
 
-            #-- END debug --#
-
-            # process contents of response.
-
-        #-- END check to see if article. --#
+                else:
+                
+                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.CONFIG_APPLICATION + "\""
+                    
+                #-- END check to see if we found article data into which we'll code.
+    
+            #-- END check to see if article. --#
+            
+        else:
+        
+            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"automated\".  Can't code articles without a user."
+            
+        #-- END check to make sure we have an automated coding user. --#
         
         return status_OUT
 
-    #-- END abstract method code_article() --#
+    #-- END method process_article() --#
     
 
     def get_content_type( self ):
