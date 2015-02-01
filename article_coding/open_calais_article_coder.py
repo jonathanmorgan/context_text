@@ -293,9 +293,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                             my_logger.info( "Article author string: " + my_author_string )
                             
                             # process author string.
-                            #latest_status = self.process_author_string( article_data, my_author_string )
+                            latest_status = self.process_author_string( article_data, my_author_string )
                             
-                            #do_save_data = True
+                            do_save_data = True
                             
                             my_logger.debug( "After calling process_author_string() - " + latest_status )
                             

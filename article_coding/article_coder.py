@@ -41,6 +41,7 @@ from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import the classes for our SourceNet application
+from sourcenet.models import Article_Author
 from sourcenet.models import Person
 
 #================================================================================
@@ -564,7 +565,7 @@ class ArticleCoder( BasicRateLimited ):
         # return reference
         status_OUT = self.STATUS_SUCCESS
         
-        status_OUT = process_newsbank_grpress_author_string( article_data_IN, author_string_IN )
+        status_OUT = self.process_newsbank_grpress_author_string( article_data_IN, author_string_IN )
         
         return status_OUT
         
@@ -584,7 +585,9 @@ class ArticleCoder( BasicRateLimited ):
            link that person to this instance.  If none found, creates a new
            Person, associates it with this instance, then searches for
            potential duplicates, associating any found with the newly created
-           Person record.
+           Person record.  Should work for Detroit News articles from Newsbank
+           as well, but their organizational affiliation is in body of article,
+           so incomplete data...
         preconditions: Assumes that there is an associated article.  If not,
            there will be an exception.
         '''
@@ -619,7 +622,7 @@ class ArticleCoder( BasicRateLimited ):
             # got an author string?
             if ( ( author_string is not None ) and ( author_string != "" ) ):
             
-                my_logger.debug( "Processing author string: \"" + author_string + "\"", me, "--- " )
+                my_logger.debug( "--- In " + me + ": Processing author string: \"" + author_string + "\"" )
                 
                 # got an author string.  Parse it.  First, break out organization.
                 # split author string on "/"
