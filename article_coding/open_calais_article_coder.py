@@ -26,6 +26,9 @@ This code file contains a class that implements functions for interacting with
 #================================================================================
 
 
+# python standard libraries
+import json
+
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.network.http_helper import Http_Helper
@@ -63,8 +66,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #============================================================================
     
 
-    # status constants
-    # in parent - STATUS_SUCCESS = "Success!"
+    # status constants - in parent (ArticleCoder) now:
+    # STATUS_SUCCESS = "Success!"
+    # STATUS_ERROR_PREFIX = "Error: "
     
     # config application
     CONFIG_APPLICATION = "OpenCalais_REST_API"
@@ -73,10 +77,16 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     CONFIG_PROP_OPEN_CALAIS_API_KEY = "open_calais_api_key"
     CONFIG_PROP_SUBMITTER = "submitter"
     
+    # HTTP header names
+    HTTP_HEADER_NAME_X_CALAIS_LICENSE_ID = "x-calais-licenseID"
+    HTTP_HEADER_NAME_CONTENT_TYPE = "Content-Type"
+    HTTP_HEADER_NAME_OUTPUT_FORMAT = "outputformat"
+    HTTP_HEADER_NAME_SUBMITTER = "submitter"
+    
     # content types
     CONTENT_TYPE_TEXT = "TEXT/RAW"
     CONTENT_TYPE_HTML = "TEXT/HTML"
-    CONTENT_TYPE_DEFAULT = CONTENT_TYPE_HTML
+    CONTENT_TYPE_DEFAULT = CONTENT_TYPE_TEXT
     
     # output formats
     OUTPUT_FORMAT_JSON = "Application/JSON"
@@ -157,6 +167,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         article_body_html = ""
         request_data = ""
         my_http_helper = None
+        my_content_type = ""
         requests_response = None
         requests_raw_text = ""
         requests_response_json = None
@@ -206,15 +217,23 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     # then, get text.
                     article_text = article_IN.article_text_set.get()
                     
-                    # retrieve article body
+                    # retrieve article body with HTML
                     article_body_html = article_text.get_content()
                     
-                    # print article body HTML
-                    #print( "**** Article " + str( article_IN.id ) + " - " + article_IN.headline )
-                    #print( "******** Body: " + article_body_html )
+                    # AND get without HTML - OpenCalais API does not deal well
+                    #    with HTML - just pass plain text.
+                    article_body_text = article_text.get_content_sans_html()
                     
                     # store whatever we are passing in the request_data variable.
-                    request_data = article_body_html
+                    request_data = article_body_text
+                    
+                    if ( self.DEBUG_FLAG == True ):
+                    
+                        my_logger.debug( "In " + me + ": Article " + str( article_IN.id ) + " - " + article_IN.headline )
+                        my_logger.debug( "In " + me + ": current article body:" )
+                        my_logger.debug( request_data )
+                    
+                    #-- END debug --#
                     
                     # encode the data, so (hopefully) HTTPHelper doesn't have to.
                     #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
@@ -222,6 +241,15 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     
                     # get Http_Helper instance
                     my_http_helper = self.get_http_helper()
+                    
+                    # what is the content type?
+                    my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
+                    
+                    if ( self.DEBUG_FLAG == True ):
+                    
+                        my_logger.debug( "In " + me + ": content type = " + my_content_type )
+                        
+                    #-- END debug --#
                     
                     # make the request.
                     requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
@@ -235,6 +263,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     
                         # convert to JSON object
                         requests_response_json = requests_response.json()
+                        is_response_OK = True
                         
                     except ValueError as ve:
                     
@@ -301,11 +330,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                             
                         #-- End check to see if we process authors --#
                         
-                        # parse response, find all quotations, people they are tied to.
-                        # for each quotation:
-                        # - look up those people, create if doubt about identity.
-                        # - add sources to data.
-                        # - save.
+                        # call the process_json_api_response() method to parse
+                        #    the request JSON, find all quotations, people they
+                        #    are tied to, then make attribution relations.
+                        latest_status = self.process_json_api_response( article_IN, article_data, requests_response_json )
                         
                     #-- END check to see if OK to process information returned from OpenCalais. --#
                         
@@ -443,6 +471,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         '''
 
         # declare variables
+        me = "initialize_from_params"
         my_http_helper = None
         my_open_calais_api_key = ""
         my_content_type = ""
@@ -468,10 +497,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_submitter = self.get_config_property( self.CONFIG_PROP_SUBMITTER, "sourcenet" )
         
         # set http headers
-        my_http_helper.set_http_header( "x-calais-licenseID", my_open_calais_api_key )
-        my_http_helper.set_http_header( "Content-Type", my_content_type )
-        my_http_helper.set_http_header( "outputformat", my_output_format )
-        my_http_helper.set_http_header( "submitter", my_submitter )
+        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_X_CALAIS_LICENSE_ID, my_open_calais_api_key )
+        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE, my_content_type )
+        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_OUTPUT_FORMAT, my_output_format )
+        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_SUBMITTER, my_submitter )
         
         # request type
         my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST
@@ -533,6 +562,42 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         return string_OUT
         
     #-- END function print_calais_json --#
+
+
+    def process_json_api_response( self, article_IN, article_data_IN, json_response_IN ):
+    
+        '''
+        Accepts Article, Article_Data instance of article we are processing, and
+           the JSON response from passing that article's text to the OpenCalais
+           API.  Parses response, finds all quotations and the people they are
+           tied to.  Then, for each quotation:
+           - look up the people who are quoted by name.
+              - If ambiguity, make a new person, but also keep track of other
+                 potential matches (will need to add this to the database).
+              - will probably need to refine the person lookup, too.  Right now, 
+           - add sources to Article_Data.
+           - save the article data.
+        '''
+        
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables
+        me = "process_json_api_response"
+        my_logger = None
+        json_string = ""
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # first, remind myself what the JSON looks like.
+        json_string = json.dumps( json_response_IN, sort_keys = True, indent = 4, separators = ( ',', ': ' ) )
+        my_logger.debug( "In " + me + ": outputting whole JSON document:" )
+        my_logger.debug( json_string )
+        
+        return status_OUT
+    
+    #-- END function process_json_response() --#
 
 
     def set_http_helper( self, instance_IN ):

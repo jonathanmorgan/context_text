@@ -44,7 +44,7 @@ my_article_coding.store_parameters( params )
 article_qs = my_article_coding.create_article_query_set()
 
 # limit to one for an initial test?
-#article_qs = article_qs[ : 1 ]
+article_qs = article_qs[ : 1 ]
 
 # make sure we have at least one article
 article_count = article_qs.count()

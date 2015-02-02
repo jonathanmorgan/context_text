@@ -146,14 +146,17 @@ my_http_helper = Http_Helper()
 
 # set up call to REST API.
 my_http_helper.set_http_header( "x-calais-licenseID", calais_api_key, None )
+
+# NOTE - does not deal well with HTML - send it raw text!
 my_http_helper.set_http_header( "Content-Type", "TEXT/RAW", None )
+
 my_http_helper.set_http_header( "outputformat", "Application/JSON", None )
 my_http_helper.set_http_header( "submitter", "sourcenet testing", None )
 
 # request type
 my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST
 
-# make the request.
+# make the request - NOTE - does not deal well with HTML - send it raw text!
 requests_response = my_http_helper.load_url_requests( calais_REST_API_URL, data_IN = article_body_text )
 
 # raw text:

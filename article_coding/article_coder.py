@@ -71,9 +71,11 @@ class ArticleCoder( BasicRateLimited ):
 
     # status constants
     STATUS_SUCCESS = "Success!"    
-    STATUS_OK = "OK!"
     STATUS_ERROR_PREFIX = "Error: "
-    
+
+    # DEPRECATED STATUSES - DO NOT USE IN NEW CODE
+    STATUS_OK = "OK!"
+
     # debug
     DEBUG_FLAG = False
     
