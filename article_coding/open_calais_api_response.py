@@ -1,0 +1,411 @@
+from __future__ import unicode_literals
+
+'''
+Copyright 2015 Jonathan Morgan
+
+This file is part of http://github.com/jonathanmorgan/sourcenet.
+
+sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+'''
+
+#================================================================================
+# Imports
+#================================================================================
+
+
+# python standard libraries
+import json
+
+# python utilities
+from python_utilities.logging.logging_helper import LoggingHelper
+
+
+#================================================================================
+# Package constants-ish
+#================================================================================
+
+
+#================================================================================
+# OpenCalaisArticleCoder class
+#================================================================================
+
+# define OpenCalaisArticleCoder class.
+class OpenCalaisApiResponse( LoggingHelper ):
+
+    '''
+    This class is a helper for coding articles using the OpenCalais REST API. It
+       contains logic to deal with parsing and making the JSON response of an API
+       call easier to use.
+    Preconditions: In order for this to be useful, you'll need to send some text
+       to the OpenCalais REST API and receive a JSON response.
+    '''
+
+    #============================================================================
+    # META!!!
+    #============================================================================
+
+    
+    #============================================================================
+    # Constants-ish
+    #============================================================================
+
+
+    # Logging variables
+    LOGGING_NAME = "sourcenet.article_coding.open_calais_api_response"
+
+    # Known JSON object attribute names
+    JSON_NAME_DOC = "doc"
+    JSON_NAME_ENTITY_TYPE = "_type"
+    JSON_NAME_ENTITY_TYPE_GROUP = "_typeGroup"
+    
+    # debugging
+    DEBUG_FLAG = True
+
+
+    #============================================================================
+    # Instance variables
+    #============================================================================
+
+
+    json_response_object = None
+    doc_object = None
+    type_group_to_items_dict = {}
+    type_to_items_dict = {}
+
+
+    #============================================================================
+    # class methods
+    #============================================================================
+
+
+    @classmethod
+    def get_named_json_property( cls, json_object_IN, name_IN, default_IN = None ):
+
+        '''
+        Accepts name of a JSON property that you expect to be contained in the 
+           JSON object passed in.  Returns property that corresponds to name. If
+           not found, returns default value (which defaults to None).
+        '''
+        
+        # return reference
+        value_OUT = None
+        
+        # check if name is present.
+        if name_IN in json_object_IN:
+        
+            # yes - return the JSON that is mapped to that name.
+            value_OUT = json_object_IN[ name_IN ]
+        
+        else:
+        
+            # return default.
+            value_OUT = default_IN
+        
+        #-- END check to see if name in root --#
+        
+        return value_OUT
+
+    #-- END get_entity_from_response() --#
+
+
+    @classmethod
+    def pretty_print_json( cls, json_IN ):
+    
+        '''
+        Accepts JSON object.  Formats it nicely, returns the formatted string.
+        '''
+    
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = json.dumps( json_IN, sort_keys = True, indent = 4, separators = ( ',', ': ' ) )
+        
+        return string_OUT
+        
+    #-- END method pretty_print_json() --#
+    
+    
+    @classmethod
+    def print_calais_json( cls, json_IN ):
+    
+        '''
+        Accepts OpenCalais API JSON object, prints selected parts of it to a
+           string variable.  Returns that string.
+        '''
+    
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        properties_to_output_list = []
+        current_property = ""
+        
+        # set properties we want to output
+        properties_to_output_list = [ "_type", "_typeGroup", "commonname", "name", "person" ]
+        
+        # loop over the stuff in the response:
+        item_counter = 0
+        current_container = json_IN
+        for item in current_container.keys():
+        
+            item_counter += 1
+            string_OUT += "==> " + str( item_counter ) + ": " + item + "\n"
+            
+            # loop over properties that we care about.
+            for current_property in properties_to_output_list:
+                        
+                # is property in the current JSON item we are looking at?
+                if ( current_property in current_container[ item ] ):
+
+                    # yes - output.
+                    current_property_value = current_container[ item ][ current_property ]
+                    string_OUT += "----> " + current_property + ": " + current_property_value  + "\n"
+
+                    # is it a Quotation or a Person?
+                    if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
+
+                        string_OUT += str( current_container[ item ] ) + "\n"
+
+                    #-- END check to see if type is "Quotation" --#
+
+                #-- END current_property --#
+
+            #-- END loop over list of properties we want to output. --#
+            
+        #-- END loop over items --#
+        
+        return string_OUT
+        
+    #-- END function print_calais_json --#
+
+
+    #============================================================================
+    # Instance methods
+    #============================================================================
+
+
+    #----------------------------------------------------------------------------
+    # __init__() method
+    #----------------------------------------------------------------------------
+
+
+    def __init__( self ):
+
+        # call parent's __init__()
+        super( OpenCalaisApiResponse, self ).__init__()
+        
+        # declare variables
+        
+        # initialize variables
+        self.response_object = None
+        self.doc_object = None
+        self.type_group_to_items_dict = {}
+        self.type_to_entities_dict = {}
+        
+        # logging variables
+        self.set_logger_name( self.LOGGING_NAME )
+
+    #-- END method __init__() --#
+
+
+    def get_doc( self ):
+
+        '''
+        Retrieves JSON response "doc" object instance.
+        '''
+        
+        # return reference
+        instance_OUT = None
+
+        # get JSON response "doc" object instance.
+        instance_OUT = self.doc_object
+
+        return instance_OUT
+
+    #-- END get_doc() --#
+
+
+    def get_entity_from_response( self, name_IN ):
+
+        '''
+        Accepts name of OpenCalais entity (a URL string).  Retrieves the json
+            object for that entity from the response.  If not found, returns
+            None.
+        '''
+        
+        # return reference
+        json_OUT = None
+        
+        # declare variables
+        json_response_root = None
+        
+        # get JSON response root.
+        json_response_root = self.get_json_response_object()
+
+        # get property, default to None if not present.
+        json_OUT = self.get_named_json_property( json_response_root, name_IN, None )
+        
+        return json_OUT
+
+    #-- END get_entity_from_response() --#
+
+
+    def get_json_response_object( self ):
+
+        '''
+        Retrieves JSON response "doc" object instance.
+        '''
+        
+        # return reference
+        instance_OUT = None
+
+        # get JSON response object instance.
+        instance_OUT = self.json_response_object
+
+        return instance_OUT
+
+    #-- END get_json_response_object() --#
+
+
+    def summarize_json( self ):
+    
+        '''
+        Using OpenCalais API JSON object in this instance, prints selected parts
+           of it to a string variable.  Returns that string.
+        '''
+    
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        json_object = None
+        
+        # call class method.
+        json_object = self.get_json_response_object()
+        string_OUT = self.print_calais_json( json_object )
+        
+        return string_OUT
+        
+    #-- END function summarize_json --#
+
+
+    def set_doc( self, json_object_IN ):
+        
+        '''
+        Accepts JSON "doc" response object (name-value pairs) from call to
+           OpenCalais REST API.  Stores separate reference to it internally,
+           doesn't do anything else for now.  Eventually, can parse it and
+           breaks out pieces so it is easier to work with if we care.
+        '''
+        
+        # return reference
+        value_OUT = None
+        
+        # declare variables
+        me = "set_doc"
+        my_logger = None
+        
+        # get logger
+        #my_logger = self.get_logger()
+        
+        # store the doc object.
+        self.doc_object = json_object_IN
+        
+        value_OUT = self.doc_object
+        
+        return value_OUT
+
+    #-- END method set_doc() --#
+
+
+    def set_json_response_object( self, json_object_IN ):
+        
+        '''
+        Accepts JSON response object (name-value pairs) from call to OpenCalais
+           REST API.  Stores it internally, then parses it and break out pieces
+           so it is easier to work with.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "set_json_response_object"
+        my_logger = None
+        json_string = ""
+        response_json_root = None
+        item_counter = -1
+        current_key = ""
+        current_object = None
+        current_type = ""
+        current_type_group = ""
+        doc_object = None
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # first, remind myself what the JSON looks like.
+        #json_string = self.pretty_print_json( json_object_IN )
+        #my_logger.debug( "In " + me + ": outputting whole JSON document:" )
+        #my_logger.debug( json_string )
+        
+        # store JSON response in "response_json" variable.
+        response_json_root = json_object_IN
+        
+        # loop over the list of top-level things.  It should be a set of
+        #    name-value pairs where the value is another structured JSON object.
+        for item_counter, current_key in enumerate( response_json_root ):
+        
+            # grab JSON for the key.
+            current_object = response_json_root[ current_key ]
+            
+            # get type group
+            current_type_group = self.get_named_json_property( current_object, self.JSON_NAME_ENTITY_TYPE_GROUP )
+            
+            # get current entity type.
+            current_type = self.get_named_json_property( current_object, self.JSON_NAME_ENTITY_TYPE )
+            
+            # log it.
+            my_logger.debug( "In " + me + ": #" + str( item_counter ) + " (type group: " + str( current_type_group ) + "; type: " + str( current_type ) + ") = " + current_key )
+            
+            # if doc, store the doc off in separate reference for easy access.
+            if ( current_key == self.JSON_NAME_DOC ):
+            
+                # store off the doc.
+                self.set_doc( current_object )
+                
+                # output, just to make sure I have what I think I have.
+                #json_string = self.pretty_print_json( current_object )
+                #my_logger.debug( "In " + me + ": outputting JSON \"doc\" object:" )
+                #my_logger.debug( json_string )
+            
+            #-- END check to see if "doc" JSON --#
+            
+            # TODO - add to dict of type groups to items
+            
+            # TODO - add to dict of types to items
+        
+        #-- END loop over top-level keys in JSON --#
+        
+        # store root in instance variable
+        self.json_response_object = response_json_root
+        instance_OUT = self.json_response_object
+        
+        # try retrieving doc entity directly from root element.
+        doc_object = self.get_entity_from_response( self.JSON_NAME_DOC )
+
+        # output, just to make sure I have what I think I have.
+        json_string = self.pretty_print_json( doc_object )
+        my_logger.debug( "In " + me + ": outputting JSON \"doc\" object from lookup:" )
+        my_logger.debug( json_string )
+        
+        return instance_OUT
+
+    #-- END method set_response_object() --#
+
+
+#-- END class OpenCalaisApiResponse --#

@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2014 Jonathan Morgan
+Copyright 2010-2015 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -14,11 +14,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 '''
 This code file contains a class that implements functions for interacting with
-   the online database of Newsbank.  It mostly includes methods for building and
-   connecting to URLs that represent issues of newspapers and articles within an
-   issue, and then Beautiful Soup code for interacting with the HTML contents of
-   those pages once they are retrieved.  The actual work of retrieving pages is
-   outside the scope of this class.
+   the Open Calais natural language processing API.  It includes methods for
+   interacting with the Open Calais REST API and for processing the JSON response
+   that the Open Calais REST API returns.
 '''
 
 #================================================================================
@@ -33,9 +31,13 @@ import json
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.network.http_helper import Http_Helper
 
+# sourcenet classes
+
 # parent abstract class.
 from sourcenet.article_coding.article_coder import ArticleCoder
 
+# class to help with parsing and processing OpenCalaisApiResponse.
+from sourcenet.article_coding.open_calais_api_response import OpenCalaisApiResponse
 
 #================================================================================
 # Package constants-ish
@@ -303,7 +305,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     if ( self.DEBUG_FLAG == True ):
                     
                         # render and output debug string.
-                        debug_string = self.print_calais_json( requests_response_json )
+                        debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
                         self.output_debug( debug_string )
         
                     #-- END debug --#
@@ -511,59 +513,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END abstract method initialize_from_params() --#
     
 
-    def print_calais_json( self, json_IN ):
-    
-        '''
-        Accepts OpenCalais API JSON object, prints selected parts of it to a
-           string variable.  Returns that string.
-        '''
-    
-        # return reference
-        string_OUT = ""
-        
-        # declare variables
-        properties_to_output_list = []
-        current_property = ""
-        
-        # set properties we want to output
-        properties_to_output_list = [ "_type", "_typeGroup", "commonname", "name", "person" ]
-        
-        # loop over the stuff in the response:
-        item_counter = 0
-        current_container = json_IN
-        for item in current_container.keys():
-        
-            item_counter += 1
-            string_OUT += "==> " + str( item_counter ) + ": " + item + "\n"
-            
-            # loop over properties that we care about.
-            for current_property in properties_to_output_list:
-                        
-                # is property in the current JSON item we are looking at?
-                if ( current_property in current_container[ item ] ):
-
-                    # yes - output.
-                    current_property_value = current_container[ item ][ current_property ]
-                    string_OUT += "----> " + current_property + ": " + current_property_value  + "\n"
-
-                    # is it a Quotation or a Person?
-                    if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
-
-                        string_OUT += str( current_container[ item ] ) + "\n"
-
-                    #-- END check to see if type is "Quotation" --#
-
-                #-- END current_property --#
-
-            #-- END loop over list of properties we want to output. --#
-            
-        #-- END loop over items --#
-        
-        return string_OUT
-        
-    #-- END function print_calais_json --#
-
-
     def process_json_api_response( self, article_IN, article_data_IN, json_response_IN ):
     
         '''
@@ -585,19 +534,22 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # declare variables
         me = "process_json_api_response"
         my_logger = None
-        json_string = ""
-        
+        my_reponse_helper = None
+
         # get logger
         my_logger = self.get_logger()
         
-        # first, remind myself what the JSON looks like.
-        json_string = json.dumps( json_response_IN, sort_keys = True, indent = 4, separators = ( ',', ': ' ) )
-        my_logger.debug( "In " + me + ": outputting whole JSON document:" )
-        my_logger.debug( json_string )
+        # get response helper.
+        my_response_helper = OpenCalaisApiResponse()
+
+        # chuck the response in there.
+        my_response_helper.set_json_response_object( json_response_IN )
+        
+        # once we get response JSON sorted out, then use it to interact.
         
         return status_OUT
     
-    #-- END function process_json_response() --#
+    #-- END function process_json_api_response() --#
 
 
     def set_http_helper( self, instance_IN ):
