@@ -33,6 +33,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 # OpenCalaisArticleCoder class
 #================================================================================
 
+
 # define OpenCalaisArticleCoder class.
 class OpenCalaisApiResponse( LoggingHelper ):
 
@@ -59,11 +60,27 @@ class OpenCalaisApiResponse( LoggingHelper ):
 
     # Known JSON object attribute names
     JSON_NAME_DOC = "doc"
-    JSON_NAME_ENTITY_TYPE = "_type"
-    JSON_NAME_ENTITY_TYPE_GROUP = "_typeGroup"
+    
+    # Item property names
+    JSON_NAME_ITEM_TYPE = "_type"
+    JSON_NAME_ITEM_TYPE_GROUP = "_typeGroup"
+    
+    # Quotation property names
+    JSON_NAME_QUOTE_PERSON_URI = "person"
+    
+    # Person property names
+    JSON_NAME_PERSON_NAME = "name"
+    
+    # OpenCalais item types
+    OC_ITEM_TYPE_QUOTATION = "Quotation"
+    OC_ITEM_TYPE_PERSON = "Person"
     
     # debugging
     DEBUG_FLAG = True
+    
+    # status constants
+    STATUS_SUCCESS = "Success!"    
+    STATUS_ERROR_PREFIX = "Error: "    
 
 
     #============================================================================
@@ -83,7 +100,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
 
 
     @classmethod
-    def get_named_json_property( cls, json_object_IN, name_IN, default_IN = None ):
+    def get_json_object_property( cls, json_object_IN, name_IN, default_IN = None ):
 
         '''
         Accepts name of a JSON property that you expect to be contained in the 
@@ -109,7 +126,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         
         return value_OUT
 
-    #-- END get_entity_from_response() --#
+    #-- END get_json_object_property() --#
 
 
     @classmethod
@@ -212,6 +229,136 @@ class OpenCalaisApiResponse( LoggingHelper ):
     #-- END method __init__() --#
 
 
+    def add_item_to_type_dict( self, item_id_IN, item_IN ):
+        
+        '''
+        Accepts item.  Gets type from inside the item.  Looks for type in
+           type_to_items_dict.  If present, retrieves associated,
+           dictionary (item ID to item map), adds item.  If not, makes dict,
+           adds item to dict, adds dict to type dict mapped to type.
+        If success, returns item type item was added to. On error, returns
+           non-empty string describing it, preceded by self.STATUS_ERROR_PREFIX.
+        '''
+        
+        # return reference
+        status_OUT = ""
+        
+        # declare variables
+        the_dict = None
+        item_type = ""
+        nested_dict = None
+        
+        # get dictionary
+        the_dict = self.type_to_items_dict
+        
+        # get item's type_group
+        item_type = self.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE )
+        
+        # got one?
+        if item_type is not None:
+        
+            # got a group.  Is it in the dict?
+            if item_type in the_dict:
+            
+                # it is in the dict - get nested dictionary
+                nested_dict = the_dict[ item_type ]
+                
+                # add the item to the nested dictionary.
+                nested_dict[ item_id_IN ] = item_IN
+            
+            else:
+            
+                # not there yet.  create a dictionary.
+                nested_dict = {}
+                
+                # add the item
+                nested_dict[ item_id_IN ] = item_IN
+                
+                # nest the dictionary.
+                the_dict[ item_type ] = nested_dict
+            
+            #-- END check to see if type group is in the dictionary --#
+            
+            # return type
+            status_OUT = item_type
+        
+        else:
+        
+            # no group.
+            status_OUT = self.STATUS_ERROR_PREFIX + "No type in element."
+        
+        #-- END check to see if we have a group --#
+        
+        return status_OUT
+        
+    #-- END method add_item_to_type_dict() --#
+    
+
+    def add_item_to_type_group_dict( self, item_id_IN, item_IN ):
+        
+        '''
+        Accepts item.  Gets type group from inside the item.  Looks for group
+           type in type_group_to_items_dict.  If present, retrieves associated,
+           dictionary (item ID to item map), adds item.  If not, makes dict,
+           adds item to dict, adds dict to type group dict mapped to group type.
+        If success, returns item type group to which the item was added.  If
+           error returns non-empty string describing it, preceded by
+           self.STATUS_ERROR_PREFIX.
+        '''
+        
+        # return reference
+        status_OUT = ""
+        
+        # declare variables
+        the_dict = None
+        item_type_group = ""
+        nested_dict = None
+        
+        # get dictionary
+        the_dict = self.type_group_to_items_dict
+        
+        # get item's type_group
+        item_type_group = self.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE_GROUP )
+        
+        # got one?
+        if item_type_group is not None:
+        
+            # got a group.  Is it in the dict?
+            if item_type_group in the_dict:
+            
+                # it is in the dict - get nested dictionary
+                nested_dict = the_dict[ item_type_group ]
+                
+                # add the item to the nested dictionary.
+                nested_dict[ item_id_IN ] = item_IN
+            
+            else:
+            
+                # not there yet.  create a dictionary.
+                nested_dict = {}
+                
+                # add the item
+                nested_dict[ item_id_IN ] = item_IN
+                
+                # nest the dictionary.
+                the_dict[ item_type_group ] = nested_dict
+            
+            #-- END check to see if type group is in the dictionary --#
+            
+            status_OUT = item_type_group
+        
+        else:
+        
+            # no group.
+            status_OUT = self.STATUS_ERROR_PREFIX + "No type group in item."
+        
+        #-- END check to see if we have a type group --#
+        
+        return status_OUT
+        
+    #-- END method add_item_to_type_group_dict() --#
+    
+
     def get_doc( self ):
 
         '''
@@ -229,7 +376,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
     #-- END get_doc() --#
 
 
-    def get_entity_from_response( self, name_IN ):
+    def get_item_from_response( self, name_IN ):
 
         '''
         Accepts name of OpenCalais entity (a URL string).  Retrieves the json
@@ -247,11 +394,47 @@ class OpenCalaisApiResponse( LoggingHelper ):
         json_response_root = self.get_json_response_object()
 
         # get property, default to None if not present.
-        json_OUT = self.get_named_json_property( json_response_root, name_IN, None )
+        json_OUT = self.get_json_object_property( json_response_root, name_IN, None )
         
         return json_OUT
 
-    #-- END get_entity_from_response() --#
+    #-- END get_item_from_response() --#
+
+
+    def get_items_of_type( self, type_IN ):
+
+        '''
+        Accepts string name of an OpenCalais type.  Retrieves the dictionary
+            object of items from the response with that type (maps item name -
+            the OpenCalais URI) to each of the items of that type.  If not found,
+            returns None.
+        '''
+        
+        # return reference
+        item_dict_OUT = None
+        
+        # declare variables
+        my_types_to_items_dict = None
+        
+        # get type-to-items dictionary
+        my_types_to_items_dict = self.type_to_items_dict
+
+        # see if type passed in is in the dictionary.
+        if type_IN in my_types_to_items_dict:
+        
+            # it is there, return it.
+            item_dict_OUT = my_types_to_items_dict.get( type_IN, None )
+            
+        else:
+        
+            # no items.  Return None.
+            item_dict_OUT = None
+            
+        #-- END check to see if type has items. --#
+        
+        return item_dict_OUT
+
+    #-- END get_items_of_type() --#
 
 
     def get_json_response_object( self ):
@@ -344,6 +527,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         current_type = ""
         current_type_group = ""
         doc_object = None
+        current_status = ""
         
         # get logger
         my_logger = self.get_logger()
@@ -353,7 +537,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         #my_logger.debug( "In " + me + ": outputting whole JSON document:" )
         #my_logger.debug( json_string )
         
-        # store JSON response in "response_json" variable.
+        # store JSON response in "response_json_root" variable.
         response_json_root = json_object_IN
         
         # loop over the list of top-level things.  It should be a set of
@@ -364,10 +548,10 @@ class OpenCalaisApiResponse( LoggingHelper ):
             current_object = response_json_root[ current_key ]
             
             # get type group
-            current_type_group = self.get_named_json_property( current_object, self.JSON_NAME_ENTITY_TYPE_GROUP )
+            current_type_group = self.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE_GROUP )
             
             # get current entity type.
-            current_type = self.get_named_json_property( current_object, self.JSON_NAME_ENTITY_TYPE )
+            current_type = self.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE )
             
             # log it.
             my_logger.debug( "In " + me + ": #" + str( item_counter ) + " (type group: " + str( current_type_group ) + "; type: " + str( current_type ) + ") = " + current_key )
@@ -385,10 +569,16 @@ class OpenCalaisApiResponse( LoggingHelper ):
             
             #-- END check to see if "doc" JSON --#
             
-            # TODO - add to dict of type groups to items
+            # add to dict of type groups to items
+            current_status = self.add_item_to_type_group_dict( current_key, current_object )
             
-            # TODO - add to dict of types to items
+            my_logger.debug( "In " + me + ": added to type group map: " + current_status )
+            
+            # add to dict of types to items
+            current_status = self.add_item_to_type_dict( current_key, current_object )
         
+            my_logger.debug( "In " + me + ": added to type map: " + current_status )
+
         #-- END loop over top-level keys in JSON --#
         
         # store root in instance variable
@@ -396,7 +586,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         instance_OUT = self.json_response_object
         
         # try retrieving doc entity directly from root element.
-        doc_object = self.get_entity_from_response( self.JSON_NAME_DOC )
+        doc_object = self.get_item_from_response( self.JSON_NAME_DOC )
 
         # output, just to make sure I have what I think I have.
         json_string = self.pretty_print_json( doc_object )

@@ -27,6 +27,9 @@ This code file contains a class that implements functions for interacting with
 # python standard libraries
 import json
 
+# mess with python 3 support
+import six
+
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.network.http_helper import Http_Helper
@@ -535,6 +538,22 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         me = "process_json_api_response"
         my_logger = None
         my_reponse_helper = None
+        
+        # quote processing variables.
+        quotation_dict = None
+        current_oc_URI = None
+        current_quotation_json = None
+        quote_counter = -1
+        quote_person_URI = ""
+        quote_person = None
+        person_to_quotes_map = {}
+        person_quote_dict = {}
+        
+        # person processing variables.
+        person_counter = -1
+        person_URI = ""
+        person_json = None
+        person_name = ""
 
         # get logger
         my_logger = self.get_logger()
@@ -547,6 +566,63 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         # once we get response JSON sorted out, then use it to interact.
         
+        # get all the quotations.
+        quotation_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+        
+        # loop over them
+        quote_counter = 0
+        for current_oc_URI, current_quotation_json in six.iteritems( quotation_dict ):
+        
+            # increment counter
+            quote_counter = quote_counter + 1
+            
+            # log the URI
+            my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
+            
+            # get the URI of the person who was quoted.
+            quote_person_URI = OpenCalaisApiResponse.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
+            
+            # is person already in person-to-quote map?
+            if quote_person_URI in person_to_quotes_map:
+            
+                # yes - get quote dictionary...
+                person_quote_dict = person_to_quotes_map[ quote_person_URI ]
+
+                # then add current quote to dictionary.
+                person_quote_dict[ current_oc_URI ] = current_quotation_json
+            
+            else:
+            
+                # person not in map.  Make dict of quotes...
+                person_quote_dict = {}
+
+                # add current quote...
+                person_quote_dict[ current_oc_URI ] = current_quotation_json
+
+                # then associate quotes with person URI.
+                person_to_quotes_map[ quote_person_URI ] = person_quote_dict
+            
+            #-- END check to see if person in person-to-quotes map. --#
+            
+        #-- END loop over quotation items --#
+        
+        # now, look at people who were quoted.
+        person_counter = 0
+        for person_URI in person_to_quotes_map:
+        
+            # increment counter
+            person_counter = person_counter + 1
+            
+            # try to get person from URI.
+            person_json = my_response_helper.get_item_from_response( person_URI )
+            
+            # get and output name.
+            person_name = OpenCalaisApiResponse.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+            
+            my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
+        
+        #-- END loop over persons --#
+
         return status_OUT
     
     #-- END function process_json_api_response() --#
