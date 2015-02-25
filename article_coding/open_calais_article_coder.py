@@ -32,6 +32,7 @@ import six
 
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
+from python_utilities.json.json_helper import JSONHelper
 from python_utilities.network.http_helper import Http_Helper
 
 # sourcenet classes
@@ -580,7 +581,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
             
             # get the URI of the person who was quoted.
-            quote_person_URI = OpenCalaisApiResponse.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
+            quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
             
             # is person already in person-to-quote map?
             if quote_person_URI in person_to_quotes_map:
@@ -617,7 +618,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             person_json = my_response_helper.get_item_from_response( person_URI )
             
             # get and output name.
-            person_name = OpenCalaisApiResponse.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+            person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
             
             my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
         

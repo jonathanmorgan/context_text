@@ -21,6 +21,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 import json
 
 # python utilities
+from python_utilities.json.json_helper import JSONHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 
 
@@ -99,53 +100,6 @@ class OpenCalaisApiResponse( LoggingHelper ):
     #============================================================================
 
 
-    @classmethod
-    def get_json_object_property( cls, json_object_IN, name_IN, default_IN = None ):
-
-        '''
-        Accepts name of a JSON property that you expect to be contained in the 
-           JSON object passed in.  Returns property that corresponds to name. If
-           not found, returns default value (which defaults to None).
-        '''
-        
-        # return reference
-        value_OUT = None
-        
-        # check if name is present.
-        if name_IN in json_object_IN:
-        
-            # yes - return the JSON that is mapped to that name.
-            value_OUT = json_object_IN[ name_IN ]
-        
-        else:
-        
-            # return default.
-            value_OUT = default_IN
-        
-        #-- END check to see if name in root --#
-        
-        return value_OUT
-
-    #-- END get_json_object_property() --#
-
-
-    @classmethod
-    def pretty_print_json( cls, json_IN ):
-    
-        '''
-        Accepts JSON object.  Formats it nicely, returns the formatted string.
-        '''
-    
-        # return reference
-        string_OUT = ""
-        
-        string_OUT = json.dumps( json_IN, sort_keys = True, indent = 4, separators = ( ',', ': ' ) )
-        
-        return string_OUT
-        
-    #-- END method pretty_print_json() --#
-    
-    
     @classmethod
     def print_calais_json( cls, json_IN ):
     
@@ -252,7 +206,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         the_dict = self.type_to_items_dict
         
         # get item's type_group
-        item_type = self.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE )
+        item_type = JSONHelper.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE )
         
         # got one?
         if item_type is not None:
@@ -318,7 +272,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         the_dict = self.type_group_to_items_dict
         
         # get item's type_group
-        item_type_group = self.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE_GROUP )
+        item_type_group = JSONHelper.get_json_object_property( item_IN, self.JSON_NAME_ITEM_TYPE_GROUP )
         
         # got one?
         if item_type_group is not None:
@@ -394,7 +348,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         json_response_root = self.get_json_response_object()
 
         # get property, default to None if not present.
-        json_OUT = self.get_json_object_property( json_response_root, name_IN, None )
+        json_OUT = JSONHelper.get_json_object_property( json_response_root, name_IN, None )
         
         return json_OUT
 
@@ -533,7 +487,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         my_logger = self.get_logger()
         
         # first, remind myself what the JSON looks like.
-        #json_string = self.pretty_print_json( json_object_IN )
+        #json_string = JSONHelper.pretty_print_json( json_object_IN )
         #my_logger.debug( "In " + me + ": outputting whole JSON document:" )
         #my_logger.debug( json_string )
         
@@ -548,10 +502,10 @@ class OpenCalaisApiResponse( LoggingHelper ):
             current_object = response_json_root[ current_key ]
             
             # get type group
-            current_type_group = self.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE_GROUP )
+            current_type_group = JSONHelper.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE_GROUP )
             
             # get current entity type.
-            current_type = self.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE )
+            current_type = JSONHelper.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE )
             
             # log it.
             my_logger.debug( "In " + me + ": #" + str( item_counter ) + " (type group: " + str( current_type_group ) + "; type: " + str( current_type ) + ") = " + current_key )
@@ -563,7 +517,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
                 self.set_doc( current_object )
                 
                 # output, just to make sure I have what I think I have.
-                #json_string = self.pretty_print_json( current_object )
+                #json_string = JSONHelper.pretty_print_json( current_object )
                 #my_logger.debug( "In " + me + ": outputting JSON \"doc\" object:" )
                 #my_logger.debug( json_string )
             
@@ -589,7 +543,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         doc_object = self.get_item_from_response( self.JSON_NAME_DOC )
 
         # output, just to make sure I have what I think I have.
-        json_string = self.pretty_print_json( doc_object )
+        json_string = JSONHelper.pretty_print_json( doc_object )
         my_logger.debug( "In " + me + ": outputting JSON \"doc\" object from lookup:" )
         my_logger.debug( json_string )
         
