@@ -399,9 +399,9 @@ class Topic( models.Model ):
 #= End Topic Model =========================================================
 
 
-# Person model
+# Abstract_Person model
 @python_2_unicode_compatible
-class Person( models.Model ):
+class Abstract_Person( models.Model ):
 
     GENDER_CHOICES = (
         ( 'na', 'Unknown' ),
@@ -423,7 +423,11 @@ class Person( models.Model ):
 
     # Meta-data for this class.
     class Meta:
+
+        abstract = True
         ordering = [ 'last_name', 'first_name', 'middle_name' ]
+        
+    #-- END class Meta --#
 
 
     #----------------------------------------------------------------------
@@ -737,7 +741,141 @@ class Person( models.Model ):
     #-- END static method look_up_person_from_name() --#
     
 
+#== END Abstract_Person Model ===========================================================#
+
+
+# Person model
+@python_2_unicode_compatible
+class Person( Abstract_Person ):
+
+    # Properties from Abstract_Person:
+    '''
+    GENDER_CHOICES = (
+        ( 'na', 'Unknown' ),
+        ( 'female', 'Female' ),
+        ( 'male', 'Male' )
+    )
+
+    first_name = models.CharField( max_length = 255 )
+    middle_name = models.CharField( max_length = 255, blank = True )
+    last_name = models.CharField( max_length = 255 )
+    name_prefix = models.CharField( max_length = 255, blank = True, null = True )
+    name_suffix = models.CharField( max_length = 255, blank = True, null = True )
+    full_name_string = models.CharField( max_length = 255, blank = True, null = True )
+    gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
+    title = models.CharField( max_length = 255, blank = True )
+    nameparser_pickled = models.TextField( blank = True, null = True )
+    is_ambiguous = models.BooleanField( default = False )
+    notes = models.TextField( blank = True )
+    '''
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+    def __str__( self ):
+ 
+        # return reference
+        string_OUT = ''
+ 
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+                
+        string_OUT = self.last_name + ', ' + self.first_name
+        
+        # middle name?
+        if ( self.middle_name ):
+        
+            string_OUT += " " + self.middle_name
+            
+        #-- END middle name check --#
+
+        if ( self.title ):
+        
+            string_OUT = string_OUT + " ( " + self.title + " )"
+            
+        #-- END check to see if we have a title. --#
+ 
+        return string_OUT
+
+    #-- END method __str__() --#
+    
+
 #== END Person Model ===========================================================#
+
+
+# Alternate_Name model
+@python_2_unicode_compatible
+class Alternate_Name( Abstract_Person ):
+
+    '''
+    Model that can be used to hold alternate names for a given person.
+       For now, no way to tie to newspaper or external UUID.  And not used at the
+       moment.  But, planning ahead...
+    '''
+
+    # Properties from Abstract_Person:
+    '''
+    GENDER_CHOICES = (
+        ( 'na', 'Unknown' ),
+        ( 'female', 'Female' ),
+        ( 'male', 'Male' )
+    )
+
+    first_name = models.CharField( max_length = 255 )
+    middle_name = models.CharField( max_length = 255, blank = True )
+    last_name = models.CharField( max_length = 255 )
+    name_prefix = models.CharField( max_length = 255, blank = True, null = True )
+    name_suffix = models.CharField( max_length = 255, blank = True, null = True )
+    full_name_string = models.CharField( max_length = 255, blank = True, null = True )
+    gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
+    title = models.CharField( max_length = 255, blank = True )
+    nameparser_pickled = models.TextField( blank = True, null = True )
+    is_ambiguous = models.BooleanField( default = False )
+    notes = models.TextField( blank = True )
+    '''
+    
+    person = models.ForeignKey( Person )
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+    def __str__( self ):
+ 
+        # return reference
+        string_OUT = ''
+ 
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+                
+        string_OUT = self.last_name + ', ' + self.first_name
+        
+        # middle name?
+        if ( self.middle_name ):
+        
+            string_OUT += " " + self.middle_name
+            
+        #-- END middle name check --#
+
+        if ( self.title ):
+        
+            string_OUT = string_OUT + " ( " + self.title + " )"
+            
+        #-- END check to see if we have a title. --#
+ 
+        return string_OUT
+
+    #-- END method __str__() --#
+    
+
+#== END Alternate_Name Model ===========================================================#
 
 
 # Orgnization model
@@ -850,6 +988,118 @@ class Newspaper( models.Model ):
     #-- END __str__() method --#
 
 #= End Article_Topic Model ======================================================
+
+
+# Person_External_UUID model
+@python_2_unicode_compatible
+class Person_External_UUID( models.Model ):
+
+    person = models.ForeignKey( Person )
+    name = models.CharField( max_length = 255, null = True, blank = True )
+    UUID = models.TextField( blank = True, null = True )
+    source = models.CharField( max_length = 255, null = True, blank = True )
+    notes = models.TextField( blank = True, null = True )
+
+    #----------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        prefix_string = ""
+        
+        if ( self.id ):
+        
+            # yes. output.
+            string_OUT += str( self.id )
+            prefix_string = " - "
+
+        #-- END check to see if ID --#
+
+        if ( self.name ):
+        
+            string_OUT += prefix_string + self.name
+            prefix_string = " - "
+            
+        #-- END check to see if newspaper. --#
+            
+        if ( self.source ):
+        
+            string_OUT += prefix_string + " ( " + self.source + " )"
+            prefix_string = " - "
+            
+        #-- END check to see if newspaper. --#
+            
+        if ( self.UUID ):
+        
+            string_OUT += prefix_string + self.UUID
+            prefix_string = " - "
+            
+        #-- END check to see if newspaper. --#
+            
+        return string_OUT
+        
+    #-- END method __str__() --#
+
+
+#= End Person_External_UUID Model ======================================================
+
+
+# Person_Newspaper model
+@python_2_unicode_compatible
+class Person_Newspaper( models.Model ):
+
+    person = models.ForeignKey( Person )
+    newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
+
+    #----------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        prefix_string = ""
+        
+        if ( self.id ):
+        
+            # yes. output.
+            string_OUT += str( self.id )
+            prefix_string = " - "
+
+        #-- END check to see if ID --#
+
+        if ( self.newspaper ):
+        
+            string_OUT += prefix_string + self.newspaper.name
+            prefix_string = " - "
+            
+        #-- END check to see if newspaper. --#
+            
+        if ( self.person ):
+        
+            string_OUT += prefix_string + str( self.person.id )
+            prefix_string = " - "
+            
+        #-- END check to see if newspaper. --#
+            
+        return string_OUT
+        
+    #-- END method __str__() --#
+
+
+#= End Person_Newspaper Model ======================================================
+
 
 # Article model
 @python_2_unicode_compatible
@@ -2339,6 +2589,10 @@ class Article_Person( models.Model ):
     person = models.ForeignKey( Person, blank = True, null = True )
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
 
+    # capture match confidence - start with 1 or 0, but leave room for
+    #    decimal values.
+    match_confidence_level = models.DecimalField( max_digits = 11, decimal_places = 10, blank = True, null = True, default = 0.0 )
+
     # meta class so we know this is an abstract class.
     class Meta:
         abstract = True
@@ -2640,8 +2894,10 @@ class Article_Source( Article_Person ):
     attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
     attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
     
-    # field to capture 
+    # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    
+    
 
     #----------------------------------------------------------------------
     # methods
@@ -2651,26 +2907,60 @@ class Article_Source( Article_Person ):
         # return reference
         string_OUT = ''
 
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+        
+        #-- END check to see if ID --#
+        
         if ( self.source_type == "individual" ):
+
             if ( self.person is not None ):
+
                 string_OUT = self.person.last_name + ", " + self.person.first_name
+
             else:
+
                 if ( self.title != '' ):
+
                     string_OUT = self.title
+
                 else:
+
                     string_OUT = "individual"
+
+                #-- END check to see if title --#
+
+            #-- END check to see if person --#
+
         elif ( self.source_type == "organization" ):
+
             if ( self.organization is not None ):
+
                 string_OUT = self.organization.name
+
             else:
+
                 string_OUT = self.title
+
+            #-- END check to see if organization --#
+
         elif ( self.source_type == "document" ):
+
             if ( self.document is not None ):
+
                 string_OUT = self.document.name
+
             else:
+
                 string_OUT = self.notes
+
+            #-- END check to see if Document --#
+
         #elif ( self.source_type == "anonymous" ):
         #    string_OUT =
+        
+        #-- END check to see what type of source --#
 
         string_OUT = string_OUT + " (" + self.source_type + ")"
 

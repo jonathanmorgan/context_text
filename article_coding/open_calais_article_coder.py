@@ -37,6 +37,10 @@ from python_utilities.network.http_helper import Http_Helper
 
 # sourcenet classes
 
+# models
+from sourcenet.models import Article_Source
+from sourcenet.models import Person
+
 # parent abstract class.
 from sourcenet.article_coding.article_coder import ArticleCoder
 
@@ -555,6 +559,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         person_URI = ""
         person_json = None
         person_name = ""
+        person_details_dict = {}
+        source_person = None
+        article_source_qs = None
+        person_paper = None        
 
         # get logger
         my_logger = self.get_logger()
@@ -621,6 +629,106 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
             
             my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
+            
+            # try looking up source just like we look up authors.
+
+            # make empty article source to work with, for now.
+            article_source = Article_Source()
+            
+            # prepare person details.
+            person_details_dict = {}
+            person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+            person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
+            person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.CONFIG_APPLICATION
+
+            # lookup person - returns person and confidence score inside
+            #    Article_Source instance.
+            article_source = self.lookup_person( article_source, 
+                                                 person_name,
+                                                 create_if_no_match_IN = True,
+                                                 update_person_IN = True,
+                                                 person_details_IN = person_details_dict )
+            source_person = article_source.person
+            
+            # got a person?
+            if ( source_person is not None ):
+
+                # !CURRENT - test new fancy lookup.
+                
+                # One Article_Source per person, and then have a new thing to
+                #    hold quotations that hangs off that.
+                # At any rate, make method to process person/quote that you pass:
+                # - source_person
+                # - article_data_IN
+                # - my_response_helper (including JSON, etc.)
+                # - quote JSON?  OR quotes list for person, from person_to_quotes_map...?
+                # - ...?
+                
+                # Now, we need to deal with Article_Source instance.  First, see
+                #    if there already is one for this name.  If so, do nothing.
+                #    If not, make one.
+                article_source_qs = article_data_IN.article_source_set.filter( person = source_person_IN )
+                
+                # got anything?
+                if ( article_source_qs.count() == 0 ):
+                                             
+                    # no - add - more stuff to set.  Need to see what we can get.
+                    
+                    # use the article_source created above.
+                    #article_source = Article_Source()
+
+                    # !TODO - set contents of Article_Source data fields.
+                    article_source.article_data = article_data_IN
+                    article_source.person = source_person
+                    
+                    # confidence level set in lookup_person() method.
+                    #article_source.match_confidence_level = 1.0
+    
+                    article_source.source_type = Article_Source.SOURCE_TYPE_INDIVIDUAL
+                    article_source.title = ""
+                    article_source.more_title = ""
+                    article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
+                    #article_source.document = None
+                    article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
+                    article_source.source_contact_type = None
+                    #article_source.source_capacity = None
+                    #article_source.localness = None
+                    article_source.notes = ""
+    
+                    # field to store how source was captured.
+                    article_source.capture_method = self.CONFIG_APPLICATION
+                
+                    # !TODO - article_source.save()
+                    
+                    my_logger.debug( "In " + me + ": adding Article_Source instance for " + str( source_person ) + "." )
+    
+                else:
+                
+                    my_logger.debug( "In " + me + ": Article_Source instance already exists for " + str( source_person ) + "." )
+                    
+                #-- END check if need new Article_Source instance --#
+                
+                # !TODO - deal with quotes.
+                # then, need to see if there is a quote for this quote.
+                #    Filter on UUID from Quotation JSON object.
+                '''
+                    # fields to track locations of data this coding was based on within
+                    #    article.  References are based on results of ParsedArticle.parse().
+                    article_source.attribution_verb_word_index = -1
+                    article_source.attribution_verb_word_number = -1
+                    article_source.attribution_paragraph_number = -1
+                    article_source.attribution_speaker_name_string = -1
+                    article_source.is_speaker_name_pronoun = False
+                    article_source.attribution_speaker_name_index_range = ""
+                    article_source.attribution_speaker_name_word_range = ""
+    
+                '''
+
+            else:
+            
+                my_logger.debug( "In " + me + ": error - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
+
+            #-- END check to see if person found. --#
         
         #-- END loop over persons --#
 

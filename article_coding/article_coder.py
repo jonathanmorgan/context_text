@@ -42,7 +42,10 @@ from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article_Author
+from sourcenet.models import Article_Source
 from sourcenet.models import Person
+from sourcenet.models import Person_External_UUID
+from sourcenet.models import Person_Newspaper
 
 #================================================================================
 # Shared variables and functions
@@ -89,6 +92,14 @@ class ArticleCoder( BasicRateLimited ):
     
     # author string processing
     REGEX_BEGINS_WITH_BY = re.compile( r'^BY ', re.IGNORECASE )
+    
+    # PARAMS for update_person()
+    PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
+    PARAM_NEWSPAPER_NOTES = "newspaper_notes"
+    PARAM_EXTERNAL_UUID_NAME = "external_uuid_name"
+    PARAM_EXTERNAL_UUID = "external_uuid"
+    PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
+    PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
 
 
     #----------------------------------------------------------------------------
@@ -199,6 +210,25 @@ class ArticleCoder( BasicRateLimited ):
     #----------------------------------------------------------------------------
 
 
+    def add_config_property( self, prop_name_IN ):
+        
+        # return reference
+        prop_name_OUT = ''
+        
+        # declare variables
+        prop_name_list = []
+        
+        # get property name list.
+        prop_name_list = self.get_config_property_list()
+        
+        # add the property name to the list.
+        prop_name_list.append( prop_name_IN )
+        
+        return prop_name_OUT
+        
+    #-- END method add_config_property() --#
+    
+    
     def code_article( self, article_IN, *args, **kwargs ):
 
         '''
@@ -272,25 +302,6 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method code_article() --#
     
 
-    def add_config_property( self, prop_name_IN ):
-        
-        # return reference
-        prop_name_OUT = ''
-        
-        # declare variables
-        prop_name_list = []
-        
-        # get property name list.
-        prop_name_list = self.get_config_property_list()
-        
-        # add the property name to the list.
-        prop_name_list.append( prop_name_IN )
-        
-        return prop_name_OUT
-        
-    #-- END method add_config_property() --#
-    
-    
     def get_config_application( self ):
 
         '''
@@ -506,6 +517,181 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method load_config_properties() --#
     
     
+    def lookup_person( self, article_person_IN, full_name_IN, create_if_no_match_IN = True, update_person_IN = True, person_details_IN = {}, *args, **kwargs ):
+    
+        '''
+        Accepts:
+           - article_person_IN - Article_Person child instance (Article_Author or Article_Source)
+           - full_name_IN - full name of person we're looking up.
+           - create_if_no_match_IN - optional boolean that indicates whether we want to create a new person if not found
+           - update_person_IN - optional boolean that indicates whether we want to update the person based on stuff in person_details_IN if person found.
+           - person_details_IN - optional dictionary of person details for the current person.  Includes:
+              - PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
+              - PARAM_NEWSPAPER_NOTES = "newspaper_notes"
+              - PARAM_EXTERNAL_UUID_NAME = "external_uuid_name"
+              - PARAM_EXTERNAL_UUID = "external_uuid"
+              - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
+              - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
+           
+        Starting with the methods on Person object:
+
+           - Person.get_person_for_name( full_name_IN, create_if_no_match_IN ).
+           - Person.look_up_person_from_name( full_name_IN ).
+
+        Tries to get person based on full name.  Then, if multiple matches, we
+           attempt to disambiguate.  If new Person created, save the person.
+           Then, if update_person_IN is true, update the person with information
+           from person_details_IN.
+           
+        Returns Article_Person child passed in, with person nested inside it and
+           match_confidence_level set.  If error or none found, person in
+           Article_Person child will be set to None.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "lookup_person"
+        person_instance = None
+        person_qs = None
+        person_count = -1
+        found_person = False
+        newspaper_IN = None
+        uuid_IN = ""
+        person_filter_qs = None
+        person_filter_count = -1
+        confidence_level = 1.0
+        
+        # got a return reference?
+        if ( article_person_IN is not None ):
+        
+            # yes.
+            instance_OUT = article_person_IN
+        
+            # got a name?
+            if ( full_name_IN ):
+            
+                # lookup Person
+                person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN )
+                
+                # Anything returned?
+                if ( person_instance is None ):
+                
+                    # Returned None - either error, or multiple matches.
+                    
+                    # initialize found_person to False.
+                    found_person = False
+                    
+                    # try method that returns QuerySet rather than trying to find just one.
+                    person_qs = Person.look_up_person_from_name( full_name_IN )
+                    person_count = person_qs.count()
+                    
+                    # got multiple matches?
+                    if ( person_count > 1 ):
+                    
+                        # yes.  Try to disambiguate.
+                        
+                        # got a UUID?
+                        uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
+                        if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
+
+                            # yes.  See if we have one that matches.
+                            person_filter_qs = person_qs.filter( person_external_uuid__UUID = uuid_IN )
+                            
+                            # got any?
+                            person_filter_count = person_filter_qs.count()
+                            if ( person_filter_count == 1 ):
+                            
+                                # found match for UUID.
+                                person_instance = person_filter_qs.get()
+                                found_person = True
+                                confidence_level = 1.0
+                            
+                            #-- END check to see if single match. --#                            
+
+                        #-- END check to see if UUID --#
+                        
+                        # got a newspaper (and UUID didn't match)?
+                        newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+                        if ( ( newspaper_IN is not None ) and ( found_person == False ) ):
+                        
+                            # see if any have same paper as that passed in.
+                            person_filter_qs = person_qs.filter( person_newspaper__newspaper = newspaper_IN )
+                            
+                            # got any?
+                            person_filter_count = person_filter_qs.count()
+                            if ( person_filter_count == 1 ):
+                            
+                                # found match for newspaper.
+                                person_instance = person_filter_qs.get()
+                                found_person = True
+                                confidence_level = 0.5
+                            
+                            #-- END check to see if single match. --#                            
+                            
+                        #-- END check to see if newspaper passed in. --#
+                    
+                    else:
+                    
+                        # Ummm, not more than one match, nothing returned.  Error.
+                        self.output_debug( "In " + me + ": no person found or created.  Error." )
+                        found_person = False
+                        
+                        # !perhaps could do sanity check by looking for UUID here...
+                    
+                    #-- END check to see if multiple matches --#
+                
+                else:
+                
+                    # found a person!
+                    found_person = True
+                
+                #-- END check to see if person found. --#
+                
+                # only print if debug is on.
+                if ( self.DEBUG_FLAG == True ):
+                
+                    # debug is on.  log it.
+                    self.output_debug( "In " + me + " person match = " + str( person_instance ) )
+                
+                #-- END check to see if debug is on --#
+            
+            #-- END check to see if name. --#
+            
+            # got a person?
+            if ( found_person == True ):
+            
+                # if no ID, is new.  Save to database.
+                if ( not( person_instance.id ) ):
+                
+                    # no ID.  Save the record.
+                    person_instance.save()
+                    my_logger.debug( "In " + me + ": saving new person - " + str( person_instance ) )
+                    
+                #-- END check to see if new Person. --#
+    
+                # update person, too?
+                if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                
+                    # yes.
+                    person_instance = self.update_person( person_instance, person_details_IN )
+                
+                #-- END check to see if we update person --#
+                
+                # place person inside Article_Source instance.
+                instance_OUT.person = person_instance
+                instance_OUT.match_confidence_level = confidence_level
+                
+            #-- END check to see if person found or created --#
+            
+        #-- END check to see if Article_Person child instance present --#
+            
+        return instance_OUT
+    
+    #-- END method lookup_person() --#
+
+
     def output_debug( self, message_IN ):
     
         '''
@@ -608,6 +794,7 @@ class ArticleCoder( BasicRateLimited ):
         author_and_part = ""
         author_comma_part = ""
         author_name = ""
+        person_details_dict = {}
         author_person = None
         article_author = None
         article_author_qs = None
@@ -690,22 +877,28 @@ class ArticleCoder( BasicRateLimited ):
                     #    person.
                     for author_name in author_name_list:
                     
-                        # first, call Person method to find matching person for
-                        #    name.
-                        author_person = Person.get_person_for_name( author_name, True )
+                        # first, lookup person to match name.
+                        author_person = self.lookup_person( author_name, True )
                         
+                        # make empty article source to work with, for now.
+                        article_author = Article_Author()
+                        
+                        # prepare person details.
+                        person_details_dict = {}
+                        person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+            
+                        # lookup person - returns person and confidence score inside
+                        #    Article_Author instance.
+                        article_author = self.lookup_person( article_author, 
+                                                             author_name,
+                                                             create_if_no_match_IN = True,
+                                                             update_person_IN = True,
+                                                             person_details_IN = person_details_dict )
+                        author_person = article_author.person
+
                         # got a person?
                         if ( author_person ):
     
-                            # if no ID, is new.  Save to database.
-                            if ( not( author_person.id ) ):
-                            
-                                # no ID.  Save the record.
-                                author_person.save()
-                                my_logger.debug( "In " + me + ": saving new person - " + str( author_person ) )
-                                
-                            #-- END check to see if new Person. --#
-                            
                             # Now, we need to deal with Article_Author instance.
                             #    First, see if there already is one for this
                             #    name.  If so, do nothing.  If not, make one.
@@ -715,7 +908,9 @@ class ArticleCoder( BasicRateLimited ):
                             if ( article_author_qs.count() == 0 ):
                                                          
                                 # no - add - including organization string.
-                                article_author = Article_Author()
+
+                                # use article_author already created above.
+                                #article_author = Article_Author()
                                 article_author.article_data = article_data_IN
                                 article_author.person = author_person
                                 article_author.organization_string = author_organization
@@ -843,6 +1038,126 @@ class ArticleCoder( BasicRateLimited ):
         properties.update( props_IN )
 
     #-- END method update_config_properties() --#
+    
+
+    def update_person( self, person_IN, person_details_IN = {}, *args, **kwargs ):
+        
+        '''
+        Accepts person instance, and then accepts dictionary of all the stuff you
+           could place as additional detail to help disambiguate a person in
+           person_details_IN.  Looks to see if this stuff has been associated
+           with person.  If yes, does nothing.  If no, creates associations.
+           Returns person.
+           
+        Associations supported:
+           
+        - Person_Newspaper - columns:        
+            - newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+            - notes = models.TextField( blank = True, null = True )
+
+        - Person_External_UUID - columns:
+            - name = models.CharField( max_length = 255, null = True, blank = True )
+            - UUID = models.TextField( blank = True, null = True )
+            - source = models.CharField( max_length = 255, null = True, blank = True )
+            - notes = models.TextField( blank = True, null = True )
+            
+        - Alternate_Name - columns:
+            - same as Person, but with addition that these are child records of
+               a person, to hold alternate names, so you can search against this 
+               as well as Person.
+            - pending...
+        '''
+        
+        # return reference
+        person_OUT = None
+        
+        # declare variables.
+        newspaper_IN = None
+        newspaper_notes_IN = ""
+        external_uuid_name_IN = ""
+        external_uuid_IN = ""
+        external_uuid_source_IN = ""
+        external_uuid_notes_IN = ""
+        
+        # declare variables - related newspapers
+        related_paper_qs = None
+        related_paper_count = -1
+        
+        # declare variables - related UUIDs
+        related_uuid_qs = None
+        related_uuid_count = -1
+        temp_instance = None
+        
+        # got a person?
+        if ( person_IN is not None ):
+        
+            # place person into output reference
+            person_OUT = person_IN
+        
+            # get values from kwargs
+            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            newspaper_notes_IN = person_details_IN.get( self.PARAM_NEWSPAPER_NOTES, None )
+            external_uuid_name_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NAME, None )
+            external_uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
+            external_uuid_source_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_SOURCE, None )
+            external_uuid_notes_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
+            
+            # got a newspaper instance?
+            if ( newspaper_IN is not None ):
+            
+                # we have a newspaper.  See if the person is already associated with
+                #    the paper.
+                related_paper_qs = person_IN.person_newspaper_set.filter( newspaper = newspaper_IN )
+                
+                # got a match?
+                related_paper_count = related_paper_qs.count()
+                if ( related_paper_count == 0 ):
+                
+                    # No. Relate newspaper to person.
+                    temp_instance = Related_Newspaper()
+
+                    # set values
+                    temp_instance.newspaper = newspaper_IN
+                    temp_instance.notes = newspaper_notes_IN
+                    
+                    # save.
+                    temp_instance.save()
+                
+                #-- END check to see if paper already related. --#
+            
+            #-- END check to see if newspaper_IN present --#
+            
+            # got a UUID value?
+            if ( ( external_uuid_IN is not None ) and ( external_uuid_IN != "" ) ):
+            
+                # we do.  See if person is already associated with the UUID.
+                related_uuid_qs = person_IN.person_external_uuid_set.filter( UUID = external_uuid_IN )
+                
+                # got a match?
+                related_uuid_count = related_uuid_qs.count()
+                if ( related_uuid_count == 0 ):
+                
+                    # not yet associated.  Make Person_External_UUID association.
+                    temp_instance = Person_External_UUID()
+
+                    # set values
+                    temp_instance.name = external_uuid_name_IN
+                    temp_instance.UUID = external_uuid_IN
+                    temp_instance.source = external_uuid_source_IN
+                    temp_instance.notes = external_uuid_notes_IN
+                    
+                    # save.
+                    temp_instance.save()
+
+                #-- END check to see if UUID match. --#
+            
+            #-- END check to see if external UUID --#
+            
+        #-- END check to see if person passed in --#
+
+        return person_OUT
+        
+    #-- END method update_person() --#
     
 
 #-- END class ArticleCoder --#
