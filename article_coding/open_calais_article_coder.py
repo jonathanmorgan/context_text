@@ -105,6 +105,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     # Open Calais API URL
     OPEN_CALAIS_REST_API_URL = "http://api.opencalais.com/tag/rs/enrich"
     
+    # variables to hold strings related to OpenCalais.
+    OPEN_CALAIS_UUID_NAME = "OpenCalais API URI (URL)"
+    
 
     #============================================================================
     # Instance variables
@@ -638,8 +641,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             # prepare person details.
             person_details_dict = {}
             person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+            person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
             person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
-            person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.CONFIG_APPLICATION
+            person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
 
             # lookup person - returns person and confidence score inside
             #    Article_Source instance.
@@ -667,7 +671,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 # Now, we need to deal with Article_Source instance.  First, see
                 #    if there already is one for this name.  If so, do nothing.
                 #    If not, make one.
-                article_source_qs = article_data_IN.article_source_set.filter( person = source_person_IN )
+                article_source_qs = article_data_IN.article_source_set.filter( person = source_person )
                 
                 # got anything?
                 if ( article_source_qs.count() == 0 ):
@@ -689,7 +693,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     article_source.more_title = ""
                     article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
                     #article_source.document = None
-                    article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
                     article_source.source_contact_type = None
                     #article_source.source_capacity = None
                     #article_source.localness = None
@@ -700,6 +703,14 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 
                     # !TODO - article_source.save()
                     
+                    # !TODO - topics?
+                    # if we want to set topics, first save article_source, then
+                    #    we can parse them out of the JSON, make sure they exist
+                    #    in topics table, then add relation.  Probably want to
+                    #    make Person_Topic also.  So, if we do this, it will be
+                    #    a separate method.
+                    #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
+
                     my_logger.debug( "In " + me + ": adding Article_Source instance for " + str( source_person ) + "." )
     
                 else:

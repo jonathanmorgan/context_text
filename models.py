@@ -414,7 +414,9 @@ class Abstract_Person( models.Model ):
     last_name = models.CharField( max_length = 255 )
     name_prefix = models.CharField( max_length = 255, blank = True, null = True )
     name_suffix = models.CharField( max_length = 255, blank = True, null = True )
+    nickname = models.CharField( max_length = 255, blank = True, null = True )
     full_name_string = models.CharField( max_length = 255, blank = True, null = True )
+    original_name_string = models.CharField( max_length = 255, blank = True, null = True )
     gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
     title = models.CharField( max_length = 255, blank = True )
     nameparser_pickled = models.TextField( blank = True, null = True )
@@ -435,8 +437,8 @@ class Abstract_Person( models.Model ):
     #----------------------------------------------------------------------
     
     
-    @staticmethod
-    def get_person_for_name( name_IN, create_if_no_match_IN = False ):
+    @classmethod
+    def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -464,7 +466,7 @@ class Abstract_Person( models.Model ):
         if ( name_IN ):
         
             # try to retrieve person for name.
-            person_qs = Person.look_up_person_from_name( name_IN )
+            person_qs = cls.look_up_person_from_name( name_IN, parsed_name_IN = parsed_name_IN )
             
             # got a match?
             person_count = person_qs.count()
@@ -481,7 +483,7 @@ class Abstract_Person( models.Model ):
                 if ( create_if_no_match_IN == True ):
                 
                     # create new Person!
-                    instance_OUT = Person()
+                    instance_OUT = cls()
                     
                     # store name
                     instance_OUT.set_name( name_IN )
@@ -493,7 +495,7 @@ class Abstract_Person( models.Model ):
                     # return None!
                     instance_OUT = None
                     
-                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, returning Nones!" )
+                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, returning None!" )
                     
                 #-- END check to see if we create on no match. --#
                 
@@ -518,8 +520,8 @@ class Abstract_Person( models.Model ):
     #-- END method get_person_for_name() --#
 
 
-    @staticmethod
-    def look_up_person_from_name( name_IN = "" ):
+    @classmethod
+    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -544,14 +546,25 @@ class Abstract_Person( models.Model ):
         middle = ""
         last = ""
         suffix = ""
+        nickname = ""
         person_qs = None
         person_count = -1
                 
         # got a name?
         if ( name_IN ):
         
-            # yes.  Parse it using HumanName class from nameparser.
-            parsed_name = HumanName( name_IN )          
+            # Got a pre-parsed name?
+            if ( parsed_name_IN is not None ):
+
+                # yes. Use it.
+                parsed_name = parsed_name_IN
+                
+            else:
+            
+                # no. Parse name_IN using HumanName class from nameparser.
+                parsed_name = HumanName( name_IN )
+                
+            #-- END check to see if pre-parsed name. --#         
             
             # Use parsed values to build a search QuerySet.  First, get values.
             prefix = parsed_name.title
@@ -559,9 +572,10 @@ class Abstract_Person( models.Model ):
             middle = parsed_name.middle
             last = parsed_name.last
             suffix = parsed_name.suffix
+            nickname = parsed_name.nickname
             
             # build up queryset.
-            qs_OUT = Person.objects.all()
+            qs_OUT = cls.objects.all()
             
             # got a prefix?
             if ( prefix ):
@@ -603,6 +617,14 @@ class Abstract_Person( models.Model ):
                 
             #-- END suffix --#
             
+            # nickname
+            if ( nickname ):
+    
+                # add value to query
+                qs_OUT = qs_OUT.filter( nickname__iexact = nickname )
+                
+            #-- END nickname --#
+            
         else:
         
             # No name, returning None
@@ -615,6 +637,49 @@ class Abstract_Person( models.Model ):
     #-- END static method look_up_person_from_name() --#
     
 
+    @classmethod
+    def standardize_name_part( cls, name_part_IN ):
+        
+        '''
+        Accepts string name part, does the following to standardize it, in this
+        order:
+           - removes any commas.
+           - strips white space from the beginning and end.
+           - More to come?
+           
+        preconditions: None.
+
+        postconditions: None.
+        '''
+        
+        # return reference
+        name_part_OUT = ""
+        
+        # declare variables
+        working_string = ""
+        
+        # start with name part passed in.
+        working_string = name_part_IN
+        
+        # first, check to see if anything passed in.
+        if ( ( working_string is not None ) and ( working_string != "" ) ):
+        
+            # remove commas.
+            working_string = working_string.replace( ",", "" )
+            
+            # strip white space.
+            working_string = working_string.strip()
+
+        #-- END check to see if anything passed in. --#
+
+        # return working_string.
+        name_part_OUT = working_string
+
+        return name_part_OUT
+        
+    #-- END method standardize_name_part() --#
+        
+        
     #----------------------------------------------------------------------
     # instance methods
     #----------------------------------------------------------------------
@@ -630,7 +695,7 @@ class Abstract_Person( models.Model ):
             
         #-- END check to see if ID --#
                 
-        string_OUT = self.last_name + ', ' + self.first_name
+        string_OUT += self.last_name + ', ' + self.first_name
         
         # middle name?
         if ( self.middle_name ):
@@ -648,6 +713,98 @@ class Abstract_Person( models.Model ):
         return string_OUT
 
     #-- END method __str__() --#
+
+
+    def standardize_name_parts( self ):
+        
+        '''
+        This method looks at each part of a name and for each, calls the method
+           standardize_name_part() to do the following to standardize it, in this
+           order:
+           - removes any commas.
+           - strips white space from the beginning and end.
+           - More to come?  Best list is in standardize_name_part()
+           
+        preconditions: None.
+
+        postconditions: if needed, name parts in instance are updated to be
+           standardized.  Instance is not saved.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "standardize_name_parts"
+        
+        # standardize name parts.
+        if ( self.name_prefix ):
+    
+            self.name_prefix = self.standardize_name_part( self.name_prefix )
+            
+        #-- END check to see if name_prefix.
+        
+        if ( self.first_name ):
+    
+            self.first_name = self.standardize_name_part( self.first_name )
+            
+        #-- END check to see if first_name.
+        
+        if ( self.middle_name ):
+    
+            self.middle_name = self.standardize_name_part( self.middle_name )
+            
+        #-- END check to see if middle_name.
+        
+        if ( self.last_name ):
+    
+            self.last_name = self.standardize_name_part( self.last_name )
+            
+        #-- END check to see if last_name.
+        
+        if ( self.name_suffix ):
+    
+            self.name_suffix = self.standardize_name_part( self.name_suffix )
+            
+        #-- END check to see if name_suffix.
+        
+        if ( self.nickname ):
+    
+            self.nickname = self.standardize_name_part( self.nickname )
+            
+        #-- END check to see if nickname.
+        
+        return instance_OUT
+        
+    #-- END method clean_up_name_parts() --#
+
+
+    def save( self, *args, **kwargs ):
+        
+        '''
+        Overridden save() method that automatically creates a full name string
+           for a person in case one is not specified.
+
+        Note: looks like child classes don't have to override save method.
+        '''
+        
+        # declare variables.
+        name_HumanName = None
+        generated_full_name_string = ""
+        
+        # standardize name parts
+        self.standardize_name_parts()
+        
+        # Make one HumanName() instance.
+        name_HumanName = self.to_HumanName()
+            
+        # use it to update the full_name_string.
+        self.full_name_string = unicode( name_HumanName )
+        
+        # call parent save() method.
+        super( Abstract_Person, self ).save( *args, **kwargs )
+        
+    #-- END method save() --#
 
 
     def set_name( self, name_IN = "" ):
@@ -670,6 +827,7 @@ class Abstract_Person( models.Model ):
         middle = ""
         last = ""
         suffix = ""
+        nickname = ""
                 
         # No name, returning None
         output_debug( "In " + me + ": storing name: " + name_IN )
@@ -686,6 +844,7 @@ class Abstract_Person( models.Model ):
             middle = parsed_name.middle
             last = parsed_name.last
             suffix = parsed_name.suffix
+            nickname = parsed_name.nickname
             
             # got a prefix?
             if ( prefix ):
@@ -727,8 +886,16 @@ class Abstract_Person( models.Model ):
                 
             #-- END suffix --#
             
+            # nickname
+            if ( nickname ):
+    
+                # set value
+                self.nickname = nickname
+                
+            #-- END nickname --#
+            
             # Finally, store the full name string (and the pickled object?).
-            self.full_name_string = str( parsed_name )
+            self.full_name_string = unicode( parsed_name )
             #self.nameparser_pickled = pickle.dumps( parsed_name )
             
         else:
@@ -738,8 +905,70 @@ class Abstract_Person( models.Model ):
         
         #-- END check to see if we have a name. --#
         
-    #-- END static method look_up_person_from_name() --#
+    #-- END ethod set_name() --#
     
+
+    def to_HumanName( self ):
+        
+        '''
+        This method creates a nameparser HumanName() object instance, then uses
+           the values from this Abstract_Person instance to populate it.  Returns
+           the HumanName instance.
+           
+        preconditions: None.
+        postconditions: None.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "to_HumanName"
+        
+        # make HumanString instance.
+        instance_OUT = HumanName()
+
+        # Use nested values to populate HumanName.
+        if ( self.name_prefix ):
+    
+            instance_OUT.title = self.name_prefix
+            
+        #-- END check to see if name_prefix.
+        
+        if ( self.first_name ):
+    
+            instance_OUT.first = self.first_name
+            
+        #-- END check to see if first_name.
+        
+        if ( self.middle_name ):
+    
+            instance_OUT.middle = self.middle_name
+            
+        #-- END check to see if middle_name.
+        
+        if ( self.last_name ):
+    
+            instance_OUT.last = self.last_name
+            
+        #-- END check to see if last_name.
+        
+        if ( self.name_suffix ):
+    
+            instance_OUT.suffix = self.name_suffix
+            
+        #-- END check to see if name_suffix.
+        
+        if ( self.nickname ):
+    
+            instance_OUT.nickname = self.nickname
+            
+        #-- END check to see if nickname.
+        
+        return instance_OUT
+        
+    #-- END method to_HumanName() --#
+
 
 #== END Abstract_Person Model ===========================================================#
 
@@ -784,7 +1013,7 @@ class Person( Abstract_Person ):
             
         #-- END check to see if ID --#
                 
-        string_OUT = self.last_name + ', ' + self.first_name
+        string_OUT += self.last_name + ', ' + self.first_name
         
         # middle name?
         if ( self.middle_name ):

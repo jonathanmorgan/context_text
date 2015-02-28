@@ -553,6 +553,8 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables
         me = "lookup_person"
+        name_part_list = []
+        name_part_count = -1
         person_instance = None
         person_qs = None
         person_count = -1
@@ -572,6 +574,11 @@ class ArticleCoder( BasicRateLimited ):
             # got a name?
             if ( full_name_IN ):
             
+                # first, gather a little information on the name.
+                name_part_list = full_name_IN.split()
+                name_part_count = len( name_part_list )
+                self.output_debug( "******** In " + me + ": name part count = " + str( name_part_count ) )
+                
                 # lookup Person
                 person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN )
                 
@@ -667,7 +674,7 @@ class ArticleCoder( BasicRateLimited ):
                 
                     # no ID.  Save the record.
                     person_instance.save()
-                    my_logger.debug( "In " + me + ": saving new person - " + str( person_instance ) )
+                    self.output_debug( "In " + me + ": saving new person - " + str( person_instance ) )
                     
                 #-- END check to see if new Person. --#
     
@@ -877,9 +884,6 @@ class ArticleCoder( BasicRateLimited ):
                     #    person.
                     for author_name in author_name_list:
                     
-                        # first, lookup person to match name.
-                        author_person = self.lookup_person( author_name, True )
-                        
                         # make empty article source to work with, for now.
                         article_author = Article_Author()
                         
@@ -1114,9 +1118,10 @@ class ArticleCoder( BasicRateLimited ):
                 if ( related_paper_count == 0 ):
                 
                     # No. Relate newspaper to person.
-                    temp_instance = Related_Newspaper()
+                    temp_instance = Person_Newspaper()
 
                     # set values
+                    temp_instance.person = person_IN
                     temp_instance.newspaper = newspaper_IN
                     temp_instance.notes = newspaper_notes_IN
                     
@@ -1141,6 +1146,7 @@ class ArticleCoder( BasicRateLimited ):
                     temp_instance = Person_External_UUID()
 
                     # set values
+                    temp_instance.person = person_IN
                     temp_instance.name = external_uuid_name_IN
                     temp_instance.UUID = external_uuid_IN
                     temp_instance.source = external_uuid_source_IN
