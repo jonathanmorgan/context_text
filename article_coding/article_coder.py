@@ -101,6 +101,11 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
 
+    # for lookup, match statuses
+    MATCH_STATUS_SINGLE = "single"
+    MATCH_STATUS_MULTIPLE = "multiple"
+    MATCH_STATUS_NONE = "none"
+
 
     #----------------------------------------------------------------------------
     # instance variables
@@ -517,6 +522,131 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method load_config_properties() --#
     
     
+    def lookup_calc_confidence( self, person_IN, person_details_IN = {}, *args, **kwargs ):
+
+        '''
+        Invoked by lookup_person(), calculates confidence score for person
+           passed in, returns decimal confidence score between 0 (no confidence)
+           and 1 (high confidence).
+        
+        Accepts:
+           - person_IN - Article_Person child instance (Article_Author or Article_Source)
+           - person_details_IN - optional dictionary of person details for the current person.  Includes:
+              - PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
+              - PARAM_NEWSPAPER_NOTES = "newspaper_notes"
+              - PARAM_EXTERNAL_UUID_NAME = "external_uuid_name"
+              - PARAM_EXTERNAL_UUID = "external_uuid"
+              - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
+              - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
+           
+        Current confidence checks (subtracts 0.1 each if not present):
+        - If UUID present in person_details_IN, checks to see if person has that UIID related.  If not, -0.1.
+        - If UUID present in person_details_IN, checks to see if any other person has that UIID related.  If yes...  Uh Oh.
+        - If newspaper present, checks to see if person is related to that newspaper.  If not, -0.1.  
+        '''
+
+        # return reference
+        value_OUT = 0.0
+        
+        # declare variables.
+        me = "lookup_calc_confidence"
+        newspaper_IN = None
+        uuid_IN = ""
+        person_id = -1
+        confidence_level = 0.0
+        confidence_qs = None
+        confidence_count = -1
+        current_person = None
+
+        
+        # got a person?
+        if ( person_IN is not None ):
+        
+            # load up incoming things we care about here.
+            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
+            person_id = person_IN.id
+        
+            # start confidence at 1
+            confidence_level = 1.0
+            
+            # got a UUID?
+            if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
+
+                # yes.  See if we have one that matches.
+                confidence_qs = person_IN.person_external_uuid_set.filter( uuid = uuid_IN )
+                
+                # got any?
+                confidence_count = confidence_qs.count()
+                if ( confidence_count == 0 ):
+                
+                    # no match for UUID.
+                    confidence_level = confidence_level - 0.1
+                
+                elif ( confidence_count > 1 ):
+                
+                    # multiple matches!  Error.
+                    self.output_debug( "In " + me + ": ERROR - While calculating confidence, multiple matches for UUID \"" + uuid_IN + "\"" )
+                
+                #-- END check to see if match. --#
+                
+                # see if anyone else has this UUID.
+                confidence_qs = Person.objects.filter( person_external_uuid__uuid = uuid_IN )
+                confidence_count = confidence_qs.exclude( pk = person_id )
+                
+                # got any?
+                confidence_count = confidence_qs.count()
+                if ( confidence_count > 0 ):
+                
+                    # found match for UUID other than this person.
+                    confidence_level = confidence_level - 2.0
+                    
+                    self.output_debug( "In " + me + ": ERROR - found people other than the one passed in with UUID." )
+                    self.output_debug( "In " + me + ": Person passed in: " + str( person_IN ) )
+                    self.output_debug( "In " + me + ": Others:" )
+
+                    # output other people, for debugging.
+                    for current_person in confidence_qs:
+                    
+                        self.output_debug( "In " + me + ": - " + str( current_person ) )
+                    
+                    #-- END loop over corrupted UUID persons. --#
+                
+                #-- END check to see if single match. --#                            
+            
+            #-- END check to see if UUID --#
+            
+            # got a newspaper?
+            if ( newspaper_IN is not None ):
+            
+                # see if any have same paper as that passed in.
+                confidence_qs = person_IN.person_newspaper_set.filter( newspaper = newspaper_IN )
+                
+                # got any?
+                confidence_count = confidence_qs.count()
+                if ( confidence_count == 0 ):
+                
+                    # no match for paper.
+                    confidence_level = confidence_level - 0.1
+                    
+                elif ( confidence_count > 1 ):
+                
+                    # multiple matches!  Error.
+                    self.output_debug( "In " + me + ": ERROR - While calculating confidence, multiple matches for newspaper: " + str( newspaper_IN ) )
+                
+                #-- END check to see if single match. --#                            
+                
+            #-- END check to see if newspaper passed in. --#
+
+        #-- END check to see if person. --#
+        
+        value_OUT = confidence_level
+
+        return value_OUT
+
+    #-- END abstract method load_config_properties() --#
+    
+    
     def lookup_person( self, article_person_IN, full_name_IN, create_if_no_match_IN = True, update_person_IN = True, person_details_IN = {}, *args, **kwargs ):
     
         '''
@@ -553,20 +683,37 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables
         me = "lookup_person"
-        name_part_list = []
-        name_part_count = -1
+        newspaper_IN = None
+        uuid_IN = ""
         person_instance = None
+        lookup_status = ""
+        standardized_full_name = ""
+        full_name_qs = None
+        full_name_count = -1
+        current_person = None
+        multiple_qs = None
+        multiple_count = -1
+        confidence_level = 1.0
+        
+        # declare variables - match status
+        match_status = ""
+        multiple_list = []
+        
+        # declare variables - disambiguation
+        person_id_list = []
         person_qs = None
         person_count = -1
         found_person = False
-        newspaper_IN = None
-        uuid_IN = ""
         person_filter_qs = None
         person_filter_count = -1
-        confidence_level = 1.0
+        
         
         # got a return reference?
         if ( article_person_IN is not None ):
+
+            # load up incoming things we care about here.
+            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
         
             # yes.
             instance_OUT = article_person_IN
@@ -574,88 +721,320 @@ class ArticleCoder( BasicRateLimited ):
             # got a name?
             if ( full_name_IN ):
             
-                # first, gather a little information on the name.
-                name_part_list = full_name_IN.split()
-                name_part_count = len( name_part_list )
-                self.output_debug( "******** In " + me + ": name part count = " + str( name_part_count ) )
-                
+        #------------------------------------------------------------------------
+        # !Search/Lookup phase
+        #
+        # After this phase of lookup, the following variables will be set:
+        # - match_status - set to either self.MATCH_STATUS_NONE, self.MATCH_STATUS_SINGLE, or self.MATCH_STATUS_MULTIPLE.
+        # - person_instance
+        #    - if match_status = self.MATCH_STATUS_SINGLE, set to the single match found.
+        #    - if match_status = self.MATCH_STATUS_NONE, contains Person instance created from name passed in, not yet saved to database.
+        #    - if match_status = self.MATCH_STATUS_MULTIPLE, should be ignored (should be None).
+        # - multiple_list
+        #    - if match_status = self.MATCH_STATUS_MULTIPLE - contains a list of Person instances of potential matches.
+        #    - if match_status is self.MATCH_STATUS_SINGLE or self.MATCH_STATUS_NONE, should be ignored (should be empty List).
+        #------------------------------------------------------------------------
+            
                 # lookup Person
                 person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN )
+                lookup_status = Person.get_person_lookup_status( person_instance )
                 
-                # Anything returned?
-                if ( person_instance is None ):
+                # Decide what to do based on status.
                 
-                    # Returned None - either error, or multiple matches.
-                    
-                    # initialize found_person to False.
-                    found_person = False
-                    
-                    # try method that returns QuerySet rather than trying to find just one.
-                    person_qs = Person.look_up_person_from_name( full_name_IN )
-                    person_count = person_qs.count()
-                    
-                    # got multiple matches?
-                    if ( person_count > 1 ):
-                    
-                        # yes.  Try to disambiguate.
-                        
-                        # got a UUID?
-                        uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
-                        if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
+                # Person.LOOKUP_STATUS_FOUND - found exactly one match.
+                if ( lookup_status == Person.LOOKUP_STATUS_FOUND ):
+                
+                    # found one match.
+                    match_status = self.MATCH_STATUS_SINGLE
+                
+                # Person.LOOKUP_STATUS_NEW - no match, new record created.
+                elif ( lookup_status == Person.LOOKUP_STATUS_NEW ):
+                
+                    # no match.
+                    match_status = self.MATCH_STATUS_NONE
 
-                            # yes.  See if we have one that matches.
-                            person_filter_qs = person_qs.filter( person_external_uuid__UUID = uuid_IN )
+                # Person.LOOKUP_STATUS_NONE - either multiple found or none.
+                elif ( lookup_status == Person.LOOKUP_STATUS_NONE ):
+                
+                    # could either be multiple matches for name or no matches
+                    #    depending on whether create_if_no_match_IN is True or
+                    #    False.  Use lookup method to get QuerySet of matches,
+                    #    then based on the results, set match_status and if
+                    #    multiple, add all to multiple_list.
+                    multiple_qs = Person.look_up_person_from_name( full_name_IN )
+                    
+                    # get count
+                    multiple_count = multiple_qs.count()
+                    
+                    # 0 or many?
+                    if ( multiple_count == 0 ):
+                    
+                        # no matches.
+                        match_status = self.MATCH_STATUS_NONE
+                        
+                        # make new person instance for name.
+                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
+                    
+                    elif ( multiple_count == 1 ):
+                    
+                        # one match. What?
+                        match_status = self.MATCH_STATUS_SINGLE
+                        person_instance = multiple_qs.get()
+                        
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " in a part of code where result should have been either 0 or > 1.  Error." )
+                    
+                    elif ( multiple_count > 1 ):
+                    
+                        # more than one.
+                        match_status = self.MATCH_STATUS_MULTIPLE
+                    
+                        # store persons in list.
+                        #multiple_list = list( full_name_qs )
+                        for current_person in full_name_qs:
+                        
+                            # add person to list.
+                            multiple_list.append( current_person )
                             
-                            # got any?
-                            person_filter_count = person_filter_qs.count()
-                            if ( person_filter_count == 1 ):
-                            
-                                # found match for UUID.
-                                person_instance = person_filter_qs.get()
-                                found_person = True
-                                confidence_level = 1.0
-                            
-                            #-- END check to see if single match. --#                            
+                        #-- END loop over QuerySet. --#
 
-                        #-- END check to see if UUID --#
-                        
-                        # got a newspaper (and UUID didn't match)?
-                        newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
-                        if ( ( newspaper_IN is not None ) and ( found_person == False ) ):
-                        
-                            # see if any have same paper as that passed in.
-                            person_filter_qs = person_qs.filter( person_newspaper__newspaper = newspaper_IN )
-                            
-                            # got any?
-                            person_filter_count = person_filter_qs.count()
-                            if ( person_filter_count == 1 ):
-                            
-                                # found match for newspaper.
-                                person_instance = person_filter_qs.get()
-                                found_person = True
-                                confidence_level = 0.5
-                            
-                            #-- END check to see if single match. --#                            
-                            
-                        #-- END check to see if newspaper passed in. --#
+                        # make new person instance for name.
+                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
                     
                     else:
                     
-                        # Ummm, not more than one match, nothing returned.  Error.
-                        self.output_debug( "In " + me + ": no person found or created.  Error." )
-                        found_person = False
-                        
-                        # !perhaps could do sanity check by looking for UUID here...
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + ", which is neither 0, 1, or > 1.  Error." )
                     
-                    #-- END check to see if multiple matches --#
+                    #-- END 
                 
                 else:
                 
-                    # found a person!
-                    found_person = True
+                    self.output_debug( "In " + me + ": Person.get_person_lookup_status() returned \"" + str( lookup_status ) + "\", which is non-standard.  Error." )
+
+                #-- END check to see what we do based on status of lookup. --#
                 
-                #-- END check to see if person found. --#
+                # If no match for parsed name, try looking up using string
+                #    full name (could in some cases be because of nameparser
+                #    parsing error).
+                if ( match_status == self.MATCH_STATUS_NONE ):
+
+                    # no match for parsed name.  Try looking up using string
+                    #    full name (could in some cases be because of nameparser
+                    #    parsing error).
+                    
+                    # get standardized full name.
+                    
+                    # if no person instance, use Person.get_person_for_name() to
+                    #    make one.
+                    if ( person_instance is None ):
+                    
+                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
+                        
+                    #-- END check to see if person_instance --#
+                    
+                    # get full name string.
+                    standardized_full_name = person_instance.full_name_string
+                        
+                    # look for matches based on full name string.
+                    full_name_qs = Person.objects.filter( full_name_string__iexact = standardized_full_name )
+
+                    # got anything back?
+                    full_name_count = full_name_qs.count()
+                    if ( full_name_count == 0 ):
+                    
+                        # nothing returned from looking for full name, either.
+                        match_status = self.MATCH_STATUS_NONE
+                    
+                    elif ( full_name_count == 1 ):
+                    
+                        # found one based on full name.  Parse error?
+                        match_status = self.MATCH_STATUS_SINGLE
+                        
+                        # store person as person_instance.
+                        person_instance = full_name_qs.get()
+                        
+                        # verification will handle assessing confidence.
+                    
+                    elif ( full_name_count > 1 ):
+
+                        # found more than one based on full name.  What to do?
+                        match_status = self.MATCH_STATUS_MULTIPLE
+                        
+                        # store persons in list.
+                        #multiple_list = list( full_name_qs )
+                        for current_person in full_name_qs:
+                        
+                            # add person to list.
+                            multiple_list.append( current_person )
+                            
+                        #-- END loop over QuerySet. --#
+                        
+                    else:
+                    
+                        self.output_debug( "In " + me + ": full_name_qs.count() returned " + str( full_name_count ) + ", which is neither 0, 1, or > 1. Error." )
+                    
+                    #-- END check to see if any matches. --#
                 
+                #-- END check to see if we need to try full-name lookup. --#
+                    
+        #------------------------------------------------------------------------
+        # !Disambiguation Phase
+        # !TODO - if multiple matches, disambiguate?
+        # - try exact match on each?
+        # - UUID?
+        # - newspaper?
+        #------------------------------------------------------------------------
+        
+                '''
+                if ( match_status == self.MATCH_STATUS_MULTIPLE ):
+
+                    # found_person initialize to False
+                    found_person = False
+                    
+                    # try an exact search using the name.
+                    person_qs = Person.look_up_person_from_name( full_name_IN, do_strict_match_IN = True )
+                    
+                    # how many results?  And, if only one, is this really better?
+                    if ( person_qs.count() == 1 ):
+                    
+                        # For now, do nothing - better to just make a new one and
+                        #    acknowledge ambiguity.
+                        pass
+                    
+                    #-- END check to see if only 1 returned from exact. --#
+
+                    # convert multiple list into a QuerySet of those Persons.
+                    person_id_list = []
+                    
+                    # get IDs for each of the multiple Persons.
+                    for current_person in multiple_list:
+                    
+                        # put ID in list.
+                        person_id_list.append( current_person.id )
+                        
+                    #-- END loop over multiple persons. --#
+
+                    # filter on IDs.
+                    person_qs = Person.objects.filter( id__in = person_id_list )
+
+                    # got a UUID?
+                    if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
+
+                        # yes.  See if we have one that matches.
+                        person_filter_qs = person_qs.filter( person_external_uuid__uuid = uuid_IN )
+                        
+                        # got any?
+                        person_filter_count = person_filter_qs.count()
+                        if ( person_filter_count == 1 ):
+                        
+                            # found match for UUID.
+                            person_instance = person_filter_qs.get()
+                            found_person = True
+                            confidence_level = 1.0
+                        
+                        #-- END check to see if single match. --#                            
+
+                    #-- END check to see if UUID --#
+                    
+                    # got a newspaper (and UUID didn't match)?
+                    if ( ( newspaper_IN is not None ) and ( found_person == False ) ):
+                    
+                        # see if any have same paper as that passed in.
+                        person_filter_qs = person_qs.filter( person_newspaper__newspaper = newspaper_IN )
+                        
+                        # got any?
+                        person_filter_count = person_filter_qs.count()
+                        if ( person_filter_count == 1 ):
+                        
+                            # found match for newspaper.
+                            person_instance = person_filter_qs.get()
+                            found_person = True
+                            confidence_level = 0.5
+                        
+                        #-- END check to see if single match. --#                            
+                        
+                    #-- END check to see if newspaper passed in. --#
+                
+                #-- END check to see if multiple. --#
+                '''
+
+        #------------------------------------------------------------------------
+        # !Verification/Confidence phase
+        #
+        # Uses contents of match_status, person_instance, and multiple_list to
+        #    figure out what to return from method call.
+        # - If single person match found, calculates confidence, then places
+        #    person_instance and confidence score into return reference.
+        # - If no match, creates new Person by saving person_instance, then sets
+        #    confidence to 1, stores person_instance in return reference.
+        # - If multiple matches, places list of Person instances for potential
+        #    matches in instance variable
+        #    person_match_list inside return reference.
+        #------------------------------------------------------------------------
+            
+                # so, based on match status, what do we do?
+                # - set confidence level.
+                # - if multiple, store list in return reference.
+
+                # MATCH_STATUS_NONE - no match, new record created.
+                if ( match_status == self.MATCH_STATUS_NONE ):
+                
+                    # should already be a new person instance created above.
+                    
+                    # confidence:
+                    confidence_level = 1.0
+                
+                # MATCH_STATUS_MULTIPLE - multiple matches.  Store multiple list.
+                elif ( match_status == self.MATCH_STATUS_MULTIPLE ):
+                
+                    # should already be a new person instance created above.
+                    
+                    # store multiple list in return reference.
+                    instance_OUT.person_match_list = multiple_list
+
+                    # confidence:
+                    confidence_level = 0.0
+                
+                # MATCH_STATUS_SINGLE - one match.  Calculate confidence.
+                elif ( match_status == self.MATCH_STATUS_SINGLE ):
+                
+                    #  use method to calculate confidence
+                    confidence_level = self.lookup_calc_confidence( person_instance, person_details_IN )
+                
+                else:
+                
+                    self.output_debug( "In " + me + ": match_status is \"" + str( match_status ) + "\", which is non-standard.  Error." )
+
+                #-- END check to see what to do based on match status --#
+                
+                # should always be a Person to return at this point, but being
+                #    cautious, just in case.
+                
+                # got a person (sanity check)?
+                if ( person_instance is not None ):
+                
+                    # if no ID, is new.  Save to database.
+                    if ( not( person_instance.id ) ):
+                    
+                        # no ID.  Save the record.
+                        person_instance.save()
+                        self.output_debug( "In " + me + ": saved new person - " + str( person_instance ) )
+                        
+                    #-- END check to see if new Person. --#
+        
+                    # update person, too?
+                    if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                    
+                        # yes.
+                        person_instance = self.update_person( person_instance, person_details_IN )
+                    
+                    #-- END check to see if we update person --#
+                    
+                    # place person inside Article_Source instance.
+                    instance_OUT.person = person_instance
+                    instance_OUT.match_confidence_level = confidence_level
+                    
+                #-- END check to see if person found or created --#
+
                 # only print if debug is on.
                 if ( self.DEBUG_FLAG == True ):
                 
@@ -665,32 +1044,6 @@ class ArticleCoder( BasicRateLimited ):
                 #-- END check to see if debug is on --#
             
             #-- END check to see if name. --#
-            
-            # got a person?
-            if ( found_person == True ):
-            
-                # if no ID, is new.  Save to database.
-                if ( not( person_instance.id ) ):
-                
-                    # no ID.  Save the record.
-                    person_instance.save()
-                    self.output_debug( "In " + me + ": saving new person - " + str( person_instance ) )
-                    
-                #-- END check to see if new Person. --#
-    
-                # update person, too?
-                if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
-                
-                    # yes.
-                    person_instance = self.update_person( person_instance, person_details_IN )
-                
-                #-- END check to see if we update person --#
-                
-                # place person inside Article_Source instance.
-                instance_OUT.person = person_instance
-                instance_OUT.match_confidence_level = confidence_level
-                
-            #-- END check to see if person found or created --#
             
         #-- END check to see if Article_Person child instance present --#
             
@@ -1082,23 +1435,14 @@ class ArticleCoder( BasicRateLimited ):
         external_uuid_IN = ""
         external_uuid_source_IN = ""
         external_uuid_notes_IN = ""
-        
-        # declare variables - related newspapers
-        related_paper_qs = None
-        related_paper_count = -1
-        
-        # declare variables - related UUIDs
-        related_uuid_qs = None
-        related_uuid_count = -1
-        temp_instance = None
-        
+                
         # got a person?
         if ( person_IN is not None ):
         
             # place person into output reference
             person_OUT = person_IN
         
-            # get values from kwargs
+            # get values from person_details_IN
             newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
             newspaper_notes_IN = person_details_IN.get( self.PARAM_NEWSPAPER_NOTES, None )
             external_uuid_name_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NAME, None )
@@ -1109,53 +1453,18 @@ class ArticleCoder( BasicRateLimited ):
             # got a newspaper instance?
             if ( newspaper_IN is not None ):
             
-                # we have a newspaper.  See if the person is already associated with
-                #    the paper.
-                related_paper_qs = person_IN.person_newspaper_set.filter( newspaper = newspaper_IN )
-                
-                # got a match?
-                related_paper_count = related_paper_qs.count()
-                if ( related_paper_count == 0 ):
-                
-                    # No. Relate newspaper to person.
-                    temp_instance = Person_Newspaper()
-
-                    # set values
-                    temp_instance.person = person_IN
-                    temp_instance.newspaper = newspaper_IN
-                    temp_instance.notes = newspaper_notes_IN
-                    
-                    # save.
-                    temp_instance.save()
-                
-                #-- END check to see if paper already related. --#
+                # Call Person.associate_newspaper - it handles checking to see if
+                #    association is already present.
+                person_OUT.associate_newspaper( newspaper_IN, newspaper_notes_IN )
             
             #-- END check to see if newspaper_IN present --#
             
             # got a UUID value?
             if ( ( external_uuid_IN is not None ) and ( external_uuid_IN != "" ) ):
             
-                # we do.  See if person is already associated with the UUID.
-                related_uuid_qs = person_IN.person_external_uuid_set.filter( UUID = external_uuid_IN )
-                
-                # got a match?
-                related_uuid_count = related_uuid_qs.count()
-                if ( related_uuid_count == 0 ):
-                
-                    # not yet associated.  Make Person_External_UUID association.
-                    temp_instance = Person_External_UUID()
-
-                    # set values
-                    temp_instance.person = person_IN
-                    temp_instance.name = external_uuid_name_IN
-                    temp_instance.UUID = external_uuid_IN
-                    temp_instance.source = external_uuid_source_IN
-                    temp_instance.notes = external_uuid_notes_IN
-                    
-                    # save.
-                    temp_instance.save()
-
-                #-- END check to see if UUID match. --#
+                # we do.  Call Person.associate_external_uuid() - it handles
+                #    checking if association is already present.
+                person_OUT.associate_external_uuid( external_uuid_IN, external_uuid_source_IN, external_uuid_name_IN, external_uuid_notes_IN )
             
             #-- END check to see if external UUID --#
             

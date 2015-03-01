@@ -403,25 +403,38 @@ class Topic( models.Model ):
 @python_2_unicode_compatible
 class Abstract_Person( models.Model ):
 
+    #----------------------------------------------------------------------
+    # constants-ish
+    #----------------------------------------------------------------------    
+
     GENDER_CHOICES = (
         ( 'na', 'Unknown' ),
         ( 'female', 'Female' ),
         ( 'male', 'Male' )
     )
+    
+    # lookup status
+    LOOKUP_STATUS_FOUND = "found"
+    LOOKUP_STATUS_NEW = "new"
+    LOOKUP_STATUS_NONE = "None"
 
-    first_name = models.CharField( max_length = 255 )
-    middle_name = models.CharField( max_length = 255, blank = True )
-    last_name = models.CharField( max_length = 255 )
+    #----------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------
+
+    first_name = models.CharField( max_length = 255, blank = True, null = True )
+    middle_name = models.CharField( max_length = 255, blank = True, null = True )
+    last_name = models.CharField( max_length = 255, blank = True, null = True )
     name_prefix = models.CharField( max_length = 255, blank = True, null = True )
     name_suffix = models.CharField( max_length = 255, blank = True, null = True )
     nickname = models.CharField( max_length = 255, blank = True, null = True )
     full_name_string = models.CharField( max_length = 255, blank = True, null = True )
     original_name_string = models.CharField( max_length = 255, blank = True, null = True )
-    gender = models.CharField( max_length = 6, choices = GENDER_CHOICES )
-    title = models.CharField( max_length = 255, blank = True )
+    gender = models.CharField( max_length = 6, choices = GENDER_CHOICES, blank = True, null = True )
+    title = models.CharField( max_length = 255, blank = True, null = True )
     nameparser_pickled = models.TextField( blank = True, null = True )
     is_ambiguous = models.BooleanField( default = False )
-    notes = models.TextField( blank = True )
+    notes = models.TextField( blank = True, null = True )
 
     # Meta-data for this class.
     class Meta:
@@ -437,8 +450,32 @@ class Abstract_Person( models.Model ):
     #----------------------------------------------------------------------
     
     
+    @staticmethod
+    def HumanName_to_str( human_name_IN ):
+    
+        # return reference
+        string_OUT = ""
+    
+        string_OUT += "HumanName: \"" + unicode( human_name_IN ) + "\"\n"
+        string_OUT += "- title: " + human_name_IN.title + "\n"
+        string_OUT += "- first: " + human_name_IN.first + "\n"
+        string_OUT += "- middle: " + human_name_IN.middle + "\n"
+        string_OUT += "- last: " + human_name_IN.last + "\n"
+        string_OUT += "- suffix: " + human_name_IN.suffix + "\n"
+        string_OUT += "- nickname: " + human_name_IN.nickname + "\n"
+        
+        return string_OUT
+    
+    #-- END static method HumanName_to_str() --#
+
+
+    #----------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------
+    
+    
     @classmethod
-    def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None ):
+    def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None, do_strict_match_IN = False ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -466,7 +503,7 @@ class Abstract_Person( models.Model ):
         if ( name_IN ):
         
             # try to retrieve person for name.
-            person_qs = cls.look_up_person_from_name( name_IN, parsed_name_IN = parsed_name_IN )
+            person_qs = cls.look_up_person_from_name( name_IN, parsed_name_IN = parsed_name_IN, do_strict_match_IN = do_strict_match_IN )
             
             # got a match?
             person_count = person_qs.count()
@@ -521,7 +558,41 @@ class Abstract_Person( models.Model ):
 
 
     @classmethod
-    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None ):
+    def get_person_lookup_status( cls, person_IN ):
+        
+        # return reference
+        status_OUT = ""
+        
+        # declare variables
+        
+        if ( person_IN is not None ):
+        
+            if ( ( person_IN.id ) and ( person_IN.id > 0 ) ):
+            
+                # there is an ID, so this is not a new record.
+                status_OUT = cls.LOOKUP_STATUS_FOUND
+                
+            else:
+            
+                # Person returne, but no ID, so this is a new record - not found.
+                status_OUT = cls.LOOKUP_STATUS_NEW
+                
+            #-- END check to see if ID present in record returned. --#
+                
+        else:
+        
+            # None - either multiple matches (eek!) or error.
+            status_OUT = cls.LOOKUP_STATUS_NONE
+        
+        #-- END check to see if None. --#
+    
+        return status_OUT
+        
+    #-- END class method get_person_lookup_status() --#
+
+
+    @classmethod
+    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -547,8 +618,7 @@ class Abstract_Person( models.Model ):
         last = ""
         suffix = ""
         nickname = ""
-        person_qs = None
-        person_count = -1
+        strict_q = None
                 
         # got a name?
         if ( name_IN ):
@@ -583,6 +653,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( name_prefix__iexact = prefix )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( prefix is None ) or ( prefix == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( name_prefix__isnull = True ) | Q( name_prefix__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+                        
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of prefix is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END check for prefix --#
             
             # first name
@@ -591,6 +682,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( first_name__iexact = first )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( first is None ) or ( first == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( first_name__isnull = True ) | Q( first_name__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+                        
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of first is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END check for first name --#
             
             # middle name
@@ -599,6 +711,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( middle_name__iexact = middle )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( middle is None ) or ( middle == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( middle_name__isnull = True ) | Q( middle_name__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of middle is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END check for middle name --#
 
             # last name
@@ -607,6 +740,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( last_name__iexact = last )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( last is None ) or ( last == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( last_name__isnull = True ) | Q( last_name__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of last is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END check for last name --#
             
             # suffix
@@ -615,6 +769,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( name_suffix__iexact = suffix )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( suffix is None ) or ( suffix == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( name_suffix__isnull = True ) | Q( name_suffix__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of suffix is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END suffix --#
             
             # nickname
@@ -623,6 +798,27 @@ class Abstract_Person( models.Model ):
                 # add value to query
                 qs_OUT = qs_OUT.filter( nickname__iexact = nickname )
                 
+            else:
+            
+                # are we being strict?
+                if ( do_strict_match_IN == True ):
+                
+                    # yes - None or ""?
+                    if ( ( nickname is None ) or ( nickname == "" ) ):
+                    
+                        # for None or "", match to either NULL OR "".
+                        strict_q = Q( nickname__isnull = True ) | Q( nickname__iexact = "" )
+                        qs_OUT = qs_OUT.filter( strict_q )
+
+                    else:
+                    
+                        # for anything else, what?  Stupid Python False values...
+                        pass
+                        
+                    #-- END check to see what exact value of nickname is. --#
+                
+                #-- END check to see if strict. --#
+            
             #-- END nickname --#
             
         else:
@@ -795,7 +991,7 @@ class Abstract_Person( models.Model ):
         # standardize name parts
         self.standardize_name_parts()
         
-        # Make one HumanName() instance.
+        # Make HumanName() instance from this Person's name parts.
         name_HumanName = self.to_HumanName()
             
         # use it to update the full_name_string.
@@ -828,6 +1024,7 @@ class Abstract_Person( models.Model ):
         last = ""
         suffix = ""
         nickname = ""
+        standardized_hn = None
                 
         # No name, returning None
         output_debug( "In " + me + ": storing name: " + name_IN )
@@ -894,9 +1091,13 @@ class Abstract_Person( models.Model ):
                 
             #-- END nickname --#
             
+            # standardize name parts
+            self.standardize_name_parts()
+            
             # Finally, store the full name string (and the pickled object?).
-            self.full_name_string = unicode( parsed_name )
-            #self.nameparser_pickled = pickle.dumps( parsed_name )
+            standardized_hn = self.to_HumanName()
+            self.full_name_string = unicode( standardized_hn )
+            #self.nameparser_pickled = pickle.dumps( standardized_hn )
             
         else:
         
@@ -1031,6 +1232,139 @@ class Person( Abstract_Person ):
         return string_OUT
 
     #-- END method __str__() --#
+    
+
+    def associate_newspaper( self, newspaper_IN, notes_IN = None ):
+        
+        '''
+        Accepts newspaper instance of newspaper in which this person has either
+           written or been quoted, plus optional notes to be stored with the
+           association.  Checks to see if that newspaper is already associated
+           with the person.  If no, creates association.  If yes, returns
+           existing record.  If error, returns None.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        related_newspaper_qs = None
+        related_newspaper_count = -1
+        
+        # got a newspaper?
+        if ( newspaper_IN is not None ):
+        
+            # see if Person_Newspaper for this newspaper.
+            related_newspaper_qs = self.person_newspaper_set.filter( newspaper = newspaper_IN )
+            
+            # got a match?
+            related_newspaper_count = related_newspaper_qs.count()
+            if ( related_newspaper_count == 0 ):
+            
+                # No. Relate newspaper to person.
+                instance_OUT = Person_Newspaper()
+    
+                # set values
+                instance_OUT.person = current_person
+                instance_OUT.newspaper = current_person_newspaper
+                
+                if ( notes_IN is not None ):
+
+                    instance_OUT.notes = notes_IN
+                    
+                #-- END check to see if notes. --#
+                
+                # save.
+                instance_OUT.save()
+
+                print( "----> CREATED TIE." )
+            
+            else:
+            
+                # return reference.  Use get().  If more than one, error, so
+                #    exception is fine.
+                instance_OUT = related_newspaper_qs.get()
+
+                print( "----> Tie already present." )
+            
+            # -- END check to see if Person_Newspaper for current paper. --#
+            
+        #-- END check to see if newspaper passed in. --#
+        
+        return instance_OUT
+        
+    #-- END method associate_newspaper() --#
+    
+
+    def associate_external_uuid( self, uuid_IN, source_IN, name_IN = None, notes_IN = None ):
+        
+        '''
+        Accepts UUID for the person from an external system (the source), plus
+           optional name and notes on the UUID.  Checks to see if that UUID is
+           already associated with the person.  If no, creates association.  If
+           yes, returns existing record.  If error, returns None.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        related_uuid_qs = None
+        related_uuid_count = -1
+        
+        # got a UUID value?
+        if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
+        
+            # we do.  See if person is already associated with the UUID.
+            related_uuid_qs = self.person_external_uuid_set.filter( uuid = uuid_IN )
+            
+            # got a match?
+            related_uuid_count = related_uuid_qs.count()
+            if ( related_uuid_count == 0 ):
+            
+                # not yet associated.  Make Person_External_UUID association.
+                instance_OUT = Person_External_UUID()
+
+                # set values
+                instance_OUT.person = self
+                instance_OUT.uuid = uuid_IN
+                
+                if ( source_IN is not None ):
+
+                    instance_OUT.source = source_IN
+                    
+                #-- END check to see if name passed in. --#
+
+                if ( name_IN is not None ):
+
+                    instance_OUT.name = name_IN
+                    
+                #-- END check to see if name passed in. --#
+                    
+                if ( notes_IN is not None ):
+
+                    instance_OUT.notes = notes_IN
+                    
+                #-- END check to see if name passed in. --#
+                
+                # save.
+                instance_OUT.save()
+
+            else:
+            
+                # return reference.  Use get().  If more than one, error, so
+                #    exception is fine.
+                instance_OUT = related_uuid_qs.get()
+
+                #print( "----> Tie already present." )
+            
+            #-- END check to see if UUID match. --#
+        
+        #-- END check to see if external UUID --#
+
+        return instance_OUT
+        
+    #-- END method associate_external_uuid() --#
     
 
 #== END Person Model ===========================================================#
@@ -1225,7 +1559,7 @@ class Person_External_UUID( models.Model ):
 
     person = models.ForeignKey( Person )
     name = models.CharField( max_length = 255, null = True, blank = True )
-    UUID = models.TextField( blank = True, null = True )
+    uuid = models.TextField( blank = True, null = True )
     source = models.CharField( max_length = 255, null = True, blank = True )
     notes = models.TextField( blank = True, null = True )
 
@@ -1264,9 +1598,9 @@ class Person_External_UUID( models.Model ):
             
         #-- END check to see if newspaper. --#
             
-        if ( self.UUID ):
+        if ( self.uuid ):
         
-            string_OUT += prefix_string + self.UUID
+            string_OUT += prefix_string + self.uuid
             prefix_string = " - "
             
         #-- END check to see if newspaper. --#
@@ -2719,7 +3053,7 @@ class Article_Data( models.Model ):
         ordering = [ 'article', 'last_modified', 'create_date' ]
 
     #----------------------------------------------------------------------------
-    # methods
+    # instance methods
     #----------------------------------------------------------------------------
 
     def __str__( self ):
@@ -2809,10 +3143,18 @@ class Article_Data( models.Model ):
 @python_2_unicode_compatible
 class Article_Person( models.Model ):
 
+    #----------------------------------------------------------------------
+    # constants-ish
+    #----------------------------------------------------------------------    
+
     #RELATION_TYPE_CHOICES = (
     #    ( "author", "Article Author" ),
     #    ( "source", "Article Source" )
     #)
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
 
     article_data = models.ForeignKey( Article_Data )
     person = models.ForeignKey( Person, blank = True, null = True )
@@ -2826,9 +3168,19 @@ class Article_Person( models.Model ):
     class Meta:
         abstract = True
 
-    #----------------------------------------------------------------------
-    # methods
-    #----------------------------------------------------------------------
+    #----------------------------------------------------------------------------
+    # Instance variables
+    #----------------------------------------------------------------------------
+
+
+    # variable to hold list of multiple potentially matching persons, if more
+    #    than one found when lookup is attempted by Article_Coder.
+    person_match_list = []
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
 
 
     def __str__( self ):
