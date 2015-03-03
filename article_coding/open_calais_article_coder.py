@@ -168,7 +168,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         status_OUT = self.STATUS_SUCCESS
         
         # declare variables
-        me = "classmethod process_articles"
+        me = "process_article"
         my_logger = None
         my_exception_helper = None
         exception_message = ""
@@ -653,7 +653,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                                  update_person_IN = True,
                                                  person_details_IN = person_details_dict )
             source_person = article_source.person
-            
+                        
             # got a person?
             if ( source_person is not None ):
 

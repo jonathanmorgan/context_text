@@ -80,7 +80,7 @@ class ArticleCoder( BasicRateLimited ):
     STATUS_OK = "OK!"
 
     # debug
-    DEBUG_FLAG = False
+    DEBUG_FLAG = True
     
     # coder user
     CODER_USERNAME_AUTOMATED = "automated"
@@ -541,8 +541,9 @@ class ArticleCoder( BasicRateLimited ):
            
         Current confidence checks (subtracts 0.1 each if not present):
         - If UUID present in person_details_IN, checks to see if person has that UIID related.  If not, -0.1.
-        - If UUID present in person_details_IN, checks to see if any other person has that UIID related.  If yes...  Uh Oh.
-        - If newspaper present, checks to see if person is related to that newspaper.  If not, -0.1.  
+        - If UUID present in person_details_IN, checks to see if any other person has that UIID related.  If yes...  Uh Oh. -2.0
+        - If newspaper present, checks to see if person is related to that newspaper.  If not, -0.1.
+        - Tries a full-name search.  If others with full-name, -0.1 (though likely a parsing issue...)
         '''
 
         # return reference
@@ -557,7 +558,11 @@ class ArticleCoder( BasicRateLimited ):
         confidence_qs = None
         confidence_count = -1
         current_person = None
-
+        
+        # sanity full-name lookup.
+        standardized_full_name = ""
+        full_name_qs = None
+        full_name_match_count = -1
         
         # got a person?
         if ( person_IN is not None ):
@@ -592,7 +597,7 @@ class ArticleCoder( BasicRateLimited ):
                 
                 # see if anyone else has this UUID.
                 confidence_qs = Person.objects.filter( person_external_uuid__uuid = uuid_IN )
-                confidence_count = confidence_qs.exclude( pk = person_id )
+                confidence_qs = confidence_qs.exclude( pk = person_id )
                 
                 # got any?
                 confidence_count = confidence_qs.count()
@@ -637,10 +642,26 @@ class ArticleCoder( BasicRateLimited ):
                 #-- END check to see if single match. --#                            
                 
             #-- END check to see if newspaper passed in. --#
+            
+            # full name check (just out of curiosity...)
+            standardized_full_name = person_IN.full_name_string
+            
+            # look for matches based on full name string.
+            full_name_qs = Person.objects.filter( full_name_string__iexact = standardized_full_name )
+  
+            # got more than one?
+            if ( full_name_match_count > 1 ):
+            
+                # there are more than one match.  My confidence just decreased.
+                confidence_level = confidence_level - 0.5
+
+            #-- END check to see if duplicates. --#
 
         #-- END check to see if person. --#
         
         value_OUT = confidence_level
+
+        self.output_debug( "In " + me + ": confidence = " + str( value_OUT ) )
 
         return value_OUT
 
@@ -724,6 +745,7 @@ class ArticleCoder( BasicRateLimited ):
         #------------------------------------------------------------------------
         # !Search/Lookup phase
         #
+        # Postconditions:
         # After this phase of lookup, the following variables will be set:
         # - match_status - set to either self.MATCH_STATUS_NONE, self.MATCH_STATUS_SINGLE, or self.MATCH_STATUS_MULTIPLE.
         # - person_instance

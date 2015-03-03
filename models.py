@@ -525,7 +525,7 @@ class Abstract_Person( models.Model ):
                     # store name
                     instance_OUT.set_name( name_IN )
                     
-                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, creating new Person!" )
+                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, creating new Person instance (but not saving yet)!" )
                     
                 else:
                 
@@ -1248,8 +1248,10 @@ class Person( Abstract_Person ):
         instance_OUT = None
         
         # declare variables
+        me = "associate_newspaper"
         related_newspaper_qs = None
         related_newspaper_count = -1
+        debug_message = ""
         
         # got a newspaper?
         if ( newspaper_IN is not None ):
@@ -1277,7 +1279,8 @@ class Person( Abstract_Person ):
                 # save.
                 instance_OUT.save()
 
-                print( "----> CREATED TIE." )
+                debug_message = "In Person." + me + ": ----> created tie from " + str( self ) + " to newspaper " + str( newspaper_IN )
+                output_debug( debug_message )
             
             else:
             
@@ -1285,7 +1288,8 @@ class Person( Abstract_Person ):
                 #    exception is fine.
                 instance_OUT = related_newspaper_qs.get()
 
-                print( "----> Tie already present." )
+                debug_message = "In Person." + me + ": ----> tie exists from " + str( self ) + " to newspaper " + str( newspaper_IN )
+                output_debug( debug_message )
             
             # -- END check to see if Person_Newspaper for current paper. --#
             
@@ -1309,8 +1313,10 @@ class Person( Abstract_Person ):
         instance_OUT = None
         
         # declare variables
+        me = "associate_external_uuid"
         related_uuid_qs = None
         related_uuid_count = -1
+        debug_message = ""
         
         # got a UUID value?
         if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
@@ -1350,13 +1356,17 @@ class Person( Abstract_Person ):
                 # save.
                 instance_OUT.save()
 
+                debug_message = "In Person." + me + ": ----> created tie from " + str( self ) + " to UUID " + uuid_IN
+                output_debug( debug_message )
+            
             else:
             
                 # return reference.  Use get().  If more than one, error, so
                 #    exception is fine.
                 instance_OUT = related_uuid_qs.get()
 
-                #print( "----> Tie already present." )
+                debug_message = "In Person." + me + ": ----> tie exists from " + str( self ) + " to UUID " + uuid_IN
+                output_debug( debug_message )
             
             #-- END check to see if UUID match. --#
         
@@ -3332,7 +3342,7 @@ class Article_Author( Article_Person ):
 
 
     #----------------------------------------------------------------------
-    # methods
+    # instance methods
     #----------------------------------------------------------------------
 
 
@@ -3354,6 +3364,57 @@ class Article_Author( Article_Person ):
 
 
 #= End Article_Author Model ======================================================
+
+
+# Alternate_Author_Match model
+@python_2_unicode_compatible
+class Alternate_Author_Match( models.Model ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+
+    article_author = models.ForeignKey( Article_Author, blank = True, null = True )
+    person = models.ForeignKey( Person, blank = True, null = True )
+
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        if ( self.article_author ):
+        
+            string_OUT += str( aelf.article_author ) + " alternate = "
+        
+        #-- END check to see if article_author. --#
+        
+        # got associated person?  We'd better...
+        if ( self.person ):
+        
+            string_OUT += self.person.last_name + ", " + self.person.first_name
+        
+        #-- END check to see if we have a person. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+
+#= End Alternate_Author_Match Model ======================================================
 
 
 # Article_Source model
@@ -3467,13 +3528,13 @@ class Article_Source( Article_Person ):
     
     # fields to track locations of data this coding was based on within
     #    article.  References are based on results of ParsedArticle.parse().
-    attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_speaker_name_string = models.TextField( blank = True, null = True )
-    is_speaker_name_pronoun = models.BooleanField( default = False )
-    attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
-    attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
+    #attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
+    #attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
+    #attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
+    #attribution_speaker_name_string = models.TextField( blank = True, null = True )
+    #is_speaker_name_pronoun = models.BooleanField( default = False )
+    #attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
+    #attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
     
     # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
@@ -3657,6 +3718,125 @@ class Article_Source( Article_Person ):
 #= End Article_Source Model ======================================================
 
 
+# Alternate_Source_Match model
+@python_2_unicode_compatible
+class Alternate_Source_Match( models.Model ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+
+    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    person = models.ForeignKey( Person, blank = True, null = True )
+
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        if ( self.article_source ):
+        
+            string_OUT += str( self.article_source ) + " alternate = "
+        
+        #-- END check to see if article_source. --#
+        
+        # got associated person?  We'd better...
+        if ( self.person ):
+        
+            string_OUT += self.person.last_name + ", " + self.person.first_name
+        
+        #-- END check to see if we have a person. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+
+#= End Alternate_Source_Match Model ======================================================
+
+
+# Article_Source_Quotation model
+@python_2_unicode_compatible
+class Article_Source_Quotation( models.Model ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+    # source in a given article whom this quote belongs to.
+    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    
+    # quotation itself.
+    quotation = models.TextField( blank = True, null = True )
+    
+    # fields to track locations of data this coding was based on within
+    #    article.  References are based on results of ParsedArticle.parse().
+    attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_speaker_name_string = models.TextField( blank = True, null = True )
+    is_speaker_name_pronoun = models.BooleanField( default = False )
+    attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
+    attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
+    
+    # field to store how source was captured.
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+
+    # other notes.
+    notes = models.TextField( blank = True, null = True )
+
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        if ( self.article_source ):
+        
+            string_OUT += str( self.article_source ) + " : "
+        
+        #-- END check to see if article_source. --#
+        
+        # got associated quotation?...
+        if ( self.quotation ):
+        
+            string_OUT += self.quotation
+                
+        #-- END check to see if we have a quotation. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+#= End Article_Source_Quotation Model ======================================================
+
+
 # Source_Organization model
 @python_2_unicode_compatible
 class Source_Organization( models.Model ):
@@ -3666,7 +3846,7 @@ class Source_Organization( models.Model ):
     title = models.CharField( max_length = 255, blank = True )
 
     #----------------------------------------------------------------------
-    # methods
+    # instance methods
     #----------------------------------------------------------------------
 
     def __str__( self ):
