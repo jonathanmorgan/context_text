@@ -565,7 +565,18 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         person_details_dict = {}
         source_person = None
         article_source_qs = None
-        person_paper = None        
+        person_paper = None
+        
+        # mention processing variables.
+        mention_list = []
+        current_mention = None
+        
+        # quotation processing variables.
+        uri_to_quotation_dictionary = {}
+        person_quote_list = None
+        quote_counter = -1
+        current_quotation_URI = ""
+        quotation_JSON = None
 
         # get logger
         my_logger = self.get_logger()
@@ -628,6 +639,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             # try to get person from URI.
             person_json = my_response_helper.get_item_from_response( person_URI )
             
+            self.output_debug( "+++++ Person JSON\n\n\n" + JSONHelper.pretty_print_json( person_json ) )
+            
             # get and output name.
             person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
             
@@ -657,8 +670,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             # got a person?
             if ( source_person is not None ):
 
-                # !CURRENT - test new fancy lookup.
-                
                 # One Article_Source per person, and then have a new thing to
                 #    hold quotations that hangs off that.
                 # At any rate, make method to process person/quote that you pass:
@@ -680,8 +691,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     
                     # use the article_source created above.
                     #article_source = Article_Source()
-
-                    # !TODO - set contents of Article_Source data fields.
+                
                     article_source.article_data = article_data_IN
                     article_source.person = source_person
                     
@@ -693,7 +703,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     article_source.more_title = ""
                     article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
                     #article_source.document = None
-                    article_source.source_contact_type = None
+                    article_source.source_contact_type = Article_Source.SOURCE_CONTACT_TYPE_OTHER
                     #article_source.source_capacity = None
                     #article_source.localness = None
                     article_source.notes = ""
@@ -701,7 +711,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     # field to store how source was captured.
                     article_source.capture_method = self.CONFIG_APPLICATION
                 
-                    # !TODO - article_source.save()
+                    article_source.save()
                     
                     # !TODO - topics?
                     # if we want to set topics, first save article_source, then
@@ -717,23 +727,68 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 
                     my_logger.debug( "In " + me + ": Article_Source instance already exists for " + str( source_person ) + "." )
                     
+                    # !TODO - want to do any updates?
+                    
                 #-- END check if need new Article_Source instance --#
                 
-                # !TODO - deal with quotes.
-                # then, need to see if there is a quote for this quote.
-                #    Filter on UUID from Quotation JSON object.
-                '''
-                    # fields to track locations of data this coding was based on within
-                    #    article.  References are based on results of ParsedArticle.parse().
-                    article_source.attribution_verb_word_index = -1
-                    article_source.attribution_verb_word_number = -1
-                    article_source.attribution_paragraph_number = -1
-                    article_source.attribution_speaker_name_string = -1
-                    article_source.is_speaker_name_pronoun = False
-                    article_source.attribution_speaker_name_index_range = ""
-                    article_source.attribution_speaker_name_word_range = ""
-    
-                '''
+                # !TODO - deal with mentions.
+                
+                # get list of mentions from Person's "instances"
+                mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
+
+                # loop
+                for current_mention in mention_list:
+                
+                    #-- to start, just print the mention. --#
+                    self.output_debug( "%%%%%%%% Mention JSON:\n\n\n" + JSONHelper.pretty_print_json( current_mention )  )
+                
+                #-- END loop over mentions --#
+
+                # !CURRENT - TODO - deal with quotes.
+                # to start, loop over the quotes associated with the current
+                #    person and see what is in them.
+                
+                # get map of URIs to JSON for "Quotation" item type.
+                uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+                
+                # get quote list for current person.
+                person_quote_list = person_to_quotes_map.get( person_URI, [] )
+                
+                # loop
+                quote_counter = 0
+                for current_quotation_URI in person_quote_list:
+
+                    # increment counter
+                    quote_counter = quote_counter + 1
+
+                    self.output_debug( "Quotation " + str( quote_counter ) + " URI: " + current_quotation_URI )
+                    
+                    # get JSON from URI_to_quotation_dictionary.
+                    quotation_JSON = uri_to_quotation_dictionary.get( current_quotation_URI, None )
+
+                    # got one?
+                    if ( quotation_JSON is not None ):
+
+                        # output JSON.
+                        self.output_debug( "++++++++ Quotation JSON:\n\n\n" + JSONHelper.pretty_print_json( quotation_JSON )  )
+
+                        # then, need to see if there is a quote for this quote.
+                        #    Filter on UUID from Quotation JSON object.
+                        '''
+                        # fields to track locations of data this coding was based on within
+                        #    article.  References are based on results of ParsedArticle.parse().
+                        article_source.attribution_verb_word_index = -1
+                        article_source.attribution_verb_word_number = -1
+                        article_source.attribution_paragraph_number = -1
+                        article_source.attribution_speaker_name_string = -1
+                        article_source.is_speaker_name_pronoun = False
+                        article_source.attribution_speaker_name_index_range = ""
+                        article_source.attribution_speaker_name_word_range = ""
+                        '''
+                        
+                    #-- END check to see if Quotation JSON --#
+                    
+                #-- END loop over quotations --#
 
             else:
             

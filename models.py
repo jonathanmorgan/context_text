@@ -2383,22 +2383,26 @@ class Article( models.Model ):
 #= End Article Model ============================================================
 
 
-# Article_Content model
+# Abstract_Related_Content model
 @python_2_unicode_compatible
-class Article_Content( models.Model ):
+class Abstract_Related_Content( models.Model ):
 
     # Content types:
     CONTENT_TYPE_CANONICAL = 'canonical'
-    CONTENT_TYPE_HTML = 'html'
     CONTENT_TYPE_TEXT = 'text'
+    CONTENT_TYPE_HTML = 'html'
+    CONTENT_TYPE_JSON = 'json'
+    CONTENT_TYPE_XML = 'xml'
     CONTENT_TYPE_OTHER = 'other'
     CONTENT_TYPE_NONE = 'none'
     CONTENT_TYPE_DEFAULT = CONTENT_TYPE_TEXT
     
     CONTENT_TYPE_CHOICES = (
         ( CONTENT_TYPE_CANONICAL, "Canonical" ),
-        ( CONTENT_TYPE_HTML, "HTML" ),
         ( CONTENT_TYPE_TEXT, "Text" ),
+        ( CONTENT_TYPE_HTML, "HTML" ),
+        ( CONTENT_TYPE_JSON, "JSON" ),
+        ( CONTENT_TYPE_XML, "XML" ),
         ( CONTENT_TYPE_OTHER, "Other" ),
         ( CONTENT_TYPE_NONE, "None" )
     )
@@ -2407,17 +2411,19 @@ class Article_Content( models.Model ):
     # model fields and meta
     #----------------------------------------------------------------------
 
-    article = models.ForeignKey( Article, unique = True )
+    #article = models.ForeignKey( Article, unique = True )
     content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
     status = models.CharField( max_length = 255, blank = True, null = True )
+    source = models.CharField( max_length = 255, blank = True, null = True )
+    content_description = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
     # meta class so we know this is an abstract class.
     class Meta:
         abstract = True
-        ordering = [ 'article', 'last_modified', 'create_date' ]
+        ordering = [ 'last_modified', 'create_date' ]
 
     #----------------------------------------------------------------------
     # instance variables
@@ -2425,7 +2431,6 @@ class Article_Content( models.Model ):
 
 
     bs_helper = None
-    content_description = "content"
     
 
     #----------------------------------------------------------------------------
@@ -2519,15 +2524,17 @@ class Article_Content( models.Model ):
             
         #-- END check to see if ID --#
              
-        string_OUT += self.content_description
+        if ( self.content_description ):
+        
+            string_OUT += self.content_description
+            
+        #-- END check to see if content_description --#
         
         if ( self.content_type ):
             
             string_OUT += " of type \"" + self.content_type + "\""
             
         #-- END check to see if there is a type --#
-             
-        string_OUT += " for article: " + str( self.article )
         
         return string_OUT
 
@@ -2546,7 +2553,139 @@ class Article_Content( models.Model ):
     #-- END method __str__() --#
 
 
+#-- END abstract Abstract_Article_Content model --#
+
+
+# Article_Content model
+@python_2_unicode_compatible
+class Article_Content( Abstract_Related_Content ):
+
+    #----------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------
+
+    # allow more than one related piece of "Article_Content" per article.
+    article = models.ForeignKey( Article )
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+        abstract = True
+        ordering = [ 'article', 'last_modified', 'create_date' ]
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def to_string( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        if ( self.id ):
+            
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+             
+        if ( self.content_description ):
+        
+            string_OUT += self.content_description
+            
+        #-- END check to see if content_description --#
+        
+        if ( self.content_type ):
+            
+            string_OUT += " of type \"" + self.content_type + "\""
+            
+        #-- END check to see if there is a type --#
+             
+        string_OUT += " for article: " + str( self.article )
+        
+        return string_OUT
+
+    #-- END method to_string() --#
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = self.to_string()
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+
+
 #-- END abstract Article_Content model --#
+
+
+# Unique_Article_Content model
+@python_2_unicode_compatible
+class Unique_Article_Content( Abstract_Related_Content ):
+
+    #----------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------
+
+    # only allow one related piece of "Unique_Article_Content" per article.
+    article = models.ForeignKey( Article, unique = True )
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+        abstract = True
+        ordering = [ 'article', 'last_modified', 'create_date' ]
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def to_string( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        if ( self.id ):
+            
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+             
+        if ( self.content_description ):
+        
+            string_OUT += self.content_description
+            
+        #-- END check to see if content_description --#
+        
+        if ( self.content_type ):
+            
+            string_OUT += " of type \"" + self.content_type + "\""
+            
+        #-- END check to see if there is a type --#
+             
+        string_OUT += " for article: " + str( self.article )
+        
+        return string_OUT
+
+    #-- END method to_string() --#
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = self.to_string()
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+
+
+#-- END abstract Unique_Article_Content model --#
 
 
 # Article_Notes model
@@ -2573,7 +2712,7 @@ class Article_Notes( Article_Content ):
 
 # Article_RawData model
 @python_2_unicode_compatible
-class Article_RawData( Article_Content ):
+class Article_RawData( Unique_Article_Content ):
 
     def __str__( self ):
 
@@ -2595,7 +2734,7 @@ class Article_RawData( Article_Content ):
 
 # Article_Text model
 @python_2_unicode_compatible
-class Article_Text( Article_Content ):
+class Article_Text( Unique_Article_Content ):
 
     #----------------------------------------------------------------------------
     # Constants-ish
@@ -3149,6 +3288,74 @@ class Article_Data( models.Model ):
 #= End Article_Data Model =======================================================
 
 
+# Article_Content model
+@python_2_unicode_compatible
+class Article_Data_Notes( Abstract_Related_Content ):
+
+    #----------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------
+
+    # allow more than one related piece of "Article_Content" per article.
+    article_data = models.ForeignKey( Article_Data )
+
+    # meta class with ordering.
+    class Meta:
+
+        ordering = [ 'article_data', 'last_modified', 'create_date' ]
+
+    #-- END nested Meta class --#
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def to_string( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        if ( self.id ):
+            
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if ID --#
+             
+        if ( self.content_description ):
+        
+            string_OUT += self.content_description
+            
+        #-- END check to see if content_description --#
+        
+        if ( self.content_type ):
+            
+            string_OUT += " of type \"" + self.content_type + "\""
+            
+        #-- END check to see if there is a type --#
+             
+        string_OUT += " for article_data: " + str( self.article_data )
+        
+        return string_OUT
+
+    #-- END method to_string() --#
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        string_OUT = self.to_string()
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+
+
+#-- END abstract Article_Data_Notes model --#
+
+
 # Article_Person model
 @python_2_unicode_compatible
 class Article_Person( models.Model ):
@@ -3425,41 +3632,49 @@ class Article_Source( Article_Person ):
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = 'exclude_capacities'
 
     # Source type stuff
+    SOURCE_TYPE_ANONYMOUS = 'anonymous'
     SOURCE_TYPE_INDIVIDUAL = 'individual'
+    SOURCE_TYPE_ORGANIZATION = 'organization'
+    SOURCE_TYPE_DOCUMENT = 'document'
+    SOURCE_TYPE_OTHER = 'other'
+    
     SOURCE_TYPE_TO_ID_MAP = {
-        "anonymous" : 1,
+        SOURCE_TYPE_ANONYMOUS : 1,
         SOURCE_TYPE_INDIVIDUAL : 2,
-        "organization" : 3,
-        "document" : 4,
-        "other" : 5
+        SOURCE_TYPE_ORGANIZATION : 3,
+        SOURCE_TYPE_DOCUMENT : 4,
+        SOURCE_TYPE_OTHER : 5
     }
 
     SOURCE_TYPE_CHOICES = (
-        ( "anonymous", "Anonymous/Unnamed" ),
+        ( SOURCE_TYPE_ANONYMOUS, "Anonymous/Unnamed" ),
         ( SOURCE_TYPE_INDIVIDUAL, "Individual Person" ),
-        ( "organization", "Organization" ),
-        ( "document", "Document" ),
-        ( "other", "Other" )
+        ( SOURCE_TYPE_ORGANIZATION, "Organization" ),
+        ( SOURCE_TYPE_DOCUMENT, "Document" ),
+        ( SOURCE_TYPE_OTHER, "Other" )
     )
 
     # Source contact type stuff
     SOURCE_CONTACT_TYPE_DIRECT = 'direct'
     SOURCE_CONTACT_TYPE_EVENT = 'event'
+    SOURCE_CONTACT_TYPE_PAST_QUOTES = 'past_quotes'
+    SOURCE_CONTACT_TYPE_DOCUMENT = 'document'
+    SOURCE_CONTACT_TYPE_OTHER = 'other'
 
     SOURCE_CONTACT_TYPE_TO_ID_MAP = {
         SOURCE_CONTACT_TYPE_DIRECT : 1,
         SOURCE_CONTACT_TYPE_EVENT : 2,
-        "past_quotes" : 3,
-        "document" : 4,
-        "other" : 5
+        SOURCE_CONTACT_TYPE_PAST_QUOTES : 3,
+        SOURCE_CONTACT_TYPE_DOCUMENT : 4,
+        SOURCE_CONTACT_TYPE_OTHER : 5
     }
 
     SOURCE_CONTACT_TYPE_CHOICES = (
         ( SOURCE_CONTACT_TYPE_DIRECT, "Direct contact" ),
         ( SOURCE_CONTACT_TYPE_EVENT, "Press conference/event" ),
-        ( "past_quotes", "Past quotes/statements" ),
-        ( "document", "Press release/document" ),
-        ( "other", "Other" )
+        ( SOURCE_CONTACT_TYPE_PAST_QUOTES, "Past quotes/statements" ),
+        ( SOURCE_CONTACT_TYPE_DOCUMENT, "Press release/document" ),
+        ( SOURCE_CONTACT_TYPE_OTHER, "Other" )
     )
 
     # Source capacity stuff
@@ -3795,6 +4010,10 @@ class Article_Source_Quotation( models.Model ):
     
     # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    
+    # additional identifying information
+    uuid = models.TextField( blank = True, null = True )
+    uuid_name = models.CharField( max_length = 255, null = True, blank = True )
 
     # other notes.
     notes = models.TextField( blank = True, null = True )

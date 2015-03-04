@@ -72,6 +72,9 @@ class OpenCalaisApiResponse( LoggingHelper ):
     # Person property names
     JSON_NAME_PERSON_NAME = "name"
     
+    # Shared OpenCalais property names
+    JSON_NAME_INSTANCES = "instances"
+    
     # OpenCalais item types
     OC_ITEM_TYPE_QUOTATION = "Quotation"
     OC_ITEM_TYPE_PERSON = "Person"
