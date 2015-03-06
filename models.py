@@ -3984,30 +3984,34 @@ class Alternate_Source_Match( models.Model ):
 #= End Alternate_Source_Match Model ======================================================
 
 
-# Article_Source_Quotation model
+# Abstract_Selected_Text model
 @python_2_unicode_compatible
-class Article_Source_Quotation( models.Model ):
+class Abstract_Selected_Text( models.Model ):
+
+    '''
+    This abstract class is used to store text that has been selected from inside
+       a larger text document.  It holds details on the text found, the text
+       around it, and the method used to single out the text.  Can be extended to
+       reference a Foreign Key of the container in which this text was found.
+    '''
 
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
 
-    # source in a given article whom this quote belongs to.
-    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
-    
-    # quotation itself.
-    quotation = models.TextField( blank = True, null = True )
-    
-    # fields to track locations of data this coding was based on within
-    #    article.  References are based on results of ParsedArticle.parse().
-    attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
-    attribution_speaker_name_string = models.TextField( blank = True, null = True )
-    is_speaker_name_pronoun = models.BooleanField( default = False )
-    attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
-    attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
-    
+
+    # basics - value, text before and after the value, length and index of value.
+    value = models.TextField( blank = True, null = True )
+    value_in_context = models.TextField( blank = True, null = True )
+    value_length = models.IntegerField( blank = True, null = True, default = 0 )
+    value_index = models.IntegerField( blank = True, null = True, default = 0 )
+    canonical_index = models.IntegerField( blank = True, null = True, default = 0 )
+    value_word_number_start = models.IntegerField( blank = True, null = True, default = 0 )
+    value_word_number_end = models.IntegerField( blank = True, null = True, default = 0 )
+    paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
+    context_before = models.TextField( blank = True, null = True )
+    context_after = models.TextField( blank = True, null = True )
+
     # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
     
@@ -4017,6 +4021,72 @@ class Article_Source_Quotation( models.Model ):
 
     # other notes.
     notes = models.TextField( blank = True, null = True )
+
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+
+        abstract = True
+        ordering = [ 'last_modified', 'create_date' ]
+        
+    #-- END inner class Meta --#
+        
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        if ( self.value_offset ):
+        
+            string_OUT += " ( index: " + str( self.value_offset ) + " ) : "
+        
+        #-- END check to see if article_source. --#
+        
+        # got associated quotation?...
+        if ( self.value ):
+        
+            string_OUT += self.value
+                
+        #-- END check to see if we have a value. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+
+#-- END abstract class Abstract_Selected_Text --#
+
+
+# Article_Source_Quotation model
+@python_2_unicode_compatible
+class Article_Source_Mention( Abstract_Selected_Text ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+
+    # source in a given article whom this quote belongs to.
+    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    
+    # is name a pronoun?
+    is_speaker_name_pronoun = models.BooleanField( default = False )
 
 
     #----------------------------------------------------------------------
@@ -4043,9 +4113,69 @@ class Article_Source_Quotation( models.Model ):
         #-- END check to see if article_source. --#
         
         # got associated quotation?...
-        if ( self.quotation ):
+        if ( self.value ):
         
-            string_OUT += self.quotation
+            string_OUT += self.value
+                
+        #-- END check to see if we have a quotation. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+#= End Article_Source_Mention Model ======================================================
+
+
+# Article_Source_Quotation model
+@python_2_unicode_compatible
+class Article_Source_Quotation( Abstract_Selected_Text ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+
+    # source in a given article whom this quote belongs to.
+    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    
+    # fields to track locations of data this coding was based on within
+    #    article.  References are based on results of ParsedArticle.parse().
+    attribution_verb_word_index = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_verb_word_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_paragraph_number = models.IntegerField( blank = True, null = True, default = 0 )
+    attribution_speaker_name_string = models.TextField( blank = True, null = True )
+    is_speaker_name_pronoun = models.BooleanField( default = False )
+    attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
+    attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
+    
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        if ( self.article_source ):
+        
+            string_OUT += str( self.article_source ) + " : "
+        
+        #-- END check to see if article_source. --#
+        
+        # got associated quotation?...
+        if ( self.value ):
+        
+            string_OUT += self.value
                 
         #-- END check to see if we have a quotation. --#
         
