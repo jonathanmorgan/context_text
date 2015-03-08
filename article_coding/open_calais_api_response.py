@@ -74,6 +74,16 @@ class OpenCalaisApiResponse( LoggingHelper ):
     
     # Shared OpenCalais property names
     JSON_NAME_INSTANCES = "instances"
+    JSON_NAME_QUOTE = "quote"
+    JSON_NAME_PERSON_DESCRIPTION = "persondescription"
+
+    # Names of things inside "instances" containers.    
+    JSON_NAME_DETECTION = "detection"
+    JSON_NAME_EXACT = "exact"
+    JSON_NAME_LENGTH = "length"
+    JSON_NAME_OFFSET = "offset"
+    JSON_NAME_PREFIX = "prefix"
+    JSON_NAME_SUFFIX = "suffix"
     
     # OpenCalais item types
     OC_ITEM_TYPE_QUOTATION = "Quotation"

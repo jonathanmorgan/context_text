@@ -105,6 +105,9 @@ from python_utilities.strings.string_helper import StringHelper
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
 
+# python_utilities - sequences
+from python_utilities.sequences.sequence_helper import SequenceHelper
+
 #================================================================================
 # Shared variables and functions
 #================================================================================
@@ -2749,6 +2752,13 @@ class Article_Text( Unique_Article_Content ):
         'p' : [ 'id', ],
     }
     
+    # Names for dictionary of results of find_in_text() (FIT) method.
+    FIT_CANONICAL_INDEX_LIST = "canonical_index_list"
+    FIT_TEXT_INDEX_LIST = "index_list"
+    FIT_FIRST_WORD_NUMBER_LIST = "first_word_number_list"
+    FIT_LAST_WORD_NUMBER_LIST = "last_word_number_list"
+    FIT_PARAGRAPH_NUMBER_LIST = "paragraph_number_list"
+    
  
     #----------------------------------------------------------------------------
     # class methods
@@ -2890,7 +2900,613 @@ class Article_Text( Unique_Article_Content ):
 
     #-- END method __str__() --#
 
+    
+    def find_in_canonical_text( self, string_IN ):
+        
+        '''
+        Accepts a string that we want to locate in the nested article text.
+        If found, returns a list of the indices of positions in the string where
+           the string was found (could be more than one).  If not found, returns
+           empty list.  If error, returns None.
+        '''
+        
+        # return reference.
+        list_OUT = []
 
+        # declare variables
+        me = "find_in_canonical_text"
+        index_OUT = -1
+        my_text = ""
+        match_count = -1
+        loop_count = -1
+        keep_looping = False
+        plain_text_index_list = []
+        plain_text_count = -1
+        remaining_word_list = []
+        current_word_list = []
+        match_count = -1
+        matching_index_list = []
+        current_index = -1
+        
+        # got a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # get text
+            my_text = self.get_content()
+            
+            # first step is to try to find the string, as-is.
+            list_OUT = StringHelper.find_substring_match_list( my_text, string_IN )
+            
+            # sanity check in case string spans multiple paragraphs.
+            
+            # sanity check.  Got anything?
+            match_count = len( list_OUT )
+            if ( match_count < 1 ):
+            
+                # no.  See if the string is in the plain text.
+                plain_text_index_list = self.find_in_plain_text( string_IN )
+                plain_text_count = len( plain_text_index_list )
+                if ( plain_text_count > 0 ):
+                
+                    output_debug( "In " + me + ": WARNING - string being searched for is in text, likely spans paragraphs." )
+                
+                    # it is in the text.  So, start to build up string word by
+                    #    word, looking for indexes where it matches the string.
+                    #    Keep looping until number that match are 0 or 1.
+                    
+                    # split string into words.
+                    remaining_word_list = string_IN.split()
+                    current_word_list = []
+                    
+                    # loop until 0 or 1 matches.
+                    keep_looping = True
+                    loop_count = 0
+                    while keep_looping == True:
+                    
+                        # increment loop count
+                        loop_count = loop_count + 1
+                    
+                        # empty matching_index_list
+                        matching_index_list = []
+                        
+                        # add word to current list.
+                        current_word_list.append( remaining_word_list[ 0 ] )
+                        
+                        # strip off the first item from remaining_word_list
+                        del( remaining_word_list[ 0 ] )
+                    
+                        # make string from current_word_list.
+                        current_string = " ".join( current_word_list )
+                
+                        output_debug( "--> In " + me + ": loop #" + str( loop_count ) + " - looking for: " + current_string )
+                
+                        # loop over the paragraph list.
+                        for current_index in StringHelper.find_substring_iter( my_text, current_string ):
+                        
+                            # add match index to list.
+                            matching_index_list.append( current_index )
+                        
+                        #-- END loop over paragraph list. --#
+                        
+                        # get count of matches.
+                        match_count = len( matching_index_list )
+                    
+                        # short circuit in case of looking for something that is
+                        #    duplicated exactly in two places in the text.
+                        remaining_word_count = len( remaining_word_list )
+                        if ( remaining_word_count == 0 ):
+                        
+                            # At this point, there are no more words to add, so
+                            #    the current state is final.  Fall out of loop.
+                            keep_looping = False 
+                        
+                        else:
+                        
+                            # more words to add... Do we have a match?
+                            if ( match_count > 1 ):
+                            
+                                # still multiple matches - keep looking.
+                                keep_looping = True
+    
+                            else:
+                            
+                                # only 1 or 0 matches.  At this point we fall
+                                #    out and see what happened.
+                                keep_looping = False
+
+                            #-- END check to see if match yet or not --#
+                            
+                        #-- END check to see if no more words left. --#
+
+                    #-- END loop to find starting paragraph. --#
+                    
+                    # so, got one match, or none.
+                    if ( match_count >= 1 ):
+                    
+                        # found one or more indexes - add each to output list.
+                        for current_index in matching_index_list:
+
+                            list_OUT.append( current_index )
+                            
+                        #-- END loop over index matches. --#
+                        
+                    elif ( match_count == 0 ):
+                    
+                        # no match - return empty list.
+                        list_OUT = []
+                        
+                    else:
+                    
+                        # not 0 or >= 1 - error.
+                        output_debug( "In " + me + ": found " + str( next_count ) + " matches for string.  Returning None." )
+                        list_OUT = None
+                        
+                    #-- END check to see if we found match. --#
+                
+                #-- END check to see if string is in the text --#
+            
+            #-- END sanity check to see if got anything --#
+        
+        else:
+        
+            # no string.  Return None.
+            list_OUT = None
+            
+        #-- END check to see if string. --#
+        
+        return list_OUT
+        
+    #-- END method find_in_canonical_text() --#
+        
+        
+    def find_in_paragraph_list( self, string_IN ):
+        
+        '''
+        Accepts a string we want to locate in one of the paragraphs inside this
+           article text.
+        If found, returns a list of the numbers of paragraphs that contains the
+           string passed in, where paragraphs are numbered starting with 1.  If
+           not found, returns empty list.  If error, returns None.
+        '''
+        
+        # return reference.
+        list_OUT = []
+        
+        # declare variables
+        me = "find_in_paragraph_list"
+        index_OUT = -1
+        my_paragraph_list = []
+        paragraph_counter = -1
+        current_paragraph = ""
+        match_count = -1
+        plain_text_index_list = []
+        plain_text_count = -1
+        current_paragraph_list = []
+        next_paragraph_list = []
+        next_count = -1
+        loop_count = -1
+        keep_looping = False
+        remaining_word_list = []
+        current_word_list = []
+        current_string = ""
+        remaining_word_count = -1
+        
+        # got a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # get paragraph list
+            my_paragraph_list = self.get_paragraph_list()
+            
+            # loop over paragraphs
+            paragraph_counter = 0
+            for current_paragraph in my_paragraph_list:
+
+                # increment counter
+                paragraph_counter = paragraph_counter + 1
+
+                # first step is to try to find the string, as-is.
+                if string_IN in current_paragraph:
+                
+                    # found it.  this is the paragraph.
+                    list_OUT.append( paragraph_counter )
+                    
+                #-- END check to see if found in current paragraph. --#
+                
+            #-- END loop over paragraphs --#
+            
+            # sanity check in case string spans multiple paragraphs.
+
+            # Got anything?
+            match_count = len( list_OUT )
+            if ( match_count < 1 ):
+            
+                # no.  See if the string is in the plain text.
+                plain_text_index_list = self.find_in_plain_text( string_IN )
+                plain_text_count = len( plain_text_index_list )
+                if ( plain_text_count > 0 ):
+                
+                    output_debug( "In " + me + ": WARNING - string being searched for is in text, likely spans paragraphs." )
+                
+                    # split string into words.
+                    remaining_word_list = string_IN.split()
+                    current_word_list = []
+                    
+                    # it is in the text.  So, start to build up string word by
+                    #    word, looking for paragraphs that match as we go.  Keep
+                    #    looping until number that match are 0 or 1.
+                    current_paragraph_list = my_paragraph_list
+                    next_count = len( current_paragraph_list )
+                    keep_looping = True
+                    loop_count = 0
+                    while keep_looping == True:
+                    
+                        # increment loop count
+                        loop_count = loop_count + 1
+                        
+                        # empty next_paragraph_list
+                        next_paragraph_list = []
+                                                
+                        # add word to current list.
+                        current_word_list.append( remaining_word_list[ 0 ] )
+                        
+                        # strip off the first item from remaining_word_list
+                        del( remaining_word_list[ 0 ] )
+                    
+                        # make string from current_word_list.
+                        current_string = " ".join( current_word_list )
+                        
+                        output_debug( "--> In " + me + ": loop #" + str( loop_count ) + " - looking for: " + current_string )
+                
+                        # loop over the paragraph list.
+                        for current_paragraph in current_paragraph_list:
+                        
+                            # is string in paragraph?
+                            if current_string in current_paragraph:
+                            
+                                # yes - add paragraph to next list.
+                                next_paragraph_list.append( current_paragraph )
+                                
+                            #-- END check to see if string is in paragraph --#
+                        
+                        #-- END loop over paragraph list. --#
+                        
+                        # switch next_paragraph_list to my_paragraph_list.
+                        current_paragraph_list = next_paragraph_list
+                        next_count = len( current_paragraph_list )
+                        
+                        # Keep looping?
+                        
+                        # short circuit in case of looking for something that is
+                        #    duplicated exactly in two places in the text.
+                        remaining_word_count = len( remaining_word_list )
+                        if ( remaining_word_count == 0 ):
+                        
+                            # At this point, there are no more words to add, so
+                            #    the current state is final.  Fall out of loop.
+                            keep_looping = False 
+                        
+                        else:
+                        
+                            # more words to add... Do we have a match?
+                            if ( next_count > 1 ):
+                            
+                                # still multiple matches - keep looking.
+                                keep_looping = True
+    
+                            else:
+                            
+                                # only 1 or 0 matches.  At this point we fall
+                                #    out and see what happened.
+                                keep_looping = False
+
+                            #-- END check to see if match yet or not --#
+                            
+                        #-- END check to see if no more words left. --#
+                    
+                    #-- END loop to find starting paragraph. --#
+                    
+                    # so, loop is done.  How many matches?
+                    if ( next_count >= 1 ):
+                    
+                        # found one or more paragraphs - look up index of each
+                        #    in my_paragraph_list, add that plus 1 to the list.
+                        for current_paragraph in current_paragraph_list:
+
+                            index_OUT = my_paragraph_list.index( current_paragraph )
+                            index_OUT = index_OUT + 1
+                        
+                            # add to output list.
+                            list_OUT.append( index_OUT )
+                            
+                        #-- END loop over paragraph list. --#
+                        
+                    elif ( next_count == 0 ):
+                    
+                        # no match - return empty list.
+                        list_OUT = []
+                        
+                    else:
+                    
+                        # not 0 or >= 1 - what to do?
+                        output_debug( "In " + me + ": found " + str( next_count ) + " matches for string.  Returning None." )
+                        list_OUT = None
+                        
+                    #-- END check to see if we found paragraph. --#
+                
+                #-- END check to see if string is in the text --#
+            
+            #-- END sanity check to see if got anything --#
+            
+        else:
+        
+            # no string.  Return None.
+            list_OUT = None
+            
+        #-- END check to see if string. --#
+        
+        return list_OUT
+        
+    #-- END method find_in_paragraph_list() --#
+        
+        
+    def find_in_plain_text( self, string_IN ):
+        
+        '''
+        Accepts a string that we want to locate in the nested article text with
+           all HTML and markup removed ("plain text").
+        If found, returns the index of the start of the string inside the
+           canonical text for this article.  If not found, returns -1.  If
+           error, returns None.
+        '''
+        
+        # return reference.
+        list_OUT = []
+        
+        # declare variables.
+        my_text = ""
+        
+        # got a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # get text
+            my_text = self.get_content_sans_html()
+            
+            # first step is to try to find the string, as-is.
+            list_OUT = StringHelper.find_substring_match_list( my_text, string_IN )
+            
+        else:
+        
+            # no string.  Return None.
+            list_OUT = None
+            
+        #-- END check to see if string. --#
+        
+        return list_OUT
+        
+    #-- END method find_in_plain_text() --#
+        
+        
+    def find_in_text( self, string_IN, requested_items_IN = None ):
+        
+        '''
+        Accepts a string that we want to locate in the nested article text.
+           If not found, returns None.  If found, returns a dictionary with the
+           following values:
+           - FIT_CANONICAL_INDEX_LIST = "canonical_index_list" - list of
+              index(ices) of start of the string passed in in the canonical text
+              for this article.
+           - FIT_TEXT_INDEX_LIST = "index_list" - index(ices) of the start of
+              the string passed in in the plain text for this article.
+           - FIT_FIRST_WORD_NUMBER_LIST = "first_word_number_list" - the
+              number(s) of the word in this article, when converted to a word
+              list, of the first word in the string passed in.  Number, not
+              index (so index + 1).
+           - FIT_LAST_WORD_NUMBER_LIST = "last_word_number_list" - the number(s)
+              of the word in this article, when converted to a word list, of the
+              last word in the string passed in.  Number, not index
+              (so index + 1).
+           - FIT_PARAGRAPH_NUMBER_LIST = "paragraph_number_list" - list of the
+              number (s) of the paragraph in this article that contains the
+              string (or, if it spans multiple paragraphs, the start of this
+              string).
+        '''
+        
+        # return reference
+        dict_OUT = {}
+        
+        # declare variables
+        me = "find_in_text"
+        items_to_process = []
+        temp_dictionary = {}
+        current_value = None
+        
+        # do we have a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # got any requested items?
+            if ( ( requested_items_IN is not None ) and ( len( requested_items_IN ) > 0 ) ):
+            
+                # yes.  use this as list of items to process.
+                items_to_process = requested_items_IN
+                
+            else:
+            
+                # no - process all items.
+                items_to_process = []
+                items_to_process.append( self.FIT_CANONICAL_INDEX_LIST )
+                items_to_process.append( self.FIT_TEXT_INDEX_LIST )
+                items_to_process.append( self.FIT_FIRST_WORD_NUMBER_LIST )
+                items_to_process.append( self.FIT_LAST_WORD_NUMBER_LIST )
+                items_to_process.append( self.FIT_PARAGRAPH_NUMBER_LIST )
+
+            #-- END check to see which items we process. --#
+            
+            # go item by item.
+
+            # FIT_CANONICAL_INDEX_LIST
+            if ( self.FIT_CANONICAL_INDEX_LIST in items_to_process ):
+            
+                # find the index of the start of the string in the canonical
+                #    text for this article (paragraphs preserved as <p> tags).
+                current_value = self.find_in_canonical_text( string_IN )
+                dict_OUT[ self.FIT_CANONICAL_INDEX_LIST ] = current_value
+            
+            #-- END FIT_CANONICAL_INDEX_LIST --#
+
+            # FIT_TEXT_INDEX_LIST
+            if ( self.FIT_TEXT_INDEX_LIST in items_to_process ):
+            
+                # find the index of the start of the string in the plain text
+                #    for this article.
+                current_value = self.find_in_plain_text( string_IN )
+                dict_OUT[ self.FIT_TEXT_INDEX_LIST ] = current_value
+            
+            #-- END FIT_TEXT_INDEX_LIST --#
+            
+            # FIT_FIRST_WORD_NUMBER_LIST and/or FIT_LAST_WORD_NUMBER_LIST
+            if ( ( self.FIT_FIRST_WORD_NUMBER_LIST in items_to_process ) or ( self.FIT_LAST_WORD_NUMBER_LIST in items_to_process ) ):
+            
+                # find the position in the list of words in this article for the
+                #    first and last words in the string passed in (also can
+                #    approximate word count from this, as well).
+                temp_dictionary = self.find_in_word_list( string_IN )
+                
+                # will return a dictionary with first and last number.
+                if ( self.FIT_FIRST_WORD_NUMBER_LIST in items_to_process ):
+                
+                    # get value and store it in output dictionary.
+                    current_value = temp_dictionary[ self.FIT_FIRST_WORD_NUMBER_LIST ]
+                    dict_OUT[ self.FIT_FIRST_WORD_NUMBER_LIST ] = current_value
+                
+                #-- END check to see if we return number of first word in word list. --#
+            
+                # will return a dictionary with first and last number.
+                if ( self.FIT_LAST_WORD_NUMBER_LIST in items_to_process ):
+                
+                    # get value and store it in output dictionary.
+                    current_value = temp_dictionary[ self.FIT_LAST_WORD_NUMBER_LIST ]
+                    dict_OUT[ self.FIT_LAST_WORD_NUMBER_LIST ] = current_value
+                
+                #-- END check to see if we return number of first word in word list. --#
+            
+            #-- FIT_FIRST_WORD_NUMBER_LIST and/or FIT_LAST_WORD_NUMBER_LIST --#
+
+            # FIT_PARAGRAPH_NUMBER_LIST
+            if ( self.FIT_PARAGRAPH_NUMBER_LIST in items_to_process ):
+            
+                # find the number of the paragraph in this article that contains
+                #    the string passed in.  If through some error or insanity
+                #    the string starts in one paragraph and ends in another,
+                #    will find the paragraph in which it starts.
+                current_value = self.find_in_paragraph_list( string_IN )
+                dict_OUT[ self.FIT_PARAGRAPH_NUMBER_LIST ] = current_value
+            
+            #-- END FIT_PARAGRAPH_NUMBER_LIST --#
+        
+        else:
+        
+            # no string passed in, return None.
+            dict_OUT = None
+            
+        #-- END check to see if string passed in. --#
+        
+        return dict_OUT
+        
+    #-- END method find_in_text() --#
+            
+                
+    def find_in_word_list( self, string_IN ):
+        
+        '''
+        Accepts a string we want to locate in the word list based on this
+           article text.
+        Returns a dictionary that contains two name-value pairs:
+           - FIT_FIRST_WORD_NUMBER_LIST = "first_word_number_list" - the
+              number(s) of the word in this article, when converted to a word
+              list, of the first word in the string passed in.  Number, not
+              index (so index + 1).
+           - FIT_LAST_WORD_NUMBER_LIST = "last_word_number_list" - the number(s)
+              of the word in this article, when converted to a word list, of the
+              last word in the string passed in.  Number, not index
+              (so index + 1).
+        If not found, each will contain a value of -1.  If error, returns None.
+        '''
+        
+        # return reference.
+        dict_OUT = {}
+        first_word_list_OUT = []
+        last_word_list_OUT = []
+        first_word_OUT = -1
+        last_word_OUT = -1
+        my_word_list = []
+        string_word_list = []
+        match_list = []
+        match_index = -1
+        string_word_count = -1
+        
+        # got a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # get paragraph list
+            my_word_list = self.get_word_list()
+            
+            # convert string into a word list.
+            string_word_list = string_IN.split()
+            
+            # try the KnuthMorrisPratt algorithm from Python Cookbook 2nd Ed.
+            for match_index in SequenceHelper.KnuthMorrisPratt( my_word_list, string_word_list ):
+            
+                # append match to list.
+                match_list.append( match_index )
+                
+            #-- END loop over matches. --#
+            
+            # got anything?
+            if ( len( match_list ) > 0 ):
+            
+                # yes - loop over matches.
+                for match_index in match_list:
+                
+                    # add 1 - want word number, not word index.
+                    first_word_OUT = match_index + 1
+                    
+                    # get word count
+                    string_word_count = len( string_word_list )
+                    
+                    # for last word, set it to match_index + word count
+                    last_word_OUT = match_index + string_word_count
+                    
+                    # add to lists.
+                    first_word_list_OUT.append( first_word_OUT )
+                    last_word_list_OUT.append( last_word_OUT )
+                    
+                #-- END loop over matches. --#
+                
+            else:
+            
+                # no match - return empty lists.
+                first_word_list_OUT = []
+                last_word_list_OUT = []
+                
+            #-- END check to see if match. --#
+            
+            # build return dictionary.
+            dict_OUT = {}
+            dict_OUT[ self.FIT_FIRST_WORD_NUMBER_LIST ] = first_word_list_OUT
+            dict_OUT[ self.FIT_LAST_WORD_NUMBER_LIST ] = last_word_list_OUT
+                        
+        else:
+        
+            # no string.  Return None.
+            dict_OUT = None
+            
+        #-- END check to see if string. --#
+        
+        return dict_OUT
+        
+    #-- END method find_in_word_list() --#
+        
+        
     def get_content_sans_html( self, *args, **kwargs ):
         
         '''
@@ -4003,8 +4619,8 @@ class Abstract_Selected_Text( models.Model ):
     # basics - value, text before and after the value, length and index of value.
     value = models.TextField( blank = True, null = True )
     value_in_context = models.TextField( blank = True, null = True )
-    value_length = models.IntegerField( blank = True, null = True, default = 0 )
     value_index = models.IntegerField( blank = True, null = True, default = 0 )
+    value_length = models.IntegerField( blank = True, null = True, default = 0 )
     canonical_index = models.IntegerField( blank = True, null = True, default = 0 )
     value_word_number_start = models.IntegerField( blank = True, null = True, default = 0 )
     value_word_number_end = models.IntegerField( blank = True, null = True, default = 0 )
@@ -4137,6 +4753,9 @@ class Article_Source_Quotation( Abstract_Selected_Text ):
 
     # source in a given article whom this quote belongs to.
     article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    
+    # value_with_attribution
+    value_with_attribution = models.TextField( blank = True, null = True )
     
     # fields to track locations of data this coding was based on within
     #    article.  References are based on results of ParsedArticle.parse().
