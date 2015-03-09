@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2015 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -17,6 +17,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 #================================================================================
 
 # python imports
+from abc import ABCMeta, abstractmethod
 import datetime
 from decimal import Decimal
 from decimal import getcontext
@@ -837,7 +838,7 @@ class Abstract_Person( models.Model ):
     
 
     @classmethod
-    def standardize_name_part( cls, name_part_IN ):
+    def standardize_name_part( cls, name_part_IN, remove_periods_IN = False ):
         
         '''
         Accepts string name part, does the following to standardize it, in this
@@ -865,6 +866,14 @@ class Abstract_Person( models.Model ):
         
             # remove commas.
             working_string = working_string.replace( ",", "" )
+            
+            # remove periods as well?
+            if ( remove_periods_IN == True ):
+            
+                # yes.
+                working_string = working_string.replace( ".", "" )
+            
+            #-- END check to see if remove periods --#
             
             # strip white space.
             working_string = working_string.strip()
@@ -914,7 +923,7 @@ class Abstract_Person( models.Model ):
     #-- END method __str__() --#
 
 
-    def standardize_name_parts( self ):
+    def standardize_name_parts( self, remove_periods_IN = False ):
         
         '''
         This method looks at each part of a name and for each, calls the method
@@ -939,37 +948,37 @@ class Abstract_Person( models.Model ):
         # standardize name parts.
         if ( self.name_prefix ):
     
-            self.name_prefix = self.standardize_name_part( self.name_prefix )
+            self.name_prefix = self.standardize_name_part( self.name_prefix, remove_periods_IN )
             
         #-- END check to see if name_prefix.
         
         if ( self.first_name ):
     
-            self.first_name = self.standardize_name_part( self.first_name )
+            self.first_name = self.standardize_name_part( self.first_name, remove_periods_IN )
             
         #-- END check to see if first_name.
         
         if ( self.middle_name ):
     
-            self.middle_name = self.standardize_name_part( self.middle_name )
+            self.middle_name = self.standardize_name_part( self.middle_name, remove_periods_IN )
             
         #-- END check to see if middle_name.
         
         if ( self.last_name ):
     
-            self.last_name = self.standardize_name_part( self.last_name )
+            self.last_name = self.standardize_name_part( self.last_name, remove_periods_IN )
             
         #-- END check to see if last_name.
         
         if ( self.name_suffix ):
     
-            self.name_suffix = self.standardize_name_part( self.name_suffix )
+            self.name_suffix = self.standardize_name_part( self.name_suffix, remove_periods_IN )
             
         #-- END check to see if name_suffix.
         
         if ( self.nickname ):
     
-            self.nickname = self.standardize_name_part( self.nickname )
+            self.nickname = self.standardize_name_part( self.nickname, remove_periods_IN )
             
         #-- END check to see if nickname.
         
@@ -1720,7 +1729,8 @@ class Article( models.Model ):
     # Will be specific to each paper, so using Grand Rapids Press as example.
 
     # Grand Rapids Press
-    GRP_NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    GRP_LOCAL_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    GRP_NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "State" ]
     Q_GRP_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
     
     
@@ -1737,6 +1747,7 @@ class Article( models.Model ):
     page = models.CharField( max_length = 255, blank = True, null = True )
     author_string = models.TextField( blank = True, null = True )
     author_varchar = models.CharField( max_length = 255, blank = True, null = True )
+    author_affiliation = models.CharField( max_length = 255, blank = True, null = True )
     headline = models.CharField( max_length = 255 )
     # What is this? - author = models.CharField( max_length = 255, blank = True, null = True )
 
@@ -3976,6 +3987,7 @@ class Article_Data_Notes( Abstract_Related_Content ):
 @python_2_unicode_compatible
 class Article_Person( models.Model ):
 
+
     #----------------------------------------------------------------------
     # constants-ish
     #----------------------------------------------------------------------    
@@ -3997,8 +4009,13 @@ class Article_Person( models.Model ):
     #    decimal values.
     match_confidence_level = models.DecimalField( max_digits = 11, decimal_places = 10, blank = True, null = True, default = 0.0 )
 
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
     # meta class so we know this is an abstract class.
     class Meta:
+
         abstract = True
 
     #----------------------------------------------------------------------------
@@ -4021,13 +4038,19 @@ class Article_Person( models.Model ):
         # return reference
         string_OUT = ""
         
+        if ( self.id ):
+        
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if id --#
+        
         if ( self.person is not None ):
         
-            string_OUT = self.person.last_name + ", " + self.person.first_name
+            string_OUT += self.person.last_name + ", " + self.person.first_name
         
         else:
         
-            string_OUT = 'empty Article_Person instance'
+            string_OUT += 'empty Article_Person instance'
         
         #-- END check to see if person. --#
         
@@ -4133,6 +4156,46 @@ class Article_Person( models.Model ):
     #-- END method is_connected() --#
 
 
+    @abstractmethod
+    def process_alternate_matches( self ):
+        
+        '''
+        If there are matches in the variable person_match_list, loops over them
+           and deals with each appropriately.  person_match_list is a list of 
+           Person instances of people who might be a match for a given name
+           string.  This method is abstract, so the child classes can each
+           define how they deal with multiple matches.
+        '''
+        
+        print( "++++++++ In Article_Person process_alternate_matches() ++++++++" )
+        
+        pass
+        
+    #-- END function process_alternate_matches() --#
+    
+
+    def save( self, *args, **kwargs ):
+        
+        '''
+        Overridden save() method that calls process_alternate_matches() after
+           django's save() method.
+
+        Note: looks like child classes don't have to override save method.
+        '''
+
+        #print( "++++++++ In Article_Person save() ++++++++" )
+        
+        # declare variables.
+        
+        # call parent save() method.
+        super( Article_Person, self ).save( *args, **kwargs )
+
+        # call process_alternate_matches
+        self.process_alternate_matches()
+        
+    #-- END method save() --#
+
+
 #= END Article_Person Model ======================================================
 
 
@@ -4171,13 +4234,22 @@ class Article_Author( Article_Person ):
 
     def __str__( self ):
         
+        # return reference
+        string_OUT = ""
+        
+        if ( self.id ):
+        
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if id --#
+        
         if ( self.person is not None ):
         
-            string_OUT = self.person.last_name + ", " + self.person.first_name + " (" + self.author_type + ")"
+            string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; type = " + self.author_type + " )"
         
         else:
         
-            string_OUT = self.author_type
+            string_OUT += self.author_type
             
         #-- END check to see if we have a person. --#
         
@@ -4185,6 +4257,69 @@ class Article_Author( Article_Person ):
 
     #-- END __str__() method --#
 
+
+    def process_alternate_matches( self ):
+        
+        '''
+        If there are matches in the variable person_match_list, loops over them
+           and deals with each appropriately.  person_match_list is a list of 
+           Person instances of people who might be a match for a given name
+           string.  For each, this method:
+           - checks to see if there is an Alternate_Author_Match present for
+              that person.
+           - if so, moves on.
+           - if not, makes one.
+        '''
+
+        #print( "@@@@@@@@ In Article_Author process_alternate_matches() @@@@@@@@" )
+        
+        #define variables
+        person_list = None
+        person_count = -1
+        current_person = ""
+        alt_match_qs = None
+        alt_match_count = -1
+        alt_author_match = None
+        
+        # get person list
+        person_list = self.person_match_list
+        
+        # got anything?
+        if ( person_list is not None ):
+
+            # get count
+            person_count = len( person_list )
+            if ( person_count > 0 ):
+            
+                # loop
+                for current_person in person_list:
+                
+                    # see if there is already an Alternate_Author_Match for the
+                    #    Person.
+                    alt_match_qs = self.alternate_author_match_set.filter( person = current_person )
+                    
+                    # got one?
+                    alt_match_count = alt_match_qs.count()
+                    if ( alt_match_count == 0 ):
+                    
+                        # no.  Make one.
+                        alt_author_match = Alternate_Author_Match()
+                        alt_author_match.article_author = self
+                        alt_author_match.person = current_person
+                        alt_author_match.save()
+                        
+                    # Eventually, might want to check if more than one...
+                        
+                    #-- END check to see if match present. --#
+                
+                #-- END loop over persons --#
+                
+            #-- END check to see if anything in the list. --#
+            
+        #-- END check to see if list is present. --#
+        
+    #-- END function process_alternate_matches() --#
+    
 
 #= End Article_Author Model ======================================================
 
@@ -4382,7 +4517,7 @@ class Article_Source( Article_Person ):
 
         if ( self.id ):
         
-            string_OUT = str( self.id ) + " - "
+            string_OUT += str( self.id ) + " - "
         
         #-- END check to see if ID --#
         
@@ -4390,17 +4525,17 @@ class Article_Source( Article_Person ):
 
             if ( self.person is not None ):
 
-                string_OUT = self.person.last_name + ", " + self.person.first_name
+                string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + " )"
 
             else:
 
                 if ( self.title != '' ):
 
-                    string_OUT = self.title
+                    string_OUT += self.title
 
                 else:
 
-                    string_OUT = "individual"
+                    string_OUT += "individual"
 
                 #-- END check to see if title --#
 
@@ -4410,11 +4545,11 @@ class Article_Source( Article_Person ):
 
             if ( self.organization is not None ):
 
-                string_OUT = self.organization.name
+                string_OUT += self.organization.name
 
             else:
 
-                string_OUT = self.title
+                string_OUT += self.title
 
             #-- END check to see if organization --#
 
@@ -4422,11 +4557,11 @@ class Article_Source( Article_Person ):
 
             if ( self.document is not None ):
 
-                string_OUT = self.document.name
+                string_OUT += self.document.name
 
             else:
 
-                string_OUT = self.notes
+                string_OUT += self.notes
 
             #-- END check to see if Document --#
 
@@ -4545,6 +4680,69 @@ class Article_Source( Article_Person ):
 
     #-- END method is_connected() --#
     
+
+    def process_alternate_matches( self ):
+        
+        '''
+        If there are matches in the variable person_match_list, loops over them
+           and deals with each appropriately.  person_match_list is a list of 
+           Person instances of people who might be a match for a given name
+           string.  For each, this method:
+           - checks to see if there is an Alternate_Author_Match present for
+              that person.
+           - if so, moves on.
+           - if not, makes one.
+        '''
+
+        #print( "&&&&&&&& In Article_Source process_alternate_matches() &&&&&&&&" )
+        
+        #define variables
+        person_list = None
+        person_count = -1
+        current_person = ""
+        alt_match_qs = None
+        alt_match_count = -1
+        alt_author_match = None
+        
+        # get person list
+        person_list = self.person_match_list
+        
+        # got anything?
+        if ( person_list is not None ):
+
+            # get count
+            person_count = len( person_list )
+            if ( person_count > 0 ):
+            
+                # loop
+                for current_person in person_list:
+                
+                    # see if there is already an Alternate_Source_Match for the
+                    #    Person.
+                    alt_match_qs = self.alternate_source_match_set.filter( person = current_person )
+                    
+                    # got one?
+                    alt_match_count = alt_match_qs.count()
+                    if ( alt_match_count == 0 ):
+                    
+                        # no.  Make one.
+                        alt_author_match = Alternate_Source_Match()
+                        alt_author_match.article_source = self
+                        alt_author_match.person = current_person
+                        alt_author_match.save()
+                        
+                    # Eventually, might want to check if more than one...
+                        
+                    #-- END check to see if match present. --#
+                
+                #-- END loop over persons --#
+                
+            #-- END check to see if anything in the list. --#
+            
+        #-- END check to see if list is present. --#
+        
+    #-- END function process_alternate_matches() --#
+
 
 #= End Article_Source Model ======================================================
 

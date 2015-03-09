@@ -719,6 +719,8 @@ class ArticleCoder( BasicRateLimited ):
         # declare variables - match status
         match_status = ""
         multiple_list = []
+        temp_person = None
+        temp_full_name = None
         
         # declare variables - disambiguation
         person_id_list = []
@@ -834,9 +836,93 @@ class ArticleCoder( BasicRateLimited ):
 
                 #-- END check to see what we do based on status of lookup. --#
                 
+                # !full name string match
                 # If no match for parsed name, try looking up using string
                 #    full name (could in some cases be because of nameparser
                 #    parsing error).
+                if ( match_status == self.MATCH_STATUS_NONE ):
+
+                    # no match for parsed name.  Try looking up using string
+                    #    full name (could in some cases be because of nameparser
+                    #    parsing error).
+                    
+                    # get standardized full name.
+                    
+                    # if no person instance, use Person.get_person_for_name() to
+                    #    make one.
+                    if ( person_instance is None ):
+                    
+                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
+                        
+                    #-- END check to see if person_instance --#
+                    
+                    # get full name string.
+                    standardized_full_name = person_instance.full_name_string
+                        
+                    # look for matches based on full name string.
+                    full_name_qs = Person.objects.filter( full_name_string__iexact = standardized_full_name )
+
+                    # got anything back?
+                    full_name_count = full_name_qs.count()
+                    if ( full_name_count == 0 ):
+
+                        # !remove periods, look again.
+                        # no - try lookup after removing periods from all name
+                        #    parts.
+                        temp_person = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
+                        temp_person.standardize_name_parts( True )
+                        temp_full_name = temp_person.full_name_string
+                        
+                        # look for matches based on no-periods full name string.
+                        full_name_qs = Person.objects.filter( full_name_string__iexact = temp_full_name )
+
+                    #-- END try to lookup person, periods removed from name strings. --#
+                    
+                    # !TODO - just first name, last name...?
+
+                    # got anything back?
+                    full_name_count = full_name_qs.count()
+                    if ( full_name_count == 0 ):
+                    
+                        # nothing returned from looking for full name, either.
+                        match_status = self.MATCH_STATUS_NONE
+                    
+                    elif ( full_name_count == 1 ):
+                    
+                        # found one based on full name.  Parse error?
+                        match_status = self.MATCH_STATUS_SINGLE
+                        
+                        # store person as person_instance.
+                        person_instance = full_name_qs.get()
+                        
+                        # verification will handle assessing confidence.
+                    
+                    elif ( full_name_count > 1 ):
+
+                        # found more than one based on full name.  What to do?
+                        match_status = self.MATCH_STATUS_MULTIPLE
+                        
+                        # store persons in list.
+                        #multiple_list = list( full_name_qs )
+                        for current_person in full_name_qs:
+                        
+                            # add person to list.
+                            multiple_list.append( current_person )
+                            
+                        #-- END loop over QuerySet. --#
+                        
+                    else:
+                    
+                        self.output_debug( "In " + me + ": full_name_qs.count() returned " + str( full_name_count ) + ", which is neither 0, 1, or > 1. Error." )
+                    
+                    #-- END check to see if any matches. --#
+                
+                #-- END check to see if we need to try full-name lookup. --#
+
+                # If no match, try removing periods ( "." ) from name parts,
+                #    then looking up using string full name (in case middle
+                #    initials are inconsistently entered with or without
+                #    periods).
                 if ( match_status == self.MATCH_STATUS_NONE ):
 
                     # no match for parsed name.  Try looking up using string
@@ -1178,6 +1264,7 @@ class ArticleCoder( BasicRateLimited ):
         author_name = ""
         person_details_dict = {}
         author_person = None
+        alternate_author_list = []
         article_author = None
         article_author_qs = None
         
@@ -1273,6 +1360,8 @@ class ArticleCoder( BasicRateLimited ):
                                                              create_if_no_match_IN = True,
                                                              update_person_IN = True,
                                                              person_details_IN = person_details_dict )
+
+                        # retrieve information from Article_Author
                         author_person = article_author.person
 
                         # got a person?
@@ -1294,6 +1383,8 @@ class ArticleCoder( BasicRateLimited ):
                                 article_author.person = author_person
                                 article_author.organization_string = author_organization
                                 article_author.save()
+                                
+                                # got alternate authors?
                                 
                                 my_logger.debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
     
