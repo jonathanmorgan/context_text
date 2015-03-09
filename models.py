@@ -439,6 +439,13 @@ class Abstract_Person( models.Model ):
     nameparser_pickled = models.TextField( blank = True, null = True )
     is_ambiguous = models.BooleanField( default = False )
     notes = models.TextField( blank = True, null = True )
+    
+    # field to store how source was captured.
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
 
     # Meta-data for this class.
     class Meta:
@@ -896,6 +903,9 @@ class Abstract_Person( models.Model ):
  
         # return reference
         string_OUT = ''
+        
+        # declare variables
+        string_list = []
  
         if ( self.id ):
         
@@ -912,11 +922,31 @@ class Abstract_Person( models.Model ):
             
         #-- END middle name check --#
 
-        if ( self.title ):
+        if ( ( self.title ) or ( self.capture_method ) ):
         
-            string_OUT = string_OUT + " ( " + self.title + " )"
+            string_OUT += " ( "
+        
+            string_list = []
+        
+            if ( self.title ):
             
-        #-- END check to see if we have a title. --#
+                # add title to list
+                string_list.append( "title = " + self.title )
+                
+            #-- END check for title --#
+            
+            if ( self.capture_method ):
+            
+                # add capture method to the list.
+                string_list.append( "capture_method = " + self.capture_method )
+                
+            #-- END check for capture_method --#
+            
+            string_OUT += "; ".join( string_list )
+
+            string_OUT += " )"
+            
+        #-- END check to see if we have a title or capture_method. --#
  
         return string_OUT
 
@@ -1219,7 +1249,7 @@ class Person( Abstract_Person ):
  
         # return reference
         string_OUT = ''
- 
+        
         if ( self.id ):
         
             string_OUT = str( self.id ) + " - "
@@ -1279,8 +1309,8 @@ class Person( Abstract_Person ):
                 instance_OUT = Person_Newspaper()
     
                 # set values
-                instance_OUT.person = current_person
-                instance_OUT.newspaper = current_person_newspaper
+                instance_OUT.person = self
+                instance_OUT.newspaper = newspaper_IN
                 
                 if ( notes_IN is not None ):
 
@@ -2160,7 +2190,7 @@ class Article( models.Model ):
                 # got a coder type?
                 if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
                 
-                    # yes.  filter on it, as well.
+                    # yes.  save it.
                     instance_OUT.coder_type = coder_type_IN
                 
                 #-- END check to see if coder type present. --#
@@ -3809,6 +3839,7 @@ class Article_Data( models.Model ):
     is_sourced = models.BooleanField( default = True )
     can_code = models.BooleanField( default = True )
     status = models.CharField( max_length = 255, blank = True, null = True, default = STATUS_DEFAULT )
+    status_messages = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
@@ -3820,6 +3851,9 @@ class Article_Data( models.Model ):
     # Changed to having a separate join table, not ManyToMany auto-generated one.
     #authors = models.ManyToManyField( Article_Author )
     #sources = models.ManyToManyField( Article_Source )
+    
+    # field to store how source was captured.
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
     
     # related projects:
     projects = models.ManyToManyField( Project )
@@ -3910,6 +3944,44 @@ class Article_Data( models.Model ):
         return counts_OUT
 
     #-- END method get_source_counts_by_type() --#
+    
+    
+    def set_status( self, status_IN, status_message_IN ):
+        
+        '''
+        Accepts status value and status message.  Stores status in "status"
+           field.  Appends status_message to "status_messages" field, preceded
+           by a newline if field is not empty.  Returns status.
+        '''
+        
+        # return reference
+        status_OUT
+        
+        # got a status?
+        if ( status_IN is not None ):
+        
+            # yes.  store it.
+            self.status = status_IN
+            
+        #-- END check to see if status. --#
+
+        # got message?
+        if ( status_message_IN ):
+            
+            # yes.  Anything currently in message?
+            if ( ( self.status_messages is not None ) and ( self.status_messages != "" ) ):
+            
+                self.status_messages += "\n"
+                
+            #-- END check to see if we need a newline. --#
+            
+            self.status_messages += status_message_IN
+        
+        #-- END check to see if message. --#
+        
+        return status_OUT
+        
+    #-- END method set_status() --#
     
 
 #= End Article_Data Model =======================================================
@@ -4009,6 +4081,9 @@ class Article_Person( models.Model ):
     #    decimal values.
     match_confidence_level = models.DecimalField( max_digits = 11, decimal_places = 10, blank = True, null = True, default = 0.0 )
 
+    # field to store how person was captured.
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    
     # time stamps.
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -4245,7 +4320,7 @@ class Article_Author( Article_Person ):
         
         if ( self.person is not None ):
         
-            string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; type = " + self.author_type + " )"
+            string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; type = " + self.author_type + "; capture_method = " + str( self.person.capture_method ) + " )"
         
         else:
         
@@ -4502,8 +4577,8 @@ class Article_Source( Article_Person ):
     #attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
     #attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
     
-    # field to store how source was captured.
-    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    # field to store how source was captured. - parent
+    #capture_method = models.CharField( max_length = 255, blank = True, null = True )
     
     
 
@@ -4525,7 +4600,7 @@ class Article_Source( Article_Person ):
 
             if ( self.person is not None ):
 
-                string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + " )"
+                string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; capture_method = " + str( self.person.capture_method ) + " )"
 
             else:
 
@@ -4872,7 +4947,7 @@ class Abstract_Selected_Text( models.Model ):
         
         #-- END check to see if article_source. --#
         
-        # got associated quotation?...
+        # got associated text?...
         if ( self.value ):
         
             string_OUT += self.value
@@ -4882,6 +4957,50 @@ class Abstract_Selected_Text( models.Model ):
         return string_OUT
 
     #-- END __str__() method --#
+    
+    
+    def build_details_list( self ):
+        
+        '''
+        Pulls together details on this selected text, one item to a list
+           element.  If present in instance, includes:
+           - graf - paragraph_number
+           - from word - starting word number
+           - to word - ending word number
+           - index - start character index in plain-text.
+        '''
+        
+        # return reference
+        list_OUT = []
+        
+        if ( self.paragraph_number ):
+        
+            list_OUT.append( "graf: " + str( self.paragraph_number ) )
+            
+        #-- END check to see if paragraph_number --#
+        
+        if ( self.value_word_number_start ):
+        
+            list_OUT.append( "from word: " + str( self.value_word_number_start ) )
+            
+        #-- END check to see if value_word_number_start --#
+        
+        if ( self.value_word_number_end ):
+        
+            list_OUT.append( "to word: " + str( self.value_word_number_end ) )
+            
+        #-- END check to see if value_word_number_end --#
+        
+        if ( self.value_index ):
+        
+            list_OUT.append( "index: " + str( self.value_index ) )
+            
+        #-- END check to see if value_index --#
+        
+        return list_OUT
+        
+    #-- END method build_details_list --#
+    
 
 
 #-- END abstract class Abstract_Selected_Text --#
@@ -4913,6 +5032,9 @@ class Article_Source_Mention( Abstract_Selected_Text ):
         # return reference
         string_OUT = ""
         
+        # declare variables
+        details_list = []
+        
         # got id?
         if ( self.id ):
         
@@ -4920,14 +5042,27 @@ class Article_Source_Mention( Abstract_Selected_Text ):
             
         #-- END check for ID. --#
 
+        details_list = self.build_details_list()
+        
+        # got anything in list?
+        if ( len( details_list ) > 0 ):
+        
+            string_OUT += " ( " + "; ".join( details_list ) + " ) - "
+        
+        #-- END check to see if got anything in list --#
+
         if ( self.article_source ):
         
             string_OUT += str( self.article_source ) + " : "
         
         #-- END check to see if article_source. --#
         
-        # got associated quotation?...
-        if ( self.value ):
+        # got associated text?...
+        if ( self.value_in_context ):
+        
+            string_OUT += self.value_in_context
+        
+        elif ( self.value ):
         
             string_OUT += self.value
                 
@@ -4976,12 +5111,24 @@ class Article_Source_Quotation( Abstract_Selected_Text ):
         # return reference
         string_OUT = ""
         
+        # declare variables
+        details_list = []
+        
         # got id?
         if ( self.id ):
         
             string_OUT = str( self.id ) + " - "
             
         #-- END check for ID. --#
+
+        details_list = self.build_details_list()
+        
+        # got anything in list?
+        if ( len( details_list ) > 0 ):
+        
+            string_OUT += " ( " + "; ".join( details_list ) + " ) - "
+        
+        #-- END check to see if got anything in list --#
 
         if ( self.article_source ):
         

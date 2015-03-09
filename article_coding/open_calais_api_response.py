@@ -147,7 +147,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
 
                     # yes - output.
                     current_property_value = current_container[ item ][ current_property ]
-                    string_OUT += "----> " + current_property + ": " + current_property_value  + "\n"
+                    string_OUT += "----> " + current_property + ": " + str( current_property_value ) + "\n"
 
                     # is it a Quotation or a Person?
                     if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):

@@ -100,6 +100,7 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID = "external_uuid"
     PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
+    PARAM_CAPTURE_METHOD = "capture_method"
 
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
@@ -683,6 +684,7 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_EXTERNAL_UUID = "external_uuid"
               - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
               - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
+              - PARAM_CAPTURE_METHOD = "capture_method"
            
         Starting with the methods on Person object:
 
@@ -729,6 +731,9 @@ class ArticleCoder( BasicRateLimited ):
         found_person = False
         person_filter_qs = None
         person_filter_count = -1
+        
+        # saving/updating person
+        capture_method = ""
         
         
         # got a return reference?
@@ -1117,13 +1122,27 @@ class ArticleCoder( BasicRateLimited ):
                 # should always be a Person to return at this point, but being
                 #    cautious, just in case.
                 
+        #------------------------------------------------------------------------
+        # !save/update person
+        #------------------------------------------------------------------------
+            
                 # got a person (sanity check)?
                 if ( person_instance is not None ):
                 
+                    # !new person
                     # if no ID, is new.  Save to database.
                     if ( not( person_instance.id ) ):
                     
-                        # no ID.  Save the record.
+                        # no ID.  See if there is a capture_method.
+                        capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
+                        if ( ( capture_method is not None ) and ( capture_method != "" ) ):
+                        
+                            # got a capture method.  Add it to person instance.
+                            person_instance.capture_method = capture_method
+                        
+                        #-- END check to see if capture_method --#
+                        
+                        # Save the record.
                         person_instance.save()
                         self.output_debug( "In " + me + ": saved new person - " + str( person_instance ) )
                         
@@ -1267,6 +1286,7 @@ class ArticleCoder( BasicRateLimited ):
         alternate_author_list = []
         article_author = None
         article_author_qs = None
+        my_capture_method = ""
         
         # get logger
         my_logger = self.get_logger()
@@ -1280,6 +1300,9 @@ class ArticleCoder( BasicRateLimited ):
             # got an author string?
             if ( ( author_string is not None ) and ( author_string != "" ) ):
             
+                # get capture method
+                my_capture_method = article_data_IN.coder_type
+        
                 my_logger.debug( "--- In " + me + ": Processing author string: \"" + author_string + "\"" )
                 
                 # got an author string.  Parse it.  First, break out organization.
@@ -1352,6 +1375,7 @@ class ArticleCoder( BasicRateLimited ):
                         # prepare person details.
                         person_details_dict = {}
                         person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+                        person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
             
                         # lookup person - returns person and confidence score inside
                         #    Article_Author instance.
@@ -1382,6 +1406,7 @@ class ArticleCoder( BasicRateLimited ):
                                 article_author.article_data = article_data_IN
                                 article_author.person = author_person
                                 article_author.organization_string = author_organization
+                                article_author.capture_method = my_capture_method
                                 article_author.save()
                                 
                                 # got alternate authors?
