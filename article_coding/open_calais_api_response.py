@@ -90,7 +90,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
     OC_ITEM_TYPE_PERSON = "Person"
     
     # debugging
-    DEBUG_FLAG = True
+    DEBUG_FLAG = False
     
     # status constants
     STATUS_SUCCESS = "Success!"    
@@ -98,14 +98,15 @@ class OpenCalaisApiResponse( LoggingHelper ):
 
 
     #============================================================================
-    # Instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #============================================================================
 
 
-    json_response_object = None
-    doc_object = None
-    type_group_to_items_dict = {}
-    type_to_items_dict = {}
+    #json_response_object = None
+    #doc_object = None
+    #type_group_to_items_dict = {}
+    #type_to_items_dict = {}
 
 
     #============================================================================
@@ -188,7 +189,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
         self.response_object = None
         self.doc_object = None
         self.type_group_to_items_dict = {}
-        self.type_to_entities_dict = {}
+        self.type_to_items_dict = {}
         
         # logging variables
         self.set_logger_name( self.LOGGING_NAME )
@@ -520,8 +521,12 @@ class OpenCalaisApiResponse( LoggingHelper ):
             # get current entity type.
             current_type = JSONHelper.get_json_object_property( current_object, self.JSON_NAME_ITEM_TYPE )
             
-            # log it.
-            my_logger.debug( "In " + me + ": #" + str( item_counter ) + " (type group: " + str( current_type_group ) + "; type: " + str( current_type ) + ") = " + current_key )
+            if ( self.DEBUG_FLAG == True ):
+
+                # log it.
+                my_logger.debug( "In " + me + ": #" + str( item_counter ) + " (type group: " + str( current_type_group ) + "; type: " + str( current_type ) + ") = " + current_key )
+                
+            #-- END DEBUG --#
             
             # if doc, store the doc off in separate reference for easy access.
             if ( current_key == self.JSON_NAME_DOC ):
@@ -539,12 +544,21 @@ class OpenCalaisApiResponse( LoggingHelper ):
             # add to dict of type groups to items
             current_status = self.add_item_to_type_group_dict( current_key, current_object )
             
-            my_logger.debug( "In " + me + ": added to type group map: " + current_status )
+            if ( self.DEBUG_FLAG == True ):
+
+                my_logger.debug( "In " + me + ": added to type group map: " + current_status )
+                
+            #-- END DEBUG --#
             
             # add to dict of types to items
             current_status = self.add_item_to_type_dict( current_key, current_object )
         
-            my_logger.debug( "In " + me + ": added to type map: " + current_status )
+            if ( self.DEBUG_FLAG == True ):
+
+                my_logger.debug( "In " + me + ": added to type map: " + current_status )
+
+            #-- END DEBUG --#
+
 
         #-- END loop over top-level keys in JSON --#
         
@@ -552,17 +566,21 @@ class OpenCalaisApiResponse( LoggingHelper ):
         self.json_response_object = response_json_root
         instance_OUT = self.json_response_object
         
-        # try retrieving doc entity directly from root element.
-        doc_object = self.get_item_from_response( self.JSON_NAME_DOC )
+        if ( self.DEBUG_FLAG == True ):
 
-        # output, just to make sure I have what I think I have.
-        json_string = JSONHelper.pretty_print_json( doc_object )
-        my_logger.debug( "In " + me + ": outputting JSON \"doc\" object from lookup:" )
-        my_logger.debug( json_string )
+            # try retrieving doc entity directly from root element.
+            doc_object = self.get_item_from_response( self.JSON_NAME_DOC )
+    
+            # output, just to make sure I have what I think I have.
+            json_string = JSONHelper.pretty_print_json( doc_object )
+            my_logger.debug( "In " + me + ": outputting JSON \"doc\" object from lookup:" )
+            my_logger.debug( json_string )
+        
+        #-- END DEBUG --#
         
         return instance_OUT
 
-    #-- END method set_response_object() --#
+    #-- END method set_json_response_object() --#
 
 
 #-- END class OpenCalaisApiResponse --#

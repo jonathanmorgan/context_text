@@ -26,6 +26,7 @@ This code file contains a class that implements functions for interacting with
 
 # python standard libraries
 import json
+import sys
 
 # mess with python 3 support
 import six
@@ -116,14 +117,16 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     
 
     #============================================================================
-    # Instance variables
+    # NOT Instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #============================================================================
 
     
     # declare variables
-    http_helper = None
-    content_type = ""
-    output_format = ""
+    #http_helper = None
+    #content_type = ""
+    #output_format = ""
 
 
     #============================================================================
@@ -234,160 +237,194 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 # got article data?
                 if ( article_data is not None ):
                 
-                    # then, get text.
-                    article_text = article_IN.article_text_set.get()
-                    
-                    # retrieve article body with HTML
-                    article_body_html = article_text.get_content()
-                    
-                    # AND get without HTML - OpenCalais API does not deal well
-                    #    with HTML - just pass plain text.
-                    article_body_text = article_text.get_content_sans_html()
-                    
-                    # store whatever we are passing in the request_data variable.
-                    request_data = article_body_text
-                    
-                    if ( self.DEBUG_FLAG == True ):
-                    
-                        my_logger.debug( "In " + me + ": Article " + str( article_IN.id ) + " - " + article_IN.headline )
-                        my_logger.debug( "In " + me + ": current article body:" )
-                        my_logger.debug( request_data )
-                    
-                    #-- END debug --#
-                    
-                    # encode the data, so (hopefully) HTTPHelper doesn't have to.
-                    #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
-                    # - moved this into load_url_requests().
-                    
-                    # get Http_Helper instance
-                    my_http_helper = self.get_http_helper()
-                    
-                    # what is the content type?
-                    my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
-                    
-                    if ( self.DEBUG_FLAG == True ):
-                    
-                        my_logger.debug( "In " + me + ": content type = " + my_content_type )
-                        
-                    #-- END debug --#
-                    
-                    # make the request.
-                    requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
-                    
-                    # raw text:
-                    requests_raw_text = requests_response.text
-                    
-                    # convert to a json object, inside try since sometimes OpenCalais
-                    #    returns non-parsable stuff.
+                    self.output_debug( "\n\nIn " + me + ": Article_Data instance id = " + str( article_data.id ) )
+                
+                    # wrap in try/except to aim to catch unexpected exceptions,
+                    #    so we can set a status in the Article_Data instance.
                     try:
-                    
-                        # convert to JSON object
-                        requests_response_json = requests_response.json()
-                        is_response_OK = True
+                
+                        # then, get text.
+                        article_text = article_IN.article_text_set.get()
                         
-                    except ValueError as ve:
-                    
-                        # problem parsing JSON - log body of article, response,
-                        #    and exception.
-                        exception_message = "ValueError parsing OpenCalais JSON."
-                        my_logger.debug( "\n ! " + exception_message )
-                        my_logger.debug( "\n ! article text:\n" + request_data )
-                        my_logger.debug( "\n ! response text:\n" + requests_raw_text )
-                        my_exception_helper.process_exception( ve, exception_message )
+                        # retrieve article body with HTML
+                        article_body_html = article_text.get_content()
                         
-                        # set status on article data to service_error
-                        article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                        # AND get without HTML - OpenCalais API does not deal well
+                        #    with HTML - just pass plain text.
+                        article_body_text = article_text.get_content_sans_html()
                         
-                        # let rest of program know it is not OK to proceed.
-                        is_response_OK = False
-                    
+                        # store whatever we are passing in the request_data variable.
+                        request_data = article_body_text
+                        
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            my_logger.debug( "In " + me + ": Article " + str( article_IN.id ) + " - " + article_IN.headline )
+                            my_logger.debug( "In " + me + ": current article body:" )
+                            my_logger.debug( request_data )
+                        
+                        #-- END debug --#
+                        
+                        # encode the data, so (hopefully) HTTPHelper doesn't have to.
+                        #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
+                        # - moved this into load_url_requests().
+                        
+                        # get Http_Helper instance
+                        my_http_helper = self.get_http_helper()
+                        
+                        # what is the content type?
+                        my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
+                        
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            my_logger.debug( "In " + me + ": content type = " + my_content_type )
+                            
+                        #-- END debug --#
+                        
+                        # make the request.
+                        requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
+                        
+                        # raw text:
+                        requests_raw_text = requests_response.text
+                        
+                        # convert to a json object, inside try since sometimes OpenCalais
+                        #    returns non-parsable stuff.
+                        try:
+                        
+                            # convert to JSON object
+                            requests_response_json = requests_response.json()
+                            is_response_OK = True
+                            
+                        except ValueError as ve:
+                        
+                            # problem parsing JSON - log body of article, response,
+                            #    and exception.
+                            exception_message = "ValueError parsing OpenCalais JSON."
+                            my_logger.debug( "\n ! " + exception_message )
+                            my_logger.debug( "\n ! article text:\n" + request_data )
+                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                            my_exception_helper.process_exception( ve, exception_message )
+                            
+                            # set status on article data to service_error
+                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            
+                            # let rest of program know it is not OK to proceed.
+                            is_response_OK = False
+                        
+                        except Exception as e:
+                        
+                            # unknown problem parsing JSON - log body of article,
+                            #    response, and exception.
+                            exception_message = "Exception parsing OpenCalais JSON."
+                            my_logger.debug( "\n ! " + exception_message )
+                            my_logger.debug( "\n ! article text:\n" + request_data )
+                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                            my_exception_helper.process_exception( e, exception_message )
+                            
+                            # set status on article data to service_error
+                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            
+                            # let rest of program know it is not OK to proceed.
+                            is_response_OK = False
+                        
+                        #-- END try/except around JSON processing. --#
+                        
+                        # render some of it as a string, for debug.
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            # render and output debug string.
+                            debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
+                            self.output_debug( debug_string )
+            
+                        #-- END debug --#
+            
+                        self.output_debug( "In " + me + ": after parsing JSON, before processing it." )
+            
+                        # all parsed - OK to continue?
+                        if ( is_response_OK == True ):
+            
+                            # process contents of response.
+                        
+                            # Process authors?
+                            if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
+                            
+                                # process authors.  Get author string
+                                my_author_string = article_IN.author_string
+                                
+                                my_logger.info( "Article author string: " + my_author_string )
+                                
+                                # process author string.
+                                latest_status = self.process_author_string( article_data, my_author_string )
+                                
+                                do_save_data = True
+                                
+                                my_logger.debug( "After calling process_author_string() - " + latest_status )
+                                
+                            #-- End check to see if we process authors --#
+                            
+                            # call the process_json_api_response() method to parse
+                            #    the request JSON, find all quotations, people they
+                            #    are tied to, then make attribution relations.
+                            latest_status = self.process_json_api_response( article_IN, article_data, requests_response_json )
+
+                            # if we make it here, we're done processing.
+                            #    Complete!                            
+                            article_data.status = Article_Data.STATUS_COMPLETE
+
+                        #-- END check to see if OK to process information returned from OpenCalais. --#
+                            
+                        # regardless, Save Article_Data instance if flag indicates
+                        #    we are to save.
+                        if ( do_save_data == True ):
+                            
+                            article_data.save()
+                            
+                            # store the JSON in an Article_Data_Note.
+                            my_json_note = Article_Data_Notes()
+                            
+                            # set values
+                            my_json_note.article_data = article_data
+                            my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
+                            my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
+                            #my_json_note.status = ""
+                            my_json_note.source = self.CONFIG_APPLICATION
+                            my_json_note.content_description = "OpenCalais REST API response JSON"
+                            
+                            # save note.
+                            my_json_note.save()
+    
+                        #-- END check to see if we save article data --#
+                        
+                        # not saving article at this point - shouldn't be changing anything there.
+                        # save the article, as well?
+                        #if ( do_save_article == True ):
+                            
+                            # We do also save the article itself.
+                        #    article_IN.save()
+                            
+                        #-- END check to see if we save article. --#
+
                     except Exception as e:
                     
-                        # unknown problem parsing JSON - log body of article,
-                        #    response, and exception.
-                        exception_message = "Exception parsing OpenCalais JSON."
-                        my_logger.debug( "\n ! " + exception_message )
-                        my_logger.debug( "\n ! article text:\n" + request_data )
-                        my_logger.debug( "\n ! response text:\n" + requests_raw_text )
-                        my_exception_helper.process_exception( e, exception_message )
-                        
-                        # set status on article data to service_error
-                        article_data.status = Article_Data.STATUS_SERVICE_ERROR
-                        
-                        # let rest of program know it is not OK to proceed.
-                        is_response_OK = False
-                    
-                    #-- END try/except around JSON processing. --#
-                    
-                    # render some of it as a string, for debug.
-                    if ( self.DEBUG_FLAG == True ):
-                    
-                        # render and output debug string.
-                        debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
-                        self.output_debug( debug_string )
-        
-                    #-- END debug --#
-        
-                    # all parsed - OK to continue?
-                    if ( is_response_OK == True ):
-        
-                        # process contents of response.
-                    
-                        # Process authors?
-                        if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
-                        
-                            # process authors.  Get author string
-                            my_author_string = article_IN.author_string
-                            
-                            my_logger.info( "Article author string: " + my_author_string )
-                            
-                            # process author string.
-                            latest_status = self.process_author_string( article_data, my_author_string )
-                            
-                            do_save_data = True
-                            
-                            my_logger.debug( "After calling process_author_string() - " + latest_status )
-                            
-                        #-- End check to see if we process authors --#
-                        
-                        # call the process_json_api_response() method to parse
-                        #    the request JSON, find all quotations, people they
-                        #    are tied to, then make attribution relations.
-                        latest_status = self.process_json_api_response( article_IN, article_data, requests_response_json )
-                        
-                    #-- END check to see if OK to process information returned from OpenCalais. --#
-                        
-                    # regardless, Save Article_Data instance if flag indicates
-                    #    we are to save.
-                    if ( do_save_data == True ):
-                        
+                        # set status on article data to unknown_error and save().
+                        exception_message = "In OpenCalaisArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
+                        article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
                         article_data.save()
                         
-                        # store the JSON in an Article_Data_Note.
-                        my_json_note = Article_Data_Notes()
+                        # unknown problem processing article
+                        my_logger.debug( "\n ! " + exception_message )
+                        my_logger.debug( "\n ! Article_Data:\n" + str( article_data ) )
+                        my_exception_helper.process_exception( e, exception_message )
                         
-                        # set values
-                        my_json_note.article_data = article_data
-                        my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                        my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
-                        #my_json_note.status = ""
-                        my_json_note.source = self.CONFIG_APPLICATION
-                        my_json_note.content_description = "OpenCalais REST API response JSON"
+                        # return status.  Article_Data is already saved.  Might
+                        #    as well let this end gracefully.
+                        status_OUT = self.STATUS_ERROR_PREFIX + exception_message
                         
-                        # save note.
-                        my_json_note.save()
-
-                    #-- END check to see if we save article data --#
+                        # OR, re-raise excpetion:
+                        # exception_type, exception_value, exception_traceback = sys.exc_info()
+                        # raise exception_type, exception_value, exception_traceback
                     
-                    # not saving article at this point - shouldn't be changing anything there.
-                    # save the article, as well?
-                    #if ( do_save_article == True ):
+                    #-- END try/except around all article processing after retrieving article_data. --#
                         
-                        # We do also save the article itself.
-                    #    article_IN.save()
-                        
-                    #-- END check to see if we save article. --#
-
                 else:
                 
                     status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.CONFIG_APPLICATION + "\""
@@ -571,6 +608,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         # quote processing variables.
         quotation_dict = None
+        quote_count = -1
         current_oc_URI = None
         current_quotation_json = None
         quote_counter = -1
@@ -613,7 +651,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         # get response helper.
         my_response_helper = OpenCalaisApiResponse()
-
+        
+        #temp_dict_1 = my_response_helper.type_group_to_items_dict
+        #my_logger.debug( "In " + me + ": type_group_to_items_dict = " + str( temp_dict_1 ) )
+        #temp_dict_2 = my_response_helper.type_to_items_dict
+        #my_logger.debug( "In " + me + ": type_to_items_dict = " + str( temp_dict_2 ) )
+        
         # chuck the response in there.
         my_response_helper.set_json_response_object( json_response_IN )
         
@@ -621,236 +664,250 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         # get all the quotations.
         quotation_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
-        
-        # loop over them
-        quote_counter = 0
-        for current_oc_URI, current_quotation_json in six.iteritems( quotation_dict ):
-        
-            # increment counter
-            quote_counter = quote_counter + 1
-            
-            # log the URI
-            my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
-            
-            # get the URI of the person who was quoted.
-            quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
-            
-            # is person already in person-to-quote map?
-            if quote_person_URI in person_to_quotes_map:
-            
-                # yes - get quote dictionary...
-                person_quote_dict = person_to_quotes_map[ quote_person_URI ]
 
-                # then add current quote to dictionary.
-                person_quote_dict[ current_oc_URI ] = current_quotation_json
-            
-            else:
-            
-                # person not in map.  Make dict of quotes...
-                person_quote_dict = {}
-
-                # add current quote...
-                person_quote_dict[ current_oc_URI ] = current_quotation_json
-
-                # then associate quotes with person URI.
-                person_to_quotes_map[ quote_person_URI ] = person_quote_dict
-            
-            #-- END check to see if person in person-to-quotes map. --#
-            
-        #-- END loop over quotation items --#
+        quote_count = len( quotation_dict )
+        my_logger.debug( "In " + me + ": quote count = " + str( quote_count ) )
         
-        # now, look at people who were quoted.
-        person_counter = 0
-        for person_URI in person_to_quotes_map:
+        # make sure we have one or more quotes
+        if ( quote_count > 0 ):
         
-            # increment counter
-            person_counter = person_counter + 1
+            # loop over them
+            quote_counter = 0
+            for current_oc_URI, current_quotation_json in six.iteritems( quotation_dict ):
             
-            # try to get person from URI.
-            person_json = my_response_helper.get_item_from_response( person_URI )
-            person_json_string = JSONHelper.pretty_print_json( person_json )
-            
-            self.output_debug( "+++++ Person JSON for URI: \"" + person_URI + "\"\n\n\n" + person_json_string )
-            
-            # Do we have JSON for this URI?
-            if ( ( person_json is not None ) and ( person_json_string.strip() != "null" ) ):
-            
-                # get and output name.
-                person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+                # increment counter
+                quote_counter = quote_counter + 1
                 
-                my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
+                # log the URI
+                my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
                 
-                # try looking up source just like we look up authors.
-    
-                # make empty article source to work with, for now.
-                article_source = Article_Source()
+                # get the URI of the person who was quoted.
+                quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
                 
-                # prepare person details.
-                person_details_dict = {}
-                person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
-                person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
-                person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
-                person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
-                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
+                # is person already in person-to-quote map?
+                if quote_person_URI in person_to_quotes_map:
+                
+                    # yes - get quote dictionary...
+                    person_quote_dict = person_to_quotes_map[ quote_person_URI ]
     
-                # lookup person - returns person and confidence score inside
-                #    Article_Source instance.
-                article_source = self.lookup_person( article_source, 
-                                                     person_name,
-                                                     create_if_no_match_IN = True,
-                                                     update_person_IN = True,
-                                                     person_details_IN = person_details_dict )
-                source_person = article_source.person
-                            
-                # got a person?
-                if ( source_person is not None ):
-    
-                    # One Article_Source per person, and then have a new thing to
-                    #    hold quotations that hangs off that.
-                    # At any rate, make method to process person/quote that you pass:
-                    # - source_person
-                    # - article_data_IN
-                    # - my_response_helper (including JSON, etc.)
-                    # - quote JSON?  OR quotes list for person, from person_to_quotes_map...?
-                    # - ...?
-                    
-                    # Now, we need to deal with Article_Source instance.  First, see
-                    #    if there already is one for this name.  If so, do nothing.
-                    #    If not, make one.
-                    article_source_qs = article_data_IN.article_source_set.filter( person = source_person )
-                    article_source_count = article_source_qs.count()
-                    
-                    # got anything?
-                    if ( article_source_count == 0 ):
-                                                 
-                        # no - add - more stuff to set.  Need to see what we can get.
-                        
-                        # use the article_source created above.
-                        #article_source = Article_Source()
-                    
-                        article_source.article_data = article_data_IN
-                        article_source.person = source_person
-                        
-                        # confidence level set in lookup_person() method.
-                        #article_source.match_confidence_level = 1.0
-        
-                        article_source.source_type = Article_Source.SOURCE_TYPE_INDIVIDUAL
-                        article_source.title = ""
-                        article_source.more_title = ""
-                        article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
-                        #article_source.document = None
-                        article_source.source_contact_type = Article_Source.SOURCE_CONTACT_TYPE_OTHER
-                        #article_source.source_capacity = None
-                        #article_source.localness = None
-                        article_source.notes = ""
-        
-                        # field to store how source was captured.
-                        article_source.capture_method = self.CONFIG_APPLICATION
-                    
-                        article_source.save()
-                        
-                        # !TODO - topics?
-                        # if we want to set topics, first save article_source, then
-                        #    we can parse them out of the JSON, make sure they exist
-                        #    in topics table, then add relation.  Probably want to
-                        #    make Person_Topic also.  So, if we do this, it will be
-                        #    a separate method.
-                        #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
-    
-                        my_logger.debug( "In " + me + ": adding Article_Source instance for " + str( source_person ) + "." )
-        
-                    elif ( article_source_count == 1 ):
-                    
-                        my_logger.debug( "In " + me + ": Article_Source instance already exists for " + str( source_person ) + "." )
-                        
-                        # retrieve article source from query set.
-                        article_source = article_source_qs.get()
-                        
-                        # !TODO - want to do any updates?
-                        
-                    else:
-                    
-                        # neither 0 or 1 sources - either invalid or multiple,
-                        #    either is not right.
-                        my_logger.debug( "In " + me + ": Article_Source count for " + str( source_person ) + " = " + str( article_source_count ) + ".  What to do?" )
-                                            
-                    #-- END check if need new Article_Source instance --#
-                    
-                    # make sure we have an article_source
-                    if ( ( article_source is not None ) and ( article_source.id ) ):
-    
-                        # !deal with mentions.
-                        
-                        # get list of mentions from Person's "instances"
-                        mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
-        
-                        # loop
-                        mention_counter = 0
-                        for current_mention in mention_list:
-                        
-                            # incremenet counter
-                            mention_counter = mention_counter + 1
-                        
-                            self.output_debug( "Mention " + str( mention_counter ) )
-                            
-                            # call method to process mention.
-                            self.process_json_mention( article_IN, article_source, current_mention )
-        
-                        #-- END loop over mentions --#
-        
-                        # !deal with quotes.
-                        # to start, loop over the quotes associated with the current
-                        #    person and see what is in them.
-                        
-                        # get map of URIs to JSON for "Quotation" item type.
-                        uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
-                        
-                        # get quote list for current person.
-                        person_quote_list = person_to_quotes_map.get( person_URI, [] )
-                        
-                        # loop
-                        quote_counter = 0
-                        for current_quotation_URI in person_quote_list:
-        
-                            # increment counter
-                            quote_counter = quote_counter + 1
-        
-                            self.output_debug( "Quotation " + str( quote_counter ) + " URI: " + current_quotation_URI )
-                            
-                            # get JSON from URI_to_quotation_dictionary.
-                            quotation_JSON = uri_to_quotation_dictionary.get( current_quotation_URI, None )
-        
-                            # got one?
-                            if ( quotation_JSON is not None ):
-        
-                                self.process_json_quotation( article_IN, article_source, current_quotation_URI, quotation_JSON )
-                                
-                            #-- END check to see if Quotation JSON --#
-                            
-                        #-- END loop over quotations --#
-                        
-                    #-- END check to make sure we have an Article_Source --#
-    
+                    # then add current quote to dictionary.
+                    person_quote_dict[ current_oc_URI ] = current_quotation_json
+                
                 else:
                 
-                    my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
+                    # person not in map.  Make dict of quotes...
+                    person_quote_dict = {}
     
-                #-- END check to see if person found. --#
+                    # add current quote...
+                    person_quote_dict[ current_oc_URI ] = current_quotation_json
+    
+                    # then associate quotes with person URI.
+                    person_to_quotes_map[ quote_person_URI ] = person_quote_dict
                 
-            else:
-            
-                # !TODO - need to set something on article_data_IN here, so we
-                #    can track when this odd error occurs - was a problem with
-                #    OpenCalais.
-                status_string = "In OpenCalaisArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
-                article_data_IN.set_status( Article_Data.STATUS_SERVICE_ERROR, status_string  )
-            
-                # log it.
-                my_logger.debug( status_string )
+                #-- END check to see if person in person-to-quotes map. --#
                 
-            #-- END check to see if JSON present for URI --#
+            #-- END loop over quotation items --#
+            
+            my_logger.debug( "In " + me + ": done with quote loop, on to person loop, over person-to-quote map." )
+            
+            # now, look at people who were quoted.
+            person_counter = 0
+            for person_URI in person_to_quotes_map:
+            
+                # increment counter
+                person_counter = person_counter + 1
+                
+                # try to get person from URI.
+                person_json = my_response_helper.get_item_from_response( person_URI )
+                person_json_string = JSONHelper.pretty_print_json( person_json )
+                
+                self.output_debug( "+++++ Person JSON for URI: \"" + person_URI + "\"\n\n\n" + person_json_string )
+                
+                # Do we have JSON for this URI?
+                if ( ( person_json is not None ) and ( person_json_string.strip() != "null" ) ):
+                
+                    # get and output name.
+                    person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+                    
+                    my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
+                    
+                    # try looking up source just like we look up authors.
         
-        #-- END loop over persons --#
+                    # make empty article source to work with, for now.
+                    article_source = Article_Source()
+                    
+                    # prepare person details.
+                    person_details_dict = {}
+                    person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+                    person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
+                    person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
+                    person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
+                    person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
+        
+                    # lookup person - returns person and confidence score inside
+                    #    Article_Source instance.
+                    article_source = self.lookup_person( article_source, 
+                                                         person_name,
+                                                         create_if_no_match_IN = True,
+                                                         update_person_IN = True,
+                                                         person_details_IN = person_details_dict )
+                    source_person = article_source.person
+                                
+                    # got a person?
+                    if ( source_person is not None ):
+        
+                        # One Article_Source per person, and then have a new thing to
+                        #    hold quotations that hangs off that.
+                        # At any rate, make method to process person/quote that you pass:
+                        # - source_person
+                        # - article_data_IN
+                        # - my_response_helper (including JSON, etc.)
+                        # - quote JSON?  OR quotes list for person, from person_to_quotes_map...?
+                        # - ...?
+                        
+                        # Now, we need to deal with Article_Source instance.  First, see
+                        #    if there already is one for this name.  If so, do nothing.
+                        #    If not, make one.
+                        article_source_qs = article_data_IN.article_source_set.filter( person = source_person )
+                        article_source_count = article_source_qs.count()
+                        
+                        # got anything?
+                        if ( article_source_count == 0 ):
+                                                     
+                            # no - add - more stuff to set.  Need to see what we can get.
+                            
+                            # use the article_source created above.
+                            #article_source = Article_Source()
+                        
+                            article_source.article_data = article_data_IN
+                            article_source.person = source_person
+                            
+                            # confidence level set in lookup_person() method.
+                            #article_source.match_confidence_level = 1.0
+            
+                            article_source.source_type = Article_Source.SOURCE_TYPE_INDIVIDUAL
+                            article_source.title = ""
+                            article_source.more_title = ""
+                            article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
+                            #article_source.document = None
+                            article_source.source_contact_type = Article_Source.SOURCE_CONTACT_TYPE_OTHER
+                            #article_source.source_capacity = None
+                            #article_source.localness = None
+                            article_source.notes = ""
+            
+                            # field to store how source was captured.
+                            article_source.capture_method = self.CONFIG_APPLICATION
+                        
+                            article_source.save()
+                            
+                            # !TODO - topics?
+                            # if we want to set topics, first save article_source, then
+                            #    we can parse them out of the JSON, make sure they exist
+                            #    in topics table, then add relation.  Probably want to
+                            #    make Person_Topic also.  So, if we do this, it will be
+                            #    a separate method.
+                            #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
+        
+                            my_logger.debug( "In " + me + ": adding Article_Source instance for " + str( source_person ) + "." )
+            
+                        elif ( article_source_count == 1 ):
+                        
+                            my_logger.debug( "In " + me + ": Article_Source instance already exists for " + str( source_person ) + "." )
+                            
+                            # retrieve article source from query set.
+                            article_source = article_source_qs.get()
+                            
+                            # !TODO - want to do any updates?
+                            
+                        else:
+                        
+                            # neither 0 or 1 sources - either invalid or multiple,
+                            #    either is not right.
+                            my_logger.debug( "In " + me + ": Article_Source count for " + str( source_person ) + " = " + str( article_source_count ) + ".  What to do?" )
+                                                
+                        #-- END check if need new Article_Source instance --#
+                        
+                        # make sure we have an article_source
+                        if ( ( article_source is not None ) and ( article_source.id ) ):
+        
+                            # !deal with mentions.
+                            
+                            # get list of mentions from Person's "instances"
+                            mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
+            
+                            # loop
+                            mention_counter = 0
+                            for current_mention in mention_list:
+                            
+                                # incremenet counter
+                                mention_counter = mention_counter + 1
+                            
+                                self.output_debug( "Mention " + str( mention_counter ) )
+                                
+                                # call method to process mention.
+                                self.process_json_mention( article_IN, article_source, current_mention )
+            
+                            #-- END loop over mentions --#
+            
+                            # !deal with quotes.
+                            # to start, loop over the quotes associated with the current
+                            #    person and see what is in them.
+                            
+                            # get map of URIs to JSON for "Quotation" item type.
+                            uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+                            
+                            # get quote list for current person.
+                            person_quote_list = person_to_quotes_map.get( person_URI, [] )
+                            
+                            # loop
+                            quote_counter = 0
+                            for current_quotation_URI in person_quote_list:
+            
+                                # increment counter
+                                quote_counter = quote_counter + 1
+            
+                                self.output_debug( "Quotation " + str( quote_counter ) + " URI: " + current_quotation_URI )
+                                
+                                # get JSON from URI_to_quotation_dictionary.
+                                quotation_JSON = uri_to_quotation_dictionary.get( current_quotation_URI, None )
+            
+                                # got one?
+                                if ( quotation_JSON is not None ):
+            
+                                    self.process_json_quotation( article_IN, article_source, current_quotation_URI, quotation_JSON )
+                                    
+                                #-- END check to see if Quotation JSON --#
+                                
+                            #-- END loop over quotations --#
+                            
+                        #-- END check to make sure we have an Article_Source --#
+        
+                    else:
+                    
+                        my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
+        
+                    #-- END check to see if person found. --#
+                    
+                else:
+                
+                    # !TODO - need to set something on article_data_IN here, so we
+                    #    can track when this odd error occurs - was a problem with
+                    #    OpenCalais.
+                    status_string = "In OpenCalaisArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
+                    article_data_IN.set_status( Article_Data.STATUS_SERVICE_ERROR, status_string  )
+                
+                    # log it.
+                    my_logger.debug( status_string )
+                    
+                #-- END check to see if JSON present for URI --#
+            
+            #-- END loop over persons --#
+            
+        else:
+
+            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article, so nothing else to do." )
+
+        #-- END check to see if any quotes in article.  If not, no attribution. --#
 
         return status_OUT
     

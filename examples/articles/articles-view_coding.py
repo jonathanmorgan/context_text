@@ -21,7 +21,7 @@ article_source_id_list = []
 # output details
 output_detail = True
 output_quotations = True
-output_mentions = True
+output_mentions = False
 source_quotation_qs = None
 source_quotation_count = -1
 source_quotation = None
@@ -34,6 +34,9 @@ automated_user = User.objects.filter( username = "automated" ).get()
 
 # find all Article_Data for automated user.
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
+
+# now, filter to only include tag "prelim_unit_test_002"
+article_data_qs = article_data_qs.filter( article__tags__name = "prelim_unit_test_002" )
 
 # how many?
 article_data_count = article_data_qs.count()
@@ -53,7 +56,7 @@ for article_data in article_data_qs:
     article_source_count = article_data.article_source_set.count()
 
     print( "\n\n============================================================\n" )
-    print( "- Article_Data " + str( article_data.id ) + " ( " + article_data.coder_type + " ) - authors: " + str( article_author_count ) + "; sources: " + str( article_source_count ) + "; details: " + str( article_data ) )
+    print( "- Article_Data " + str( article_data.id ) + " - status: " + article_data.status + "; authors: " + str( article_author_count ) + "; sources: " + str( article_source_count ) + "; coder_type: " + article_data.coder_type + "; details: " + str( article_data ) )
     
     # get article...
     related_article = article_data.article

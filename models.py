@@ -1817,7 +1817,7 @@ class Article( models.Model ):
     #locations = models.ManyToManyField( Article_Location, blank = True )
 
     #----------------------------------------------------------------------------
-    # Instance variables and meta-data
+    # Meta class
     #----------------------------------------------------------------------------
 
     # Meta-data for this class.
@@ -2470,16 +2470,29 @@ class Abstract_Related_Content( models.Model ):
         ordering = [ 'last_modified', 'create_date' ]
 
     #----------------------------------------------------------------------
-    # instance variables
+    # NOT instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #----------------------------------------------------------------------
 
 
-    bs_helper = None
+    #bs_helper = None
     
 
     #----------------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Abstract_Related_Content, self ).__init__( *args, **kwargs )
+
+        # then, initialize variable.
+        self.bs_helper = None
+        
+    #-- END method __init__() --#
 
 
     def get_bs_helper( self ):
@@ -3827,7 +3840,9 @@ class Article_Data( models.Model ):
     )
     
     STATUS_NEW = "new"
+    STATUS_COMPLETE = "complete"
     STATUS_SERVICE_ERROR = "service_error"
+    STATUS_UNKNOWN_ERROR = "unknown_error"
     STATUS_DEFAULT = STATUS_NEW
 
     article = models.ForeignKey( Article )
@@ -3946,7 +3961,7 @@ class Article_Data( models.Model ):
     #-- END method get_source_counts_by_type() --#
     
     
-    def set_status( self, status_IN, status_message_IN ):
+    def set_status( self, status_IN, status_message_IN = None ):
         
         '''
         Accepts status value and status message.  Stores status in "status"
@@ -3955,7 +3970,7 @@ class Article_Data( models.Model ):
         '''
         
         # return reference
-        status_OUT
+        status_OUT = ""
         
         # got a status?
         if ( status_IN is not None ):
@@ -3966,18 +3981,22 @@ class Article_Data( models.Model ):
         #-- END check to see if status. --#
 
         # got message?
-        if ( status_message_IN ):
+        if ( ( status_message_IN is not None ) and ( status_message_IN != "" ) ):
             
             # yes.  Anything currently in message?
             if ( ( self.status_messages is not None ) and ( self.status_messages != "" ) ):
             
-                self.status_messages += "\n"
+                self.status_messages += "\n" + status_message_IN
                 
-            #-- END check to see if we need a newline. --#
+            else:
             
-            self.status_messages += status_message_IN
-        
+                self.status_messages = status_message_IN
+                    
+            #-- END check to see if we need a newline. --#
+                    
         #-- END check to see if message. --#
+        
+        status_OUT = self.status
         
         return status_OUT
         
@@ -4094,18 +4113,31 @@ class Article_Person( models.Model ):
         abstract = True
 
     #----------------------------------------------------------------------------
-    # Instance variables
+    # NOT Instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #----------------------------------------------------------------------------
 
 
     # variable to hold list of multiple potentially matching persons, if more
     #    than one found when lookup is attempted by Article_Coder.
-    person_match_list = []
+    #person_match_list = []
 
 
     #----------------------------------------------------------------------------
     # instance methods
     #----------------------------------------------------------------------------
+
+    
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Article_Person, self ).__init__( *args, **kwargs )
+
+        # then, initialize variable.
+        self.person_match_list = []
+        
+    #-- END method __init__() --#
 
 
     def __str__( self ):
@@ -5293,7 +5325,7 @@ class Temp_Section( models.Model ):
     OUTPUT_PAGES_PER_DAY = "pages_per_day"
 
     #----------------------------------------------------------------------
-    # instance variables
+    # model fields
     #----------------------------------------------------------------------
 
     name = models.CharField( max_length = 255, blank = True, null = True )
@@ -6555,7 +6587,7 @@ class Articles_To_Migrate( models.Model ):
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
 
     #----------------------------------------------------------------------------
-    # Instance variables and meta-data
+    # Meta class
     #----------------------------------------------------------------------------
 
     # Meta-data for this class.

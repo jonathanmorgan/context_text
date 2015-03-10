@@ -22,6 +22,9 @@ import datetime
 #from StringIO import StringIO
 #import pickle
 
+# HTML parsing
+from bs4 import BeautifulSoup
+
 # import django authentication code.
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -173,6 +176,16 @@ def article_view( request_IN ):
     article_instance = None
     article_paragraph_list = None
     
+    # declare variables - interacting with article text
+    article_content = ""
+    article_content_bs = None
+    p_tag_list = []
+    p_tag_count = -1
+    rendered_article_html = ""
+    paragraph_index = -1
+    paragraph_number = -1
+    p_tag_bs = None
+
     # configure context instance
     my_context_instance = RequestContext( request_IN )
     
@@ -232,11 +245,60 @@ def article_view( request_IN ):
                     # retrieve article text.
                     article_text = article_instance.article_text_set.get()
                     
+                    # get content
+                    article_content = article_text.get_content()
+                    
+                    # parse with beautifulsoup
+                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
+                    
+                    # get paragraph tag list
+                    p_tag_list = article_content_bs.find_all( 'p' )
+                    p_tag_count = len( p_tag_list )
+                    
+                    # got p-tags?
+                    if ( p_tag_count > 0 ):
+                    
+                        # yes.  create a table with two columns per row:
+                        # - paragraph number
+                        # - paragraph text
+                        rendered_article_html = '''
+                            <table class="gridtable">
+                                <tr>
+                                    <th>graf#</th>
+                                    <th>text</th>
+                                </tr>
+                        '''
+                    
+                        # for each paragraph, grab that <p> and place it in a table
+                        #    cell.
+                        for paragraph_index in range( p_tag_count ):
+                        
+                            # paragraph number is index + 1
+                            paragraph_number = paragraph_index + 1
+                            
+                            # get <p> tag with ID of paragraph_number
+                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
+                            
+                            # render row
+                            rendered_article_html += "\n        <tr><td>" + str( paragraph_number ) + "</td><td>" + str( p_tag_bs ) + "</td></tr>"
+                        
+                        #-- END loop over <p> ids. --#
+                        
+                        rendered_article_html += "</table>"
+                    
+                    else:
+                    
+                        # no p-tags - just use article_text.
+                        rendered_article_html = article_content
+                        
+                    #-- END check to see if paragraph tags. --#
+                    
                     # seed response dictionary.
                     response_dictionary[ 'article_instance' ] = article_instance
                     response_dictionary[ 'article_text' ] = article_text
+                    response_dictionary[ 'article_content' ] = rendered_article_html
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
+
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
                     

@@ -108,12 +108,13 @@ class ArticleCoding( SourcenetBase ):
 
 
     #---------------------------------------------------------------------------
-    # instance variables
+    # NOT Instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #---------------------------------------------------------------------------
     
-    
     # exception helper.
-    exception_helper = None
+    #exception_helper = None
     
     #---------------------------------------------------------------------------
     # __init__() method
@@ -129,6 +130,7 @@ class ArticleCoding( SourcenetBase ):
         my_exception_helper = None
         
         # exception helper
+        self.exception_helper = None
         my_exception_helper = ExceptionHelper()
         #my_exception_helper.set_logging_level( logging.DEBUG )
         self.set_exception_helper( my_exception_helper )
@@ -249,7 +251,7 @@ class ArticleCoding( SourcenetBase ):
                     #-- END pre-request check for rate-limiting --#
                     
                     # a little debugging to start
-                    my_logger.info( "==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
+                    my_logger.info( "\n\n============================================================\n==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
                     
                     # add per-article exception handling, so we can get an idea of how
                     #    many articles cause problems.

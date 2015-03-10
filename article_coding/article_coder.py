@@ -109,14 +109,16 @@ class ArticleCoder( BasicRateLimited ):
 
 
     #----------------------------------------------------------------------------
-    # instance variables
+    # NOT instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
     #----------------------------------------------------------------------------
 
 
     # cofiguration parameters
-    config_application = ""
-    config_property_list = []
-    config_properties = {}
+    #config_application = ""
+    #config_property_list = []
+    #config_properties = {}
     
     # rate-limiting - in BasicRateLimited
     #do_manage_time = False
@@ -124,10 +126,10 @@ class ArticleCoder( BasicRateLimited ):
     #rate_limit_daily_limit = -1
     
     # debug
-    debug = ""
+    #debug = ""
 
     # exception helper.
-    exception_helper = None
+    #exception_helper = None
     
     
     #-----------------------------------------------------------------------------
@@ -194,6 +196,7 @@ class ArticleCoder( BasicRateLimited ):
         self.debug = ""
         
         # exception helper
+        self.exception_helper = None
         my_exception_helper = ExceptionHelper()
         #my_exception_helper.set_logging_level( logging.DEBUG )
         self.set_exception_helper( my_exception_helper )
@@ -818,8 +821,8 @@ class ArticleCoder( BasicRateLimited ):
                         match_status = self.MATCH_STATUS_MULTIPLE
                     
                         # store persons in list.
-                        #multiple_list = list( full_name_qs )
-                        for current_person in full_name_qs:
+                        #multiple_list = list( multiple_qs )
+                        for current_person in multiple_qs:
                         
                             # add person to list.
                             multiple_list.append( current_person )

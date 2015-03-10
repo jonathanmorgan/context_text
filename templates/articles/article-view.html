@@ -51,7 +51,11 @@
                 <li><em>Author:</em> {{ article_instance.author_string }}</li>
             </ul>
             <h4>Article Text</h4>
+            {{ article_content|safe }}
+            <!-- 
+            <hr />
             {{ article_text.get_content|safe }}
+            -->
         </div>
 
     {% endif %}
