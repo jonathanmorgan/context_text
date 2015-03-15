@@ -1256,8 +1256,7 @@ class Person( Abstract_Person ):
             
         #-- END check to see if ID --#
                 
-        string_OUT += self.last_name + ', ' + self.first_name
-        
+        string_OUT += str( self.last_name ) + ', ' + str( self.first_name )        
         # middle name?
         if ( self.middle_name ):
         
@@ -3086,6 +3085,12 @@ class Article_Text( Unique_Article_Content ):
                         
                     elif ( match_count == 0 ):
                     
+                        # !TODO - final sanity check.  In case of first word being in
+                        #    one paragraph, rest of string in another, start
+                        #    removing words from the front and recursively
+                        #    calling this method, to see if we can at least get
+                        #    an idea of where it is.
+                    
                         # no match - return empty list.
                         list_OUT = []
                         
@@ -3275,6 +3280,12 @@ class Article_Text( Unique_Article_Content ):
                         #-- END loop over paragraph list. --#
                         
                     elif ( next_count == 0 ):
+                    
+                        # !TODO - final sanity check.  In case of first word being in
+                        #    one paragraph, rest of string in another, start
+                        #    removing words from the front and recursively
+                        #    calling this method, to see if we can at least get
+                        #    an idea of where it is.
                     
                         # no match - return empty list.
                         list_OUT = []
@@ -4619,8 +4630,13 @@ class Article_Source( Article_Person ):
     #----------------------------------------------------------------------
 
     def __str__( self ):
+
         # return reference
         string_OUT = ''
+        
+        # declare variables
+        temp_string = ""
+        separator = ""
 
         if ( self.id ):
         
@@ -4632,7 +4648,27 @@ class Article_Source( Article_Person ):
 
             if ( self.person is not None ):
 
-                string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; capture_method = " + str( self.person.capture_method ) + " )"
+                # last name
+                temp_string = self.person.last_name
+                if ( ( temp_string is not None ) and ( temp_string != "" ) ):
+                
+                    string_OUT += temp_string
+                    separator = ", "
+                    
+                #-- END last name --#
+                
+                # first name
+                temp_string = self.person.first_name
+                if ( ( temp_string is not None ) and ( temp_string != "" ) ):
+                
+                    string_OUT += separator + temp_string
+                    separator = ", "
+                    
+                #-- END first name --#
+                
+                # there will be an ID, and fine to just output "None" if no
+                #    capture_method.
+                string_OUT += " ( id = " + str( self.person.id ) + "; capture_method = " + str( self.person.capture_method ) + " )"
 
             else:
 

@@ -83,6 +83,7 @@ urlpatterns = patterns( '',
 
     # article views
     url( r'^article/view/$', 'sourcenet.views.article_view' ),
+    url( r'^article/article_data/view/$', 'sourcenet.views.article_view_article_data' ),
 
     # article coding page
     url( r'^article/code/', 'sourcenet.views.article_code' ),

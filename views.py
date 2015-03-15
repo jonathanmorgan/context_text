@@ -66,6 +66,7 @@ from sourcenet.export.network_output import NetworkOutput
 # Import the classes for our SourceNet application
 from sourcenet.models import Article
 #from sourcenet.models import Article_Author
+from sourcenet.models import Article_Data
 #from sourcenet.models import Article_Source
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
@@ -343,6 +344,118 @@ def article_view( request_IN ):
     return response_OUT
 
 #-- END view method article_view() --#
+
+
+@login_required
+def article_view_article_data( request_IN ):
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_view_coding"
+    my_context_instance = None
+    response_dictionary = {}
+    default_template = ''
+    article_lookup_form = None
+    is_form_ready = False
+    article_id = -1
+    article_data_qs = None
+    article_data_count = -1
+    article_data_instance = None
+    article_data_list = []
+
+    # configure context instance
+    my_context_instance = RequestContext( request_IN )
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'article_instance' ] = None
+    response_dictionary[ 'article_text' ] = None
+
+    # set my default rendering template
+    default_template = 'articles/article-view-article-data.html'
+
+    # variables for building, populating person array that is used to control
+    #    building of network data matrices.
+
+    # do we have output parameters?
+    if ( request_IN.method == 'POST' ):
+
+        article_lookup_form = ArticleLookupForm( request_IN.POST )
+        article_id = request_IN.POST.get( "article_id", -1 )
+        is_form_ready = True
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        article_lookup_form = ArticleLookupForm( request_IN.GET )
+        article_id = request_IN.GET.get( "article_id", -1 )
+        is_form_ready = True
+        
+    #-- END check to see request type so we initialize form correctly. --#
+    
+    # form ready?
+    if ( is_form_ready == True ):
+
+        if ( article_lookup_form.is_valid() == True ):
+
+            # retrieve article specified by the input parameter, then create
+            #   HTML output of article plus Article_Text.
+            
+            # get article ID.
+            article_id = request_IN.POST.get( "article_id", -1 )
+
+            # retrieve QuerySet of Article_Data related to article.
+            article_data_qs = Article_Data.objects.filter( article_id = article_id )
+
+            # get count of queryset return items
+            if ( ( article_data_qs != None ) and ( article_data_qs != "" ) ):
+
+                # get count of articles
+                article_data_count = article_data_qs.count()
+    
+                # to start, just make a list out of the article data and pass it
+                #    to the template.
+                article_data_list = list( article_data_qs )
+
+                # seed response dictionary.
+                response_dictionary[ 'article_id' ] = article_id
+                response_dictionary[ 'article_data_list' ] = article_data_list
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, make an empty instance of network output form.
+        article_lookup_form = ArticleLookupForm()
+        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+
+    return response_OUT
+
+#-- END view method article_view_coding() --#
 
 
 @login_required
