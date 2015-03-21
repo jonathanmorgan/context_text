@@ -226,7 +226,8 @@ def article_view( request_IN ):
             #   HTML output of article plus Article_Text.
             
             # get article ID.
-            article_id = request_IN.POST.get( "article_id", -1 )
+            # already populated above.
+            #article_id = request_IN.POST.get( "article_id", -1 )
 
             # retrieve QuerySet that contains that article.
             article_qs = Article.objects.filter( pk = article_id )
@@ -307,7 +308,7 @@ def article_view( request_IN ):
                 
                     # error - none or multiple articles found for ID. --#
                     print( "No article returned for ID passed in." )
-                    response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     
                 #-- END check to see if there is one or other than one. --#
@@ -403,8 +404,9 @@ def article_view_article_data( request_IN ):
             # retrieve article specified by the input parameter, then create
             #   HTML output of article plus Article_Text.
             
+            # Article ID retrieved above
             # get article ID.
-            article_id = request_IN.POST.get( "article_id", -1 )
+            #article_id = request_IN.POST.get( "article_id", -1 )
 
             # retrieve QuerySet of Article_Data related to article.
             article_data_qs = Article_Data.objects.filter( article_id = article_id )

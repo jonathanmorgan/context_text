@@ -56,6 +56,17 @@
             <hr />
             {{ article_text.get_content|safe }}
             -->
+            <hr />
+            <h4>Article_Data Record(s)</h4>
+
+            <ul>
+                {# loop over article_data #}
+                {% for article_data in article_instance.article_data_set.all %}
+                    <li>{{ article_data }}</li>
+                {% endfor %}
+            </ul>
+            
+            <p><a href="../article_data/view?article_id={{ article_instance.id }}">View related Article_Data</a></p>
         </div>
 
     {% endif %}

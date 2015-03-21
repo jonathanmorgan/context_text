@@ -2850,6 +2850,37 @@ class Article_Text( Unique_Article_Content ):
 
 
     @classmethod
+    def convert_string_to_word_list( cls, string_IN ):
+        
+        '''
+        Accepts a string, for now, just calls ".split()" on it to split it on
+           white space.  Eventually, might make it fancier (deal better with
+           punctuation, for example, at least optionally).
+        Returns list of words if no errors, None if error.
+        '''
+        
+        # return reference
+        word_list_OUT = []
+        
+        # got a string?
+        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+        
+            # split the string.
+            word_list_OUT = string_IN.split()
+        
+        else:
+        
+            # no string.  Return None.
+            word_list_OUT = None
+            
+        #-- END check to see if string. --#
+        
+        return word_list_OUT
+        
+    #-- END class method convert_string_to_word_list() --#
+    
+
+    @classmethod
     def process_paragraph_contents( cls, paragraph_element_list_IN, bs_helper_IN = None, *args, **kwargs ):
   
         '''
@@ -2954,7 +2985,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method __str__() --#
 
     
-    def find_in_canonical_text( self, string_IN ):
+    def find_in_canonical_text( self, string_IN, do_multi_graph_check_IN = True ):
         
         '''
         Accepts a string that we want to locate in the nested article text.
@@ -2980,6 +3011,25 @@ class Article_Text( Unique_Article_Content ):
         match_count = -1
         matching_index_list = []
         current_index = -1
+        
+        # declare variables - multi-graf check - start removing wrods from
+        #    beginning to test for case where start of string is end of
+        #    paragraph.
+        original_word_list = None
+        reduced_word_list = None
+        removed_word_list = None
+        reduced_word_count = -1
+        reduced_string = ""
+        multi_graph_match_list = []
+        multi_graph_match_count = -1
+        continue_reducing = True
+        reduced_match_index = -1
+        first_word = ""
+        first_word_index = -1
+        removed_word = ""
+        removed_word_index = -1
+        removed_word_count = -1
+        removed_word_match_counter = -1
         
         # got a string?
         if ( ( string_IN is not None ) and ( string_IN != "" ) ):
@@ -3008,7 +3058,7 @@ class Article_Text( Unique_Article_Content ):
                     #    Keep looping until number that match are 0 or 1.
                     
                     # split string into words.
-                    remaining_word_list = string_IN.split()
+                    remaining_word_list = self.convert_string_to_word_list( string_IN )
                     current_word_list = []
                     
                     # loop until 0 or 1 matches.
@@ -3072,8 +3122,174 @@ class Article_Text( Unique_Article_Content ):
                         #-- END check to see if no more words left. --#
 
                     #-- END loop to find starting paragraph. --#
+
+                    # !find_in_canonical_text() - spans paragraphs?
+                    # check if spans paragraphs.  In case of first word
+                    #    in one paragraph, rest of string in another, start
+                    #    removing words from the front and recursive-ish-ly
+                    #    calling this method, to see if we can at least get
+                    #    an idea of where it is.
+                    if ( ( match_count == 0 ) and ( do_multi_graph_check_IN == True ) ):
+                    
+                        # convert original string to word list.
+                        original_word_list = self.convert_string_to_word_list( string_IN )
+                        
+                        # start reduced_word_list at original_word_list.
+                        reduced_word_list = list( original_word_list )
+                        
+                        # start removed_word_list as an empty list.
+                        removed_word_list = []
+
+                        # initialize loop variables.
+                        multi_graph_match_list = []
+                        multi_graph_match_count = -1
+                        continue_reducing = True
+
+                        # loop, removing one word from beginning of reduced list
+                        #    each time, then calling this method, with the flag
+                        #    to do_multi_graph_check_IN set to False.
+                        while continue_reducing == True:
+                        
+                            # take first word in reduced_word_list, add it to
+                            #    removed_word_list, then remove it from
+                            #    reduced_word_list.
+                            removed_word_list.append( reduced_word_list[ 0 ] )
+                            del( reduced_word_list[ 0 ] )
+                            
+                            # first, check if we are out of words.
+                            reduced_word_count = len( reduced_word_list )
+                            if ( reduced_word_count > 0 ):
+
+                                # call this method with reduced string
+                                reduced_string = " ".join( reduced_word_list )
+                                multi_graph_match_list = self.find_in_canonical_text( reduced_string, False )
+                                
+                                # what we got?
+                                if ( multi_graph_match_list is not None ):
+                                
+                                    # got a list back.  Matches?
+                                    multi_graph_match_count = len( multi_graph_match_list )
+                                    if ( multi_graph_match_count == 0 ):
+                                    
+                                        # no match.  Keep looping.
+                                        continue_reducing = True
+                                        
+                                    elif ( multi_graph_match_count >= 1 ):
+                                    
+                                        # one or more matches.  Once you get 
+                                        #    matches, stop.  string is only
+                                        #    getting shorter.  Will have to deal
+                                        #    with multiples outside of loop.
+                                        continue_reducing = False
+
+                                    else:
+                                    
+                                        # error - should never get here.  Stop
+                                        #    looping.
+                                        continue_reducing = False
+                                        output_debug( "In " + me + ": ERROR - error in child call to " + me + "() - length of list returned is not >= 0.  Falling out." )
+
+                                    #-- END check to see how many matches. --#
+                                
+                                else:
+                                
+                                    # error in child call.  Stop looping.
+                                    continue_reducing = False
+                                    output_debug( "In " + me + ": ERROR - error in child call to " + me + "() - None returned rather than a list.  Falling out." )
+                                
+                                #-- END check to see if list is None --#
+                                
+                            else:
+                            
+                                # reduced word count is 0. End of line.
+                                continue_reducing = False
+                                
+                            #-- END check to see if any words left in reduced word list. --#
+                            
+                        #-- END loop to reduce and search for string. --#
+                        
+                        # OK.  See if we have a match list.
+                        if ( multi_graph_match_list is not None ):
+                        
+                            # got more than 0?
+                            multi_graph_match_count = len( multi_graph_match_list )
+                            if ( multi_graph_match_count > 0 ):
+                            
+                                # got something.  for each match, then, need to
+                                #    loop over the removed words and look for
+                                #    each in the overall string, from the right,
+                                #    starting with the match index, until one of
+                                #    the matches is not between the first word
+                                #    and the match index (fail) or you run out
+                                #    of words (match).
+                                for reduced_match_index in multi_graph_match_list:
+                                    
+                                    # look for first word.
+                                    first_word = original_word_list[ 0 ]
+                                    first_word_index = my_text.rfind( first_word, 0, reduced_match_index )
+                                    most_recent_index = first_word_index - 1
+                                    
+                                    # first word found?
+                                    if ( first_word_index >= 0 ):
+                                    
+                                        # loop over the removed words.
+                                        removed_word_count = len( removed_word_list )
+                                        removed_word_match_counter = 0
+                                        for removed_word in removed_word_list:
+    
+                                            # get index for removed word.
+                                            removed_word_index = my_text.rfind( removed_word, 0, reduced_match_index )
+                                            
+                                            # make sure it is greater than
+                                            #    most_recent_index.
+                                            if ( removed_word_index > most_recent_index ):
+                                            
+                                                # removed word is in correct
+                                                #    range - increment counter.
+                                                removed_word_match_counter += 1
+                                                output_debug( "In " + me + ": in sanity check - for reduced match index = " + str( reduced_match_index ) + ", word ( \"" + removed_word + "\" ) is at index " + str( removed_word_index ) + " which is between previous index ( " + str( most_recent_index ) + " ) and start of reduced match ( " + str( reduced_match_index ) + " ).  OK so far..." )
+
+                                            else:
+                                            
+                                                # not in range.  Don't increment
+                                                #    counter, no match.
+                                                output_debug( "In " + me + ": in sanity check - for reduced match index = " + str( reduced_match_index ) + ", word ( \"" + removed_word + "\" ) is at index " + str( removed_word_index ) + " which is not between previous index ( " + str( most_recent_index ) + " ) and start of reduced match ( " + str( reduced_match_index ) + " ).  No match." )
+                                                
+                                            #-- END check to see if removed word is in right place. --#
+                                            
+                                            # set most_recent_index to
+                                            #    removed_word_index
+                                            most_recent_index = removed_word_index
+                                        
+                                        #-- END loop over removed words. --#
+                                        
+                                        # is removed_word_match_counter equal to
+                                        #    removed_word_count?
+                                        if ( removed_word_match_counter == removed_word_count ):
+                                        
+                                            # yes.  This is a match.
+                                            matching_index_list.append( first_word_index )
+                                        
+                                        #-- END check to see if removed words indicate match --#
+                                        
+                                    #-- END check to see if first word found. --#
+                                    
+                                #-- END loop over multi-graph match list --#
+
+                            else:
+                            
+                                # nothing in list.  Leave match_count and
+                                #    matching_index_list as-is.
+                                pass
+                                
+                            #-- END check to see if matches. --#
+                        
+                        #-- END check to see if multi-graph match list --#
+                        
+                    #-- END check to see if no matches at this point. --#
                     
                     # so, got one match, or none.
+                    match_count = len( matching_index_list )
                     if ( match_count >= 1 ):
                     
                         # found one or more indexes - add each to output list.
@@ -3084,12 +3300,6 @@ class Article_Text( Unique_Article_Content ):
                         #-- END loop over index matches. --#
                         
                     elif ( match_count == 0 ):
-                    
-                        # !TODO - final sanity check.  In case of first word being in
-                        #    one paragraph, rest of string in another, start
-                        #    removing words from the front and recursively
-                        #    calling this method, to see if we can at least get
-                        #    an idea of where it is.
                     
                         # no match - return empty list.
                         list_OUT = []
@@ -3118,7 +3328,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method find_in_canonical_text() --#
         
         
-    def find_in_paragraph_list( self, string_IN ):
+    def find_in_paragraph_list( self, string_IN, do_multi_graph_check_IN = True  ):
         
         '''
         Accepts a string we want to locate in one of the paragraphs inside this
@@ -3149,6 +3359,26 @@ class Article_Text( Unique_Article_Content ):
         current_word_list = []
         current_string = ""
         remaining_word_count = -1
+        matching_paragraph_list = []
+        match_count = -1
+        current_paragraph_text = ""
+        
+        # declare variables - multi-graf check - start removing wrods from
+        #    beginning to test for case where start of string is end of
+        #    paragraph.
+        original_word_list = None
+        reduced_word_list = None
+        removed_word_list = None
+        multi_graph_match_list = []
+        multi_graph_match_count = -1
+        continue_reducing = True
+        reduced_word_count = -1
+        reduced_string = ""
+        removed_string = ""
+        removed_string_match_list = []
+        preceding_paragraph_number = -1
+        preceding_paragraph_index = -1
+        preceding_paragraph_text = ""
         
         # got a string?
         if ( ( string_IN is not None ) and ( string_IN != "" ) ):
@@ -3187,7 +3417,7 @@ class Article_Text( Unique_Article_Content ):
                     output_debug( "In " + me + ": WARNING - string being searched for is in text, likely spans paragraphs." )
                 
                     # split string into words.
-                    remaining_word_list = string_IN.split()
+                    remaining_word_list = self.convert_string_to_word_list( string_IN )
                     current_word_list = []
                     
                     # it is in the text.  So, start to build up string word by
@@ -3263,15 +3493,168 @@ class Article_Text( Unique_Article_Content ):
                         #-- END check to see if no more words left. --#
                     
                     #-- END loop to find starting paragraph. --#
+
+                    # put list of remaining paragraphs in
+                    #    matching_paragraph_list and get count of matches.
+                    matching_paragraph_list = list( current_paragraph_list )
+                    match_count = len( matching_paragraph_list )
+
+                    # !find_in_paragraph_list() - spans paragraphs?
+                    # check if spans paragraphs.  In case of first word
+                    #    in one paragraph, rest of string in another, start
+                    #    removing words from the front and recursive-ish-ly
+                    #    calling this method, to see if we can at least get
+                    #    an idea of where it is.
+                    if ( ( match_count == 0 ) and ( do_multi_graph_check_IN == True ) ):
+                    
+                        # convert original string to word list.
+                        original_word_list = self.convert_string_to_word_list( string_IN )
+                        
+                        # start reduced_word_list at original_word_list.
+                        reduced_word_list = list( original_word_list )
+                        
+                        # start removed_word_list as an empty list.
+                        removed_word_list = []
+
+                        # initialize loop variables.
+                        multi_graph_match_list = []
+                        multi_graph_match_count = -1
+                        continue_reducing = True
+
+                        # loop, removing one word from beginning of reduced list
+                        #    each time, then calling this method, with the flag
+                        #    to do_multi_graph_check_IN set to False.
+                        while continue_reducing == True:
+                        
+                            # take first word in reduced_word_list, add it to
+                            #    removed_word_list, then remove it from
+                            #    reduced_word_list.
+                            removed_word_list.append( reduced_word_list[ 0 ] )
+                            del( reduced_word_list[ 0 ] )
+                            
+                            # first, check if we are out of words.
+                            reduced_word_count = len( reduced_word_list )
+                            if ( reduced_word_count > 0 ):
+
+                                # call this method with reduced string
+                                reduced_string = " ".join( reduced_word_list )
+                                multi_graph_match_list = self.find_in_paragraph_list( reduced_string, False )
+                                
+                                # what we got?
+                                if ( multi_graph_match_list is not None ):
+                                
+                                    # got a list back.  Matches?
+                                    multi_graph_match_count = len( multi_graph_match_list )
+                                    if ( multi_graph_match_count == 0 ):
+                                    
+                                        # no match.  Keep looping.
+                                        continue_reducing = True
+                                        
+                                    elif ( multi_graph_match_count >= 1 ):
+                                    
+                                        # one or more matches.  Once you get 
+                                        #    matches, stop.  string is only
+                                        #    getting shorter.  Will have to deal
+                                        #    with multiples outside of loop.
+                                        continue_reducing = False
+
+                                    else:
+                                    
+                                        # error - should never get here.  Stop
+                                        #    looping.
+                                        continue_reducing = False
+                                        output_debug( "In " + me + ": ERROR - error in child call to " + me + "() - length of list returned is not >= 0.  Falling out." )
+
+                                    #-- END check to see how many matches. --#
+                                
+                                else:
+                                
+                                    # error in child call.  Stop looping.
+                                    continue_reducing = False
+                                    output_debug( "In " + me + ": ERROR - error in child call to " + me + "() - None returned rather than a list.  Falling out." )
+                                
+                                #-- END check to see if list is None --#
+                                
+                            else:
+                            
+                                # reduced word count is 0. End of line.
+                                continue_reducing = False
+                                
+                            #-- END check to see if any words left in reduced word list. --#
+                            
+                        #-- END loop to reduce and search for string. --#
+                        
+                        # OK.  See if we have a match list.
+                        if ( multi_graph_match_list is not None ):
+                        
+                            # got more than 0?
+                            multi_graph_match_count = len( multi_graph_match_list )
+                            if ( multi_graph_match_count > 0 ):
+                            
+                                # got something.  for each match, then, need to
+                                #    look for string of removed words in list of
+                                #    paragraphs.  If removed word string is in
+                                #    the paragraph before the current match (at
+                                #    least in the list of matches, if not the
+                                #    only one), then match!  If not, no match.
+                                for reduced_match_index in multi_graph_match_list:
+                                    
+                                    # just look for the string made up of the
+                                    #    removed words.
+                                    removed_string = " ".join( removed_word_list )
+                                    
+                                    # call this method, telling it not to do any
+                                    #    multi-paragraph checking.
+                                    removed_string_match_list = self.find_in_paragraph_list( removed_string, False )
+                                    
+                                    # is reduced_match_index - 1 (paragraph
+                                    #    before match) in list?
+                                    preceding_paragraph_number = reduced_match_index - 1
+                                    if ( preceding_paragraph_number in removed_string_match_list ):
+                                    
+                                        # got a match.  Get paragraph text for
+                                        #    that preceding paragraph.
+                                        
+                                        # get index of preceding paragraph.
+                                        preceding_paragraph_index = preceding_paragraph_number - 1
+
+                                        # get text for that paragraph.
+                                        preceding_paragraph_text = my_paragraph_list[ preceding_paragraph_index ]
+                                        
+                                        # add text to matching_paragraph_list
+                                        matching_paragraph_list.append( preceding_paragraph_text )
+                                        output_debug( "In " + me + ": in sanity check - for reduced match paragraph # = " + str( reduced_match_index ) + ", removed words ( \"" + removed_string + "\" ) are in graph(s): " + str( removed_string_match_list ) + ", which includes the previous graph ( " + str( preceding_paragraph_number ) + " ) - this is a match." )
+                        
+                                    else:
+                                    
+                                        # not a match.
+                                        output_debug( "In " + me + ": in sanity check - for reduced match paragraph # = " + str( reduced_match_index ) + ", removed words ( \"" + removed_string + "\" ) are in graphs: " + str( removed_string_match_list ) + ", none of which is the previous graph ( " + str( preceding_paragraph_number ) + " ) - this is not a match." )
+                                        
+                                    #-- END check to see if match for removed text is in previous paragraph. --#
+                                    
+                                #-- END loop over multi-graph match list --#
+
+                            else:
+                            
+                                # nothing in list.  Leave match_count and
+                                #    matching_index_list as-is.
+                                pass
+                                
+                            #-- END check to see if matches. --#
+                        
+                        #-- END check to see if multi-graph match list --#
+                        
+                    #-- END check to see if no matches at this point. --#
                     
                     # so, loop is done.  How many matches?
-                    if ( next_count >= 1 ):
+                    match_count = len( matching_paragraph_list )
+                    if ( match_count >= 1 ):
                     
                         # found one or more paragraphs - look up index of each
                         #    in my_paragraph_list, add that plus 1 to the list.
-                        for current_paragraph in current_paragraph_list:
+                        for current_paragraph_text in matching_paragraph_list:
 
-                            index_OUT = my_paragraph_list.index( current_paragraph )
+                            index_OUT = my_paragraph_list.index( current_paragraph_text )
                             index_OUT = index_OUT + 1
                         
                             # add to output list.
@@ -3279,13 +3662,7 @@ class Article_Text( Unique_Article_Content ):
                             
                         #-- END loop over paragraph list. --#
                         
-                    elif ( next_count == 0 ):
-                    
-                        # !TODO - final sanity check.  In case of first word being in
-                        #    one paragraph, rest of string in another, start
-                        #    removing words from the front and recursively
-                        #    calling this method, to see if we can at least get
-                        #    an idea of where it is.
+                    elif ( match_count == 0 ):
                     
                         # no match - return empty list.
                         list_OUT = []
@@ -3293,7 +3670,7 @@ class Article_Text( Unique_Article_Content ):
                     else:
                     
                         # not 0 or >= 1 - what to do?
-                        output_debug( "In " + me + ": found " + str( next_count ) + " matches for string.  Returning None." )
+                        output_debug( "In " + me + ": found " + str( match_count ) + " matches for string.  Returning None." )
                         list_OUT = None
                         
                     #-- END check to see if we found paragraph. --#
@@ -3516,7 +3893,7 @@ class Article_Text( Unique_Article_Content ):
             my_word_list = self.get_word_list()
             
             # convert string into a word list.
-            string_word_list = string_IN.split()
+            string_word_list = self.convert_string_to_word_list( string_IN )
             
             # try the KnuthMorrisPratt algorithm from Python Cookbook 2nd Ed.
             for match_index in SequenceHelper.KnuthMorrisPratt( my_word_list, string_word_list ):
@@ -3702,7 +4079,7 @@ class Article_Text( Unique_Article_Content ):
         cleaned_content = StringHelper.replace_white_space( cleaned_content )
         
         # split the string on white space.
-        word_list = cleaned_content.split()
+        word_list = self.convert_string_to_word_list( cleaned_content )
         
         # how many we got?
         word_count = len( word_list )

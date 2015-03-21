@@ -40,6 +40,16 @@ class ArticleLookupForm( forms.Form ):
 #-- END ArticleLookupForm --#
 
 
+# create a form to let a user lookup an article to view its contents.
+class Article_DataLookupForm( forms.Form ):
+
+    # Article_Data ID
+    article_data_id = forms.IntegerField( required = True, label = "Article Data ID" )
+    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
+
+#-- END ArticleLookupForm --#
+
+
 # create a form to let a user specify the criteria used to limit the articles
 #    that are used to create output.
 class ArticleSelectForm( forms.Form ):
