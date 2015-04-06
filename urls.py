@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2015 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -24,6 +24,8 @@ from django.contrib.auth import views as auth_views
 # import polls from mysite
 from sourcenet.models import Article
 
+'''
+# !tastypie API
 # import tastypie stuff, so we can make REST-ful API
 from tastypie.api import Api
 from sourcenet.tastypie_api.sourcenet_api import ArticleResource
@@ -33,6 +35,7 @@ v1_api = Api( api_name='v1' )
 
 # register resources
 v1_api.register( ArticleResource() )
+'''
 
 # polls-specific URL settings, intended to be included in master urls.py file.
 #urlpatterns = patterns( 'mysite.polls.views',
@@ -88,7 +91,8 @@ urlpatterns = patterns( '',
     # article coding page
     url( r'^article/code/', 'sourcenet.views.article_code' ),
 
+    # !tastypie API
     # APIs
-    url( r'^api/', include( v1_api.urls) ),
+    #url( r'^api/', include( v1_api.urls) ),
 
 )
