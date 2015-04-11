@@ -49,7 +49,7 @@ article_qs = my_article_coding.create_article_query_set()
 #article_qs = article_qs[ : 1 ]
 
 # limit to single test ID.
-#article_qs = article_qs.filter( id = 318737 )
+article_qs = article_qs.filter( id = 4831 )
 
 # make sure we have at least one article
 article_count = article_qs.count()

@@ -3697,8 +3697,8 @@ class Article_Text( Unique_Article_Content ):
         Accepts a string that we want to locate in the nested article text with
            all HTML and markup removed ("plain text").
         If found, returns the index of the start of the string inside the
-           canonical text for this article.  If not found, returns -1.  If
-           error, returns None.
+           plain text for this article.  If not found, returns -1.  If error,
+           returns None.
         '''
         
         # return reference.

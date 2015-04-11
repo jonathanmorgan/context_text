@@ -1000,6 +1000,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         mention_prefix_word_list = []
         mention_prefix_word_count = -1
         
+        # declare variables - troubleshooting
+        current_match = -1
+        full_string_index = -1
+        mention_prefix_length = -1
+        calculated_match_index = -1
+        
         # output JSON.
         self.output_debug( "++++++++ In " + me + " - Mention JSON:\n\n\n" + JSONHelper.pretty_print_json( mention_JSON_IN )  )
 
@@ -1129,6 +1135,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 
                     # we know we have one match, so we can dig in and try to get
                     #    all the things.
+                    sanity_check_index = found_list[ 0 ]
+                    full_string_index = sanity_check_index
                     
                     #-----------------------------------------------------------
                     # plain text index
@@ -1156,10 +1164,26 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
                         #-- END check to see if index from OpenCalais matches --#
                         
+                    elif ( found_list_count > 1 ):
+                    
+                        # multiple matches.  If at end of entire article, could
+                        #    be because suffix is one or two words, there are
+                        #    other matches in the article.
+                        # Match = full_string_index + mention_prefix_length
+                        mention_prefix_length = len( mention_prefix )
+                        calculated_match_index = full_string_index + mention_prefix_length
+                        if calculated_match_index in found_list:
+                        
+                            # the calculated match index is in list.  That is
+                            #    the match.  Use it.
+                            plain_text_index = calculated_match_index
+                            
+                        #-- END check to see which match is the right one.
+                    
                     else:
                     
                         # ERROR.
-                        notes_string = "In " + me + ": ERROR - plain text index - mention + suffix not found, but prefix + mention + suffix was at index " + str( sanity_check_index )
+                        notes_string = "In " + me + ": ERROR - plain text index - `mention + suffix` match count = " + str( found_list_count ) + ", `prefix + mention + suffix` was at index " + str( sanity_check_index )
                         notes_list.append( notes_string )
                         self.output_debug( notes_string )
                         is_ok_to_update = False

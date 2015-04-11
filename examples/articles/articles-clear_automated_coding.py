@@ -2,8 +2,11 @@
 from sourcenet.models import Article_Data
 from django.contrib.auth.models import User
 
-# declare variables
+# declare variables - filter article data to clear
 automated_user = None
+article_id_in_list = []
+
+# declare variables - variables used while clearing.
 article_data_qs = None
 article_data_count = -1
 article_data = None
@@ -23,6 +26,15 @@ automated_user = User.objects.filter( username = "automated" ).get()
 
 # find all Article_Data for automated user.
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
+
+# filter on related article IDs?
+article_id_in_list = [ 4831 ]
+if ( len( article_id_in_list ) > 0 ):
+
+    # yes.
+    article_data_qs = article_data_qs.filter( article__id__in = article_id_in_list )
+
+#-- END check to see if filter on specific IDs. --#
 
 # how many?
 article_data_count = article_data_qs.count()
