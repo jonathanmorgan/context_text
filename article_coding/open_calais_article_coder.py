@@ -1186,7 +1186,11 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         notes_string = "In " + me + ": ERROR - plain text index - `mention + suffix` match count = " + str( found_list_count ) + ", `prefix + mention + suffix` was at index " + str( sanity_check_index )
                         notes_list.append( notes_string )
                         self.output_debug( notes_string )
-                        is_ok_to_update = False
+                        
+                        #is_ok_to_update = False
+                        # might as well update, so we can see what else for
+                        #    debugging. just set the plain text index to -1.
+                        plain_text_index = -1
                     
                     #-- END check to see if found mention + suffix
                     

@@ -126,6 +126,7 @@ class NetworkDataOutput( object ):
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
+    PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
     
     # node attributes
     NODE_ATTRIBUTE_PERSON_TYPE = "person_type"
@@ -999,6 +1000,7 @@ class NetworkDataOutput( object ):
         network_label_IN = ''
         source_capacity_include_list_IN = None
         source_capacity_exclude_list_IN = None
+        source_contact_type_include_list_IN = None
 
         # retrieve info.
         output_type_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT )
@@ -1007,6 +1009,7 @@ class NetworkDataOutput( object ):
         network_label_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_NETWORK_LABEL, '' )
         source_capacity_include_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST )
         source_capacity_exclude_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST )
+        source_contact_type_include_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST )
 
         # store
         self.set_output_type( output_type_IN )
@@ -1025,6 +1028,14 @@ class NetworkDataOutput( object ):
             self.include_render_details = False
         
         #-- END check to see whether we include render details --#
+        
+        # got source contact type include list?
+        if ( ( source_contact_type_include_list_IN is not None ) and ( len( source_contact_type_include_list_IN ) > 0 ) ):
+        
+            # store in internal inclusion parameters
+            self.inclusion_params[ NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST ] = source_contact_type_include_list_IN
+        
+        #-- END check to see if source contact type list --#
 
         # got include list?
         if ( source_capacity_include_list_IN ):

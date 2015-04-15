@@ -1,5 +1,5 @@
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2015 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -30,18 +30,11 @@ from sourcenet.models import Article_Source
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
 
-# create a form to let a user lookup an article to view its contents.
-class ArticleLookupForm( forms.Form ):
-
-    # Article ID
-    article_id = forms.IntegerField( required = True, label = "Article ID" )
-    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
-
-#-- END ArticleLookupForm --#
-
-
-# create a form to let a user lookup an article to view its contents.
 class Article_DataLookupForm( forms.Form ):
+
+    '''
+    create a form to let a user lookup an article to view its Article_Data.
+    '''
 
     # Article_Data ID
     article_data_id = forms.IntegerField( required = True, label = "Article Data ID" )
@@ -50,9 +43,42 @@ class Article_DataLookupForm( forms.Form ):
 #-- END ArticleLookupForm --#
 
 
-# create a form to let a user specify the criteria used to limit the articles
-#    that are used to create output.
+class ArticleLookupForm( forms.Form ):
+
+    '''
+    create a form to let a user lookup an article to view its contents.
+    '''
+
+    # Article ID
+    article_id = forms.IntegerField( required = True, label = "Article ID" )
+    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
+
+#-- END ArticleLookupForm --#
+
+
+class ArticleOutputTypeSelectForm( forms.Form ):
+
+    '''
+    form inputs to let a user specify the criteria used to limit the articles
+       that are used to create output.
+    '''
+
+    # just contains the output type field for outputting network data.
+    output_type = forms.ChoiceField( label = "Output Type", choices = CsvArticleOutput.OUTPUT_TYPE_CHOICES_LIST )
+
+    # and a place to specify the text you want pre-pended to each column header.
+    header_prefix = forms.CharField( required = False, label = "Column Header Prefix" )
+
+#-- END ArticleOutputTypeSelectForm -------------------------------------------#
+
+
 class ArticleSelectForm( forms.Form ):
+    
+    '''
+    create a form to let a user specify the criteria used to limit the articles
+       that are used to create output.
+    '''
+    
     # what fields do I want?
 
     # start date
@@ -73,33 +99,35 @@ class ArticleSelectForm( forms.Form ):
     # coders to include
     coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
 
+    # list of unique identifiers to limit to.
+    coder_types_list = forms.CharField( required = False, label = "Coder Type List (comma-delimited)" )
+    
     # topics to include
     topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
 
     # list of unique identifiers to limit to.
+    tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
+    
+    # list of unique identifiers to limit to.
     unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
-
+    
     # allow duplicate articles?
     allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
     
 #-- END ArticleSelectForm -----------------------------------------------------#
 
 
-# create a form to let a user specify the criteria used to limit the articles
-#    that are used to create output.
-class ArticleOutputTypeSelectForm( forms.Form ):
-
-    # just contains the output type field for outputting network data.
-    output_type = forms.ChoiceField( label = "Output Type", choices = CsvArticleOutput.OUTPUT_TYPE_CHOICES_LIST )
-
-    # and a place to specify the text you want pre-pended to each column header.
-    header_prefix = forms.CharField( required = False, label = "Column Header Prefix" )
-
-#-- END ArticleOutputTypeSelectForm -------------------------------------------#
-
-
 # create a form to let a user specify the criteria used to limit the output form
 class PersonSelectForm( forms.Form ):
+
+    '''
+    PersonSelectForm lets user specify additional filter criteria for selecting
+       the people who will be included in a given network.  This should be used
+       to broaden the set of people included in a given network so that networks
+       over time will include the same set of people, even if some aren't
+       present in a given time slice.
+    '''
+
     # reporters to include?
 
     # criteria for pulling in people, so we can include a broader set of people
@@ -119,7 +147,9 @@ class PersonSelectForm( forms.Form ):
 
     person_publications = forms.ModelMultipleChoiceField( required = False, queryset = Newspaper.objects.all() )
     person_coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
+    person_coder_types_list = forms.CharField( required = False, label = "Coder Type List (comma-delimited)" )
     person_topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
+    person_tag_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
     person_unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
 
     # allow duplicate articles?
@@ -128,9 +158,14 @@ class PersonSelectForm( forms.Form ):
 #-- end Form model PersonSelectForm -------------------------------------------
 
 
-# create a form to let a user specify the criteria used to limit the articles
-#    that are used to create output.
 class NetworkOutputForm( forms.Form ):
+
+    '''
+    NetworkOutputForm lets user specify details about the format and structure
+       of the output that will capture network data - can specify file format,
+       for example, whether to include render details/debug, and other details
+       of the data that will result from examining Article_Data.
+    '''
 
     # do we want to download result as file?
     network_download_as_file = forms.ChoiceField( required = False, label = "Download As File?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
@@ -150,8 +185,41 @@ class NetworkOutputForm( forms.Form ):
     # do we want to output row and column headers?
     network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
-    # include and exclude source capacities
-    include_capacities = forms.MultipleChoiceField( required = False, choices = Article_Source.SOURCE_CAPACITY_CHOICES )
-    exclude_capacities = forms.MultipleChoiceField( required = False, choices = Article_Source.SOURCE_CAPACITY_CHOICES )
+#-- END NetworkOutputForm -------------------------------------------#
 
-#-- END ArticleOutputTypeSelectForm -------------------------------------------#
+
+class RelationSelectForm( forms.Form ):
+    
+    '''
+    RelationSelectForm contains form inputs that allow one to specify what types
+       of relations you want included in a network.  To start, just includes the
+       source contact type.
+    ''' 
+
+    # source contact types
+
+    # to have them all selected, need to make a list of the values in choices
+    #    to place in "initial".
+    initial_selected_list = []
+    for selected_item in Article_Source.SOURCE_CONTACT_TYPE_CHOICES:
+    
+        initial_selected_list.append( selected_item[ 0 ] )
+        
+    #-- END loop to populate initial selected items list --#
+        
+    include_source_contact_types = forms.MultipleChoiceField( required = False,
+        choices = Article_Source.SOURCE_CONTACT_TYPE_CHOICES,
+        widget = forms.widgets.CheckboxSelectMultiple,
+        initial = ( initial_selected_list ),
+        label = "relations - Include source contact types" )
+    
+    # include and exclude source capacities
+    include_capacities = forms.MultipleChoiceField( required = False,
+        choices = Article_Source.SOURCE_CAPACITY_CHOICES,
+        label = "relations - Include source capacities" )
+
+    exclude_capacities = forms.MultipleChoiceField( required = False,
+        choices = Article_Source.SOURCE_CAPACITY_CHOICES,
+        label = "relations - Exclude source capacities" )
+
+#-- END RelationSelectForm -----------------------------------------------------#

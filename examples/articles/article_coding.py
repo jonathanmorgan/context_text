@@ -20,7 +20,7 @@ start_pub_date = "2009-12-06"
 end_pub_date = "2009-12-12"
 #tag_in_list = "prelim_reliability"
 #tag_in_list = "prelim_network"
-tag_in_list = "prelim_unit_test_005"
+tag_in_list = "prelim_unit_test_006"
 paper_id_in_list = "1"
 section_list = "Lakeshore,Front Page,City and Region,Business"
 
@@ -49,7 +49,7 @@ article_qs = my_article_coding.create_article_query_set()
 #article_qs = article_qs[ : 1 ]
 
 # limit to single test ID.
-article_qs = article_qs.filter( id = 4831 )
+#article_qs = article_qs.filter( id = 360962 )
 
 # make sure we have at least one article
 article_count = article_qs.count()

@@ -4,10 +4,10 @@ from django.contrib.auth.models import User
 
 # declare variables - filter article data to clear
 automated_user = None
+article_data_qs = None
 article_id_in_list = []
 
 # declare variables - variables used while clearing.
-article_data_qs = None
 article_data_count = -1
 article_data = None
 article_author_count = -1
@@ -28,7 +28,7 @@ automated_user = User.objects.filter( username = "automated" ).get()
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
 
 # filter on related article IDs?
-article_id_in_list = [ 4831 ]
+article_id_in_list = [ 360962 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.

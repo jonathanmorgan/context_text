@@ -59,6 +59,7 @@ from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
 from sourcenet.forms import PersonSelectForm
 from sourcenet.forms import NetworkOutputForm
+from sourcenet.forms import RelationSelectForm
 
 # import class that actually processes requests for outputting networks.
 from sourcenet.export.network_output import NetworkOutput
@@ -733,9 +734,14 @@ def output_network( request_IN ):
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
+    
+    # declare variables - forms
     article_select_form = None
     network_output_form = None
     person_select_form = None
+    relation_select_form = None
+    
+    # declare variables - rendering
     include_render_details_IN = ''
     include_render_details = False
     download_as_file_IN = ""
@@ -787,9 +793,13 @@ def output_network( request_IN ):
         article_select_form = ArticleSelectForm( request_IN.POST )
         network_output_form = NetworkOutputForm( request_IN.POST )
         person_select_form = PersonSelectForm( request_IN.POST )
+        relation_select_form = RelationSelectForm( request_IN.POST )
 
         # is all our form data OK?
-        if ( ( article_select_form.is_valid() == True ) and ( network_output_form.is_valid() == True ) and ( person_select_form.is_valid() == True ) ):
+        if ( ( article_select_form.is_valid() == True )
+            and ( network_output_form.is_valid() == True )
+            and ( person_select_form.is_valid() == True )
+            and ( relation_select_form.is_valid() == True ) ):
 
             # retrieve articles specified by the input parameters, then create
             #   string output, then pass it and form on to the output form.
@@ -910,6 +920,7 @@ def output_network( request_IN ):
                 response_dictionary[ 'article_select_form' ] = article_select_form
                 response_dictionary[ 'network_output_form' ] = network_output_form
                 response_dictionary[ 'person_select_form' ] = person_select_form
+                response_dictionary[ 'relation_select_form' ] = relation_select_form
                 response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
                 
             #-- END check to see if we return result as a file --#
@@ -921,6 +932,7 @@ def output_network( request_IN ):
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'network_output_form' ] = network_output_form
             response_dictionary[ 'person_select_form' ] = person_select_form
+            response_dictionary[ 'relation_select_form' ] = relation_select_form
             response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
 
         #-- END check to see whether or not form is valid. --#
@@ -931,9 +943,11 @@ def output_network( request_IN ):
         article_select_form = ArticleSelectForm()
         network_output_form = NetworkOutputForm()
         person_select_form = PersonSelectForm()
+        relation_select_form = RelationSelectForm()
         response_dictionary[ 'article_select_form' ] = article_select_form
         response_dictionary[ 'network_output_form' ] = network_output_form
         response_dictionary[ 'person_select_form' ] = person_select_form
+        response_dictionary[ 'relation_select_form' ] = relation_select_form
         
         # add on the "me" property.
         response_dictionary[ 'current_view' ] = me        

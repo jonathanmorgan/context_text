@@ -49,9 +49,9 @@ class SourcenetBase( BasicRateLimited ):
     PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
     PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
     PARAM_PUBLICATION_LIST = 'publications'   # list of IDs of newspapers you want included.
-    PARAM_TAG_LIST = 'tags_list'   # list of tag values that you want included.
     PARAM_TOPIC_LIST = 'topics'   # list of IDs of topics whose data you want included.
     PARAM_SECTION_LIST = 'section_list'   # list of tag values that you want included.
+    PARAM_TAG_LIST = 'tags_list'   # comma-delimited string list of tag values that you want included.
     PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
     PARAM_ARTICLE_ID_LIST = 'article_id_list'   # list of ids of articles whose data you want included.
 

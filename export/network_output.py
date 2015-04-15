@@ -77,10 +77,17 @@ class NetworkOutput( SourcenetBase ):
     #PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
     #PARAM_PUBLICATION_LIST = 'publications'   # list of IDs of newspapers you want included.
     #PARAM_TOPIC_LIST = 'topics'   # list of IDs of topics whose data you want included.
+    #PARAM_TAG_LIST = 'tags_list'   # comma-delimited string list of tags you want articles that are included to have one or more of assigned to them.
     #PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
+
+    # parameters for relation selection.
+    PARAM_SOURCE_CAPACITY_INCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
+    PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
+    PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
 
     # network selection parameters unique to this class.
     PARAM_CODER_LIST = 'coders'   # list of IDs of coders whose data you want included.
+    PARAM_CODER_TYPE_LIST = 'coder_types_list'   # comma-delimited string list of coder_type values from Article_Data that you want articles' data to have for articles we process.
     PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
     PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
     PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
@@ -103,14 +110,19 @@ class NetworkOutput( SourcenetBase ):
         SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
         SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,        
         SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_SOURCE_CAPACITY_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_SOURCE_CAPACITY_EXCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_HEADER_PREFIX : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_DOWNLOAD_AS_FILE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_RENDER_DETAILS : ParamContainer.PARAM_TYPE_STRING,
         PARAM_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_DATA_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_LABEL : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
@@ -119,6 +131,7 @@ class NetworkOutput( SourcenetBase ):
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING
     }
@@ -388,6 +401,8 @@ class NetworkOutput( SourcenetBase ):
         date_range_IN = ''
         publication_list_IN = None
         coder_list_IN = None
+        coder_type_list_IN = None
+        tag_list_IN = None
         topic_list_IN = None
         unique_id_list_IN = ''
         allow_duplicate_articles_IN = ''
@@ -408,7 +423,9 @@ class NetworkOutput( SourcenetBase ):
         date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
         publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+        coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
         topic_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TOPIC_LIST )
+        tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST )
         unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST )
         allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, SourcenetBase.CHOICE_NO )
 
@@ -499,6 +516,18 @@ class NetworkOutput( SourcenetBase ):
 
         #-- END processing of coders --#
 
+        # coder types
+        #if ( coder_list_IN ):
+        if ( ( coder_type_list_IN is not None ) and ( len( coder_type_list_IN ) > 0 ) ):
+
+            # set up query instance
+            current_query = Q( coder_type__in = coder_type_list_IN )
+
+            # add it to the query list
+            query_list.append( current_query )
+
+        #-- END processing of coder types --#
+
         # topics
         #if ( topic_list_IN ):
         if ( ( topic_list_IN is not None ) and ( len( topic_list_IN ) > 0 ) ):
@@ -511,6 +540,16 @@ class NetworkOutput( SourcenetBase ):
 
         #-- END processing of topics --#
 
+        # tags IN list.
+        if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
+
+            # we have a tag list.  Set up Q() instance.
+            current_query = Q( tags__name__in = tag_list_IN )
+
+            # add it to the query list
+            query_list.append( current_query )
+
+        #-- END check to see if we need to match tags. --#
 
         # unique identifiers IN list
         # if ( unique_id_list_IN ):

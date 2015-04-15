@@ -4876,6 +4876,7 @@ class Article_Source( Article_Person ):
 
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = 'include_capacities'
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = 'exclude_capacities'
+    PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = 'include_source_contact_types'
 
     # Source type stuff
     SOURCE_TYPE_ANONYMOUS = 'anonymous'
@@ -5115,7 +5116,10 @@ class Article_Source( Article_Person ):
                work.
 
             Params:
-            - source_IN - source whose connectedness we need to check.
+            - self - source whose connectedness we need to check.
+            - contact_type_in_list_IN - list of contact types that are OK to be considered "connected".  If not specified, all are OK.
+            - capacity_in_list_IN
+            - capacity_not_in_list_IN
 
             Returns:
             - boolean - If "connected", returns True.  If not, returns False.
@@ -5128,6 +5132,7 @@ class Article_Source( Article_Person ):
         current_source_type = ''
         current_source_contact_type = ''
         current_source_capacity = ''
+        contact_type_in_list_IN = None
         capacity_in_list_IN = None
         capacity_not_in_list_IN = None
 
@@ -5135,9 +5140,8 @@ class Article_Source( Article_Person ):
         #    person in the person reference).
         is_connected_OUT = super( Article_Source, self ).is_connected( param_dict_IN )
 
-        # Now, check the source type, contact type.
+        # Now, check the source type.
         current_source_type = self.source_type
-        current_source_contact_type = self.source_contact_type
 
         # correct source type?
         if ( current_source_type != Article_Source.SOURCE_TYPE_INDIVIDUAL ):
@@ -5147,18 +5151,45 @@ class Article_Source( Article_Person ):
 
         #-- END check of source type --#
 
-        # contact type OK?
-        if ( ( current_source_contact_type != Article_Source.SOURCE_CONTACT_TYPE_DIRECT ) and ( current_source_contact_type != Article_Source.SOURCE_CONTACT_TYPE_EVENT ) ):
-
-            # contact type not direct or event.  This person is not connected.
-            is_connected_OUT = False
-
-        #-- END contact type check. --#
-
         # Got a param dict?
         if ( param_dict_IN is not None ):
 
-            # we have a dict.  Do we have list of source capacities to either
+            # we have a parameter dictionary - anything in it related to us?
+            
+            # Do we have a list of source contact types that we are to allow?
+            if Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST in param_dict_IN:
+            
+                # first, retrieve the value for the key
+                contact_type_in_list_IN = param_dict_IN.get( Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST, None )
+                
+                # is it populated and does it contain at least one thing?
+                if ( ( contact_type_in_list_IN is not None ) and ( len( contact_type_in_list_IN ) > 0 ) ):
+                
+                    # it is populated.  Is the current source contact type in
+                    #    the list?
+                    current_source_contact_type = self.source_contact_type
+                    if current_source_contact_type not in contact_type_in_list_IN:
+                    
+                        # not in include list, so not connected.
+                        is_connected_OUT = False
+                    
+                    #-- END check to see if contact type is in our list. --#
+                
+                else:
+                
+                    # nothing in list.  Fall back to default - Any is fine!
+                    pass
+                    
+                    # old default: Only acceptable contact types were:
+                    # - Article_Source.SOURCE_CONTACT_TYPE_DIRECT
+                    # - Article_Source.SOURCE_CONTACT_TYPE_EVENT
+                    # if other than those, not connected.
+                
+                #-- END check to see if list is populated.
+            
+            #-- END check to see if source contact types include list --#
+            
+            # Do we have list of source capacities to either
             #    include or exclude?
             if Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST in param_dict_IN:
                 
@@ -5364,7 +5395,7 @@ class Abstract_Selected_Text( models.Model ):
     class Meta:
 
         abstract = True
-        ordering = [ 'last_modified', 'create_date' ]
+        ordering = [ 'paragraph_number', 'last_modified', 'create_date' ]
         
     #-- END inner class Meta --#
         
