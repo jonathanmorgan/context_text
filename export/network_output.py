@@ -516,8 +516,6 @@ class NetworkOutput( SourcenetBase ):
         #if ( coder_list_IN ):
         if ( ( coder_list_IN is not None ) and ( len( coder_list_IN ) > 0 ) ):
 
-            my_logger.debug( "In " + me + ": coder_list_IN = " + str( coder_list_IN ) )
-            
             # try converting items in list to int.
             coder_int_list = []
             for coder_id_string in coder_list_IN:
@@ -527,6 +525,8 @@ class NetworkOutput( SourcenetBase ):
                 coder_int_list.append( coder_id_int )
                 
             #-- END loop over string coder IDs. --#
+            
+            my_logger.debug( "In " + me + ": coder_int_list = " + str( coder_list_IN ) )
             
             # set up query instance
             current_query = Q( coder__pk__in = coder_int_list )
@@ -588,12 +588,20 @@ class NetworkOutput( SourcenetBase ):
             has_unique_id_list = True
 
         #-- END processing of unique_identifiers --#
+        
+        my_logger.debug( "In " + me + ": before adding Q() instances - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
         # now, add them all to the QuerySet - try a loop
+        query_item_count = 0
         for query_item in query_list:
 
+            # increment query_item_count
+            query_item_count += 1
+            
             # append each filter to query set.
             query_set_OUT = query_set_OUT.filter( query_item )
+
+            my_logger.debug( "In " + me + ": Q() #" + str( query_item_count ) + " - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
         #-- END loop over query set items --#
 
@@ -606,7 +614,11 @@ class NetworkOutput( SourcenetBase ):
             # remove duplicate articles.
             query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
 
+            my_logger.debug( "In " + me + ": after remove_duplicate_article_data() - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
+
         #-- END check to see if we allow duplicates --#
+
+        my_logger.debug( "In " + me + ": end of method - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
         return query_set_OUT
 
@@ -832,13 +844,15 @@ class NetworkOutput( SourcenetBase ):
             - query_set_IN - django QuerySet instance that contains Article_Data instances.
 
             Returns:
-            - QuerySet - QuerySet of Article_Data instances with only one Article_Data row per Article.
+            - QuerySet - QuerySet of Article_Data instances with only one Article_Data row per Article.  If nothing to remove, just returns QuerySet passed in.  If something other than a QuerySet passed in, just returns it.
         """
 
         # return reference
         qs_OUT = ''
 
         # declare variables
+        me = "remove_duplicate_article_data"
+        my_logger = None
         unique_article_id_to_article_data_id_dict = {}
         current_article_data = None
         current_article = None
@@ -846,9 +860,17 @@ class NetworkOutput( SourcenetBase ):
         current_id = -1
         omit_id_list = []
 
-        # do we have a query set?
-        if ( query_set_IN ):
+        # get logger
+        my_logger = self.get_logger()
+        
+        my_logger.debug( "In " + me + ": beginning of method: count of query_set_IN = " + str( query_set_IN.count() ) )
+        
+        # to start, set return QuerySet to QuerySet passed in.
+        qs_OUT = query_set_IN
 
+        # do we have a query set?
+        if query_set_IN is not None:
+    
             # loop over the article data
             for current_article_data in query_set_IN:
 
@@ -862,6 +884,8 @@ class NetworkOutput( SourcenetBase ):
                     # get ID of current Article_Data row.
                     current_id = current_article_data.id
     
+                    #my_logger.debug( "In " + me + ": current_article = id: " + str( current_id ) + "; current_unique_id = " + str( current_unique_id ) )
+
                     # is the unique_id in the dict?
                     if current_unique_id in unique_article_id_to_article_data_id_dict:
     
@@ -883,11 +907,13 @@ class NetworkOutput( SourcenetBase ):
             if ( len( omit_id_list ) > 0 ):
 
                 # IDs to omit.
-                qs_OUT = query_set_IN.exclude( id__in = omit_id_list )
+                qs_OUT = qs_OUT.exclude( id__in = omit_id_list )
 
             #-- END check to see if we have to omit IDs --#
 
         #-- END check to make sure we have a query set. --#
+
+        my_logger.debug( "In " + me + ": end of method: count of qs_OUT = " + str( qs_OUT.count() ) )
 
         return qs_OUT
 

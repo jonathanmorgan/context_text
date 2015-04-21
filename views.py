@@ -126,7 +126,7 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
             #print( my_message )
             
             # got a logger name?
-            my_logger_name = "sourcenet.models"
+            my_logger_name = "sourcenet.views"
             if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
             
                 # use logger name passed in.
@@ -916,6 +916,8 @@ def output_network( request_IN ):
                 
             #-- END check to see if None --#
 
+            output_debug( "In " + me + ": before parameter and article details." )
+
             # include render details?
             if ( include_render_details == True ):
 
@@ -962,6 +964,8 @@ def output_network( request_IN ):
                 
             #-- END check to see if we include render details. --#
             
+            output_debug( "In " + me + ": after parameter and article details, before rendering network." )
+
             # render the actual network data.
             output_string += network_outputter.render_network_data( network_query_set )
 
@@ -973,6 +977,8 @@ def output_network( request_IN ):
                 output_string += "=======================\n"
     
             #-- END check to see if we output render details --#
+
+            output_debug( "In " + me + ": download file, or render view?" )
 
             # download as file, or render view?
             if ( download_as_file == True ):

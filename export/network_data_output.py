@@ -39,11 +39,15 @@ from sourcenet.models import Article_Source
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
 
+# Import sourcenet shared classes.
+from sourcenet.shared.sourcenet_base import SourcenetBase
+
+
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkDataOutput( object ):
+class NetworkDataOutput( SourcenetBase ):
 
     
     #---------------------------------------------------------------------------
