@@ -395,12 +395,17 @@ class NetworkOutput( SourcenetBase ):
         query_set_OUT = None
 
         # declare variables
+        me = "create_query_set"
+        my_logger = None
         request_IN = None
         start_date_IN = ''
         end_date_IN = ''
         date_range_IN = ''
         publication_list_IN = None
         coder_list_IN = None
+        coder_id_string = ""
+        coder_id_int = -1
+        coder_int_list = None
         coder_type_list_IN = None
         tag_list_IN = None
         topic_list_IN = None
@@ -416,6 +421,9 @@ class NetworkOutput( SourcenetBase ):
         current_query = None
         query_list = []
         has_unique_id_list = False
+        
+        # get logger
+        my_logger = self.get_logger()
 
         # retrieve the incoming parameters
         start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, '' )
@@ -508,9 +516,21 @@ class NetworkOutput( SourcenetBase ):
         #if ( coder_list_IN ):
         if ( ( coder_list_IN is not None ) and ( len( coder_list_IN ) > 0 ) ):
 
+            my_logger.debug( "In " + me + ": coder_list_IN = " + str( coder_list_IN ) )
+            
+            # try converting items in list to int.
+            coder_int_list = []
+            for coder_id_string in coder_list_IN:
+            
+                # convert to int, then append to list.
+                coder_id_int = int( coder_id_string )
+                coder_int_list.append( coder_id_int )
+                
+            #-- END loop over string coder IDs. --#
+            
             # set up query instance
-            current_query = Q( coder__id__in = coder_list_IN )
-
+            current_query = Q( coder__pk__in = coder_int_list )
+                
             # add it to the query list
             query_list.append( current_query )
 
@@ -544,7 +564,7 @@ class NetworkOutput( SourcenetBase ):
         if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
 
             # we have a tag list.  Set up Q() instance.
-            current_query = Q( tags__name__in = tag_list_IN )
+            current_query = Q( article__tags__name__in = tag_list_IN )
 
             # add it to the query list
             query_list.append( current_query )
