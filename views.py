@@ -903,7 +903,7 @@ def output_network( request_IN ):
             # retrieve Article_Data QuerySet based on parameters passed in.
             network_query_set = network_outputter.create_network_query_set()
             
-            output_debug( "In " + me + ": type of network_query_set = " + str( type( network_query_set ) ) + "; value = "  + str( network_query_set ) )
+            output_debug( "In " + me + ": type of network_query_set = " + str( type( network_query_set ) ) )
 
             # get count of queryset return items
             if ( network_query_set is not None ):

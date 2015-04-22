@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Output source network{% endblock %}
+{% block title %}Output attribution network{% endblock %}
 
 {% block content %}
 
-    <h1>Output source network</h1>
+    <h1>Output attribution network</h1>
 
     {% if network_output_form.errors %}
         <p style="color: red;">
@@ -34,24 +34,29 @@
         <table>
             <tr>
                 <th><h3>Select Articles</h3></th>
+                <th><h3>Configure Network</h3></th>
                 <th><h3>Select People</h3></th>
             </tr>
             <tr>
-                <td>
+                <td valign="top" style="border: 1px solid gray;">
                     <table>
                         {{ article_select_form }}
+                    </table>
+                </td>
+                <td valign="top" style="border: 1px solid gray;">
+                    <table>
                         {{ relation_select_form }}
                         {{ network_output_form }}
                     </table>
                 </td>
-                <td valign="top">
+                <td valign="top" style="border: 1px solid gray;">
                     <table>
                         {{ person_select_form }}
                     </table>
                 </td>
             </tr>
             <tr>
-                <td colspan="2" align="center"><input type="submit" value="Submit"></td>
+                <td colspan="3" align="left"><br /><strong><em>WHEN YOU ARE DONE:</em></strong> <input type="submit" value="Output Attribution Network"></td>
             </tr>
         </table>
     </form>

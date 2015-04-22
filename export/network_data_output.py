@@ -91,6 +91,18 @@ class NetworkDataOutput( SourcenetBase ):
         ( NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS, "Network + Attribute Rows" ),
     ]
 
+    # Person Query Types
+    PERSON_QUERY_TYPE_ALL = "all"
+    PERSON_QUERY_TYPE_ARTICLES = "articles"
+    PERSON_QUERY_TYPE_CUSTOM = "custom"
+    PERSON_QUERY_TYPE_DEFAULT = PERSON_QUERY_TYPE_ARTICLES
+
+    PERSON_QUERY_TYPE_CHOICES_LIST = [ 
+        ( PERSON_QUERY_TYPE_ALL, "All persons" ),
+        ( PERSON_QUERY_TYPE_ARTICLES, "From selected articles" ),
+        ( PERSON_QUERY_TYPE_CUSTOM, "Custom, defined below" ),
+    ]
+
     # person types
     PERSON_TYPE_UNKNOWN = 'unknown'
     PERSON_TYPE_AUTHOR = 'author'
@@ -131,6 +143,7 @@ class NetworkDataOutput( SourcenetBase ):
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
+    PARAM_PERSON_QUERY_TYPE = "person_query_type"
     
     # node attributes
     NODE_ATTRIBUTE_PERSON_TYPE = "person_type"
@@ -145,6 +158,9 @@ class NetworkDataOutput( SourcenetBase ):
 
 
     def __init__( self ):
+
+        # call parent's __init__()
+        super( NetworkDataOutput, self ).__init__()
 
         # declare variables
         self.query_set = None
@@ -174,6 +190,9 @@ class NetworkDataOutput( SourcenetBase ):
         # inclusion parameter holder
         self.inclusion_params = {}
 
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
+        self.set_logger_name( "sourcenet.export.network_data_output" )
+        
     #-- END method __init__() --#
 
 
@@ -295,13 +314,28 @@ class NetworkDataOutput( SourcenetBase ):
 
         # return reference
         status_OUT = NetworkDataOutput.STATUS_OK
+        
+        # declare variables
+        me = "add_reciprocal_relation"
+        my_logger = None
+        debug_string = ""
+        
+        # initialize logger
+        my_logger = self.get_logger()
 
         # make sure we have two values.
         if ( person_1_id_IN and person_2_id_IN ):
 
             if ( self.DEBUG_FLAG == True ):
-                # output the author map
-                self.debug += "\n\nin add_reciprocal_relation, got two IDs: " + str( person_1_id_IN ) + "; " + str( person_2_id_IN ) + ".\n\n"
+
+                # output message about having two values.
+                debug_string = "In " + me + ": got two IDs: " + str( person_1_id_IN ) + "; " + str( person_2_id_IN ) + "."
+                
+                # add to debug string?
+                self.debug += "\n\n" + debug_string + "\n\n"
+                
+                my_logger.debug( debug_string )
+                            
             #-- END DEBUG --#
 
             # add directed relations from 1 to 2 and from 2 to 1.
@@ -689,32 +723,64 @@ class NetworkDataOutput( SourcenetBase ):
         list_OUT = []
 
         # declare variables
+        me = "generate_master_person_list"
+        my_logger = None
+        debug_string = ""
+        person_dict = None
         person_ids_list = None
-        person_ids_count = None
-        merged_person_types = None
+        current_person_id = None
+        person_id_to_type_dict = None
         merged_person_id_list = None
+
+        # initialize logger
+        my_logger = self.get_logger()
 
         # retrieve the person dictionary
         person_dict = self.person_dictionary
 
+        my_logger.debug( "In " + me + ": len( person_dict ) = " + str( len( person_dict ) ) )
+
         # grab list of keys from person_dictionary.
         person_ids_list = person_dict.keys()
 
-        # make a dict from it.
-        person_ids_count = len( person_ids_list )
-        merge_values = []
-        merge_values[ 0 : person_ids_count - 1 ] = NetworkDataOutput.PERSON_TYPE_UNKNOWN
-        merged_person_types = dict( zip( person_ids_list, merge_values ) )
+        # ABSOLUTELY BROKEN FIRST ATTEMPT FROM 2010, FOR POSTERITY:
+        #
+        #person_ids_count = len( person_ids_list )
+        # ==> person_ids_count = 738
+        #merge_values_list[ 0 : person_ids_count - 1 ] = NetworkDataOutput.PERSON_TYPE_UNKNOWN
+        # ==> len( merge_values_list ) = 7
+        #zipped_tuples_list = zip( person_ids_list, merge_values_list )
+        # ==> len( zipped_tuples_list ) = 7
+        #merged_person_types = dict( zipped_tuples_list )
+        # ==> len( merged_person_types ) = 7
+        #merged_person_types.update( self.person_type_dict )
+        # ==> len( merged_person_types ) = 314
+        #
+        # Resulted in person dictionary count dropping from 738 to 7, then
+        #    increasing up to the number of people referenced by the selected
+        #    articles, as stored in self.person_type_dict.
 
-        # add in the people from the person_type_dict.
-        merged_person_types.update( self.person_type_dict )
+        # make a dictionary that maps persons from person dictionary to type...
+        person_id_to_type_dict = {}
+        for current_person_id in person_ids_list:
+        
+            # to start, add all persons to dictionary with type of "unknown".
+            person_id_to_type_dict[ current_person_id ] = NetworkDataOutput.PERSON_TYPE_UNKNOWN
+            
+        #-- END loop over IDs from dictionary. --#
+
+        # update or add people and corresponding types from the nested
+        #    self.person_type_dict.
+        person_id_to_type_dict.update( self.person_type_dict )
+
+        my_logger.debug( "In " + me + ": after person_id_to_type_dict.update( self.person_type_dict ), len( person_id_to_type_dict ) = " + str( len( person_id_to_type_dict ) ) )
 
         # store this in the person_type_dict?
 
         # grab the ID list from this merged dictionary, sort it, and use it
         #    as your list of people to iterate over as you create actual
         #    output.
-        merged_person_id_list = merged_person_types.keys()
+        merged_person_id_list = person_id_to_type_dict.keys()
         
         # do we want it sorted?
         if ( is_sorted_IN == True ):
@@ -728,6 +794,8 @@ class NetworkDataOutput( SourcenetBase ):
         self.master_person_list = merged_person_id_list
 
         list_OUT = self.master_person_list
+        
+        my_logger.debug( "In " + me + ": len( self.master_person_list ) = " + str( len( self.master_person_list ) ) )
 
         return list_OUT
 
@@ -1098,14 +1166,16 @@ class NetworkDataOutput( SourcenetBase ):
         """
             Method: process_author_relations()
 
-            Purpose: Accepts a QuerySet of authors and one of sources.  First,
-               checks to see if multiple authors.  If so, loops and creates a
-               dictionary that maps author ID to author instance.  Then,
-               iterates over keys of this map.  For each author:
+            Purpose: Accepts a QuerySet of authors and one of sources from a
+               given Article_Data instance (so, the authors of and sources
+               quoted in a given article).  First, checks to see if multiple
+               authors.  If so, loops and creates a dictionary that maps author
+               ID to author instance.  Then, iterates over keys of this dict.
+               For each author:
                   - removes that author from the local author dictionary
-                  - registers them as an author in the person_type_dict
+                  - registers them as an author in the master person_type_dict
                   - loops over all remaining authors in the map, creating a
-                     reciprocal relation with each.
+                     reciprocal co-author/shared byline relation with each.
                   - calls the process_source_relations() method to tie the
                      author to the sources passed in.
                If only one author, just registers them as an author and calls
@@ -1113,7 +1183,8 @@ class NetworkDataOutput( SourcenetBase ):
 
             Preconditions: connection_map must be initialized to a dictionary.
                Also must pass in something for author query set and source query
-               set.
+               set (each should be pulled from the same single Article_Data
+               instance).
 
             Params:
             - author_qs_IN - QuerySet of authors to relate to each other.
@@ -1129,6 +1200,8 @@ class NetworkDataOutput( SourcenetBase ):
         status_OUT = NetworkDataOutput.STATUS_OK
 
         # declare variables
+        me = "process_author_relations"
+        my_logger = None
         #multiple_authors = False
         author_map = None
         current_author = None
@@ -1136,6 +1209,9 @@ class NetworkDataOutput( SourcenetBase ):
         author_id_list = None
         remaining_author_id_list = None
         remaining_person_id = -1
+
+        # initialize logger
+        my_logger = self.get_logger()
 
         # make sure we have a QuerySet.
         if ( author_qs_IN is not None ):
@@ -1167,10 +1243,16 @@ class NetworkDataOutput( SourcenetBase ):
             #-- END loop over authors to build map. --#
 
             if ( self.DEBUG_FLAG == True ):
-                # output the author map
-                self.debug += "\n\nauthor map:\n" + str( author_map ) + "\n\n"
-            #-- END DEBUG --#
 
+                # output message about connectedness of source.
+                debug_string = "\n\nIn " + me + ": author map = \n" + str( author_map ) + "\n\n"
+                
+                # add to debug string?
+                self.debug += debug_string
+                
+                my_logger.debug( debug_string )
+                
+            #-- END DEBUG --#
 
             # Now, make a copy of the keys of the map, for us to loop over.
             author_id_list = author_map.keys()
@@ -1179,18 +1261,36 @@ class NetworkDataOutput( SourcenetBase ):
             for current_person_id in author_id_list:
 
                 if ( self.DEBUG_FLAG == True ):
-                    # output the author map
-                    self.debug += "\n\nauthor person ID:\n" + str( current_person_id ) + "\n\n"
+
+                    # output message about connectedness of source.
+                    debug_string = "\n\nIn " + me + ": author person ID:\n" + str( current_person_id ) + "\n\n"
+                    
+                    # add to debug string?
+                    self.debug += debug_string
+                    
+                    my_logger.debug( debug_string )
+                
                 #-- END DEBUG --#
 
                 # remove author from author_map.  pop()-ing it, for now, just
                 #    in case.  Eventually, probably should del:
-                # del author_map[ current_author_id ]
+                # del author_map[ current_person_id ]
+                #
+                # - NOTE: bi-directional tie, so OK to remove from map as we go.
+                #    If the ties were potentially asymmetrical, would need to do
+                #    something substantially different.
                 current_author = author_map.pop( current_person_id )
 
                 if ( self.DEBUG_FLAG == True ):
-                    # output the author map
-                    self.debug += "\n\nauthor map:\n" + str( author_map ) + "\n\n"
+
+                    # output message about connectedness of source.
+                    debug_string = "\n\nIn " + me + ": author map = \n" + str( author_map ) + "\n\n"
+                    
+                    # add to debug string?
+                    self.debug += debug_string
+                    
+                    my_logger.debug( debug_string )
+                    
                 #-- END DEBUG --#
                 
                 # get IDs of remaining authors
@@ -1244,11 +1344,17 @@ class NetworkDataOutput( SourcenetBase ):
         status_OUT = NetworkDataOutput.STATUS_OK
 
         # declare variables
+        me = "process_source_relations"
+        my_logger = None
+        debug_string = ""
         author_map = None
         current_source = None
         is_connected = False
         current_person_id = -1
         source_counter = -1
+
+        # initialize logger
+        my_logger = self.get_logger()
 
         # make sure we have an author ID.
         if ( author_id_IN != '' ):
@@ -1273,8 +1379,15 @@ class NetworkDataOutput( SourcenetBase ):
                         current_person_id = current_source.get_person_id()
 
                         if ( self.DEBUG_FLAG == True ):
-                            # output the author map
-                            self.debug += "\n\nin process_source_relations, source " + str( source_counter ) + " has ID: " + str( current_person_id ) + ".\n\n"
+
+                            # output message about connectedness of source.
+                            debug_string = "In " + me + ": connected source " + str( source_counter ) + " has ID: " + str( current_person_id )
+                            
+                            # add to debug string?
+                            self.debug += "\n\n" + debug_string + "\n\n"
+                            
+                            my_logger.debug( debug_string )
+                            
                         #-- END DEBUG --#
 
                         if ( current_person_id ):
@@ -1287,8 +1400,15 @@ class NetworkDataOutput( SourcenetBase ):
                     else:
 
                         if ( self.DEBUG_FLAG == True ):
-                            # output the author map
-                            self.debug += "\n\nin process_source_relations, source " + str( source_counter ) + " is not connected.\n\n"
+
+                            # output message about connectedness of source.
+                            debug_string = "In " + me + ": source " + str( source_counter ) + " is not connected."
+                            
+                            # add to debug string?
+                            self.debug += "\n\n" + debug_string + "\n\n"
+                            
+                            my_logger.debug( debug_string )
+                            
                         #-- END DEBUG --#
 
                     #-- END check to see if connected. --#
@@ -1331,6 +1451,9 @@ class NetworkDataOutput( SourcenetBase ):
         network_data_OUT = ''
 
         # declare variables
+        me = "render"
+        my_logger = None
+        debug_string = ""
         article_data_query_set = None
         person_dict = None
         network_dict = {}
@@ -1339,6 +1462,9 @@ class NetworkDataOutput( SourcenetBase ):
         article_author_count = -1
         author_qs = None
         source_qs = None
+
+        # initialize logger
+        my_logger = self.get_logger()
 
         # start by grabbing person dict, query set.
         article_data_query_set = self.query_set
@@ -1357,7 +1483,15 @@ class NetworkDataOutput( SourcenetBase ):
                 article_data_counter += 1
 
                 if ( self.DEBUG_FLAG == True ):
-                    self.debug += "\n\n+++ Current article data = " + str( current_article_data.id ) + " +++\n\n"
+
+                    # output message about connectedness of source.
+                    debug_string = "In " + me + ": +++ Current article data = " + str( current_article_data.id ) + " +++"
+                    
+                    # add to debug string?
+                    self.debug += "\n\n" + debug_string + "\n\n"
+                    
+                    my_logger.debug( debug_string )
+
                 #-- END DEBUG --#
 
                 # first, see how many authors this article has.
@@ -1378,8 +1512,15 @@ class NetworkDataOutput( SourcenetBase ):
                     self.update_source_person_types( source_qs )
 
                     if ( self.DEBUG_FLAG == True ):
-                        # output the relation thinger
-                        self.debug += "\n\nRelation Map after article " + str( article_counter ) + ":\n" + str( self.relation_map ) + "\n\n"
+
+                        # output message about connectedness of source.
+                        debug_string = "In " + me + ": Relation Map after article " + str( article_data_counter ) + ":\n" + str( self.relation_map )
+                        
+                        # add to debug string?
+                        self.debug += "\n\n" + debug_string + "\n\n"
+                        
+                        #my_logger.debug( debug_string )
+    
                     #-- END DEBUG --#
 
                 #-- END check to make sure there are authors.

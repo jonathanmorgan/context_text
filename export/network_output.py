@@ -24,6 +24,12 @@ The network_output module contains objects and code to parse and output social
    
 '''
 
+'''
+If a NetworkDataOutput implementer will need to access or use variables, you
+   should declare them in class NetworkDataOutput in file
+   /export/network_data_output.py, then reference those variables here.
+'''
+
 __author__="jonathanmorgan"
 __date__ ="$May 1, 2010 12:49:50 PM$"
 
@@ -102,6 +108,9 @@ class NetworkOutput( SourcenetBase ):
     # prefix for person-selection params - same as network selection parameters
     #    above, but with this prefix appended to the front.
     PARAM_PERSON_PREFIX = 'person_'
+    
+    # parameters for person selection.
+    PARAM_PERSON_QUERY_TYPE = NetworkDataOutput.PARAM_PERSON_QUERY_TYPE
 
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
@@ -125,6 +134,7 @@ class NetworkOutput( SourcenetBase ):
         PARAM_NETWORK_DATA_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_LABEL : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
@@ -169,6 +179,15 @@ class NetworkOutput( SourcenetBase ):
     
     NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST
 
+    # Person Query Types
+    PERSON_QUERY_TYPE_ALL = NetworkDataOutput.PERSON_QUERY_TYPE_ALL
+    PERSON_QUERY_TYPE_ARTICLES = NetworkDataOutput.PERSON_QUERY_TYPE_ARTICLES
+    PERSON_QUERY_TYPE_CUSTOM = NetworkDataOutput.PERSON_QUERY_TYPE_CUSTOM
+    PERSON_QUERY_TYPE_DEFAULT = NetworkDataOutput.PERSON_QUERY_TYPE_DEFAULT
+
+    PERSON_QUERY_TYPE_CHOICES_LIST = NetworkDataOutput.PERSON_QUERY_TYPE_CHOICES_LIST
+
+
     #---------------------------------------------------------------------------
     # __init__() method
     #---------------------------------------------------------------------------
@@ -189,6 +208,9 @@ class NetworkOutput( SourcenetBase ):
         # variables for outputting result as file
         self.mime_type = ""
         self.file_extension = ""
+        
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
+        self.set_logger_name( "sourcenet.export.network_output" )
         
     #-- END method __init__() --#
 
@@ -337,11 +359,16 @@ class NetworkOutput( SourcenetBase ):
         person_dict_OUT = {}
 
         # declare variables
+        me = "create_person_dict"
+        my_logger = None
         request_IN = None
         article_data_query_set = None
         current_article_data = None
         author_qs = None
         source_qs = None
+        
+        # initialize logger
+        my_logger = self.get_logger()
 
         # get request instance
         request_IN = self.request
@@ -352,10 +379,12 @@ class NetworkOutput( SourcenetBase ):
             # get query set to loop over Article_Data that matches our person
             #    select criteria.
             article_data_query_set = self.create_person_query_set()
+            
+            my_logger.debug( "In " + me + ": article_data_query_set.count() = " + str( article_data_query_set.count() ) )
 
             # loop over the articles
             for current_article_data in article_data_query_set:
-
+            
                 # retrieve authors and add them to dict
                 author_qs = current_article_data.article_author_set.all()
                 person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
@@ -367,26 +396,81 @@ class NetworkOutput( SourcenetBase ):
             #-- END loop over articles --#
 
         #-- END check to make sure we have a request --#
+        
+        my_logger.debug( "In " + me + ": len( person_dict_OUT ) = " + str( len( person_dict_OUT ) ) )
 
         return person_dict_OUT
 
     #-- END function create_person_dict() --#
 
 
-    def create_person_query_set( self ):
+    def create_person_query_set( self, person_query_type_IN = None ):
 
         # return reference
         query_set_OUT = None
 
         # declare variables
+        me = "create_person_query_set"
+        my_logger = None
+        selected_person_query_type = ""
+        
+        # initialize logger.
+        my_logger = self.get_logger()
+        
+        # got a value passed in?
+        if ( ( person_query_type_IN is not None ) and ( person_query_type_IN != "" ) ):
+        
+            # value passed in - use it.
+            selected_person_query_type = person_query_type_IN
 
-        # call the create query set method, use person_start_date, person_end_date
-        #    as date boundaries for retrieval of all people across multiple slices.
-        query_set_OUT = self.create_query_set( NetworkOutput.PARAM_PERSON_PREFIX )
+        else:
+        
+            # nothing passed in - retrieve person query type from request.
+            selected_person_query_type = self.get_param_as_str( NetworkOutput.PARAM_PERSON_QUERY_TYPE, NetworkOutput.PERSON_QUERY_TYPE_DEFAULT )
+        
+        #-- END check to see if query type passed in --#
+        
+        my_logger.debug( "In " + me + ": selected_person_query_type = " + selected_person_query_type )
+
+        # Figure out what to call to generate QuerySet based on selected person
+        #    query type.
+
+        # "all"
+        if ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_ALL ):
+        
+            # want all people referenced in any coded article - return all
+            #    Article_Data instances.
+            query_set_OUT = Article_Data.objects.all()
+            my_logger.debug( "In " + me + ": returning all Article_Data instances." )
+            
+        # "articles"
+        elif ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_ARTICLES ):
+        
+            # just want people associated with selected articles.
+            query_set_OUT = self.create_network_query_set()
+            my_logger.debug( "In " + me + ": returning same Article_Data instances used for network." )
+            
+        # "custom"
+        elif ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_CUSTOM ):
+        
+            # custom - call the create_query_set() method with "PERSON_" prefix,
+            #    so it uses the custom person selection filter fields.  This
+            #    will be used for things like retrieving all people across
+            #    multiple time slices to be included in each time slice's
+            #    network.
+            query_set_OUT = self.create_query_set( NetworkOutput.PARAM_PERSON_PREFIX )
+            my_logger.debug( "In " + me + ": returning Article_Data instances that match custom person query filters." )
+            
+        else:
+        
+            # unknown person query type - just use those for selected articles.
+            query_set_OUT = self.create_network_query_set()
+            
+        #-- END check to see what we do based on person query type. --#
 
         return query_set_OUT
 
-    #-- end method output_create_person_query_set() ---------------------------#
+    #-- end method create_person_query_set() ---------------------------#
 
 
     def create_query_set( self, param_prefix_IN = '' ):
