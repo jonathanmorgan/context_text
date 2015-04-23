@@ -1,5 +1,13 @@
-# imports
+# python package imports
+import six
+
+# django imports
+from django.contrib.auth.models import User
+
+# sourcenet imports
+from sourcenet.models import Analysis_Reliability_Names
 from sourcenet.models import Article
+from sourcenet.models import Person
 
 # declare variables - retrieving reliability sample.
 article_qs = None
@@ -21,7 +29,7 @@ article_data_coder_id = None
 author_info_dict = None
 source_info_dict = None
 
-# dictionary field names
+# article info dictionary field names
 ARTICLE_ID = "article_id"
 ARTICLE_DATA_ID_LIST = "article_data_id_list"
 ARTICLE_CODER_ID_LIST = "article_coder_id_list"
@@ -33,12 +41,250 @@ PERSON_ID = "person_id"
 PERSON_NAME = "person_name"
 PERSON_CODER_ID_LIST = "person_coder_id_list"
 
+# person types
+PERSON_TYPE_AUTHOR = "author"
+PERSON_TYPE_SOURCE = "source"
 
 #-------------------------------------------------------------------------------
 # function definitions
 #-------------------------------------------------------------------------------
 
 
+def output_reliability_name_row( article_IN, person_info_dict_IN, coder_id_to_index_map_IN, person_type_IN ):
+    
+    '''
+    Accepts:
+    - article_IN - article this person was detected within.
+    - person_info_dict_IN, dictionary that maps person IDs to the
+       following:
+       - person_id - ID of person found in article.
+       - person_name - String name of that person.
+       - person_coder_id_list - list of the IDs of the coders who detected and
+          recorded the presence of that person.
+    - coder_id_to_index_map_IN, a map that tells this method which
+       coder User IDs correspond to which coder index in the reliability row
+    - person_type_IN, the type of the person ("author" or "source").     
+     
+    Creates an instance of Analysis_Reliability_Names, stores values from the
+       dictionary in the appropriate columns, then saves it.
+       
+    Returns the row model instance, or None if error.
+    '''
+    
+    # return reference
+    instance_OUT = None
+    
+    # declare variables
+    me = "output_reliability_name_row"
+    reliability_instance = None
+    my_person_id = -1
+    my_person = None
+    my_person_name = ""
+    my_coder_list = []
+    current_coder_id = -1
+    current_coder_index = -1
+    current_coder_user = None
+    
+    # make sure we have everything we need.
+    
+    # article
+    if ( article_IN is not None ):
+    
+        # person_info
+        if ( person_info_dict_IN is not None ):
+        
+            # map of coder IDs to indexes
+            if ( coder_id_to_index_map_IN is not None ):
+            
+                # person type.
+                if ( ( person_type_IN is not None ) and ( person_type_IN != "" ) ):
+                
+                    # got everything.  make reliability row.
+                    reliability_instance = Analysis_Reliability_Names()
+                    
+                    # get information from info dictionary
+                    my_person_id = person_info_dict_IN.get( PERSON_ID, -1 )
+                    my_person = Person.objects.get( id = my_person_id )
+                    my_person_name = person_info_dict_IN.get( PERSON_NAME, None )
+                    my_coder_list = person_info_dict_IN.get( PERSON_CODER_ID_LIST, -1 )
+                    
+                    # place info inside
+                    reliability_instance.article = article_IN
+                    reliability_instance.person = my_person
+                    reliability_instance.person_name = my_person_name
+                    reliability_instance.person_type = person_type_IN
+                    
+                    # loop over coders.
+                    for current_coder_id in my_coder_list:
+                    
+                        # look up index.
+                        current_coder_index = coder_id_to_index_map_IN.get( current_coder_id, -1 )
+                        
+                        # get User instance
+                        current_coder_user = User.objects.get( id = current_coder_id )
+
+                        # use index to decide in which columns to place
+                        #    coder-specific information.
+                        if ( current_coder_index != -1 ):
+                        
+                            # place info in "coder<index>" fields.
+                            
+                            # coder# - reference to User who coded.
+                            field_name = "coder" + str( current_coder_index )
+                            setattr( reliability_instance, field_name, current_coder_user )
+                            
+                            # coder#_detected - 1, since coder detected this person.
+                            field_name = "coder" + str( current_coder_index ) + "_detected"
+                            setattr( reliability_instance, field_name, 1 )
+
+                            # coder#_person_id - id of person (will be
+                            #    subsequently used to smoosh rows together for
+                            #    same name, different person IDs).
+                            field_name = "coder" + str( current_coder_index ) + "_person_id"
+                            setattr( reliability_instance, field_name, my_person_id )
+                        
+                        else:
+                        
+                            print ( "====> In " + me + ": ERROR - no index found for coder ID \"" + str( current_coder_id ) + "\"" )
+
+                        #-- END check to make sure coder index isn't -1 --#
+                    
+                    #-- END loop over coder IDs. --#
+                    
+                    # save
+                    reliability_instance.save()
+                    
+                    # return
+                    instance_OUT = reliability_instance
+    
+                #-- END check to see if we have person type. --#
+
+            #-- END check to see if we have map of coder IDs to indexes. --#
+
+        #-- END check to see if we have person info. --#
+
+    #-- END check to see if we have an article. --#
+    
+    return instance_OUT
+    
+#-- END function output_reliability_name_row() --#
+
+
+def output_reliability_data( article_info_dict_IN ):
+
+    '''
+    Accepts article_info_dict_IN, dictionary that maps article IDs to the
+       following:
+       - article_id - ID of article.
+       - article_data_id_list - list of IDs of Article_Data instances for the
+          article.
+       - article_coder_id_list - list of IDs of Coders who coded the article.
+       - author_dict - dictionary that maps person IDs of authors to dictionary
+          that contains details of author, including author ID, name, and list of
+          coders who found the author.
+       - source_dict - dictionary that maps person IDs of sources to dictionary
+          that contains details of source, including source ID, name, and list of
+          coders who found the source.
+          
+    Loops over the items in the dictionary, processing each.  For each article,
+       gets dictionaries of authors and sources and for each author and source,
+       outputs a row to the reliability table containing coding information.
+    '''
+
+    # declare variables.
+    article_info_count = -1
+    article_info_counter = -1
+    current_article_info_dict = {}
+    my_article_id = -1
+    my_article_info = {}
+    my_article_data_id_list = []
+    my_article_coder_id_list = []
+    my_author_info_dict = {}
+    my_source_info_dict = {}
+    my_article = None
+    coder_id_to_index_dict = {}
+    current_coder_index = -1
+    my_person_id = -1
+    my_person_info_dict = {}
+    reliability_row = -1
+
+    # make sure we have something to output.
+    if article_info_dict_IN is not None:
+    
+        # not None.  Initialize count variables.
+        article_info_count = len( article_info_dict_IN )
+        article_info_counter = 0
+        
+        # loop over info passed in.
+        for my_article_id, my_article_info in six.iteritems( article_info_dict_IN ):
+        
+            # retrieve elements contained in article_info:
+            my_article_data_id_list = my_article_info.get( ARTICLE_DATA_ID_LIST, [] )
+            my_article_coder_id_list = my_article_info.get( ARTICLE_CODER_ID_LIST, [] )
+            my_author_info_dict = my_article_info.get( AUTHOR_INFO_DICT, {} )
+            my_source_info_dict = my_article_info.get( SOURCE_INFO_DICT, {} )
+            
+            # set up information needed for reliability row output.
+            
+            # get article for article ID.
+            my_article = Article.objects.get( id = my_article_id )
+            
+            # make a map of coder IDs to coder index numbers (1-3) for keeping
+            #    info for a given coder in the same columns over all the rows.
+            coder_id_to_index_dict = {}
+            current_coder_index = 0
+            
+            # loop over coder IDs.  If more than 3, have a problem.
+            for current_coder_id in my_article_coder_id_list:
+            
+                # increment index.
+                current_coder_index += 1
+                
+                # assign index to ID.
+                coder_id_to_index_dict[ current_coder_id ] = current_coder_index
+                
+            #-- END loop over coder IDs. --#
+            
+            # for reliability table output, just run through author and source
+            #    info.
+
+            # got author info?
+            if ( ( my_author_info_dict is not None ) and ( len ( my_author_info_dict ) > 0 ) ):
+            
+                # loop over the info in the dictionary, calling function to
+                #    output a given person's row to the reliability table for
+                #    each.
+                for my_person_id, my_person_info_dict in six.iteritems( my_author_info_dict ):
+                
+                    # call function to output reliability table row.
+                    reliability_row = output_reliability_name_row( my_article, my_person_info_dict, coder_id_to_index_dict, PERSON_TYPE_AUTHOR )
+                
+                #-- END loop over author info ---#
+            
+            #-- END check to see if we have author info. --#
+            
+            # got source info?
+            if ( ( my_source_info_dict is not None ) and ( len ( my_source_info_dict ) > 0 ) ):
+            
+                # loop over the info in the dictionary, calling function to
+                #    output a given person's row to the reliability table for
+                #    each.
+                for my_person_id, my_person_info_dict in six.iteritems( my_source_info_dict ):
+                
+                    # call function to output reliability table row.
+                    reliability_row = output_reliability_name_row( my_article, my_person_info_dict, coder_id_to_index_dict, PERSON_TYPE_SOURCE )
+                
+                #-- END loop over author info ---#
+
+            #-- END check to see if we have author info. --#            
+        
+        #-- END loop over article_info_dict_IN --#
+        
+    #-- END check to see if we got something passed in. --#
+    
+#-- END function output_reliability_data --##
+    
+        
 def process_person_qs( coder_IN, article_person_qs_IN, person_info_dict_IN ):
     
     '''
@@ -265,16 +511,6 @@ for current_article in article_qs:
 #-------------------------------------------------------------------------------
 
 
-# to start, just print.
-print( article_to_info_dict )
+# Now to go through the data structure we created and place information from it
+#    into the database table modeled by Analysis_Reliability_Names.
 
-# columns we want...
-# - article_id
-# - person_id
-# - person_name
-# - coder_1_detected
-# - coder_1_person_id
-# - coder_2_detected
-# - coder_2_person_id
-# - coder_3_detected
-# - coder_3 person_id

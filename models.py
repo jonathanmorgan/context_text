@@ -4261,7 +4261,7 @@ class Article_Data( models.Model ):
     article = models.ForeignKey( Article )
     coder = models.ForeignKey( User )
     coder_type = models.CharField( max_length = 255, blank = True, null = True )
-    topics = models.ManyToManyField( Topic, blank = True, null = True )
+    topics = models.ManyToManyField( Topic, blank = True )
     locations = models.ManyToManyField( Location, blank = True )
     article_type = models.CharField( max_length = 255, choices = ARTICLE_TYPE_CHOICES, blank = True, default = 'news' )
     is_sourced = models.BooleanField( default = True )
@@ -5002,7 +5002,7 @@ class Article_Source( Article_Person ):
     more_title = models.CharField( max_length = 255, blank = True, null = True )
     organization = models.ForeignKey( Organization, blank = True, null = True )
     document = models.ForeignKey( Document, blank = True, null = True )
-    topics = models.ManyToManyField( Topic, blank = True, null = True )
+    topics = models.ManyToManyField( Topic, blank = True )
     source_contact_type = models.CharField( max_length = 255, choices = SOURCE_CONTACT_TYPE_CHOICES, blank = True, null = True )
     source_capacity = models.CharField( max_length = 255, choices = SOURCE_CAPACITY_CHOICES, blank = True, null = True )
     #count_direct_quote = models.IntegerField( "Count direct quotes", default = 0 )
@@ -5727,6 +5727,11 @@ class Source_Organization( models.Model ):
 #        return string_OUT
 
 #= End Article_Location Model ======================================================
+
+
+#==============================================================================#
+# !Import and migration models
+#==============================================================================#
 
 
 # Import_Error model
@@ -7121,3 +7126,104 @@ class Articles_To_Migrate( models.Model ):
 
 #= END Articles_To_Migrate model ===============================================#
 
+
+#==============================================================================#
+# !Analysis models
+#==============================================================================#
+
+
+@python_2_unicode_compatible
+class Analysis_Reliability_Names( models.Model ):
+
+    '''
+    Class to hold information on name detection choices within a given article
+       across coders, for use in inter-coder reliability testing.  Intended to
+       be read or exported for use by statistical analysis packages (numpy, R, 
+       etc.).  Example of how to populate this table:
+       
+       sourcenet/examples/analysis/reliability-build_name_data.py
+       
+       Examples of calculating reliability TK.
+       
+       Includes columns for three coders.  If you need more, add more sets of
+       coder columns.
+    '''
+
+    #----------------------------------------------------------------------
+    # model fields
+    #----------------------------------------------------------------------
+
+    article = models.ForeignKey( Article, blank = True, null = True )
+    person = models.ForeignKey( Person, blank = True, null = True )
+    person_name = models.CharField( max_length = 255, blank = True, null = True )
+    name_type = models.CharField( max_length = 255, blank = True, null = True )
+    coder1 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder1_set" )
+    coder1_detected = models.IntegerField( blank = True, null = True )
+    coder1_person_id = models.IntegerField( blank = True, null = True )
+    coder2 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder2_set" )
+    coder2_detected = models.IntegerField( blank = True, null = True )
+    coder2_person_id = models.IntegerField( blank = True, null = True )
+    coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder3_set" )
+    coder3_detected = models.IntegerField( blank = True )
+    coder3_person_id = models.IntegerField( blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+
+    #----------------------------------------------------------------------------
+    # Meta class
+    #----------------------------------------------------------------------------
+
+    # Meta-data for this class.
+    class Meta:
+        ordering = [ 'article', 'name_type', 'person' ]
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        # start with stuff we should always have.
+        if ( self.id ):
+        
+            string_OUT += str( self.id )
+            
+        #-- END check to see if ID. --#
+        
+        # got an article?
+        if ( self.article ):
+        
+            # yes - output ID.
+            string_OUT += " - article ID: " + str( self.article.id )
+            
+        #-- END check to see if article. --#
+        
+        # got person_name?
+        if ( self.person_name ):
+        
+            # yes, append it
+            string_OUT += " - " + person_name
+            
+        #-- END check to see if person_name --#
+            
+        # got person?
+        if ( self.person ):
+        
+            # yes, append ID in parens.
+            string_OUT += " ( " + str( self.person.id ) + " )"
+            
+        #-- END check to see if we have a person. --#
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+     
+
+#= END Articles_To_Migrate model ===============================================#
