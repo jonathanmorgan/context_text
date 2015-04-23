@@ -953,6 +953,31 @@ class Abstract_Person( models.Model ):
     #-- END method __str__() --#
 
 
+    def get_name_string( self ):
+        
+        '''
+        Converts current person's name into a HumanName, then call the str()
+           function on that name to convert it to a string.  Returns that
+           string.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        my_HumanName = None
+        
+        # get human name for this instance.
+        my_HumanName = self.to_HumanName()
+        
+        # convert that to a string.
+        value_OUT = str( my_HumanName )
+        
+        return value_OUT
+        
+    #-- END method get_name_string() --#
+
+
     def standardize_name_parts( self, remove_periods_IN = False ):
         
         '''
