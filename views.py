@@ -56,6 +56,9 @@ from django.template import RequestContext
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
 
+# python_utilities - string helper
+from python_utilities.strings.string_helper import StringHelper
+
 # Import the form class for network output
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
@@ -261,6 +264,7 @@ def article_view( request_IN ):
     paragraph_index = -1
     paragraph_number = -1
     p_tag_bs = None
+    p_tag_html = ""
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -357,7 +361,15 @@ def article_view( request_IN ):
                             p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
                             
                             # render row
-                            rendered_article_html += "\n        <tr><td>" + str( paragraph_number ) + "</td><td>" + str( p_tag_bs ) + "</td></tr>"
+                            p_tag_html = p_tag_bs.prettify()
+                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
+                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
+
+                            # calling str() on any part of a string being
+                            #    concatenated causes all parts of the string to
+                            #    try to encode to default encoding ('ascii').
+                            #    This breaks if there are non-ascii characters.
+                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
                         
                         #-- END loop over <p> ids. --#
                         

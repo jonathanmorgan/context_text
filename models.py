@@ -509,6 +509,7 @@ class Abstract_Person( models.Model ):
         me = "get_person_for_name"
         person_qs = None
         person_count = -1
+        id_list = []
         
         # got a name?
         if ( name_IN ):
@@ -536,21 +537,28 @@ class Abstract_Person( models.Model ):
                     # store name
                     instance_OUT.set_name( name_IN )
                     
-                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, creating new Person instance (but not saving yet)!" )
+                    output_debug( "In " + me + ": no match for name: \"" + name_IN + "\"; so, creating new Person instance (but not saving yet)!" )
                     
                 else:
                 
                     # return None!
                     instance_OUT = None
                     
-                    output_debug( "In " + me + ": no match for name: " + name_IN + "; so, returning None!" )
+                    output_debug( "In " + me + ": no match for name: \"" + name_IN + "\"; so, returning None!" )
                     
                 #-- END check to see if we create on no match. --#
                 
             else:
             
                 # Multiple matches.  Trouble.
-                output_debug( "In " + me + ": multiple matches for name \"" + name_IN + ".  Returning None." )
+                id_list = []
+                for person in person_qs:
+                
+                    id_list.append( person.id )
+                    
+                #-- END loop over person matches. --#
+                
+                output_debug( "In " + me + ": multiple matches for name \"" + name_IN + "\" ( " + str( id_list ) + " ).  Returning None." )
                 instance_OUT = None
             
             #-- END check count of persons returned. --#
@@ -7156,7 +7164,7 @@ class Analysis_Reliability_Names( models.Model ):
     article = models.ForeignKey( Article, blank = True, null = True )
     person = models.ForeignKey( Person, blank = True, null = True )
     person_name = models.CharField( max_length = 255, blank = True, null = True )
-    name_type = models.CharField( max_length = 255, blank = True, null = True )
+    person_type = models.CharField( max_length = 255, blank = True, null = True )
     coder1 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder1_set" )
     coder1_detected = models.IntegerField( blank = True, null = True )
     coder1_person_id = models.IntegerField( blank = True, null = True )
@@ -7164,7 +7172,7 @@ class Analysis_Reliability_Names( models.Model ):
     coder2_detected = models.IntegerField( blank = True, null = True )
     coder2_person_id = models.IntegerField( blank = True, null = True )
     coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder3_set" )
-    coder3_detected = models.IntegerField( blank = True )
+    coder3_detected = models.IntegerField( blank = True, null = True )
     coder3_person_id = models.IntegerField( blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
@@ -7177,7 +7185,7 @@ class Analysis_Reliability_Names( models.Model ):
 
     # Meta-data for this class.
     class Meta:
-        ordering = [ 'article', 'name_type', 'person' ]
+        ordering = [ 'article', 'person_type', 'person' ]
 
 
     #----------------------------------------------------------------------------
@@ -7189,6 +7197,9 @@ class Analysis_Reliability_Names( models.Model ):
 
         # return reference
         string_OUT = ""
+        
+        # declare variables
+        temp_string = ""
         
         # start with stuff we should always have.
         if ( self.id ):
@@ -7209,7 +7220,7 @@ class Analysis_Reliability_Names( models.Model ):
         if ( self.person_name ):
         
             # yes, append it
-            string_OUT += " - " + person_name
+            string_OUT += " - " + self.person_name
             
         #-- END check to see if person_name --#
             
@@ -7220,6 +7231,40 @@ class Analysis_Reliability_Names( models.Model ):
             string_OUT += " ( " + str( self.person.id ) + " )"
             
         #-- END check to see if we have a person. --#
+        
+        # got coder details?
+        if ( ( self.coder1 ) or ( self.coder2 ) or ( self.coder3 ) ):
+        
+            # yes.  Output a summary of coding.
+            string_OUT += " - coders: "
+            
+            temp_string = ""
+            
+            if ( self.coder1 ):
+            
+                # output details for coder 1
+                string_OUT += "1"
+                temp_string += " ====> 1 - " + str( self.coder1.id ) + "; " + str( self.coder1_detected ) + "; " + str( self.coder1_person_id )
+                
+            #-- END check to see if coder1 --#
+
+            if ( self.coder2 ):
+            
+                # output details for coder 2
+                string_OUT += "2"
+                temp_string += " ====> 2 - " + str( self.coder2.id ) + "; " + str( self.coder2_detected ) + "; " + str( self.coder2_person_id )
+                
+            #-- END check to see if coder2 --#
+        
+            if ( self.coder3 ):
+            
+                # output details for coder 3
+                string_OUT += "3"
+                temp_string += " ====> 3 - " + str( self.coder3.id ) + "; " + str( self.coder3_detected ) + "; " + str( self.coder3_person_id )
+                
+            #-- END check to see if coder3 --#
+            
+            string_OUT += temp_string
         
         return string_OUT
 

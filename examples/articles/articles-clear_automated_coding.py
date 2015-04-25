@@ -28,7 +28,8 @@ automated_user = User.objects.filter( username = "automated" ).get()
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
 
 # filter on related article IDs?
-article_id_in_list = [ 360962 ]
+#article_id_in_list = [ 360962 ]
+article_id_in_list = [ 28598 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.
