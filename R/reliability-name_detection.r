@@ -4,22 +4,40 @@
 
 # Before you run this code, you need to do the following:
 # - connect to the database.  Example is in db_connect.r, in this same folder.
+# source( "db_connect.r" )
 # - Initialize the functions contained in reliability_functions.r, also in this same folder.
+# source( "reliability_functions.r" )
+# - Set person_type to either "author" or "source"
+# - If you want to filter on a label, declare the label in filter_on_label
+
+# if no person_type, default to "source".
+if ( exists( "person_type" ) == FALSE ){
+
+    # no person type.  Default to "source".
+    person_type <- "source"
+
+}
+
+# if no person_type, default to "source".
+if ( exists( "filter_on_label" ) == FALSE ) {
+
+    # no label specified for filtering.  Default to "".
+    filter_on_label <- ""
+
+}
+
+# create output file name based on person type.
+output_file <- paste( person_type, "-name_detection_results.txt", sep = "" )
 
 #==============================================================================#
 # Retrieve data
 #==============================================================================#
 
-# adjust to either pull in source data or author data.
-
 # execute query to pull in the source information from reliability table.
-#result_set <- dbSendQuery( connection, "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = 'source' ORDER BY id ASC;" )
-
-# OR execute query to pull in the author information from reliability table.
-result_set <- dbSendQuery( connection, "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = 'author' ORDER BY id ASC;" )
+result_set <- query_reliability_data( person_type, filter_on_label )
 
 # retrieve rows into data.frame
-data_frame <- fetch( result_set, -1 )
+data_frame <- fetch( result_set, n = -1 )
 
 # test data.frame fetch - get column names, row, column count
 colnames( data_frame )
@@ -61,7 +79,7 @@ detected_matrix_1v2_wide <- t( detected_matrix_1v2_tall )
 #detected_matrix_1v2_wide <- rbind( coder1_detected, coder2_detected )
 
 # test agreement - wants the cbind matrix, not the rbind one.
-test_agreement( detected_matrix_1v2_tall, label_IN = "Person Detection - Compare coder 1 and 2" )
+test_agreement( detected_matrix_1v2_tall, label_IN = "Person Detection - Compare coder 1 and 2", file_IN = output_file )
 
 #==============================================================================#
 # Compare coder 2 and 3
@@ -71,7 +89,7 @@ test_agreement( detected_matrix_1v2_tall, label_IN = "Person Detection - Compare
 detected_matrix_2v3_tall <- cbind( coder2_detected, coder3_detected )
 
 # test agreement - wants the cbind matrix, not the rbind one.
-test_agreement( detected_matrix_2v3_tall, label_IN = "Person Detection - Compare coder 2 and 3" )
+test_agreement( detected_matrix_2v3_tall, label_IN = "Person Detection - Compare coder 2 and 3", file_IN = output_file )
 
 #------------------------------------------------------------------------------#
 # Compare coder 1 and 3
@@ -81,4 +99,4 @@ test_agreement( detected_matrix_2v3_tall, label_IN = "Person Detection - Compare
 detected_matrix_1v3_tall <- cbind( coder1_detected, coder3_detected )
 
 # test agreement - wants the cbind matrix, not the rbind one.
-test_agreement( detected_matrix_1v3_tall, label_IN = "Person Detection - Compare coder 1 and 3" )
+test_agreement( detected_matrix_1v3_tall, label_IN = "Person Detection - Compare coder 1 and 3", file_IN = output_file )

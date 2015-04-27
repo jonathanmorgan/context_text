@@ -20,6 +20,7 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
+do_delete = False
 
 # get User with name "automated"
 automated_user = User.objects.filter( username = "automated" ).get()
@@ -27,9 +28,19 @@ automated_user = User.objects.filter( username = "automated" ).get()
 # find all Article_Data for automated user.
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
 
+# filter on related article tags?
+article_tag_in_list = [ 'prelim_network' ]
+if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) ):
+
+    # filter on tags
+    article_data_qs = article_data_qs.filter( article__tags__name__in = article_tag_in_list )
+
+#-- END check to see if tags to filter on --#
+
 # filter on related article IDs?
 #article_id_in_list = [ 360962 ]
-article_id_in_list = [ 28598 ]
+#article_id_in_list = [ 28598 ]
+article_id_in_list = [ 21653, 21756 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.
@@ -95,8 +106,13 @@ for article_data in article_data_qs:
     
     #-- END check if there are tags --#
     
-    # delete Article_Data and children
-    article_data.delete()
+    # delete Article_Data and children?
+    if ( do_delete == True ):
+    
+        # yes - delete.
+        article_data.delete()
+        
+    #-- END check to see if we delete or not... --#
     
 #-- END loop over article data. --#
 

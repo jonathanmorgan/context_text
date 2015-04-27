@@ -35,8 +35,8 @@ automated_user = User.objects.filter( username = "automated" ).get()
 # find all Article_Data for automated user.
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
 
-# now, filter to only include tag "prelim_unit_test_002"
-article_data_qs = article_data_qs.filter( article__tags__name = "prelim_unit_test_005" )
+# now, filter to only include a particular tag
+article_data_qs = article_data_qs.filter( article__tags__name = "prelim_reliability" )
 
 # how many?
 article_data_count = article_data_qs.count()

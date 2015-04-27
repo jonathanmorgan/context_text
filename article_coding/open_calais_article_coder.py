@@ -887,7 +887,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             
                         else:
                         
-                            my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
+                            my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + person_name + "\"" )
             
                         #-- END check to see if person found. --#
                         

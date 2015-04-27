@@ -10,10 +10,57 @@ library( irr )
 # Functions
 #==============================================================================#
 
+
+# Function: query_reliability_data()
+#
+# Accepts person_type and filter_on_label values.  Creates Query to pull back
+#    records with person type and label passed in when either value is present.
+#
+# Returns the ResultSet.
+query_reliability_data <- function( person_type_IN, filter_on_label_IN = "" ) {
+
+    # return reference
+    result_set_OUT <- NULL
+
+    # declare variables
+    query_string <- ""
+
+    # build query string using person_type
+    query_string <- paste( "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = '", person_type_IN, "'", sep = "" )
+
+    # got a filter_on_label?
+    if ( filter_on_label_IN != "" ) {
+
+        # yes.  Add a WHERE clause for matching the label.
+        query_string <- paste( query_string, " AND label = '", filter_on_label, "'", sep = "" )
+
+    }
+
+    # add ORDER BY
+    query_string <- paste( query_string, " ORDER BY id ASC;", sep = "" )
+
+    cat( query_string )
+
+    # run query
+    result_set_OUT <- dbSendQuery( connection, query_string )
+
+    return( result_set_OUT )
+
+} #-- END functon query_reliability_data() --#
+
+
 # Function: output_agree_results
 #
 # Accepts the results of a call to agree() from the irr library.  Outputs them.
-output_agree_results <- function( result_IN ) {
+output_agree_results <- function( result_IN, file_IN = "" ) {
+
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # yes - open it for output.
+        sink( file_IN, append=TRUE, split=TRUE )
+
+    }
 
     cat( "Agree results:\n" )
     cat( paste( "- Method: ", result_IN$method, "\n" ) )
@@ -23,13 +70,29 @@ output_agree_results <- function( result_IN ) {
     cat( paste( "- Value: ", result_IN$value, "\n" ) )
     cat( "\n" )
 
-}
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # return output to the terminal.
+        sink()
+
+    }
+
+} #-- END function output_agree_results() --#
 
 # Function: output_kripp_results
 #
 # Accepts the results of a call to kripp.alpha() from the irr library.  Outputs
 #    them.
-output_kripp_results <- function( result_IN ) {
+output_kripp_results <- function( result_IN, file_IN = "" ) {
+
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # yes - open it for output.
+        sink( file_IN, append=TRUE, split=TRUE )
+
+    }
 
     cat( "Krippendorf's Alpha results:\n" )
     cat( paste( "- Method: ", result_IN$method, "\n" ) )
@@ -40,7 +103,15 @@ output_kripp_results <- function( result_IN ) {
     cat( paste( "- Alpha: ", result_IN$value, "\n" ) )
     cat( "\n" )
 
-}
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # return output to the terminal.
+        sink()
+
+    }
+
+} #-- END function output_kripp_results() --#
 
 # Function: test_agreement()
 #
@@ -49,7 +120,7 @@ output_kripp_results <- function( result_IN ) {
 #    outputs the results.
 #
 # Hint: to make matrix, use cbind on vectors of coding results per coder.
-test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement" ) {
+test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_IN = "" ) {
 
     # return reference
     status_OUT <- "Success!"
@@ -60,10 +131,26 @@ test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement" ) {
     agree_result <- NULL
     kripp_result <- NULL
 
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # yes - open it for output.
+        sink( file_IN, append=TRUE, split=TRUE )
+
+    }
+
     # output label
-    cat( "\n#==============================================================================#\n")
+    cat( "\n#==============================================================================#\n" )
     cat( paste( label_IN, "\n" ) )
-    cat( "#==============================================================================#\n\n")
+    cat( "#==============================================================================#\n\n" )
+
+    # got a file passed in?
+    if ( file_IN != "" ){
+
+        # return output to the terminal.
+        sink()
+
+    }
 
     # store matrix passed in in tall, then transpose so we have wide.
     coding_matrix_tall <- coding_matrix_IN
@@ -71,22 +158,22 @@ test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement" ) {
 
     # percentage agreement - wants the cbind matrix, not the rbind one.
     agree_result <- agree( coding_matrix_tall )
-    output_agree_results( agree_result )
+    output_agree_results( agree_result, file_IN )
 
     # Scott's Pi?
 
     # run Krippendorf's Alpha (not a good match to data - no variance)
     kripp_result <- kripp.alpha( coding_matrix_wide, method = "nominal" )
-    output_kripp_results( kripp_result )
+    output_kripp_results( kripp_result, file_IN )
 
     kripp_result <- kripp.alpha( coding_matrix_wide, method = "ordinal" )
-    output_kripp_results( kripp_result )
+    output_kripp_results( kripp_result, file_IN )
 
     kripp_result <- kripp.alpha( coding_matrix_wide, method = "interval" )
-    output_kripp_results( kripp_result )
+    output_kripp_results( kripp_result, file_IN )
 
     kripp_result <- kripp.alpha( coding_matrix_wide, method = "ratio" )
-    output_kripp_results( kripp_result )
+    output_kripp_results( kripp_result, file_IN )
 
     return( status_OUT )
 

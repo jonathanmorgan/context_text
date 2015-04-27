@@ -7174,6 +7174,7 @@ class Analysis_Reliability_Names( models.Model ):
     coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder3_set" )
     coder3_detected = models.IntegerField( blank = True, null = True )
     coder3_person_id = models.IntegerField( blank = True, null = True )
+    label = models.CharField( max_length = 255, blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
@@ -7207,6 +7208,14 @@ class Analysis_Reliability_Names( models.Model ):
             string_OUT += str( self.id )
             
         #-- END check to see if ID. --#
+        
+        # got a label?
+        if ( self.label ):
+        
+            # got a label
+            string_OUT += " - label: " + self.label
+            
+        #-- END check for label --#
         
         # got an article?
         if ( self.article ):

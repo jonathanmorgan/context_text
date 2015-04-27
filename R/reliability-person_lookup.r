@@ -4,24 +4,40 @@
 
 # Before you run this code, you need to do the following:
 # - connect to the database.  Example is in db_connect.r, in this same folder.
+# source( "db_connect.r" )
 # - Initialize the functions contained in reliability_functions.r, also in this same folder.
+# source( "reliability_functions.r" )
+# - Set person_type to either "author" or "source"
+# - If you want to filter on a label, declare the label in filter_on_label
+
+# if no person_type, default to "source".
+if ( exists( "person_type" ) == FALSE ){
+
+    # no person type.  Default to "source".
+    person_type <- "source"
+
+}
+
+# if no person_type, default to "source".
+if ( exists( "filter_on_label" ) == FALSE ) {
+
+    # no label specified for filtering.  Default to "".
+    filter_on_label <- ""
+
+}
+
+# create output file name based on person type.
+output_file <- paste( person_type, "-person_lookup_results.txt", sep = "" )
 
 #==============================================================================#
 # Retrieve data
 #==============================================================================#
 
-# adjust to either pull in source data or author data.
-
-# execute query to pull in the source information from reliability table.
-
-# including situations where one detected the person and the other did not.
-result_set <- dbSendQuery( connection, "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = 'source' ORDER BY id ASC;" )
-
-# OR execute query to pull in the author information from reliability table.
-#result_set <- dbSendQuery( connection, "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = 'author' ORDER BY id ASC;" )
+# execute query to pull in person data from reliability table.
+result_set <- query_reliability_data( person_type, filter_on_label )
 
 # retrieve rows into data.frame
-data_frame <- fetch( result_set, -1 )
+data_frame <- fetch( result_set, n = -1 )
 
 # test data.frame fetch - get column names, row, column count
 colnames( data_frame )
@@ -62,7 +78,7 @@ lookup_matrix_1v2_wide <- t( lookup_matrix_1v2_tall )
 #lookup_matrix_1v2_wide <- rbind( coder1_person_id, coder2_person_id )
 
 # test agreement.
-test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - all included" )
+test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - all included", file_IN = output_file )
 
 # filter to omit where either one or the other did not detect the person.
 filtered_df <- data_frame[ !( ( coder1_person_id == 0 ) | ( coder2_person_id == 0 ) ), ]
@@ -75,7 +91,7 @@ coder2_person_id <- filtered_df$coder2_person_id
 lookup_matrix_1v2_tall <- cbind( coder1_person_id, coder2_person_id )
 
 # test agreement.
-test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - filter - only joint detection" )
+test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - filter - only joint detection", file_IN = output_file )
 
 #==============================================================================#
 # Compare coder 2 and 3
@@ -89,7 +105,7 @@ coder3_person_id <- data_frame$coder3_person_id
 lookup_matrix_2v3_tall <- cbind( coder2_person_id, coder3_person_id )
 
 # test_agreement
-test_agreement( lookup_matrix_2v3_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - all included" )
+test_agreement( lookup_matrix_2v3_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - all included", file_IN = output_file )
 
 # filter to omit where either one or the other did not detect the person.
 filtered_df <- data_frame[ !( ( coder2_person_id == 0 ) | ( coder3_person_id == 0 ) ), ]
@@ -102,7 +118,7 @@ coder3_person_id <- filtered_df$coder3_person_id
 lookup_matrix_2v3_tall <- cbind( coder2_person_id, coder3_person_id )
 
 # test agreement.
-test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - filter - only joint detection" )
+test_agreement( lookup_matrix_2v3_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - filter - only joint detection", file_IN = output_file )
 
 #==============================================================================#
 # Compare coder 1 and 3
@@ -116,7 +132,7 @@ coder3_person_id <- data_frame$coder3_person_id
 lookup_matrix_1v3_tall <- cbind( coder1_person_id, coder3_person_id )
 
 # percentage agreement - wants the cbind matrix, not the rbind one.
-test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - all included" )
+test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - all included", file_IN = output_file )
 
 # filter to omit where either one or the other did not detect the person.
 filtered_df <- data_frame[ !( ( coder1_person_id == 0 ) | ( coder3_person_id == 0 ) ), ]
@@ -129,4 +145,4 @@ coder3_person_id <- filtered_df$coder3_person_id
 lookup_matrix_1v3_tall <- cbind( coder1_person_id, coder3_person_id )
 
 # test agreement.
-test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - filter - only joint detection" )
+test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - filter - only joint detection", file_IN = output_file )

@@ -110,7 +110,7 @@ class Reliability_Names( object ):
     #-- END method get_coder_for_index() --#
     
         
-    def output_reliability_data( self ):
+    def output_reliability_data( self, label_IN = "" ):
     
         '''
         Accepts article_info_dict_IN, dictionary that maps article IDs to the
@@ -192,7 +192,7 @@ class Reliability_Names( object ):
                     for my_person_id, my_person_info_dict in six.iteritems( my_author_info_dict ):
                     
                         # call function to output reliability table row.
-                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_AUTHOR )
+                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_AUTHOR, label_IN = label_IN )
                         print ( "- author: " + str( reliability_row ) )
                     
                     #-- END loop over author info ---#
@@ -208,7 +208,7 @@ class Reliability_Names( object ):
                     for my_person_id, my_person_info_dict in six.iteritems( my_source_info_dict ):
                     
                         # call function to output reliability table row.
-                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_SOURCE )
+                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_SOURCE, label_IN = label_IN )
                         print ( "- source: " + str( reliability_row ) )
                     
                     #-- END loop over author info ---#
@@ -222,7 +222,7 @@ class Reliability_Names( object ):
     #-- END method output_reliability_data --##
     
     
-    def output_reliability_name_row( self, article_IN, person_info_dict_IN, person_type_IN ):
+    def output_reliability_name_row( self, article_IN, person_info_dict_IN, person_type_IN, label_IN = "" ):
         
         '''
         Accepts:
@@ -278,6 +278,14 @@ class Reliability_Names( object ):
                     
                         # got everything.  make reliability row.
                         reliability_instance = Analysis_Reliability_Names()
+                        
+                        # got a label?
+                        if ( ( label_IN is not None ) and ( label_IN != "" ) ):
+                        
+                            # yes, there is a label.  Add it to row.
+                            reliability_instance.label = label_IN
+                        
+                        #-- END check to see if label --#
                         
                         # get information from info dictionary
                         my_person_id = person_info_dict_IN.get( self.PERSON_ID, -1 )
@@ -441,9 +449,14 @@ class Reliability_Names( object ):
         # process articles to build data
         #-------------------------------------------------------------------------------
         
-        
-        # get articles with tag of "prelim_reliability"
-        article_qs = Article.objects.filter(tags__name__in = tag_list_IN )
+        # got a tag list?
+        if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
+
+            # get articles with tags in list passed in.
+            article_qs = Article.objects.filter( tags__name__in = tag_list_IN )
+            
+        #-- END check to see if tag list --#
+            
         article_qs = article_qs.order_by( "id" )
         
         # build a dictionary that maps article ID to assorted details about the coding
@@ -554,7 +567,7 @@ class Reliability_Names( object ):
                         
             #-- END loop over related Article_Data
             
-            # update artucle info dictionary
+            # update article info dictionary
             article_info_dict[ self.ARTICLE_ID ] = article_id
             article_info_dict[ self.ARTICLE_DATA_ID_LIST ] = article_data_id_list
             article_info_dict[ self.ARTICLE_CODER_ID_LIST ] = article_coder_id_list
@@ -676,13 +689,15 @@ class Reliability_Names( object ):
 # declare variables
 my_reliability_instance = None
 tag_list = None
+label = ""
 
 # make reliability instance
 my_reliability_instance = Reliability_Names()
 
 # process articles
-tag_list = [ "prelim_reliability", ]
+tag_list = [ "reliability_test", ]
 my_reliability_instance.process_articles( tag_list )
 
 # output to database.
-my_reliability_instance.output_reliability_data()
+label = "reliability_test"
+my_reliability_instance.output_reliability_data( label )
