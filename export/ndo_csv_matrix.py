@@ -478,10 +478,6 @@ class NDO_CSVMatrix( NetworkDataOutput ):
                matrix of ties.  For a given cell in the matrix, the value is an
                integer: 0 if no tie, 1 or greater if tie.  Each column value is
                separated by two spaces.
-               Uses the query set to output delimited data in the format specified in
-               the output_type instance variable.  If one line per article, has
-               sets of columns for as many authors and sources as are present in
-               the articles with the most authors and sources, respectively.
 
             Preconditions: assumes that we have a query set of articles stored
                in the instance.  If not, does nothing, returns empty string.

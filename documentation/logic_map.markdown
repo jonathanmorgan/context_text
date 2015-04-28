@@ -13,9 +13,18 @@
 - sourcenet/export/network_data_output.py - abstract class NetworkDataOutput
 - sourcenet/export/ndo_*.py - concrete NetworkDataOutput child classes:
 
-    - sourcenet/export/ndo_simple_matrix.py - first format, for UCINet, not compatible with anything else.
-    - sourcenet/export/ndo_csv_matrix.py - CSV table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.
-    - sourcenet/export/ndo_tab_delimited_matrix.py - tab-delimited table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.    
+    - sourcenet/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
+    
+        - first format, for UCINet, not compatible with anything else.
+    
+    - sourcenet/export/ndo_csv_matrix.py - class NDO_CSVMatrix
+    
+        - CSV table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.
+
+    - sourcenet/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
+    
+        - tab-delimited table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.
+        - this is just a configuration container - extends NDO_CSVMatrix, adjusts configuration so it outputs tab-delimited rather than CSV.
 
 - sourcenet/models.py - class Article_Source
 
@@ -70,3 +79,28 @@
             - abstract NetworkDataOutput.render_network_data()
             
                 - implemented by one of the outputters in the sourcenet/export/ndo_*.py files
+                
+                    - sourcenet/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
+                    - sourcenet/export/ndo_csv_matrix.py - class NDO_CSVMatrix
+                    - sourcenet/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
+                
+                - NDO_CSVMatrix
+                
+                    - NDO_CSVMatrix.render_network_data()
+                    
+                        - NDO_CSVMatrix.create_csv_string()
+                        
+                            - NDO_CSVMatrix.init_csv_output()
+                            
+                                - makes and stores csv.writer() set to write to a StringBuffer.
+                            
+                            - NDO_CSVMatrix.create_csv_document()
+                            
+                                - NetworkDataOutput.create_header_list()
+                                - NDO_CSVMatrix.append_row_to_csv()
+                                - NetworkDataOutput.get_master_person_list()
+                                - NDO_CSVMatrix.append_person_row()
+                                - NetworkDataOutput.do_output_attribute_rows()
+                                - NDO_CSVMatrix.append_person_type_id_row()
+                            
+                            - NDO_CSVMatrix.cleanup()

@@ -8,7 +8,13 @@ tab_test1 <- read.delim( "tab-test1-data.txt", header = TRUE, row.names = 1, che
 # comma-delimited:
 csv_test1 <- read.csv( "csv-test1.csv", header = TRUE, row.names = 1, check.names = FALSE )
 
-# just use the first 314 rows (omit the person_type row for now).
+#------------------------------------------------------------------------------#
+# If extra data on nodes stored in rows at the end of the file:
+#------------------------------------------------------------------------------#
+
+# - person_type value for each person is last row of values.
+
+# To just get ties, use the first 314 rows (omit the person_type row for now).
 tab_test1_network <- tab_test1[ 1 : 314, ]
 csv_test1_network <- csv_test1[ 1 : 314, ]
 
@@ -21,6 +27,18 @@ tab_test1_matrix <- as.matrix( tab_test1_network )
 csv_test1_matrix <- as.matrix( csv_test1_network )
 
 # they appear to be identical.  Using tab one from here on.
+
+#------------------------------------------------------------------------------#
+# If extra data on nodes stored as columns at right of the file:
+#------------------------------------------------------------------------------#
+
+# example: person_type value for each person is last column of values.
+
+# To just get ties, use all but the last column.
+tab_test1_network <- tab_test1[ , -ncol( tab_test1 ) ]
+
+# convert to a matrix
+tab_test1_matrix <- as.matrix( tab_test1_network )
 
 #==============================================================================#
 # igraph - more basic SNA package:
@@ -38,7 +56,7 @@ test1_igraph
 
 # Will output something like:
 #
-# IGRAPH UNW- 314 309 -- 
+# IGRAPH UNW- 314 309 --
 # + attr: name (v/c), weight (e/n)
 #
 # in the first line, "UNW-" are traits of graph:
@@ -100,18 +118,18 @@ test1_statnet
 
 # Output example:
 # Network attributes:
-#  vertices = 314 
-#  directed = FALSE 
-#  hyper = FALSE 
-#  loops = FALSE 
-#  multiple = FALSE 
-#  bipartite = FALSE 
-#  total edges= 309 
-#    missing edges= 0 
-#    non-missing edges= 309 
+#  vertices = 314
+#  directed = FALSE
+#  hyper = FALSE
+#  loops = FALSE
+#  multiple = FALSE
+#  bipartite = FALSE
+#  total edges= 309
+#    missing edges= 0
+#    non-missing edges= 309
 #
-# Vertex attribute names: 
-#    vertex.names 
+# Vertex attribute names:
+#    vertex.names
 #
 # No edge attributes
 
@@ -130,18 +148,18 @@ test1_statnet <- network( tab_test1_matrix, matrix.type = "adjacency", directed 
 test1_statnet
 
 # Network attributes:
-#  vertices = 314 
-#  directed = FALSE 
-#  hyper = FALSE 
-#  loops = FALSE 
-#  multiple = FALSE 
-#  bipartite = FALSE 
-#  total edges= 309 
-#    missing edges= 0 
-#    non-missing edges= 309 
+#  vertices = 314
+#  directed = FALSE
+#  hyper = FALSE
+#  loops = FALSE
+#  multiple = FALSE
+#  bipartite = FALSE
+#  total edges= 309
+#    missing edges= 0
+#    non-missing edges= 309
 #
-# Vertex attribute names: 
-#    person_type vertex.names 
+# Vertex attribute names:
+#    person_type vertex.names
 #
 # No edge attributes
 
