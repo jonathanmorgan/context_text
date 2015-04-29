@@ -121,3 +121,12 @@ print( "- Article ( " + str( len( article_id_list ) ) + " ): " + str( ", ".join(
 print( "- Article_Data ( " + str( len( article_data_id_list ) ) + " ): " + str( ", ".join( article_data_id_list ) ) )
 print( "- Article_Author ( " + str( len( article_author_id_list ) ) + " ): " + str( ", ".join( article_author_id_list ) ) )
 print( "- Article_Source ( " + str( len( article_source_id_list ) ) + " ): " + str( ", ".join( article_source_id_list ) ) )
+
+# delete Article_Data and children?
+if ( do_delete == False ):
+
+    # yes - delete.
+    print( "\n\n====> NOTE: do_delete == False - DRY RUN - no changes made." )
+    
+#-- END check to see if we delete or not... --#
+    
