@@ -1,6 +1,8 @@
 # link to good doc on qaptest(){sna} function: http://www.inside-r.org/packages/cran/sna/docs/qaptest
 
 # imports
+# install.packages( "sna" )
+# install.packages( "statnet" )
 library( "sna" )
 
 # first, need to load in the two matrices we want to compare.

@@ -44,6 +44,8 @@ tab_test1_matrix <- as.matrix( tab_test1_network )
 # igraph - more basic SNA package:
 #==============================================================================#
 
+# make sure you've loaded the igraph library
+# install.packages( "igraph" )
 library( igraph )
 
 # convert matrix to igraph graph object instance.
@@ -108,6 +110,8 @@ V( test1_igraph )$person_type
 # statnet
 #==============================================================================#
 
+# make sure you've loaded the statnet library
+# install.packages( "statnet" )
 library( statnet )
 
 # convert matrix to statnet network object instance.

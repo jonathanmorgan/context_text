@@ -15,6 +15,7 @@
 # - http://assemblingnetwork.wordpress.com/2013/06/10/network-basics-with-r-and-igraph-part-ii-of-iii/
 
 # make sure you've loaded the igraph library
+# install.packages( "igraph" )
 library( igraph )
 
 # assuming that our igraph network object is in reference test1_igraph.
@@ -45,6 +46,7 @@ node_attribute_df <- data.frame( id = V( test1_igraph )$name, person_type = V( t
 #==============================================================================#
 
 # make sure you've loaded the statnet library
+# install.packages( "statnet" )
 library( statnet )
 
 # assuming that our statnet network object is in reference test1_statnet.
