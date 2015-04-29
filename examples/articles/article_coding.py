@@ -15,6 +15,7 @@ article_qs = None
 article_id_in_list = []
 article_count = -1
 coding_status = ""
+do_coding = False
 
 # first, get a list of articles to code.
 start_pub_date = "2009-12-06"
@@ -52,7 +53,7 @@ article_qs = my_article_coding.create_article_query_set()
 # filter on related article IDs?
 #article_id_in_list = [ 360962 ]
 #article_id_in_list = [ 28598 ]
-article_id_in_list = [ 21653, 21756 ]
+# article_id_in_list = [ 21653, 21756 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.
@@ -62,12 +63,27 @@ if ( len( article_id_in_list ) > 0 ):
 
 # make sure we have at least one article
 article_count = article_qs.count()
-if ( article_count > 0 ):
 
-    # invoke the code_article_data( self, query_set_IN ) method.
-    coding_status = my_article_coding.code_article_data( article_qs )
+# Do coding?
+if ( do_coding == True ):
+
+    # yes - as long as we have articles.
+    if ( article_count > 0 ):
+
+        # invoke the code_article_data( self, query_set_IN ) method.
+        coding_status = my_article_coding.code_article_data( article_qs )
     
-    # output status
-    print( "\n\n==============================\n\nCoding status: \"" + coding_status + "\"" )
+        # output status
+        print( "\n\n==============================\n\nCoding status: \"" + coding_status + "\"" )
     
-#-- END check to see if article count. --#
+    #-- END check to see if article count. --#
+    
+else:
+    
+    # output matching article count.
+    print( "do_coding == False, so dry run" )
+    print( "- query params:" )
+    print( params )
+    print( "- matching article count: " + str( article_count ) )
+    
+#-- END check to see if we do_coding --#

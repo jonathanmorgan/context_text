@@ -5,8 +5,8 @@ library( "sna" )
 
 # first, need to load in the two matrices we want to compare.
 # Start with loading in tab-delimited files.
-human_network_data <- read.delim( "sourcenet_data-20150427-175642.tab", header = TRUE, row.names = 1, check.names = FALSE )
-calais_network_data <- read.delim( "sourcenet_data-20150427-175701.tab", header = TRUE, row.names = 1, check.names = FALSE )
+human_network_data <- read.delim( "sourcenet_data-20150429-002603.tab", header = TRUE, row.names = 1, check.names = FALSE )
+calais_network_data <- read.delim( "sourcenet_data-20150429-002619.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
 # remove the right-most column, which contains non-tie info on nodes.
 human_network_ties <- human_network_data[ , -ncol( human_network_data ) ]

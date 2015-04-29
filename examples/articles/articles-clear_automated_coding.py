@@ -40,7 +40,7 @@ if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) 
 # filter on related article IDs?
 #article_id_in_list = [ 360962 ]
 #article_id_in_list = [ 28598 ]
-article_id_in_list = [ 21653, 21756 ]
+# article_id_in_list = [ 21653, 21756 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.
