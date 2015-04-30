@@ -7168,12 +7168,15 @@ class Analysis_Reliability_Names( models.Model ):
     coder1 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder1_set" )
     coder1_detected = models.IntegerField( blank = True, null = True )
     coder1_person_id = models.IntegerField( blank = True, null = True )
+    coder1_source_type = models.CharField( max_length = 255, blank = True, null = True )
     coder2 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder2_set" )
     coder2_detected = models.IntegerField( blank = True, null = True )
     coder2_person_id = models.IntegerField( blank = True, null = True )
+    coder2_source_type = models.CharField( max_length = 255, blank = True, null = True )
     coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_names_coder3_set" )
     coder3_detected = models.IntegerField( blank = True, null = True )
     coder3_person_id = models.IntegerField( blank = True, null = True )
+    coder3_source_type = models.CharField( max_length = 255, blank = True, null = True )
     label = models.CharField( max_length = 255, blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
@@ -7280,4 +7283,154 @@ class Analysis_Reliability_Names( models.Model ):
     #-- END method __str__() --#
      
 
-#= END Articles_To_Migrate model ===============================================#
+#= END Analysis_Reliability_Names model ===============================================#
+
+
+@python_2_unicode_compatible
+class Analysis_Reliability_Ties( models.Model ):
+
+    '''
+    Class to hold information on name detection choices within a given article
+       across coders, for use in inter-coder reliability testing.  Intended to
+       be read or exported for use by statistical analysis packages (numpy, R, 
+       etc.).  Example of how to populate this table:
+       
+       sourcenet/examples/analysis/reliability-build_name_data.py
+       
+       Examples of calculating reliability TK.
+       
+       Includes columns for three coders.  If you need more, add more sets of
+       coder columns.
+    '''
+
+    #----------------------------------------------------------------------
+    # model fields
+    #----------------------------------------------------------------------
+
+    article = models.ForeignKey( Article, blank = True, null = True )
+    person = models.ForeignKey( Person, blank = True, null = True, related_name = "reliability_ties_from_set" )
+    person_name = models.CharField( max_length = 255, blank = True, null = True )
+    person_type = models.CharField( max_length = 255, blank = True, null = True )
+    relation_type = models.CharField( max_length = 255, blank = True, null = True )
+    relation_person = models.ForeignKey( Person, blank = True, null = True, related_name = "reliability_ties_to_set" )
+    coder1 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder1_set" )
+    coder1_mention_count = models.IntegerField( blank = True, null = True )
+    coder2 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder2_set" )
+    coder2_mention_count = models.IntegerField( blank = True, null = True )
+    coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder3_set" )
+    coder3_mention_count = models.IntegerField( blank = True, null = True )
+    label = models.CharField( max_length = 255, blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+
+    #----------------------------------------------------------------------------
+    # Meta class
+    #----------------------------------------------------------------------------
+
+    # Meta-data for this class.
+    class Meta:
+        ordering = [ 'article', 'person_type', 'person', 'relation_person' ]
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        temp_string = ""
+        
+        # start with stuff we should always have.
+        if ( self.id ):
+        
+            string_OUT += str( self.id )
+            
+        #-- END check to see if ID. --#
+        
+        # got a label?
+        if ( self.label ):
+        
+            # got a label
+            string_OUT += " - label: " + self.label
+            
+        #-- END check for label --#
+        
+        # got an article?
+        if ( self.article ):
+        
+            # yes - output ID.
+            string_OUT += " - article ID: " + str( self.article.id )
+            
+        #-- END check to see if article. --#
+        
+        # got person_name?
+        if ( self.person_name ):
+        
+            # yes, append it
+            string_OUT += " - from " + self.person_name
+            
+        #-- END check to see if person_name --#
+            
+        # got person?
+        if ( self.person ):
+        
+            # yes, append ID in parens.
+            string_OUT += " ( " + str( self.person.id ) + " )"
+            
+        #-- END check to see if we have a person. --#
+        
+        # got relation_person?
+        if ( self.relation_person ):
+        
+            # yes.  add information.
+            string_OUT += " to " + self.relation_person.get_name_string() + " ( " + str( self.relation_person.id ) + " )"
+        
+        #-- END check to see if relation_person --#
+        
+        # got coder details?
+        if ( ( self.coder1 ) or ( self.coder2 ) or ( self.coder3 ) ):
+        
+            # yes.  Output a summary of coding.
+            string_OUT += " - coders: "
+            
+            temp_string = ""
+            
+            if ( self.coder1 ):
+            
+                # output details for coder 1
+                string_OUT += "1"
+                temp_string += " ====> 1 - " + str( self.coder1.id ) + "; mentions: " + str( self.coder1_mention_count )
+                
+            #-- END check to see if coder1 --#
+
+            if ( self.coder2 ):
+            
+                # output details for coder 2
+                string_OUT += "2"
+                temp_string += " ====> 2 - " + str( self.coder2.id ) + "; mentions: " + str( self.coder2_mention_count )
+                
+            #-- END check to see if coder2 --#
+        
+            if ( self.coder3 ):
+            
+                # output details for coder 3
+                string_OUT += "3"
+                temp_string += " ====> 3 - " + str( self.coder3.id ) + "; mentions: " + str( self.coder3_mention_count )
+                
+            #-- END check to see if coder3 --#
+            
+            string_OUT += temp_string
+        
+        return string_OUT
+
+    #-- END method __str__() --#
+     
+
+#= END Analysis_Reliability_Ties model ===============================================#
