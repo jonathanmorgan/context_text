@@ -7304,21 +7304,40 @@ class Analysis_Reliability_Ties( models.Model ):
     '''
 
     #----------------------------------------------------------------------
+    # constants-ish
+    #----------------------------------------------------------------------
+
+
+    # person types
+    PERSON_TYPE_AUTHOR = "author"
+    PERSON_TYPE_SOURCE = "source"
+    
+    # relation types
+    RELATION_AUTHOR_TO_SOURCE = "author_to_source"
+    RELATION_AUTHOR_TO_AUTHOR = "author_to_author"
+    RELATION_SOURCE_TO_SOURCE = "source_to_source"
+    
+
+    #----------------------------------------------------------------------
     # model fields
     #----------------------------------------------------------------------
 
-    article = models.ForeignKey( Article, blank = True, null = True )
     person = models.ForeignKey( Person, blank = True, null = True, related_name = "reliability_ties_from_set" )
     person_name = models.CharField( max_length = 255, blank = True, null = True )
     person_type = models.CharField( max_length = 255, blank = True, null = True )
     relation_type = models.CharField( max_length = 255, blank = True, null = True )
     relation_person = models.ForeignKey( Person, blank = True, null = True, related_name = "reliability_ties_to_set" )
+    relation_person_name = models.CharField( max_length = 255, blank = True, null = True )
+    relation_person_type = models.CharField( max_length = 255, blank = True, null = True )
     coder1 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder1_set" )
     coder1_mention_count = models.IntegerField( blank = True, null = True )
+    coder1_id_list = models.CharField( max_length = 255, blank = True, null = True )
     coder2 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder2_set" )
     coder2_mention_count = models.IntegerField( blank = True, null = True )
+    coder2_id_list = models.CharField( max_length = 255, blank = True, null = True )
     coder3 = models.ForeignKey( User, blank = True, null = True, related_name = "reliability_ties_coder3_set" )
     coder3_mention_count = models.IntegerField( blank = True, null = True )
+    coder3_id_list = models.CharField( max_length = 255, blank = True, null = True )
     label = models.CharField( max_length = 255, blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
     create_date = models.DateTimeField( auto_now_add = True )
@@ -7331,7 +7350,7 @@ class Analysis_Reliability_Ties( models.Model ):
 
     # Meta-data for this class.
     class Meta:
-        ordering = [ 'article', 'person_type', 'person', 'relation_person' ]
+        ordering = [ 'person_type', 'person', 'relation_person' ]
 
 
     #----------------------------------------------------------------------------
@@ -7361,14 +7380,6 @@ class Analysis_Reliability_Ties( models.Model ):
             string_OUT += " - label: " + self.label
             
         #-- END check for label --#
-        
-        # got an article?
-        if ( self.article ):
-        
-            # yes - output ID.
-            string_OUT += " - article ID: " + str( self.article.id )
-            
-        #-- END check to see if article. --#
         
         # got person_name?
         if ( self.person_name ):
