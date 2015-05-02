@@ -472,7 +472,7 @@ class Reliability_Ties( object ):
         
         article_qs = article_qs.order_by( "id" )
         
-        article_qs = article_qs[ : 2 ]
+        #article_qs = article_qs[ : 2 ]
             
         # build a dictionary that maps author ID to information on that author
         #    and the sources the author quoted in stories included in selected
