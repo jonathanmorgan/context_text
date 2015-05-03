@@ -32,7 +32,7 @@ query_reliability_data <- function( person_type_IN, filter_on_label_IN = "" ) {
     if ( filter_on_label_IN != "" ) {
 
         # yes.  Add a WHERE clause for matching the label.
-        query_string <- paste( query_string, " AND label = '", filter_on_label, "'", sep = "" )
+        query_string <- paste( query_string, " AND label = '", filter_on_label_IN, "'", sep = "" )
 
     }
 
