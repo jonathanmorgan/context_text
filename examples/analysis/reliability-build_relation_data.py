@@ -246,6 +246,7 @@ class Reliability_Ties( object ):
         # declare variables - retrieving reliability sample.
         me = "process_articles"
         article_qs = None
+        article_count = -1
         current_article = None
         article_data_qs = None
         article_data_count = -1
@@ -403,6 +404,17 @@ class Reliability_Ties( object ):
             #-- END check to see if coder_3_article_data --#
         
         #-- END loop over articles. --#
+        
+        # summary
+        print( "" )
+
+        if ( ( self.reliability_row_label is not None ) and ( self.reliability_row_label != "" ) ):
+            print( "Assigned label " + self.reliability_row_label + " to created rows." )
+        #-- END check to see if label set. --#
+            
+        article_count = article_qs.count()
+        print( "Processed " + str( article_count ) + " Articles." )
+        print( "Processed " + str( article_data_counter ) + " Article_Data records." )
 
     #-- END method process_articles() --#
 
@@ -663,7 +675,7 @@ my_reliability_instance.coder_id_to_instance_map = coder_id_to_instance_dict
 my_reliability_instance.coder_id_to_index_map = coder_id_to_index_dict
 
 # label for reliability rows created and used in this session.
-label = "prelim_network"
+label = "prelim_network_fixed_authors"
 my_reliability_instance.reliability_row_label = label
 
 # process articles

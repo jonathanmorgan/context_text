@@ -4515,6 +4515,7 @@ class Article_Person( models.Model ):
 
     article_data = models.ForeignKey( Article_Data )
     person = models.ForeignKey( Person, blank = True, null = True )
+    original_person = models.ForeignKey( Person, blank = True, null = True, related_name="%(app_label)s_%(class)s_original_person_set")
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
 
     # capture match confidence - start with 1 or 0, but leave room for

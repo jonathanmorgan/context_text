@@ -40,6 +40,7 @@ if ( filter_on_label != "" ) {
 
 # add ORDER BY
 query_string <- paste( query_string, " ORDER BY person_id, relation_person_id ASC;", sep = "" )
+query_string
 
 # run query
 result_set <- dbSendQuery( connection, query_string )
