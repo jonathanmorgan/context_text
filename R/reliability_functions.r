@@ -120,7 +120,7 @@ output_kripp_results <- function( result_IN, file_IN = "" ) {
 #    outputs the results.
 #
 # Hint: to make matrix, use cbind on vectors of coding results per coder.
-test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_IN = "" ) {
+test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_IN = "", cor_use_IN = "all.obs", cor_method_IN = "pearson" ) {
 
     # return reference
     status_OUT <- "Success!"
@@ -128,8 +128,16 @@ test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_
     # declare variables
     coding_matrix_tall <- NULL
     coding_matrix_wide <- NULL
+    tall_column_count <- -1
+    column_number <- -1
+    cor_result <- NULL
     agree_result <- NULL
     kripp_result <- NULL
+
+    # store matrix passed in in tall, then transpose so we have wide.
+    coding_matrix_tall <- coding_matrix_IN
+    tall_column_count <- ncol( coding_matrix_tall )
+    coding_matrix_wide <- t( coding_matrix_tall )
 
     # got a file passed in?
     if ( file_IN != "" ){
@@ -140,9 +148,41 @@ test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_
     }
 
     # output label
-    cat( "\n#==============================================================================#\n" )
+    cat( "\n#=============================================================================#\n" )
     cat( paste( label_IN, "\n" ) )
-    cat( "#==============================================================================#\n\n" )
+    cat( "#=============================================================================#\n\n" )
+
+    # also output variance and standard deviation of each list, and a
+    #    correlation coefficient, just for diagnostics.
+    for( column_number in 1 : tall_column_count ) {
+
+        # output variance and standard deviation for this column.
+        cat( paste( "var col", column_number, " = ", var( coding_matrix_tall[ , column_number ] ), "\n", sep = "" ) )
+        cat( paste( "sd col", column_number, " = ", sd( coding_matrix_tall[ , column_number ] ), "\n", sep = "" ) )
+
+    } #-- END loop over columns for variance and standard deviation --#
+
+    # output correlations between columns.
+    cor_result <- cor( coding_matrix_tall, use = cor_use_IN, method = cor_method_IN )
+
+    # loop over columns in cor_result
+    for( column_number in 1 : tall_column_count ) {
+
+        # then, loop through rows to to output - from 1 to column_number - 1.
+        if ( column_number > 1 ) {
+
+            for( row_number in 1 : ( tall_column_count - 1 ) ) {
+
+                # output the correlation coefficient.
+                cat( paste( cor_method_IN, " r[", row_number, ",", column_number, "] = ", cor_result[ row_number, column_number ], "\n", sep = "" ) )
+
+            } #-- END loop over rows. --#
+
+        } #-- END check to make sure we aren't in first column. --#
+
+    } #-- END loop over columns --#
+
+    cat( "\n\n" )
 
     # got a file passed in?
     if ( file_IN != "" ){
@@ -151,10 +191,6 @@ test_agreement <- function( coding_matrix_IN, label_IN = "test_agreement", file_
         sink()
 
     }
-
-    # store matrix passed in in tall, then transpose so we have wide.
-    coding_matrix_tall <- coding_matrix_IN
-    coding_matrix_wide <- t( coding_matrix_tall )
 
     # percentage agreement - wants the cbind matrix, not the rbind one.
     agree_result <- agree( coding_matrix_tall )
