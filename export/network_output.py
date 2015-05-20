@@ -21,7 +21,6 @@ The network_output module contains objects and code to parse and output social
    of Article_Data, not Article, so that we support multiple passes at coding
    a given article by different people, only have to store the contents of each
    article once.
-   
 '''
 
 '''
@@ -301,7 +300,7 @@ class NetworkOutput( SourcenetBase ):
                 # store the person in the output dict.
                 person_dict_OUT[ current_person_id ] = current_value
 
-            #-- END check to see if there is a person (in comparison to an anonymous source, for instance, or the author just being the newspaper)
+            #-- END check to see if there is a person (in comparison to an anonymous source, for instance, or the author just being the newspaper) --#
 
         #-- END loop over people --#
 
@@ -1066,6 +1065,7 @@ class NetworkOutput( SourcenetBase ):
                 network_OUT += "\n\n" + network_data_outputter.debug + "\n\n"
 
             #-- END check to see if we have debug to output. --#
+
         #-- END check to make sure we have a query set. --#
 
         return network_OUT

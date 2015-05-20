@@ -1,5 +1,6 @@
-# First, need to load data into either statnet or igraph network object.  For
-#    more details on that, see the file "sna-load_data.r".
+    # First, need to load data into either statnet or igraph network object.  For
+    #    more details on that, see the file "sna-load_data.r".
+    # source( "sna-load_data.r" )
 
 # Good notes:
 # - http://www.shizukalab.com/toolkits/sna/node-level-calculations
