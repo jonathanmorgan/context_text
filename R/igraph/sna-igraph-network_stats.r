@@ -28,7 +28,9 @@
 # install.packages( "igraph" )
 library( igraph )
 
-# assuming that our igraph network object is in reference test1_igraph.
+#==============================================================================#
+# NODE level
+#==============================================================================#
 
 # try calling the degree() function on an igraph object.  Returns a number vector with names.
 human_degree_vector <- degree( human_network_igraph )
@@ -57,6 +59,10 @@ calais_degree_var <- var( calais_degree_vector )
 human_above_mean_vector <- human_degree_vector[ human_degree_vector > human_degree_mean ]
 calais_above_mean_vector <- calais_degree_vector[ calais_degree_vector > calais_degree_mean ]
 
+#==============================================================================#
+# NETWORK level
+#==============================================================================#
+
 # graph-level degree centrality
 human_degree_centrality <- centralization.degree( human_network_igraph )
 calais_degree_centrality <- centralization.degree( calais_network_igraph )
@@ -69,9 +75,9 @@ calais_betweenness_centrality <- centralization.betweenness( calais_network_igra
 human_betweenness <- human_betweenness_centrality$res
 calais_betweenness <- calais_betweenness_centrality$res
 
-# graph-level connectedness
-human_connectedness <- connectedness( human_network_igraph )
-calais_connectedness <- connectedness( calais_network_igraph )
+# graph-level transitivity
+human_transitivity <- transitivity( human_network_igraph, type = "global" )
+calais_transitivity <- transitivity( calais_network_igraph, type = "global" )
 
 #==============================================================================#
 # output attributes to data frame

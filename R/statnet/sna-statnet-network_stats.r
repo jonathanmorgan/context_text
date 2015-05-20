@@ -23,7 +23,9 @@
 # install.packages( "statnet" )
 library( statnet )
 
-# assuming that our statnet network object is in reference test1_statnet.
+#==============================================================================#
+# NODE level
+#==============================================================================#
 
 # Use the degree function in the sna package to create vector of degree values
 #    for each node.  Make sure to pass the gmode parameter to tell it that the
@@ -66,6 +68,10 @@ calais_degree_var <- var( calais_degree_vector )
 # subset vector to get only those that are above mean
 human_above_mean_vector <- human_degree_vector[ human_degree_vector > human_degree_mean ]
 calais_above_mean_vector <- calais_degree_vector[ calais_degree_vector > calais_degree_mean ]
+
+#==============================================================================#
+# NETWORK level
+#==============================================================================#
 
 # graph-level degree centrality
 human_degree_centrality <- centralization( human_network_statnet, degree, mode = "graph" )
