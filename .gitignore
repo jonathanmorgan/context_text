@@ -36,6 +36,6 @@ nosetests.xml
 .Rproj.user
 
 # R
-#.RData
-#.Rhistory
-#R.Rproj
+.RData
+.Rhistory
+*.Rproj

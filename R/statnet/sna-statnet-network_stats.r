@@ -65,9 +65,21 @@ calais_degree_sd <- sd( calais_degree_vector )
 human_degree_var <- var( human_degree_vector )
 calais_degree_var <- var( calais_degree_vector )
 
+# what is the max value among these degrees?
+human_degree_max <- max( human_degree_vector )
+calais_degree_max <- max( calais_degree_vector )
+
 # subset vector to get only those that are above mean
 human_above_mean_vector <- human_degree_vector[ human_degree_vector > human_degree_mean ]
 calais_above_mean_vector <- calais_degree_vector[ calais_degree_vector > calais_degree_mean ]
+
+# calculate and plot degree distributions
+
+# human
+human_degree_frequencies_table <- table( human_degree_vector )
+
+# calais
+calais_degree_frequencies_table <- table( calais_degree_vector )
 
 #==============================================================================#
 # NETWORK level
