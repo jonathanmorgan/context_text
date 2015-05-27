@@ -8,7 +8,7 @@
 #==============================================================================#
 
 
-calculateColumnMean <- function( columnIN, minValueToIncludeIN = NULL ) {
+calculateColumnMean <- function( listIN, minValueToIncludeIN = NULL ) {
 
     # Function: calculateColumnMean()
     #
@@ -23,10 +23,26 @@ calculateColumnMean <- function( columnIN, minValueToIncludeIN = NULL ) {
     valueOUT <- NULL
 
     # declare variables
+    workingList <- NULL
 
     # check to see if min value is set.
     if ( is.null( minValueToIncludeIN ) == FALSE ) {
 
+        # we have a minimum value.  Filter out all entries in column/vector that
+        #    are less than that value.
+        workingList <- listIN[ listIN >= minValueToIncludeIN ]
+
+    } else {
+
+        # no minimum value.  Just use column/vector passed in.
+        workingList <- listIN
+
     }
+
+    # calculate mean on working list.
+    valueOUT <- mean( workingList )
+
+    # return value
+    return( valueOUT )
 
 } #-- END function calculateColumnMean
