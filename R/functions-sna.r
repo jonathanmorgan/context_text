@@ -8,9 +8,9 @@
 #==============================================================================#
 
 
-calculateColumnMean <- function( listIN, minValueToIncludeIN = NULL ) {
+calculateListMean <- function( listIN, minValueToIncludeIN = NULL, excludeNaNIN = TRUE ) {
 
-    # Function: calculateColumnMean()
+    # Function: calculateListMean()
     #
     # Accepts column/vector to get mean for and optional minimum value we want
     #    included in the calculation (so you can only look at values greater
@@ -24,9 +24,10 @@ calculateColumnMean <- function( listIN, minValueToIncludeIN = NULL ) {
 
     # declare variables
     workingList <- NULL
+    listLength <- -1
 
     # check to see if min value is set.
-    if ( is.null( minValueToIncludeIN ) == FALSE ) {
+    if ( !is.null( minValueToIncludeIN ) ) {
 
         # we have a minimum value.  Filter out all entries in column/vector that
         #    are less than that value.
@@ -35,14 +36,25 @@ calculateColumnMean <- function( listIN, minValueToIncludeIN = NULL ) {
     } else {
 
         # no minimum value.  Just use column/vector passed in.
-        workingList <- listIN
+        workingList <- as.vector( listIN, mode = "numeric" )
 
     }
 
-    # calculate mean on working list.
-    valueOUT <- mean( workingList )
+    # anything in list?
+    listLength <- length( workingList )
+    if ( listLength > 0 ) {
+
+        # yes. calculate mean on working list.
+        valueOUT <- mean( workingList, na.rm = excludeNaNIN )
+
+    } else {
+
+        # no - return...?
+        valueOUT <- 0
+
+    }
 
     # return value
     return( valueOUT )
 
-} #-- END function calculateColumnMean
+} #-- END function calculateListMean

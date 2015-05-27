@@ -104,6 +104,14 @@ calaisBetweennessCentrality <- sna::centralization( calaisNetworkStatnet, sna::b
 humanConnectedness <- sna::connectedness( humanNetworkStatnet )
 calaisConnectedness <- sna::connectedness( calaisNetworkStatnet )
 
+# graph-level transitivity
+humanTransitivity <- sna::gtrans( humanNetworkStatnet, mode = "graph" )
+calaisTransitivity <- sna::gtrans( calaisNetworkStatnet, mode = "graph" )
+
+# graph-level density
+humanDensity <- sna::gden( humanNetworkStatnet, mode = "graph" )
+calaisDensity <- sna::gden( calaisNetworkStatnet, mode = "graph" )
+
 #==============================================================================#
 # output attributes to data frame
 #==============================================================================#

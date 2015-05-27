@@ -36,8 +36,8 @@ library( igraph )
 #==============================================================================#
 
 # try calling the degree() function on an igraph object.  Returns a number vector with names.
-humanDegreeVector <- degree( humanNetworkIgraph )
-calaisDegreeVector <- degree( calaisNetworkIgraph )
+humanDegreeVector <- igraph::degree( humanNetworkIgraph )
+calaisDegreeVector <- igraph::degree( calaisNetworkIgraph )
 
 # For help with igraph::degree function:
 ??igraph::degree
@@ -66,13 +66,13 @@ calaisDegreeMax <- max( calaisDegreeVector )
 
 # human
 humanDegreeFrequenciesTable <- table( humanDegreeVector )
-humanDegreeDistribution <- degree.distribution( humanNetworkIgraph )
+humanDegreeDistribution <- igraph::degree.distribution( humanNetworkIgraph )
 plot( humanDegreeDistribution, xlab = "human node degree" )
 lines( humanDegreeDistribution )
 
 # calais
 calaisDegreeFrequenciesTable <- table( calaisDegreeVector )
-calaisDegreeDistribution<- degree.distribution( calaisNetworkIgraph )
+calaisDegreeDistribution<- igraph::degree.distribution( calaisNetworkIgraph )
 plot( calaisDegreeDistribution, xlab = "calais node degree" )
 lines( calaisDegreeDistribution)
 
@@ -80,25 +80,38 @@ lines( calaisDegreeDistribution)
 humanAboveMeanVector <- humanDegreeVector[ humanDegreeVector > humanDegreeMean ]
 calaisAboveMeanVector<- calaisDegreeVector[ calaisDegreeVector > calaisDegreeMean ]
 
+# node-level transitivity
+# create transitivity vectors.
+humanTransitivityVector <- igraph::transitivity( humanNetworkIgraph, type = "local" )
+calaisTransitivityVector <- igraph::transitivity( calaisNetworkIgraph, type = "local" )
+
+# And, if you want averages of these:
+humanMeanTransitivity <- mean( humanTransitivityVector, na.rm = TRUE )
+calaisMeanTransitivity <- mean( calaisTransitivityVector, na.rm = TRUE )
+
 #==============================================================================#
 # NETWORK level
 #==============================================================================#
 
 # graph-level degree centrality
-humanDegreeCentrality <- centralization.degree( humanNetworkIgraph )
-calaisDegreeCentrality <- centralization.degree( calaisNetworkIgraph )
+humanDegreeCentrality <- igraph::centralization.degree( humanNetworkIgraph )
+calaisDegreeCentrality <- igraph::centralization.degree( calaisNetworkIgraph )
 
 # graph-level undirected betweenness
-humanBetweennessCentrality <- centralization.betweenness( humanNetworkIgraph, directed = FALSE )
-calaisBetweennessCentrality <- centralization.betweenness( calaisNetworkIgraph, directed = FALSE )
+humanBetweennessCentrality <- igraph::centralization.betweenness( humanNetworkIgraph, directed = FALSE )
+calaisBetweennessCentrality <- igraph::centralization.betweenness( calaisNetworkIgraph, directed = FALSE )
 
 # node-level undirected betweenness
 humanBetweenness <- humanBetweennessCentrality$res
 calaisBetweenness <- calaisBetweennessCentrality$res
 
 # graph-level transitivity
-humanTransitivity <- transitivity( humanNetworkIgraph, type = "global" )
-calaisTransitivity <- transitivity( calaisNetworkIgraph, type = "global" )
+humanTransitivity <- igraph::transitivity( humanNetworkIgraph, type = "global" )
+calaisTransitivity <- igraph::transitivity( calaisNetworkIgraph, type = "global" )
+
+# graph-level density
+humanDensity <- igraph::graph.density( humanNetworkIgraph )
+calaisDensity <- igraph::graph.density( calaisNetworkIgraph )
 
 #==============================================================================#
 # output attributes to data frame
