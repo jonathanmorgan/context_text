@@ -1,21 +1,26 @@
 # First, need to load data - see (or just source() ) the file "sna-load_data.r".
+
+# setwd( ".." )  # go back up to root R directory.
 # source( "sna-load_data.r" )
+# setwd( "statnet" )  # come back.
+
 # does the following (among other things):
 # Start with loading in tab-delimited files.
-#human_network_data <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
-#calais_network_data <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
+#humanNetworkData <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
+#calaisNetworkData <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
 # remove the right-most column, which contains non-tie info on nodes.
-#human_network_ties <- human_network_data[ , -ncol( human_network_data ) ]
-#calais_network_ties <- calais_network_data[ , -ncol( calais_network_data )]
+#humanNetworkTies <- humanNetworkData[ , -ncol( humanNetworkData ) ]
+#calaisNetworkTies <- calaisNetworkData[ , -ncol( calaisNetworkData ) ]
 
 # convert each to a matrix
-#human_network_matrix <- as.matrix( human_network_ties )
-#calais_network_matrix <- as.matrix( calais_network_ties )
+#humanNetworkMatrix <- as.matrix( humanNetworkTies )
+#calaisNetworkMatrix <- as.matrix( calaisNetworkTies )
 
 # get person type vectors
-#human_person_types <- human_network_data[ , ncol( human_network_data ) ]
-#calais_person_types <- calais_network_data[ , ncol( calais_network_data ) ]
+#humanPersonTypes <- humanNetworkData[ , ncol( humanNetworkData ) ]
+#calaisPersonTypes <- calaisNetworkData[ , ncol( calaisNetworkData ) ]
+
 
 #==============================================================================#
 # statnet
@@ -26,8 +31,8 @@
 library( "statnet" )
 
 # convert matrices to statnet network object instance.
-human_network_statnet <- network( human_network_matrix, matrix.type = "adjacency", directed = FALSE )
-calais_network_statnet <- network( calais_network_matrix, matrix.type = "adjacency", directed = FALSE )
+humanNetworkStatnet <- network( humanNetworkMatrix, matrix.type = "adjacency", directed = FALSE )
+calaisNetworkStatnet <- network( calaisNetworkMatrix, matrix.type = "adjacency", directed = FALSE )
 
 # If you have a file of attributes (each attribute is a column, with attribute
 #    name the column name), you can associate those attributes when you create
@@ -62,20 +67,20 @@ calais_network_statnet <- network( calais_network_matrix, matrix.type = "adjacen
 
 # - OR - you can just add the attribute values to an existing network.
 #test1_statnet%v%"person_type" <- tab_attribute_test1$person_type
-human_network_statnet%v%"person_type" <- human_person_types
-calais_network_statnet%v%"person_type" <- calais_person_types
+humanNetworkStatnet%v%"person_type" <- humanPersonTypes
+calaisNetworkStatnet%v%"person_type" <- calaisPersonTypes
 
 # WARNING from http://www.inside-r.org/packages/cran/network/docs/loading.attributes
 # Note: order of attributes in the data frame MUST match order of vertex ids
 #    otherwise the attribute will get assigned to the wrong vertex
 
 # list out the person_type attribute values
-#human_network_statnet%v%"person_type"
-#calais_network_statnet%v%"person_type"
+#humanNetworkStatnet%v%"person_type"
+#calaisNetworkStatnet%v%"person_type"
 
 # to see information about network, just type the object name:
-human_network_statnet
-calais_network_statnet
+humanNetworkStatnet
+calaisNetworkStatnet
 
 # example output:
 # ---------------

@@ -6,10 +6,10 @@ library( "RPostgreSQL" )
 
 # create DB connection
 driver <- dbDriver( "PostgreSQL" )
-db_username <- ""
-db_password <- ""
-db_name <- ""
-connection <- dbConnect( driver, user=db_username, password=db_password, dbname=db_name )
+dbUsername <- ""
+dbPassword <- ""
+dbName <- ""
+connection <- dbConnect( driver, user=dbUsername, password=dbPassword, dbname=dbName )
 
 # test connection
 dbListTables( connection )

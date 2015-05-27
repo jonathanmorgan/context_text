@@ -1,12 +1,15 @@
 # First, need to load data into statnet network object.  For
 #    more details on that, see the files "sna-load_data.r" and
 #    "sna-statnet_init.r".
+# assumes that working directory for statnet is sourcenet/R/statnet.
+# setwd( ".." )
 # source( "sna-load_data.r" )
+# setwd( "statnet" )
 # source( "sna-statnet-init.r" )
 
 # results in:
-# - human_network_statnet - statnet network with human-coded network in it.
-# - calais_network_statnet - statnet network with computer-coded network in it.
+# - humanNetworkStatnet - statnet network with human-coded network in it.
+# - calaisNetworkStatnet - statnet network with computer-coded network in it.
 
 # Links:
 # - manual (PDF): http://cran.r-project.org/web/packages/sna/sna.pdf
@@ -19,7 +22,7 @@
 # statnet
 #==============================================================================#
 
-# make sure you've loaded the statnet library
+# make sure you've loaded the statnet library (includes sna)
 # install.packages( "statnet" )
 library( statnet )
 
@@ -31,22 +34,22 @@ library( statnet )
 #    for each node.  Make sure to pass the gmode parameter to tell it that the
 #    graph is not directed (gmode = "graph", instead of "digraph").
 # Doc: http://www.inside-r.org/packages/cran/sna/docs/degree
-human_degree_vector <- degree( human_network_statnet, gmode = "graph" )
-calais_degree_vector <- degree( calais_network_statnet, gmode = "graph" )
+humanDegreeVector <- sna::degree( humanNetworkStatnet, gmode = "graph" )
+calaisDegreeVector <- sna::degree( calaisNetworkStatnet, gmode = "graph" )
 
 # If you have other libraries loaded that also implement a degree function, you
 #    can also call this with package name:
-#human_degree_vector_sna <- sna::degree( human_network_statnet, gmode = "graph" )
-#calais_degree_vector_sna <- sna::degree( calais_network_statnet, gmode = "graph" )
+#humanDegreeVectorSna <- sna::degree( humanNetworkStatnet, gmode = "graph" )
+#calaisDegreeVectorSna <- sna::degree( calaisNetworkStatnet, gmode = "graph" )
 
 # output the vectors
-human_degree_vector
-calais_degree_vector
+humanDegreeVector
+calaisDegreeVector
 
 # Take the degree and associate it with each node as a node attribute.
 #    (%v% is a shortcut for the get.vertex.attribute command)
-human_network_statnet %v% "degree" <- human_degree_vector
-calais_network_statnet %v% "degree" <- calais_degree_vector
+humanNetworkStatnet %v% "degree" <- humanDegreeVector
+calaisNetworkStatnet %v% "degree" <- calaisDegreeVector
 
 # want more info on the degree function?  You can get to it eventually through
 #    the following:
@@ -54,52 +57,52 @@ help( package = "sna" )
 ??sna::degree
 
 # what is the average (mean) degree?
-human_degree_mean <- mean( human_degree_vector )
-calais_degree_mean <- mean( calais_degree_vector )
+humanDegreeMean <- mean( humanDegreeVector )
+calaisDegreeMean <- mean( calaisDegreeVector )
 
 # what is the standard deviation of these degrees?
-human_degree_sd <- sd( human_degree_vector )
-calais_degree_sd <- sd( calais_degree_vector )
+humanDegreeSd <- sd( humanDegreeVector )
+calaisDegreeSd <- sd( calaisDegreeVector )
 
 # what is the variance of these degrees?
-human_degree_var <- var( human_degree_vector )
-calais_degree_var <- var( calais_degree_vector )
+humanDegreeVar <- var( humanDegreeVector )
+calaisDegreeVar <- var( calaisDegreeVector )
 
 # what is the max value among these degrees?
-human_degree_max <- max( human_degree_vector )
-calais_degree_max <- max( calais_degree_vector )
+humanDegreeMax <- max( humanDegreeVector )
+calaisDegreeMax <- max( calaisDegreeVector )
 
 # subset vector to get only those that are above mean
-human_above_mean_vector <- human_degree_vector[ human_degree_vector > human_degree_mean ]
-calais_above_mean_vector <- calais_degree_vector[ calais_degree_vector > calais_degree_mean ]
+humanAboveMeanVector <- humanDegreeVector[ humanDegreeVector > humanDegreeMean ]
+calaisAboveMeanVector <- calaisDegreeVector[ calaisDegreeVector > calaisDegreeMean ]
 
 # calculate and plot degree distributions
 
 # human
-human_degree_frequencies_table <- table( human_degree_vector )
+humanDegreeFrequenciesTable <- table( humanDegreeVector )
 
 # calais
-calais_degree_frequencies_table <- table( calais_degree_vector )
+calaisDegreeFrequenciesTable <- table( calaisDegreeVector )
 
 #==============================================================================#
 # NETWORK level
 #==============================================================================#
 
 # graph-level degree centrality
-human_degree_centrality <- centralization( human_network_statnet, degree, mode = "graph" )
-calais_degree_centrality <- centralization( calais_network_statnet, degree, mode = "graph" )
+humanDegreeCentrality <- sna::centralization( humanNetworkStatnet, sna::degree, mode = "graph" )
+calaisDegreeCentrality <- sna::centralization( calaisNetworkStatnet, sna::degree, mode = "graph" )
 
 # node-level undirected betweenness
-human_betweenness <- betweenness( human_network_statnet, gmode = "graph", cmode = "undirected" )
-calais_betweenness <- betweenness( calais_network_statnet, gmode = "graph", cmode = "undirected" )
+humanBetweenness <- sna::betweenness( humanNetworkStatnet, gmode = "graph", cmode = "undirected" )
+calaisBetweenness <- sna::betweenness( calaisNetworkStatnet, gmode = "graph", cmode = "undirected" )
 
 # graph-level betweenness centrality
-human_betweenness_centrality <- centralization( human_network_statnet, betweenness, mode = "graph", cmode = "undirected" )
-calais_betweenness_centrality <- centralization( calais_network_statnet, betweenness, mode = "graph", cmode = "undirected" )
+humanBetweennessCentrality <- sna::centralization( humanNetworkStatnet, sna::betweenness, mode = "graph", cmode = "undirected" )
+calaisBetweennessCentrality <- sna::centralization( calaisNetworkStatnet, sna::betweenness, mode = "graph", cmode = "undirected" )
 
 # graph-level connectedness
-human_connectedness <- connectedness( human_network_statnet )
-calais_connectedness <- connectedness( calais_network_statnet )
+humanConnectedness <- sna::connectedness( humanNetworkStatnet )
+calaisConnectedness <- sna::connectedness( calaisNetworkStatnet )
 
 #==============================================================================#
 # output attributes to data frame
@@ -109,9 +112,9 @@ calais_connectedness <- connectedness( calais_network_statnet )
 #    combine the attribute vectors into a data frame.
 
 # first, output network object to see what attributes you have
-human_network_statnet
-calais_network_statnet
+humanNetworkStatnet
+calaisNetworkStatnet
 
 # then, combine node attributes into a data frame.
-human_node_attribute_df <- data.frame( id = human_network_statnet %v% "vertex.names", person_type = human_network_statnet %v% "person_type", degree = human_network_statnet %v% "degree" )
-calais_node_attribute_df <- data.frame( id = calais_network_statnet %v% "vertex.names", person_type = calais_network_statnet %v% "person_type", degree = calais_network_statnet %v% "degree" )
+humanNodeAttributeDF <- data.frame( id = humanNetworkStatnet %v% "vertex.names", person_type = humanNetworkStatnet %v% "person_type", degree = humanNetworkStatnet %v% "degree" )
+calaisNodeAttributeDF <- data.frame( id = calaisNetworkStatnet %v% "vertex.names", person_type = calaisNetworkStatnet %v% "person_type", degree = calaisNetworkStatnet %v% "degree" )

@@ -1,21 +1,24 @@
 # First, need to load data - see (or just source() ) the file "sna-load_data.r".
+# setwd( ".." )  # go back up to root R directory.
 # source( "sna-load_data.r" )
+# setwd( "igraph" )  # come back.
+
 # does the following (among other things):
 # Start with loading in tab-delimited files.
-#human_network_data <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
-#calais_network_data <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
+#humanNetworkData <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
+#calaisNetworkData <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
 # remove the right-most column, which contains non-tie info on nodes.
-#human_network_ties <- human_network_data[ , -ncol( human_network_data ) ]
-#calais_network_ties <- calais_network_data[ , -ncol( calais_network_data )]
+#humanNetworkTies <- humanNetworkData[ , -ncol( humanNetworkData ) ]
+#calaisNetworkTies <- calaisNetworkData[ , -ncol( calaisNetworkData ) ]
 
 # convert each to a matrix
-#human_network_matrix <- as.matrix( human_network_ties )
-#calais_network_matrix <- as.matrix( calais_network_ties )
+#humanNetworkMatrix <- as.matrix( humanNetworkTies )
+#calaisNetworkMatrix <- as.matrix( calaisNetworkTies )
 
 # get person type vectors
-#human_person_types <- human_network_data[ , ncol( human_network_data ) ]
-#calais_person_types <- calais_network_data[ , ncol( calais_network_data ) ]
+#humanPersonTypes <- humanNetworkData[ , ncol( humanNetworkData ) ]
+#calaisPersonTypes <- calaisNetworkData[ , ncol( calaisNetworkData ) ]
 
 #==============================================================================#
 # igraph - more basic SNA package:
@@ -26,14 +29,14 @@
 library( igraph )
 
 # convert matrix to igraph graph object instance.
-human_network_igraph <- graph.adjacency( human_network_matrix, mode = "undirected", weighted = TRUE )
-calais_network_igraph <- graph.adjacency( calais_network_matrix, mode = "undirected", weighted = TRUE )
+humanNetworkIgraph <- graph.adjacency( humanNetworkMatrix, mode = "undirected", weighted = TRUE )
+calaisNetworkIgraph <- graph.adjacency( calaisNetworkMatrix, mode = "undirected", weighted = TRUE )
 
 # more details on graph.adjacency(): http://igraph.org/r/doc/graph.adjacency.html
 
 # to see count of nodes and edges, just type the object name:
-human_network_igraph
-calais_network_igraph
+humanNetworkIgraph
+calaisNetworkIgraph
 
 # Will output something like:
 #
@@ -53,21 +56,21 @@ calais_network_igraph
 
 # to reference a vertex attribute's values, use V( <network> )$<attribute_name>
 # output the names for the nodes in the graph:
-V( human_network_igraph )$name
-V( calais_network_igraph )$name
+V( humanNetworkIgraph )$name
+V( calaisNetworkIgraph )$name
 
 # add the person_types to the network.
 
 # set vertex/node attribute person_type
-V( human_network_igraph )$person_type <- human_person_types
-V( calais_network_igraph )$person_type <- calais_person_types
+V( humanNetworkIgraph )$person_type <- humanPersonTypes
+V( calaisNetworkIgraph )$person_type <- calaisPersonTypes
 
 # OR use function:
-#human_network_igraph <- set.vertex.attribute( human_network_igraph, "person_type", value = human_person_types )
-#calais_network_igraph <- set.vertex.attribute( calais_network_igraph, "person_type", value = calais_person_types )
+#humanNetworkIgraph <- set.vertex.attribute( humanNetworkIgraph, "person_type", value = humanPersonTypes )
+#calaisNetworkIgraph <- set.vertex.attribute( calaisNetworkIgraph, "person_type", value = calaisPersonTypes )
 
 # look at graph and person_type attribute values
-human_network_igraph
-V( human_network_igraph )$person_type
-calais_network_igraph
-V( calais_network_igraph )$person_type
+humanNetworkIgraph
+V( humanNetworkIgraph )$person_type
+calaisNetworkIgraph
+V( calaisNetworkIgraph )$person_type

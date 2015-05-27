@@ -6,49 +6,49 @@
 # - connect to the database.  Example is in db_connect.r, in this same folder.
 # source( "db_connect.r" )
 # - Initialize the functions contained in reliability_functions.r, also in this same folder.
-# source( "reliability_functions.r" )
-# - Set person_type to either "author" or "source"
-# - If you want to filter on a label, declare the label in filter_on_label
+# source( "functions-reliability.r" )
+# - Set personType to either "author" or "source"
+# - If you want to filter on a label, declare the label in filterOnLabel
 
-# if no person_type, default to "source".
-if ( exists( "person_type" ) == FALSE ){
+# if no personType, default to "source".
+if ( exists( "personType" ) == FALSE ){
 
     # no person type.  Default to "source".
-    person_type <- "source"
+    personType <- "source"
 
 }
 
-# if no person_type, default to "source".
-if ( exists( "filter_on_label" ) == FALSE ) {
+# if no personType, default to "source".
+if ( exists( "filterOnLabel" ) == FALSE ) {
 
     # no label specified for filtering.  Default to "".
-    filter_on_label <- ""
+    filterOnLabel <- ""
 
 }
 
 # create output file name based on person type.
-output_file <- paste( person_type, "-person_lookup_results.txt", sep = "" )
+outputFile <- paste( personType, "-person_lookup_results.txt", sep = "" )
 
 #==============================================================================#
 # Retrieve data
 #==============================================================================#
 
 # execute query to pull in person data from reliability table.
-result_set <- query_reliability_data( person_type, filter_on_label )
+resultSet <- queryReliabilityData( personType, filterOnLabel )
 
 # retrieve rows into data.frame
-data_frame <- fetch( result_set, n = -1 )
+dataFrame <- fetch( resultSet, n = -1 )
 
 # test data.frame fetch - get column names, row, column count
-colnames( data_frame )
-nrow( data_frame )
-ncol( data_frame )
+colnames( dataFrame )
+nrow( dataFrame )
+ncol( dataFrame )
 
 # close result set
-dbClearResult( result_set )
+dbClearResult( resultSet )
 
 # Try a different way of building matrix.   THIS DOESN'T WORK!
-#coder1_person_id <- data_frame[ "coder1_person_id" ]
+#coder1PersonId <- dataFrame[ "coder1_person_id" ]
 # return dataframes, not vectors. Must be vectors to combine into a matrix.
 
 #==============================================================================#
@@ -67,82 +67,82 @@ dbClearResult( result_set )
 #    the opposite orientation, so make sure you look at what each expects.
 
 # get columns to compare
-coder1_person_id <- data_frame$coder1_person_id
-coder2_person_id <- data_frame$coder2_person_id
+coder1PersonId <- dataFrame$coder1_person_id
+coder2PersonId <- dataFrame$coder2_person_id
 
 # matrix of person lookup values for each person
-lookup_matrix_1v2_tall <- cbind( coder1_person_id, coder2_person_id )
-lookup_matrix_1v2_wide <- t( lookup_matrix_1v2_tall )
+lookupMatrix1v2Tall <- cbind( coder1PersonId, coder2PersonId )
+lookupMatrix1v2Wide <- t( lookupMatrix1v2Tall )
 
 # OR just...
-#lookup_matrix_1v2_wide <- rbind( coder1_person_id, coder2_person_id )
+#lookupMatrix1v2Wide <- rbind( coder1PersonId, coder2PersonId )
 
 # test agreement.
-test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - all included", file_IN = output_file )
+testAgreement( lookupMatrix1v2Tall, labelIN = "Person Lookup - Compare coder 1 and 2 - all included", fileIN = outputFile )
 
 # filter to omit where either one or the other did not detect the person.
-filtered_df <- data_frame[ !( ( coder1_person_id == 0 ) | ( coder2_person_id == 0 ) ), ]
+filteredDF <- dataFrame[ !( ( coder1PersonId == 0 ) | ( coder2PersonId == 0 ) ), ]
 
 # get columns to compare
-coder1_person_id <- filtered_df$coder1_person_id
-coder2_person_id <- filtered_df$coder2_person_id
+coder1PersonId <- filteredDF$coder1_person_id
+coder2PersonId <- filteredDF$coder2_person_id
 
 # matrix of person lookup values for each person
-lookup_matrix_1v2_tall <- cbind( coder1_person_id, coder2_person_id )
+lookupMatrix1v2Tall <- cbind( coder1PersonId, coder2PersonId )
 
 # test agreement.
-test_agreement( lookup_matrix_1v2_tall, label_IN = "Person Lookup - Compare coder 1 and 2 - filter - only joint detection", file_IN = output_file )
+testAgreement( lookupMatrix1v2Tall, labelIN = "Person Lookup - Compare coder 1 and 2 - filter - only joint detection", fileIN = outputFile )
 
 #==============================================================================#
 # Compare coder 2 and 3
 #==============================================================================#
 
 # get columns to compare
-coder2_person_id <- data_frame$coder2_person_id
-coder3_person_id <- data_frame$coder3_person_id
+coder2PersonId <- dataFrame$coder2_person_id
+coder3PersonId <- dataFrame$coder3_person_id
 
 # person lookup 2 v. 3 - convert to matrix
-lookup_matrix_2v3_tall <- cbind( coder2_person_id, coder3_person_id )
+lookupMatrix2v3Tall <- cbind( coder2PersonId, coder3PersonId )
 
-# test_agreement
-test_agreement( lookup_matrix_2v3_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - all included", file_IN = output_file )
+# testAgreement
+testAgreement( lookupMatrix2v3Tall, labelIN = "Person Lookup - Compare coder 2 and 3 - all included", fileIN = outputFile )
 
 # filter to omit where either one or the other did not detect the person.
-filtered_df <- data_frame[ !( ( coder2_person_id == 0 ) | ( coder3_person_id == 0 ) ), ]
+filteredDF <- dataFrame[ !( ( coder2PersonId == 0 ) | ( coder3PersonId == 0 ) ), ]
 
 # get columns to compare
-coder2_person_id <- filtered_df$coder2_person_id
-coder3_person_id <- filtered_df$coder3_person_id
+coder2PersonId <- filteredDF$coder2_person_id
+coder3PersonId <- filteredDF$coder3_person_id
 
 # person lookup 2 v. 3 - convert to matrix
-lookup_matrix_2v3_tall <- cbind( coder2_person_id, coder3_person_id )
+lookupMatrix2v3Tall <- cbind( coder2PersonId, coder3PersonId )
 
 # test agreement.
-test_agreement( lookup_matrix_2v3_tall, label_IN = "Person Lookup - Compare coder 2 and 3 - filter - only joint detection", file_IN = output_file )
+testAgreement( lookupMatrix2v3Tall, labelIN = "Person Lookup - Compare coder 2 and 3 - filter - only joint detection", fileIN = outputFile )
 
 #==============================================================================#
 # Compare coder 1 and 3
 #==============================================================================#
 
 # get columns to compare
-coder1_person_id <- data_frame$coder1_person_id
-coder3_person_id <- data_frame$coder3_person_id
+coder1PersonId <- dataFrame$coder1_person_id
+coder3PersonId <- dataFrame$coder3_person_id
 
 # convert to matrix
-lookup_matrix_1v3_tall <- cbind( coder1_person_id, coder3_person_id )
+lookupMatrix1v3Tall <- cbind( coder1PersonId, coder3PersonId )
 
 # percentage agreement - wants the cbind matrix, not the rbind one.
-test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - all included", file_IN = output_file )
+testAgreement( lookupMatrix1v3Tall, labelIN = "Person Lookup - Compare coder 1 and 3 - all included", fileIN = outputFile )
 
 # filter to omit where either one or the other did not detect the person.
-filtered_df <- data_frame[ !( ( coder1_person_id == 0 ) | ( coder3_person_id == 0 ) ), ]
+filteredDF <- dataFrame[ !( ( coder1PersonId == 0 ) | ( coder3PersonId == 0 ) ), ]
 
 # get columns to compare
-coder1_person_id <- filtered_df$coder1_person_id
-coder3_person_id <- filtered_df$coder3_person_id
+coder1PersonId <- filteredDF$coder1_person_id
+coder3PersonId <- filteredDF$coder3_person_id
 
 # person lookup 1 v. 3 - convert to matrix
-lookup_matrix_1v3_tall <- cbind( coder1_person_id, coder3_person_id )
+lookupMatrix1v3Tall <- cbind( coder1PersonId, coder3PersonId )
 
 # test agreement.
-test_agreement( lookup_matrix_1v3_tall, label_IN = "Person Lookup - Compare coder 1 and 3 - filter - only joint detection", file_IN = output_file )
+testAgreement( lookupMatrix1v3Tall, labelIN = "Person Lookup - Compare coder 1 and 3 - filter - only joint detection", fileIN = outputFile )

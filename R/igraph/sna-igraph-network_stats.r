@@ -1,12 +1,15 @@
 # First, need to load data into statnet network object.  For
 #    more details on that, see the files "sna-load_data.r" and
 #    "sna-statnet_init.r".
+# assumes that working directory for statnet is sourcenet/R/igraph
+# setwd( ".." )
 # source( "sna-load_data.r" )
+# setwd( "igraph" )
 # source( "sna-igraph-init.r" )
 
 # results in:
-# - human_network_igraph - igraph network with human-coded network in it.
-# - calais_network_igraph - igraph network with computer-coded network in it.
+# - humanNetworkIgraph - igraph network with human-coded network in it.
+# - calaisNetworkIgraph - igraph network with computer-coded network in it.
 
 # Links:
 # - CRAN page: http://cran.r-project.org/web/packages/igraph/index.html
@@ -33,69 +36,69 @@ library( igraph )
 #==============================================================================#
 
 # try calling the degree() function on an igraph object.  Returns a number vector with names.
-human_degree_vector <- degree( human_network_igraph )
-calais_degree_vector <- degree( calais_network_igraph )
+humanDegreeVector <- degree( humanNetworkIgraph )
+calaisDegreeVector <- degree( calaisNetworkIgraph )
 
 # For help with igraph::degree function:
 ??igraph::degree
 
 # append the degrees to the network as a vertex attribute.
-V( human_network_igraph )$degree <- human_degree_vector
-V( calais_network_igraph )$degree <- calais_degree_vector
+V( humanNetworkIgraph )$degree <- humanDegreeVector
+V( calaisNetworkIgraph )$degree <- calaisDegreeVector
 
 # calculate the mean of the degrees.
-human_degree_mean <- mean( human_degree_vector )
-calais_degree_mean <- mean( calais_degree_vector )
+humanDegreeMean <- mean( humanDegreeVector )
+calaisDegreeMean <- mean( calaisDegreeVector )
 
 # what is the standard deviation of these degrees?
-human_degree_sd <- sd( human_degree_vector )
-calais_degree_sd <- sd( calais_degree_vector )
+humanDegreeSd <- sd( humanDegreeVector )
+calaisDegreeSd <- sd( calaisDegreeVector )
 
 # what is the variance of these degrees?
-human_degree_var <- var( human_degree_vector )
-calais_degree_var <- var( calais_degree_vector )
+humanDegreeVar <- var( humanDegreeVector )
+calaisDegreeVar <- var( calaisDegreeVector )
 
 # what is the max value among these degrees?
-human_degree_max <- max( human_degree_vector )
-calais_degree_max <- max( calais_degree_vector )
+humanDegreeMax <- max( humanDegreeVector )
+calaisDegreeMax <- max( calaisDegreeVector )
 
 # calculate and plot degree distributions
 
 # human
-human_degree_frequencies_table <- table( human_degree_vector )
-human_degree_distribution <- degree.distribution( human_network_igraph )
-plot( human_degree_distribution, xlab = "human node degree" )
-lines( human_degree_distribution )
+humanDegreeFrequenciesTable <- table( humanDegreeVector )
+humanDegreeDistribution <- degree.distribution( humanNetworkIgraph )
+plot( humanDegreeDistribution, xlab = "human node degree" )
+lines( humanDegreeDistribution )
 
 # calais
-calais_degree_frequencies_table <- table( calais_degree_vector )
-calais_degree_distribution <- degree.distribution( calais_network_igraph )
-plot( calais_degree_distribution, xlab = "calais node degree" )
-lines( calais_degree_distribution )
+calaisDegreeFrequenciesTable <- table( calaisDegreeVector )
+calaisDegreeDistribution<- degree.distribution( calaisNetworkIgraph )
+plot( calaisDegreeDistribution, xlab = "calais node degree" )
+lines( calaisDegreeDistribution)
 
 # subset vector to get only those that are above mean
-human_above_mean_vector <- human_degree_vector[ human_degree_vector > human_degree_mean ]
-calais_above_mean_vector <- calais_degree_vector[ calais_degree_vector > calais_degree_mean ]
+humanAboveMeanVector <- humanDegreeVector[ humanDegreeVector > humanDegreeMean ]
+calaisAboveMeanVector<- calaisDegreeVector[ calaisDegreeVector > calaisDegreeMean ]
 
 #==============================================================================#
 # NETWORK level
 #==============================================================================#
 
 # graph-level degree centrality
-human_degree_centrality <- centralization.degree( human_network_igraph )
-calais_degree_centrality <- centralization.degree( calais_network_igraph )
+humanDegreeCentrality <- centralization.degree( humanNetworkIgraph )
+calaisDegreeCentrality <- centralization.degree( calaisNetworkIgraph )
 
 # graph-level undirected betweenness
-human_betweenness_centrality <- centralization.betweenness( human_network_igraph, directed = FALSE )
-calais_betweenness_centrality <- centralization.betweenness( calais_network_igraph, directed = FALSE )
+humanBetweennessCentrality <- centralization.betweenness( humanNetworkIgraph, directed = FALSE )
+calaisBetweennessCentrality <- centralization.betweenness( calaisNetworkIgraph, directed = FALSE )
 
 # node-level undirected betweenness
-human_betweenness <- human_betweenness_centrality$res
-calais_betweenness <- calais_betweenness_centrality$res
+humanBetweenness <- humanBetweennessCentrality$res
+calaisBetweenness <- calaisBetweennessCentrality$res
 
 # graph-level transitivity
-human_transitivity <- transitivity( human_network_igraph, type = "global" )
-calais_transitivity <- transitivity( calais_network_igraph, type = "global" )
+humanTransitivity <- transitivity( humanNetworkIgraph, type = "global" )
+calaisTransitivity <- transitivity( calaisNetworkIgraph, type = "global" )
 
 #==============================================================================#
 # output attributes to data frame
@@ -105,9 +108,9 @@ calais_transitivity <- transitivity( calais_network_igraph, type = "global" )
 #    combine the attribute vectors into a data frame.
 
 # first, output igraph object to see what attributes you have
-human_network_igraph
-calais_network_igraph
+humanNetworkIgraph
+calaisNetworkIgraph
 
 # then, combine them into a data frame.
-human_node_attribute_df <- data.frame( id = V( human_network_igraph )$name, person_type = V( human_network_igraph )$person_type, degree = V( human_network_igraph )$degree )
-calais_node_attribute_df <- data.frame( id = V( calais_network_igraph )$name, person_type = V( calais_network_igraph )$person_type, degree = V( calais_network_igraph )$degree )
+humanNodeAttributeDF <- data.frame( id = V( humanNetworkIgraph )$name, person_type = V( humanNetworkIgraph )$person_type, degree = V( humanNetworkIgraph )$degree )
+calaisNodeAttributeDF <- data.frame( id = V( calaisNetworkIgraph )$name, person_type = V( calaisNetworkIgraph )$person_type, degree = V( calaisNetworkIgraph )$degree )
