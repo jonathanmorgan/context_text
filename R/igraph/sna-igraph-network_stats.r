@@ -1,15 +1,23 @@
-# First, need to load data into statnet network object.  For
-#    more details on that, see the files "sna-load_data.r" and
-#    "sna-statnet_init.r".
+# First, need to load SNA functions and load data into statnet network object.
+#    For more details on that, see the files "functions-sna.r",
+#    "sna-load_data.r" and "sna-igraph_init.r".
+#
 # assumes that working directory for statnet is sourcenet/R/igraph
 # setwd( ".." )
+# source( "functions-sna.r" )
 # source( "sna-load_data.r" )
 # setwd( "igraph" )
 # source( "sna-igraph-init.r" )
 
-# results in:
-# - humanNetworkIgraph - igraph network with human-coded network in it.
-# - calaisNetworkIgraph - igraph network with computer-coded network in it.
+# results in (among other things):
+# - humanNetworkData - data frame with human-generated network data matrix in it, including columns on the right side for any node-specific attributes.
+# - calaisNetworkData - data frame with computer-generated network data matrix in it, including columns on the right side for any node-specific attributes.
+# - humanNetworkTies - data frame with only human-generated network data matrix in it, no node-specific attributes.
+# - calaisNetworkTies - data frame with only computer-generated network data matrix in it, no node-specific attributes.
+# - humanNetworkMatrix - matrix with only human-generated network data matrix in it, no node-specific attributes.
+# - calaisNetworkMatrix - matrix with only computer-generated network data matrix in it, no node-specific attributes.
+# - humanNetworkIgraph - igraph network with human-coded network in it, including node-specific attributes.
+# - calaisNetworkIgraph - igraph network with computer-coded network in it, including node-specific attributes.
 
 # Links:
 # - CRAN page: http://cran.r-project.org/web/packages/igraph/index.html
@@ -45,6 +53,10 @@ calaisDegreeVector <- igraph::degree( calaisNetworkIgraph )
 # append the degrees to the network as a vertex attribute.
 V( humanNetworkIgraph )$degree <- humanDegreeVector
 V( calaisNetworkIgraph )$degree <- calaisDegreeVector
+
+# add these also to their respective data frames.
+humanNetworkData$degree <- humanDegreeVector
+calaisNetworkData$degree <- calaisDegreeVector
 
 # calculate the mean of the degrees.
 humanDegreeMean <- mean( humanDegreeVector )
@@ -88,6 +100,15 @@ calaisTransitivityVector <- igraph::transitivity( calaisNetworkIgraph, type = "l
 # And, if you want averages of these:
 humanMeanTransitivity <- mean( humanTransitivityVector, na.rm = TRUE )
 calaisMeanTransitivity <- mean( calaisTransitivityVector, na.rm = TRUE )
+
+# calculate author mean degree
+humanAuthorDegreeMean <- calcAuthorMeanDegree( humanNetworkData )
+calaisAuthorDegreeMean <- calcAuthorMeanDegree( calaisNetworkData )
+
+# calculate source mean degree
+humanSourceDegreeMean <- calcSourceMeanDegree( humanNetworkData )
+calaisSourceDegreeMean <- calcSourceMeanDegree( calaisNetworkData )
+
 
 #==============================================================================#
 # NETWORK level

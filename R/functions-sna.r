@@ -8,6 +8,78 @@
 #==============================================================================#
 
 
+calcAuthorMeanDegree <- function( dataFrameIN, includeBothIN = TRUE ) {
+
+    # Function calcAuthorMeanDegree()
+    #
+    # Filters data frame to just authors using dataFrameIN$person_type (2 or 4),
+    #    then calculates and returns the mean of the column dataFrameIN$degree.
+    #
+    # preconditions: data frame passed in must have $person_type and $degree
+    #    columns.
+
+    # return reference
+    valueOUT <- -1
+
+    # declare variables
+    authorDF <- NULL
+
+    # filter data frame
+    authorDF <- dataFrameIN[ dataFrameIN$person_type == 2 | dataFrameIN$person_type == 4, ]
+
+    # include both?
+    if ( includeBothIN == FALSE ){
+
+        # don't include both - just person_type = 2.
+        authorDF <- authorDF[ authorDF$person_type == 2, ]
+
+    }
+
+    # calculate mean of $degree column.
+    valueOUT <- mean( authorDF$degree )
+
+    # return value
+    return( valueOUT )
+
+} #-- END function calcAuthorMeanDegree() --#
+
+
+calcSourceMeanDegree <- function( dataFrameIN, includeBothIN = TRUE ) {
+
+    # Function calcSourceMeanDegree()
+    #
+    # Filters data frame to just sources using dataFrameIN$person_type (3 or 4),
+    #    then calculates and returns the mean of the column dataFrameIN$degree.
+    #
+    # preconditions: data frame passed in must have $person_type and $degree
+    #    columns.
+
+    # return reference
+    valueOUT <- -1
+
+    # declare variables
+    sourceDF <- NULL
+
+    # filter data frame
+    sourceDF <- dataFrameIN[ dataFrameIN$person_type == 3 | dataFrameIN$person_type == 4, ]
+
+    # include both?
+    if ( includeBothIN == FALSE ){
+
+        # don't include both - just person_type = 3.
+        sourceDF <- sourceDF[ sourceDF$person_type == 3, ]
+
+    }
+
+    # calculate mean of $degree column.
+    valueOUT <- mean( sourceDF$degree )
+
+    # return value
+    return( valueOUT )
+
+} #-- END function calcSourceMeanDegree() --#
+
+
 calculateListMean <- function( listIN, minValueToIncludeIN = NULL, excludeNaNIN = TRUE ) {
 
     # Function: calculateListMean()

@@ -33,6 +33,7 @@ class Analysis_Person_Info( object ):
             - self.PROP_AUTHOR_SHARED_SOURCE_AUTHORS_LIST = "author_shared_source_authors_list" - list of authors who quoted any one or more sources that the current author also quoted.
             - self.PROP_AUTHOR_SOURCE_COUNT = "author_source_count" - count of sources for the author (length of source list above).
             - self.PROP_AUTHOR_SHARED_SOURCE_COUNT = "author_shared_source_count" - count of shared sources (length of shared source info dictionary above).
+            - self.PROP_AUTHOR_ARTICLE_ID_LIST = "author_article_id_list" - list of ids of articles written by author included in analysis.
 
         - self.PROP_CODER_SOURCE_DATA = "coder_source_data" - maps to dictionary that maps source IDs of all sources the coder found in the set of articles processed by this class to a dictionary of information on each source.  Source info dictionary includes:
         
@@ -41,6 +42,7 @@ class Analysis_Person_Info( object ):
         - self.PROP_CODER_AUTHOR_ID_LIST = "coder_author_id_list" - list of IDs of authors this coder found.
         - self.PROP_CODER_AUTHOR_SOURCE_COUNT_LIST = "coder_author_source_count_list" - list of source counts per author, in same order as list of author IDs.
         - self.PROP_CODER_AUTHOR_SHARED_COUNT_LIST = "coder_author_shared_count_list" - list of shared source counts per author, in same order as list of author IDs.
+        - self.PROP_CODER_AUTHOR_ARTICLE_COUNT_LIST = "coder_author_article_count_list" - list of counts of articles in this analysis for each author.
     '''
         
     #----------------------------------------------------------------------
@@ -66,6 +68,7 @@ class Analysis_Person_Info( object ):
     PROP_CODER_AUTHOR_ID_LIST = "coder_author_id_list"
     PROP_CODER_AUTHOR_SOURCE_COUNT_LIST = "coder_author_source_count_list"
     PROP_CODER_AUTHOR_SHARED_COUNT_LIST = "coder_author_shared_count_list"
+    PROP_CODER_AUTHOR_ARTICLE_COUNT_LIST = "coder_author_article_count_list"
 
     # author property names
     PROP_AUTHOR_SOURCE_LIST = "author_source_list"
@@ -73,6 +76,7 @@ class Analysis_Person_Info( object ):
     PROP_AUTHOR_SHARED_SOURCE_AUTHORS_LIST = "author_shared_source_authors_list"
     PROP_AUTHOR_SOURCE_COUNT = "author_source_count"
     PROP_AUTHOR_SHARED_SOURCE_COUNT = "author_shared_source_count"
+    PROP_AUTHOR_ARTICLE_ID_LIST = "author_article_id_list"
     
     # shared source property names
     PROP_SHARED_SOURCE_ID = "shared_source_id"
@@ -515,6 +519,7 @@ class Analysis_Person_Info( object ):
         
         # declare variables
         me = "process_relations"
+        article_id = -1
         article_data_coder = None
         article_author_qs = None
         article_source_qs = None
@@ -527,6 +532,9 @@ class Analysis_Person_Info( object ):
         # make sure we have an instance
         if ( article_data_IN is not None ):
         
+            # get article ID.
+            article_id = article_data_IN.article_id
+            
             # Get coder info...
             article_data_coder = article_data_IN.coder
             
@@ -541,6 +549,9 @@ class Analysis_Person_Info( object ):
             
                 # get author person.
                 author_person = current_author.person
+                
+                # update author article id list
+                self.update_author_article_id_list( article_data_coder, author_person, article_id )
                     
                 # update author info for each related source.
                 for current_source in article_source_qs:
@@ -594,6 +605,9 @@ class Analysis_Person_Info( object ):
         source_count = -1
         shared_source_info = None
         shared_source_count = -1
+        article_count = -1
+        author_article_id_list = None
+        coder_author_article_count_list = None
         
         print( "" )
         print( "Start of " + me + "():" )
@@ -610,6 +624,7 @@ class Analysis_Person_Info( object ):
             coder_author_id_list = []
             coder_author_source_count_list = []
             coder_author_shared_count_list = []
+            coder_author_article_count_list = []
 
             # retrieve author data dictionary.
             author_id_to_data_dict = coder_data_dict.get( self.PROP_CODER_AUTHOR_DATA, None )
@@ -654,6 +669,12 @@ class Analysis_Person_Info( object ):
                 #-- END check to see if dictionary is None --#
                 author_info[ self.PROP_AUTHOR_SHARED_SOURCE_COUNT ] = shared_source_count
                 coder_author_shared_count_list.append( shared_source_count )
+                
+                # get author's article count and add to coder list.
+                author_article_id_list = author_info.get( self.PROP_AUTHOR_ARTICLE_ID_LIST, [] )
+                article_count = len( author_article_id_list )
+                coder_author_article_count_list.append( article_count )
+                print( "******** In " + me + "(): Summarizing coder index " + str( coder_index ) + "; author " + str( author_id ) + "; article ID list = " + str( author_article_id_list ) )
             
             #-- END loop over authors. --#
             
@@ -661,12 +682,92 @@ class Analysis_Person_Info( object ):
             coder_data_dict[ self.PROP_CODER_AUTHOR_ID_LIST ] = coder_author_id_list
             coder_data_dict[ self.PROP_CODER_AUTHOR_SOURCE_COUNT_LIST ] = coder_author_source_count_list
             coder_data_dict[ self.PROP_CODER_AUTHOR_SHARED_COUNT_LIST ] = coder_author_shared_count_list
+            coder_data_dict[ self.PROP_CODER_AUTHOR_ARTICLE_COUNT_LIST ] = coder_author_article_count_list
             
         #-- END loop over coders. --#
         
         return status_OUT
         
     #-- END method summarize_data --#
+
+
+    def update_author_article_id_list( self, coder_user_IN, author_person_IN, article_id_IN ):
+        
+        # return reference
+        status_OUT = ""
+        
+        # declare variables
+        me = "update_author_article_id_list"
+        author_person_id = None
+        source_person_id = None
+        coder_author_data_dict = None
+        author_info_dict = None
+        author_article_id_list = None
+        
+        # make sure we have an author person...
+        if ( author_person_IN is not None ):
+        
+            # get ID
+            author_person_id = author_person_IN.id
+        
+            # ...and a coder.
+            if ( coder_user_IN is not None ):
+            
+                # got everything we need.  Get data for the current coder.
+                coder_author_data_dict = self.get_coder_author_data( coder_user_IN )
+                
+                # got something back?
+                if ( coder_author_data_dict is not None ):
+
+                    # yes.  Get author info.
+                    author_info_dict = coder_author_data_dict.get( author_person_id, None )
+                    
+                    # got any?
+                    if ( author_info_dict is None ):
+                    
+                        # no.  Add some.
+                        author_info_dict = {}
+                        author_info_dict[ self.PROP_AUTHOR_SOURCE_LIST ] = []
+                        author_info_dict[ self.PROP_AUTHOR_ARTICLE_ID_LIST ] = []
+                        coder_author_data_dict[ author_person_id ] = author_info_dict
+                        
+                    #-- END check to see if author info present. --#
+                    
+                    # Should have one now.  Get list of articles by this author.
+                    author_article_id_list = author_info_dict.get( self.PROP_AUTHOR_ARTICLE_ID_LIST, None )
+                    
+                    # got a list?
+                    if ( author_article_id_list is None ):
+                    
+                        # no - first time author processed. --#
+                        author_article_id_list = []
+                        author_info_dict[ self.PROP_AUTHOR_ARTICLE_ID_LIST ] = author_article_id_list
+                    
+                    #-- END check to see if list of author's related sources is present. --#
+                    
+                    # Is article_id in list?
+                    if ( article_id_IN not in author_article_id_list ):
+                    
+                        # no.  Add it.
+                        author_article_id_list.append( article_id_IN )
+                        
+                    #-- END check to see if source in author's source list --#
+                    
+                else:
+                
+                    # error.  Should always have source info after calling
+                    #    get_coder_author_data().
+                    pass
+                
+                #-- END check to see if we have author info --#
+            
+            #-- END check to make sure we have a coder. --#
+        
+        #-- END check for author person --#
+        
+        return status_OUT
+    
+    #-- END method update_author_article_id_list() --#
 
 
     def update_author_info( self, author_person_IN, source_person_IN, coder_user_IN ):
@@ -712,6 +813,7 @@ class Analysis_Person_Info( object ):
                             # no.  Add some.
                             author_info_dict = {}
                             author_info_dict[ self.PROP_AUTHOR_SOURCE_LIST ] = []
+                            author_info_dict[ self.PROP_AUTHOR_ARTICLE_ID_LIST ] = []
                             coder_author_data_dict[ author_person_id ] = author_info_dict
                             
                         #-- END check to see if author info present. --#
@@ -736,7 +838,7 @@ class Analysis_Person_Info( object ):
                             author_source_list.append( source_person_id )
                             
                         #-- END check to see if source in author's source list --#
-                    
+                        
                     else:
                     
                         # error.  Should always have source info after calling
@@ -1055,6 +1157,7 @@ coder_data_dict = None
 coder_author_id_list = None
 coder_author_source_count_list = None
 coder_author_shared_count_list = None
+coder_author_article_count_list = None
 mean_source_count = -1
 mean_shared_count = -1
 author_index = -1
@@ -1062,6 +1165,7 @@ shared_count = -1
 temp_author_id_list = []
 temp_source_count_list = []
 temp_shared_count_list = []
+temp_article_count_list = []
 
 # for each coder, get authors.
 coder_index_to_data_dict = my_analysis_instance.coder_index_to_data_map
@@ -1073,6 +1177,7 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     coder_author_id_list = coder_data_dict.get( Analysis_Person_Info.PROP_CODER_AUTHOR_ID_LIST, None )
     coder_author_source_count_list = coder_data_dict.get( Analysis_Person_Info.PROP_CODER_AUTHOR_SOURCE_COUNT_LIST, None )
     coder_author_shared_count_list = coder_data_dict.get( Analysis_Person_Info.PROP_CODER_AUTHOR_SHARED_COUNT_LIST, None )
+    coder_author_article_count_list = coder_data_dict.get( Analysis_Person_Info.PROP_CODER_AUTHOR_ARTICLE_COUNT_LIST, None )
 
     # output
     print( "" )
@@ -1084,6 +1189,7 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     print( "- author ID list = " + str( coder_author_id_list ) )    
     print( "- author source count list = " + str( coder_author_source_count_list ) )    
     print( "- author shared count list = " + str( coder_author_shared_count_list ) )    
+    print( "- author article count list = " + str( coder_author_article_count_list ) )    
 
     # and some computations
 
@@ -1103,6 +1209,7 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     temp_author_id_list = []
     temp_source_count_list = []
     temp_shared_count_list = []
+    temp_article_count_list = []
 
     for shared_count in coder_author_shared_count_list:
     
@@ -1116,6 +1223,7 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
             temp_author_id_list.append( coder_author_id_list[ author_index ] )
             temp_source_count_list.append( coder_author_source_count_list[ author_index ] )
             temp_shared_count_list.append( coder_author_shared_count_list[ author_index ] )
+            temp_article_count_list.append( coder_author_article_count_list[ author_index ] )
             
         #-- END check to see if shared count > 0 --#
     
@@ -1126,6 +1234,7 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     print( "- author ID list = " + str( temp_author_id_list ) )    
     print( "- author source count list = " + str( temp_source_count_list ) )    
     print( "- author shared count list = " + str( temp_shared_count_list ) )    
+    print( "- author article count list = " + str( temp_article_count_list ) )    
 
     # and some computations
 

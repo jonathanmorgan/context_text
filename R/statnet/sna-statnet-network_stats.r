@@ -1,13 +1,22 @@
-# First, need to load data into statnet network object.  For
-#    more details on that, see the files "sna-load_data.r" and
-#    "sna-statnet_init.r".
+# First, need to load SNA functions and load data into statnet network object.
+#    For more details on that, see the files "functions-sna.r",
+#    "sna-load_data.r" and "sna-statnet_init.r".
+#
 # assumes that working directory for statnet is sourcenet/R/statnet.
 # setwd( ".." )
+# source( "functions-sna.r" )
 # source( "sna-load_data.r" )
 # setwd( "statnet" )
 # source( "sna-statnet-init.r" )
 
 # results in:
+# results in (among other things):
+# - humanNetworkData - data frame with human-generated network data matrix in it, including columns on the right side for any node-specific attributes.
+# - calaisNetworkData - data frame with computer-generated network data matrix in it, including columns on the right side for any node-specific attributes.
+# - humanNetworkTies - data frame with only human-generated network data matrix in it, no node-specific attributes.
+# - calaisNetworkTies - data frame with only computer-generated network data matrix in it, no node-specific attributes.
+# - humanNetworkMatrix - matrix with only human-generated network data matrix in it, no node-specific attributes.
+# - calaisNetworkMatrix - matrix with only computer-generated network data matrix in it, no node-specific attributes.
 # - humanNetworkStatnet - statnet network with human-coded network in it.
 # - calaisNetworkStatnet - statnet network with computer-coded network in it.
 
@@ -56,6 +65,10 @@ calaisNetworkStatnet %v% "degree" <- calaisDegreeVector
 help( package = "sna" )
 ??sna::degree
 
+# add these also to their respective data frames.
+humanNetworkData$degree <- humanDegreeVector
+calaisNetworkData$degree <- calaisDegreeVector
+
 # what is the average (mean) degree?
 humanDegreeMean <- mean( humanDegreeVector )
 calaisDegreeMean <- mean( calaisDegreeVector )
@@ -83,6 +96,15 @@ humanDegreeFrequenciesTable <- table( humanDegreeVector )
 
 # calais
 calaisDegreeFrequenciesTable <- table( calaisDegreeVector )
+
+# calculate author mean degree
+humanAuthorDegreeMean <- calcAuthorMeanDegree( humanNetworkData )
+calaisAuthorDegreeMean <- calcAuthorMeanDegree( calaisNetworkData )
+
+# calculate source mean degree
+humanSourceDegreeMean <- calcSourceMeanDegree( humanNetworkData )
+calaisSourceDegreeMean <- calcSourceMeanDegree( calaisNetworkData )
+
 
 #==============================================================================#
 # NETWORK level
