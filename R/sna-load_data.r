@@ -17,12 +17,18 @@ source( "functions-sna.r" )
 
 # first, need to load in the two matrices we want to compare.
 # Start with loading in tab-delimited files.
-humanNetworkData <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
-calaisNetworkData <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
+humanNetworkData <- read.delim( "human-sourcenet_data-20150602-223859.tab", header = TRUE, row.names = 1, check.names = FALSE )
+calaisNetworkData <- read.delim( "puter-sourcenet_data-20150602-224006.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
 # remove the right-most 2 columns, which contains non-tie info on nodes.
-humanNetworkTies <- humanNetworkData[ , c( -( ncol( humanNetworkData ) - 1 ), -ncol( humanNetworkData ) ) ]
-calaisNetworkTies <- calaisNetworkData[ , c( -( ncol( calaisNetworkData ) -1 ), -ncol( calaisNetworkData ) ) ]
+#humanNetworkTies <- humanNetworkData[ , c( -( ncol( humanNetworkData ) - 1 ), -ncol( humanNetworkData ) ) ]
+#calaisNetworkTies <- calaisNetworkData[ , c( -( ncol( calaisNetworkData ) -1 ), -ncol( calaisNetworkData ) ) ]
+
+# OR, remove the attribute columns using their names.
+attrColumnNames <- names( humanNetworkData ) %in% c( "person_id", "person_type" )
+humanNetworkTies <- humanNetworkData[ , !attrColumnNames ]
+attrColumnNames <- names( calaisNetworkData ) %in% c( "person_id", "person_type" )
+calaisNetworkTies <- calaisNetworkData[ , !attrColumnNames ]
 
 # convert each to a matrix
 humanNetworkMatrix <- as.matrix( humanNetworkTies )

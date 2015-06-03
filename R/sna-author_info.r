@@ -30,14 +30,26 @@ calaisAuthorsMeanTieWeightGE1 <- mean( calaisAuthorsNetworkData$meanTieWeightGE1
 #==============================================================================#
 
 # human - subsetting based on position of authors who had shared sources.
-humanAuthorsSharedNetworkData <- humanNetworkData[ c( 3, 6, 9, 11, 12, 13, 14, 16, 21, 43, 44, 63, 169, 310 ), ]
+#humanAuthorsSharedNetworkData <- humanNetworkData[ c( 3, 6, 9, 11, 12, 13, 14, 16, 21, 43, 44, 63, 169, 310 ), ]
+
+# subsetting based on person IDs.
+humanAuthorsSharedIDs <- c( 46, 23, 29, 161, 36, 425, 302, 66, 69, 73, 591, 84, 217, 223 )
+humanAuthorsSharedNetworkData <- humanNetworkData[ humanNetworkData$person_id %in% humanAuthorsSharedIDs , ]
+
+# human - make data
 humanAuthorsSharedMeanDegree <- mean( humanAuthorsSharedNetworkData$degree )
 humanAuthorsSharedMaxDegree <- max( humanAuthorsSharedNetworkData$degree )
 humanAuthorsSharedMeanTieWeightGE0 <- mean( humanAuthorsSharedNetworkData$meanTieWeightGE0 )
 humanAuthorsSharedMeanTieWeightGE1 <- mean( humanAuthorsSharedNetworkData$meanTieWeightGE1 )
 
-# calais
-calaisAuthorsSharedNetworkData <- calaisNetworkData[ c( 3, 6, 9, 11, 12, 13, 16, 21, 44, 63, 169, 310 ), ]
+# calais - subsetting based on position of authors who had shared sources.
+#calaisAuthorsSharedNetworkData <- calaisNetworkData[ c( 3, 6, 9, 11, 12, 13, 16, 21, 44, 63, 169, 310 ), ]
+
+# subsetting based on person IDs.
+calaisAuthorsSharedIDs <- c( 46, 23, 29, 161, 36, 425, 302, 66, 69, 591, 84, 223 )
+calaisAuthorsSharedNetworkData <- calaisNetworkData[ calaisNetworkData$person_id %in% calaisAuthorsSharedIDs , ]
+
+# calais - make data
 calaisAuthorsSharedMeanDegree <- mean( calaisAuthorsSharedNetworkData$degree )
 calaisAuthorsSharedMaxDegree <- max( calaisAuthorsSharedNetworkData$degree )
 calaisAuthorsSharedMeanTieWeightGE0 <- mean( calaisAuthorsSharedNetworkData$meanTieWeightGE0 )
