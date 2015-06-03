@@ -20,9 +20,9 @@ source( "functions-sna.r" )
 humanNetworkData <- read.delim( "human-sourcenet_data-20150504-002453.tab", header = TRUE, row.names = 1, check.names = FALSE )
 calaisNetworkData <- read.delim( "puter-sourcenet_data-20150504-002507.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
-# remove the right-most column, which contains non-tie info on nodes.
-humanNetworkTies <- humanNetworkData[ , -ncol( humanNetworkData ) ]
-calaisNetworkTies <- calaisNetworkData[ , -ncol( calaisNetworkData ) ]
+# remove the right-most 2 columns, which contains non-tie info on nodes.
+humanNetworkTies <- humanNetworkData[ , c( -( ncol( humanNetworkData ) - 1 ), -ncol( humanNetworkData ) ) ]
+calaisNetworkTies <- calaisNetworkData[ , c( -( ncol( calaisNetworkData ) -1 ), -ncol( calaisNetworkData ) ) ]
 
 # convert each to a matrix
 humanNetworkMatrix <- as.matrix( humanNetworkTies )
@@ -31,6 +31,10 @@ calaisNetworkMatrix <- as.matrix( calaisNetworkTies )
 # get person type vectors
 humanPersonTypes <- humanNetworkData[ , ncol( humanNetworkData ) ]
 calaisPersonTypes <- calaisNetworkData[ , ncol( calaisNetworkData ) ]
+
+# get person ID vectors
+humanPersonTypes <- humanNetworkData[ , ncol( humanNetworkData ) - 1 ]
+calaisPersonTypes <- calaisNetworkData[ , ncol( calaisNetworkData ) - 1 ]
 
 # calculate vectors of average tie weights for calais and human data for all
 #    ties (including 0s) and just ties >= 1, and add each as columns to data
