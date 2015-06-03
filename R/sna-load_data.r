@@ -32,13 +32,33 @@ calaisNetworkMatrix <- as.matrix( calaisNetworkTies )
 humanPersonTypes <- humanNetworkData[ , ncol( humanNetworkData ) ]
 calaisPersonTypes <- calaisNetworkData[ , ncol( calaisNetworkData ) ]
 
-# create vector of average tie weights (mean of values in any cell with value
-#    greater than 0 - if no ties, returns 0).
-humanMeanTieWeights <- apply( humanNetworkTies, 1, calculateListMean, minValueToIncludeIN = 1 )
-calaisMeanTieWeights <- apply( calaisNetworkTies, 1, calculateListMean, minValueToIncludeIN = 1 )
+# calculate vectors of average tie weights for calais and human data for all
+#    ties (including 0s) and just ties >= 1, and add each as columns to data
+#    frame <type>NetworkData.
+
+# human - include ties Greater than or equal to 0 (GE0)
+humanMeanTieWeightGE0Vector <- apply( humanNetworkMatrix, 1, calculateListMean )
+humanNetworkData$meanTieWeightGE0 <- humanMeanTieWeightGE0Vector
+
+# human - include ties Greater than or equal to 1 (GE1)
+humanMeanTieWeightGE1Vector <- apply( humanNetworkMatrix, 1, calculateListMean, minValueToIncludeIN = 1 )
+humanNetworkData$meanTieWeightGE1 <- humanMeanTieWeightGE1Vector
+
+# calais - include ties Greater than or equal to 0 (GE0)
+calaisMeanTieWeightGE0Vector <- apply( calaisNetworkMatrix, 1, calculateListMean )
+calaisNetworkData$meanTieWeightGE0 <- calaisMeanTieWeightGE0Vector
+
+# calais - include ties Greater than or equal to 1 (GE1)
+calaisMeanTieWeightGE1Vector <- apply( calaisNetworkMatrix, 1, calculateListMean, minValueToIncludeIN = 1 )
+calaisNetworkData$meanTieWeightGE1 <- calaisMeanTieWeightGE1Vector
+
+# Run above against tie matrices. Could also run against <type>NetworkTies data
+#    frames:
+#humanMeanTieWeightGE1Vector <- apply( humanNetworkTies, 1, calculateListMean, minValueToIncludeIN = 1 )
+#calaisMeanTieWeightGE1Vector <- apply( calaisNetworkTies, 1, calculateListMean, minValueToIncludeIN = 1 )
 
 # And, if you want averages of these:
-humanMeanTieWeightWithZeroes <- mean( humanMeanTieWeights )
-humanMeanTieWeightNoZeroes <- calculateListMean( humanMeanTieWeights, minValueToIncludeIN = 1 )
-calaisMeanTieWeightWithZeroes <- mean( calaisMeanTieWeights )
-calaisMeanTieWeightNoZeroes <- calculateListMean( calaisMeanTieWeights, minValueToIncludeIN = 1 )
+humanMeanTieWeightWithZeroes <- mean( humanNetworkData$meanTieWeightGE1 )
+humanMeanTieWeightNoZeroes <- calculateListMean( humanNetworkData$meanTieWeightGE1, minValueToIncludeIN = 1 )
+calaisMeanTieWeightWithZeroes <- mean( calaisNetworkData$meanTieWeightGE1 )
+calaisMeanTieWeightNoZeroes <- calculateListMean( calaisNetworkData$meanTieWeightGE1, minValueToIncludeIN = 1 )

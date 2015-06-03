@@ -183,6 +183,9 @@ class NDO_CSVMatrix( NetworkDataOutput ):
 
                 # yes - append attributes.
                 
+                # append person's ID.
+                column_value_list.append( str( person_id_IN ) )
+
                 # get current person's person type and append it.
                 person_type_id = self.get_person_type_id( person_id_IN )
                 column_value_list.append( str( person_type_id ) )
@@ -195,6 +198,48 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         #-- END check to make sure we have a person --#
 
     #-- END method append_person_row --#
+
+
+    def append_person_id_row( self ):
+
+        '''
+            Method: append_person_id_row()
+
+            Purpose: Create a list of person IDs for the people in
+               master list, then append the list to the end of the
+               CSV document.
+
+            Preconditions: Master person list must be present.
+
+            Params: none
+            
+            Postconditions: Row is appended to the end of the nested CSV document, but nothing is returned.
+        '''
+
+        # return reference
+
+        # declare variables
+        person_id_list = None
+
+        # get person type ID list
+        person_id_list = self.create_person_id_list( True )
+
+        if ( ( self.LOCAL_DEBUG_FLAG == True ) or ( self.DEBUG_FLAG == True ) ):
+            self.debug += "\n\nperson id list:\n" + "; ".join( person_id_list )
+        #-- END DEBUG --#
+
+        # got it?
+        if ( ( person_id_list != None ) and ( len( person_id_list ) > 0 ) ):
+
+            # add label to front
+            person_id_list.insert( 0, "person_id" )
+
+            # write the row
+            self.append_row_to_csv( person_id_list )
+            
+        #-- END check to make sure we have list.
+
+    #-- END method append_person_id_row --#
 
 
     def append_person_type_id_row( self ):
@@ -237,7 +282,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
             
         #-- END check to make sure we have list.
 
-    #-- END method create_person_type_attribute_string --#
+    #-- END method append_person_type_id_row --#
 
 
     def append_row_to_csv( self, column_value_list_IN ):
@@ -342,7 +387,10 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         do_output_attr_rows = self.do_output_attribute_rows()
         if ( do_output_attr_rows == True ):
 
-            # yes - append the attribute string.
+            # yes - append the "person_id" attribute string...
+            self.append_person_id_row()
+            
+            # ...and append the "person_type" attribute string.
             self.append_person_type_id_row()
             
         #-- END check to see if include attributes. --#

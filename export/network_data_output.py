@@ -146,8 +146,10 @@ class NetworkDataOutput( SourcenetBase ):
     PARAM_PERSON_QUERY_TYPE = "person_query_type"
     
     # node attributes
+    NODE_ATTRIBUTE_PERSON_ID = "person_id"
     NODE_ATTRIBUTE_PERSON_TYPE = "person_type"
     NODE_ATTRIBUTE_LIST = [
+        NODE_ATTRIBUTE_PERSON_ID,
         NODE_ATTRIBUTE_PERSON_TYPE,
     ]
 
@@ -516,6 +518,61 @@ class NetworkDataOutput( SourcenetBase ):
         return list_OUT
 
     #-- END method create_label_list --#
+
+
+    def create_person_id_list( self, as_string_IN = True ):
+
+        """
+            Method: create_person_id_list()
+
+            Purpose: Create a list of person IDs for the people in master
+               list.
+
+            Preconditions: Master person list must be present.
+
+            Params: none
+
+            Returns:
+            - list_OUT - list of person IDs, in sorted master person list order.
+        """
+
+        # return reference
+        list_OUT = []
+
+        # declare variables
+        person_list = None
+        current_person_id = -1
+        output_person_id = -1
+
+        # get master list
+        person_list = self.get_master_person_list()
+
+        # got it?
+        if ( person_list ):
+
+            # loop over the master list.
+            for current_person_id in sorted( person_list ):
+            
+                # store in output variable
+                output_person_id = current_person_id
+
+                # append as a string?
+                if ( as_string_IN == True ):
+
+                    output_person_id = str( output_person_id )
+
+                #-- END check to see if append as string --#
+
+                # append to output list.
+                list_OUT.append( output_person_id )
+
+            #-- END loop over people --#
+
+        #-- END check to make sure we have list.
+
+        return list_OUT
+
+    #-- END method create_person_id_list --#
 
 
     def create_person_type_id_list( self, as_string_IN = True ):
