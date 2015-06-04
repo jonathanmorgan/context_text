@@ -1160,6 +1160,7 @@ coder_author_shared_count_list = None
 coder_author_article_count_list = None
 mean_source_count = -1
 mean_shared_count = -1
+mean_article_count = -1
 author_index = -1
 shared_count = -1
 temp_author_id_list = []
@@ -1203,6 +1204,10 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     # mean shared count per author
     mean_shared_count = float( sum( coder_author_shared_count_list ) ) / len( coder_author_shared_count_list )
     print( "- mean shared count per author = " + str( mean_shared_count ) )
+    
+    # mean article count per author
+    mean_article_count = float( sum( coder_author_article_count_list ) ) / len( coder_author_article_count_list )
+    print( "- mean article count per author = " + str( mean_article_count ) )
     
     # the same, but just for those with shared sources.
     author_index = -1
@@ -1248,5 +1253,9 @@ for coder_index, coder_data_dict in six.iteritems( coder_index_to_data_dict ):
     # mean shared count per author with shared sources
     mean_shared_count = float( sum( temp_shared_count_list ) ) / len( temp_shared_count_list )
     print( "- mean shared count per author with shared sources = " + str( mean_shared_count ) )
+    
+    # mean article count per author
+    mean_article_count = float( sum( temp_article_count_list ) ) / len( temp_article_count_list )
+    print( "- mean article count per author = " + str( mean_article_count ) )
     
 #-- END loop over coders. --#
