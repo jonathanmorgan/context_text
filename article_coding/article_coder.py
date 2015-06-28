@@ -24,6 +24,8 @@ if __name__ == "__main__":
 
 # python libraries
 from abc import ABCMeta, abstractmethod
+import calendar
+import datetime
 import logging
 #import copy
 import re
@@ -138,7 +140,7 @@ class ArticleCoder( BasicRateLimited ):
 
 
     @classmethod
-    def get_automated_coding_user( cls, *args, **kwargs ):
+    def get_automated_coding_user( cls, create_if_no_match_IN = True, *args, **kwargs ):
     
         '''
         Can't reference django models in class context anymore in models files:
@@ -151,15 +153,46 @@ class ArticleCoder( BasicRateLimited ):
 
         # declare variables
         temp_user = None
+        temp_password = ""
         
         # User already retrieved?
         if ( cls.CODER_USER_AUTOMATED == None ):
         
-            # get user
-            temp_user = User.objects.get( username = cls.CODER_USERNAME_AUTOMATED )
+            # use a try to detect if no automated user.
+            try:
             
-            # store it
-            cls.CODER_USER_AUTOMATED = temp_user
+                # get user
+                temp_user = User.objects.get( username = cls.CODER_USERNAME_AUTOMATED )
+                
+                # store it
+                cls.CODER_USER_AUTOMATED = temp_user
+                
+            except:
+            
+                # exception in get() call - create and return new user?
+                if ( create_if_no_match_IN == True ):
+                
+                    # set password to current time stamp.
+                    temp_password = datetime.datetime.utcnow()
+                    temp_password = calendar.timegm( temp_password.timetuple() )
+                    temp_password = str( temp_password )
+                
+                    # create user with username, password, no email.
+                    temp_user = User.objects.create_user( cls.CODER_USERNAME_AUTOMATED, None, temp_password )
+                    
+                    # add information to user.
+                    temp_user.first_name = "Automated"
+                    temp_user.last_name = "Processing"
+                    
+                    # save user.
+                    temp_user.save()
+                    
+                    # store user in class
+                    cls.CODER_USER_AUTOMATED = temp_user
+                    
+                #-- END check to see if we create a user. ---#
+            
+            #-- END try/except for looking up automated user. --#
             
         #-- END check to see if user already stored in class. --#
 
