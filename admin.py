@@ -32,7 +32,7 @@ from sourcenet.models import Article_Author
 #from sourcenet.models import Article_Location
 from sourcenet.models import Article_Notes
 from sourcenet.models import Article_RawData
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Article_Text
 #from sourcenet.models import Article_Topic
 #from sourcenet.models import Source_Organization
@@ -51,7 +51,7 @@ admin.site.register( Newspaper )
 #admin.site.register( Article_Author )
 admin.site.register( Article_Notes )
 admin.site.register( Article_RawData )
-#admin.site.register( Article_Source )
+#admin.site.register( Article_Subject )
 #admin.site.register( Article_Text )
 #admin.site.register( Article_Topic )
 #admin.site.register( Source_Organization )
@@ -185,7 +185,7 @@ class ArticleAuthorInline( admin.StackedInline ):
 #    extra = 2
 #    fk_name = 'source_organization'
 
-class ArticleSourceInline( admin.StackedInline ):
+class ArticleSubjectInline( admin.StackedInline ):
 
     # set up ajax-selects - for make_ajax_form, 1st argument is the model you
     #    are looking to make ajax selects form fields for; 2nd argument is a
@@ -193,14 +193,20 @@ class ArticleSourceInline( admin.StackedInline ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in sourcenet.ajax-select-lookups.py
-    form = make_ajax_form( Article_Source, dict( person = 'person', organization = 'organization' ) )
+    form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
 
-    model = Article_Source
+    model = Article_Subject
     extra = 2
     fk_name = 'article_data'
     fieldsets = [
-        ( None,                 { 'fields' : [ 'source_type', 'person', 'title', 'more_title', 'organization', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
-        ( "Notes (Optional)",
+        (
+            None,
+            {
+                'fields' : [ 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'document', 'source_contact_type', 'source_capacity', 'localness' ]
+            }
+        ),
+        (
+            "Notes (Optional)",
             {
                 'fields' : [ 'notes' ],
                 'classes' : ( "collapse", )
@@ -208,7 +214,7 @@ class ArticleSourceInline( admin.StackedInline ):
         ),
     ]
 
-#-- END class ArticleSourceInline --#
+#-- END class ArticleSubjectInline --#
 
 
 #-------------------------------------------------------------------------------
@@ -273,7 +279,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
     inlines = [
         #TopicInline,
         ArticleAuthorInline,
-        ArticleSourceInline,
+        ArticleSubjectInline,
         #LocationInline
     ]
 
@@ -291,7 +297,7 @@ admin.site.register( Article_Data, Article_DataAdmin )
 # Article Source admin definition
 #-------------------------------------------------------------------------------
 
-class Article_SourceAdmin( admin.ModelAdmin ):
+class Article_SubjectAdmin( admin.ModelAdmin ):
 
     # set up ajax-selects - for make_ajax_form, 1st argument is the model you
     #    are looking to make ajax selects form fields for; 2nd argument is a
@@ -299,11 +305,17 @@ class Article_SourceAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in sourcenet.ajax-select-lookups.py
-    form = make_ajax_form( Article_Source, dict( person = 'person', organization = 'organization' ) )
+    form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
 
     fieldsets = [
-        ( None,                 { 'fields' : [ 'article_data', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ] } ),
-        ( "Notes (Optional)",
+        (
+            None,
+            {
+                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ]
+            }
+        ),
+        (
+            "Notes (Optional)",
             {
                 'fields' : [ 'notes' ],
                 'classes' : ( "collapse", )
@@ -315,15 +327,15 @@ class Article_SourceAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'person', 'organization', 'article_data' )
+    list_display = ( 'person', 'subject_type', 'organization', 'article_data' )
     #list_display_links = ( 'headline', )
-    list_filter = [ 'person', 'organization', 'article_data' ]
+    list_filter = [ 'person', 'subject_type', 'organization', 'article_data' ]
     #search_fields = [ 'article', 'person', 'organization' ]
     #date_hierarchy = 'pub_date'
 
-#-- END Article_SourceAdmin admin model --#
+#-- END Article_SubjectAdmin admin model --#
 
-admin.site.register( Article_Source, Article_SourceAdmin )
+admin.site.register( Article_Subject, Article_SubjectAdmin )
 
 #-------------------------------------------------------------------------------
 # Article Author admin definition
@@ -353,6 +365,6 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     #search_fields = [ 'article', 'person' ]
     #date_hierarchy = 'pub_date'
 
-#-- END Article_SourceAdmin admin model --#
+#-- END Article_AuthorAdmin admin model --#
 
 admin.site.register( Article_Author, Article_AuthorAdmin )

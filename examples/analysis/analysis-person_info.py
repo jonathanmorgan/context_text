@@ -542,7 +542,7 @@ class Analysis_Person_Info( object ):
             article_author_qs = article_data_IN.article_author_set.all()
                         
             # ...and source QuerySet.
-            article_source_qs = article_data_IN.article_source_set.all()
+            article_source_qs = article_data_IN.get_quoted_article_sources_qs()
             
             # for each author...
             for current_author in article_author_qs:

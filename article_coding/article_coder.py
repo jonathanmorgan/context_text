@@ -44,7 +44,7 @@ from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 from sourcenet.models import Person_External_UUID
 from sourcenet.models import Person_Newspaper
@@ -567,7 +567,7 @@ class ArticleCoder( BasicRateLimited ):
            and 1 (high confidence).
         
         Accepts:
-           - person_IN - Article_Person child instance (Article_Author or Article_Source)
+           - person_IN - Article_Person child instance (Article_Author or Article_Subject)
            - person_details_IN - optional dictionary of person details for the current person.  Includes:
               - PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
               - PARAM_NEWSPAPER_NOTES = "newspaper_notes"
@@ -709,7 +709,7 @@ class ArticleCoder( BasicRateLimited ):
     
         '''
         Accepts:
-           - article_person_IN - Article_Person child instance (Article_Author or Article_Source)
+           - article_person_IN - Article_Person child instance (Article_Author or Article_Subject)
            - full_name_IN - full name of person we're looking up.
            - create_if_no_match_IN - optional boolean that indicates whether we want to create a new person if not found
            - update_person_IN - optional boolean that indicates whether we want to update the person based on stuff in person_details_IN if person found.
@@ -1192,7 +1192,7 @@ class ArticleCoder( BasicRateLimited ):
                     
                     #-- END check to see if we update person --#
                     
-                    # place person inside Article_Source instance.
+                    # place person inside Article_Person instance.
                     instance_OUT.person = person_instance
                     instance_OUT.match_confidence_level = confidence_level
                     

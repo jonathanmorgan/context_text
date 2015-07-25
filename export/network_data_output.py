@@ -35,7 +35,7 @@ from python_utilities.parameters.param_container import ParamContainer
 # Import the classes for our SourceNet application
 #from sourcenet.models import Article
 #from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
 
@@ -140,9 +140,9 @@ class NetworkDataOutput( SourcenetBase ):
     PARAM_NETWORK_DATA_OUTPUT_TYPE = 'network_data_output_type'   # type of data you want to output - either just the network, just node attributes, or network with attributes in same table, either with attributes as additional rows or additional columns.
     PARAM_NETWORK_INCLUDE_HEADERS = 'network_include_headers'
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
-    PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
-    PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
-    PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
+    PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Subject.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
+    PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Subject.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
+    PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Subject.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
     PARAM_PERSON_QUERY_TYPE = "person_query_type"
     
     # node attributes
@@ -1559,7 +1559,7 @@ class NetworkDataOutput( SourcenetBase ):
 
                     # get authors
                     author_qs = current_article_data.article_author_set.all()
-                    source_qs = current_article_data.article_source_set.all()
+                    source_qs = current_article_data.get_quoted_article_sources_qs()
 
                     # call method to loop over authors and tie them to other
                     #    authors (if present) and eligible sources.

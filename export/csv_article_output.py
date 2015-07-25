@@ -33,7 +33,7 @@ import StringIO
 # Import the classes for our SourceNet application
 #from sourcenet.models import Article
 #from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 #from sourcenet.models import Person
 from sourcenet.models import Topic
 
@@ -494,7 +494,7 @@ class CsvArticleOutput( object ):
         # ...and output headers for columns of counts broken out by type.
         # loop over types in alphabetical order, appending each to list as we
         #    go.
-        for current_type in sorted( Article_Source.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
+        for current_type in sorted( Article_Subject.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
 
             # get count for type
             current_type_count = article_source_count + "_" + current_type
@@ -827,6 +827,7 @@ class CsvArticleOutput( object ):
         list_OUT = []
 
         # declare variables
+        article_source_set = None
         article_source_count = -1
         article_source_counts_by_type = None
         current_type = ''
@@ -844,7 +845,8 @@ class CsvArticleOutput( object ):
             if ( article_data_IN is not None ):
 
                 # yes.  Set the article count.
-                article_source_count = article_data_IN.article_source_set.count()
+                article_source_set = article_data_IN.get_quoted_article_sources_qs()
+                article_source_count = article_source_set.count()
 
             else:
 
@@ -874,7 +876,7 @@ class CsvArticleOutput( object ):
 
             # loop over the counts in alphabetical order of type, appending each to
             #    list as we go.
-            for current_type in sorted( Article_Source.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
+            for current_type in sorted( Article_Subject.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
 
                 # get count for type
                 if current_type in article_source_counts_by_type:
@@ -899,7 +901,7 @@ class CsvArticleOutput( object ):
             # output headers for columns of counts broken out by type.
             # loop over types in alphabetical order, appending each to list as
             #   we go.
-            for current_type in sorted( Article_Source.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
+            for current_type in sorted( Article_Subject.SOURCE_TYPE_TO_ID_MAP.iterkeys() ):
 
                 # set column header for type
                 current_type_count = article_source_count + "_" + current_type
@@ -919,8 +921,8 @@ class CsvArticleOutput( object ):
         """
             Method: create_source_list
 
-            Purpose: Accepts an output type, an optional Article_Source model
-               instance and an optional header prefix.  If output type is
+            Purpose: Accepts an output type, an optional Article_Subject model
+               instance for a source, and an optional header prefix.  If output type is
                "values" and model instance is passed in, uses the values in the
                instance to populate the list. If no instance, puts empty strings
                in all the columns.  If output type of "headers", creates list of
@@ -930,7 +932,7 @@ class CsvArticleOutput( object ):
 
             Params:
             - output_type_IN - output type, either "values" or "headers".
-            - article_source_IN - optional - Article_Source model instance to use to populate values for this author.
+            - article_source_IN - optional - Article_Subject instance to use to populate values for this author.
             - header_prefix_IN - optional - prefix to append to the beginning of each header.
 
             Returns:
@@ -956,7 +958,7 @@ class CsvArticleOutput( object ):
         # what is our output type?
         if ( output_type_IN == CsvArticleOutput.CSV_LIST_OUTPUT_TYPE_VALUES ):
 
-            # values - got an Article_Source model instance?
+            # values - got an Article_Subject model instance?
             if ( article_source_IN is not None ):
 
                 # got a source.  Use it to populate fields.
@@ -985,7 +987,7 @@ class CsvArticleOutput( object ):
                 source_organization = None
                 source_document = None
 
-            #-- END check to see if we have an Article_Source model instance --#
+            #-- END check to see if we have an Article_Subject model instance --#
 
         else:
 
@@ -1196,6 +1198,7 @@ class CsvArticleOutput( object ):
         article_authors = None
         current_author = None
         max_sources_IN = -1
+        article_source_set = None
         article_source_count = -1
         article_sources = None
         current_source = None
@@ -1250,7 +1253,8 @@ class CsvArticleOutput( object ):
             #-------------------------------------------------------------------
 
             # loop over sources
-            article_sources = article_data_IN.article_source_set.order_by( 'person' )
+            article_source_set = article_data_IN.get_quoted_article_sources_qs()
+            article_sources = article_source_set.order_by( 'person' )
             article_source_count = article_sources.count()
             for current_source in article_sources:
 
@@ -1349,6 +1353,7 @@ class CsvArticleOutput( object ):
         article_authors = None
         current_author = None
         max_sources_IN = -1
+        article_source_set = None
         article_source_count = -1
         article_sources = None
         current_source = None
@@ -1405,8 +1410,9 @@ class CsvArticleOutput( object ):
             #-------------------------------------------------------------------
 
             # loop over sources
-            article_source_count = article_data_IN.article_source_set.count()
-            article_sources = article_data_IN.article_source_set.order_by( 'person' )
+            article_source_set = article_data_IN.get_quoted_article_sources_qs()
+            article_source_count = article_source_set.count()
+            article_sources = article_source_set.order_by( 'person' )
             for current_source in article_sources:
 
                 # append source to list
@@ -1455,6 +1461,7 @@ class CsvArticleOutput( object ):
         article_authors = None
         current_author = None
         max_sources_IN = -1
+        article_source_set = None
         article_source_count = -1
         article_sources = None
         current_source = None
@@ -1533,7 +1540,8 @@ class CsvArticleOutput( object ):
             #-------------------------------------------------------------------
 
             # loop over sources, outputting a row for each.
-            article_sources = article_data_IN.article_source_set.order_by( 'person' )
+            article_source_set = article_data_IN.get_quoted_article_sources_qs()
+            article_sources = article_source_set.order_by( 'person' )
             article_source_count = article_sources.count()
 
             # check if we have any sources.  Should output article even if no
@@ -1608,6 +1616,7 @@ class CsvArticleOutput( object ):
         current_topic_count = -1
         current_location_count = -1
         current_author_count = -1
+        article_source_set = None
         current_source_count = -1
         topic_max = -1
         location_max = -1
@@ -1640,7 +1649,10 @@ class CsvArticleOutput( object ):
             current_topic_count = current_article_data.topics.count()
             current_location_count = current_article_data.locations.count()
             current_author_count = current_article_data.article_author_set.count()
-            current_source_count = current_article_data.article_source_set.count()
+            
+            # get sources, then count().
+            article_source_set = current_article_data.get_quoted_article_sources_qs()
+            current_source_count = article_source_set.count()
 
             # compare current counts to max counts, update max if current is
             #    greater.

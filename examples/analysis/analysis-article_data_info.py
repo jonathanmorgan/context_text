@@ -154,7 +154,7 @@ for article_data_instance in article_data_qs:
     coder_source_id_list = coder_to_source_id_list_map.get( current_coder_id, None )
     
     # get the QuerySet of sources for the Article_Data.
-    source_qs = article_data_instance.article_source_set.all()
+    source_qs = article_data_instance.get_quoted_article_sources_qs()
 
     # loop over sources.
     for article_source in source_qs:

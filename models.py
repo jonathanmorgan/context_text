@@ -1413,7 +1413,7 @@ class Person( Abstract_Person ):
 
                     instance_OUT.source = source_IN
                     
-                #-- END check to see if name passed in. --#
+                #-- END check to see if source of UUID passed in. --#
 
                 if ( name_IN is not None ):
 
@@ -1425,7 +1425,7 @@ class Person( Abstract_Person ):
 
                     instance_OUT.notes = notes_IN
                     
-                #-- END check to see if name passed in. --#
+                #-- END check to see if notes passed in. --#
                 
                 # save.
                 instance_OUT.save()
@@ -1680,7 +1680,7 @@ class Person_External_UUID( models.Model ):
             string_OUT += prefix_string + " ( " + self.source + " )"
             prefix_string = " - "
             
-        #-- END check to see if newspaper. --#
+        #-- END check to see if source. --#
             
         if ( self.uuid ):
         
@@ -1845,7 +1845,7 @@ class Article( models.Model ):
     #    we can track agreement, compare coding from different coders.
     #topics = models.ManyToManyField( Article_Topic )
     #authors = models.ManyToManyField( Article_Author )
-    #sources = models.ManyToManyField( Article_Source )
+    #subjects = models.ManyToManyField( Article_Subject )
     #locations = models.ManyToManyField( Article_Location, blank = True )
 
     #----------------------------------------------------------------------------
@@ -4286,7 +4286,7 @@ class Article_Data( models.Model ):
 
     # Changed to having a separate join table, not ManyToMany auto-generated one.
     #authors = models.ManyToManyField( Article_Author )
-    #sources = models.ManyToManyField( Article_Source )
+    #subjects = models.ManyToManyField( Article_Subject )
     
     # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
@@ -4311,6 +4311,30 @@ class Article_Data( models.Model ):
     #-- END method __str__() --#
 
 
+    def get_quoted_article_sources_qs( self ):
+    
+        '''
+        Retrieves a QuerySet that contains related Article_Subject instances
+           that are of subject_type "quoted".
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        
+        # get all article sources
+        qs_OUT = self.article_subject_set.all()
+        
+        # filter to just those with subject type of "quoted"
+        #    (Article_Subject.SUBJECT_TYPE_QUOTED).
+        qs_OUT = qs_OUT.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
+        
+        return qs_OUT
+    
+    #-- END method get_quoted_article_sources_qs() --#
+        
+            
     def get_source_counts_by_type( self ):
 
         '''
@@ -4337,8 +4361,8 @@ class Article_Data( models.Model ):
         current_source_type = ''
         current_type_count = -1
 
-        # grab types from Article_Source
-        types_dictionary = Article_Source.SOURCE_TYPE_TO_ID_MAP
+        # grab types from Article_Subject
+        types_dictionary = Article_Subject.SOURCE_TYPE_TO_ID_MAP
 
         # populate output dictionary with types
         for current_type in types_dictionary.iterkeys():
@@ -4349,7 +4373,7 @@ class Article_Data( models.Model ):
 
         # now get sources, loop over them, and for each, get source type, add
         #    one to the value in the hash for that type.
-        article_sources = self.article_source_set.all()
+        article_sources = self.get_quoted_article_sources_qs()
 
         for current_source in article_sources:
 
@@ -4506,7 +4530,7 @@ class Article_Person( models.Model ):
 
     #RELATION_TYPE_CHOICES = (
     #    ( "author", "Article Author" ),
-    #    ( "source", "Article Source" )
+    #    ( "subject", "Article Subject " )
     #)
 
     #----------------------------------------------------------------------------
@@ -4633,7 +4657,7 @@ class Article_Person( models.Model ):
             # are we also loading the person?
             id_OUT = my_person.id
 
-        #-- END check to make sure source has a person.
+        #-- END check to make sure there is an associated person.
 
         return id_OUT
 
@@ -4646,20 +4670,22 @@ class Article_Person( models.Model ):
             Method: is_connected()
 
             Purpose: accepts a parameter dictionary for specifying more rigorous
-               ways of including or ommitting connections.  In Article_Person,
-               and in child Article_Author, just always returns true if there is
-               a person reference.  In Article_Source, examines the
-               categorization of the source to determine if the source is
-               eligible to be classified as "connected" to the authors of the
-               story.  If "connected", returns True.  If not, returns False.  By
-               default, "Connected" = source of type "individual" with contact
-               type of "direct" or "event".  Eventually we can make this more
-               nuanced, allow filtering here based on input parameters, and
-               allow different types of connections to be requested.  For now,
-               just need it to work.
+               ways of including or ommitting connections.  Returns true if
+               there is a person reference.
+               
+            Inheritance: In Article_Person, and in child Article_Author, just
+               always returns true if there is a person reference.  In 
+               Article_Subject, examines the categorization of the source to
+               determine if the source is eligible to be classified as
+               "connected" to the authors of the story.  If "connected", returns
+               True.  If not, returns False.  By default, "Connected" = source
+               of type "individual" with contact type of "direct" or "event".
+               Eventually we can make this more nuanced, allow filtering here
+               based on input parameters, and allow different types of
+               connections to be requested.  For now, just need it to work.
 
             Params:
-            - param_dict_IN - source whose connectedness we need to check.
+            - param_dict_IN - contains person whose connectedness we need to check.
 
             Returns:
             - boolean - If "connected", returns True.  If not, returns False.
@@ -4904,13 +4930,22 @@ class Alternate_Author_Match( models.Model ):
 #= End Alternate_Author_Match Model ======================================================
 
 
-# Article_Source model
+# Article_Subject model
 @python_2_unicode_compatible
-class Article_Source( Article_Person ):
+class Article_Subject( Article_Person ):
 
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = 'include_capacities'
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = 'exclude_capacities'
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = 'include_source_contact_types'
+    
+    # subjet types
+    SUBJECT_TYPE_MENTIONED = 'mentioned'
+    SUBJECT_TYPE_QUOTED = 'quoted'
+
+    SUBJECT_TYPE_CHOICES = (
+        ( SUBJECT_TYPE_MENTIONED, "Subject Mentioned" ),
+        ( SUBJECT_TYPE_QUOTED, "Source Quoted" ),
+    )
 
     # Source type stuff
     SOURCE_TYPE_ANONYMOUS = 'anonymous'
@@ -5007,6 +5042,7 @@ class Article_Source( Article_Person ):
     )
 
     source_type = models.CharField( max_length = 255, choices = SOURCE_TYPE_CHOICES, blank = True, null = True )
+    subject_type = models.CharField( max_length = 255, choices = SUBJECT_TYPE_CHOICES, blank = True, null = True )
     title = models.CharField( max_length = 255, blank = True, null = True )
     more_title = models.CharField( max_length = 255, blank = True, null = True )
     organization = models.ForeignKey( Organization, blank = True, null = True )
@@ -5172,13 +5208,13 @@ class Article_Source( Article_Person ):
 
         # first, call parent method (takes care of checking to see if there is a
         #    person in the person reference).
-        is_connected_OUT = super( Article_Source, self ).is_connected( param_dict_IN )
+        is_connected_OUT = super( Article_Subject, self ).is_connected( param_dict_IN )
 
         # Now, check the source type.
         current_source_type = self.source_type
 
         # correct source type?
-        if ( current_source_type != Article_Source.SOURCE_TYPE_INDIVIDUAL ):
+        if ( current_source_type != Article_Subject.SOURCE_TYPE_INDIVIDUAL ):
 
             # no.  Set output flag to false.
             is_connected_OUT = False
@@ -5191,10 +5227,10 @@ class Article_Source( Article_Person ):
             # we have a parameter dictionary - anything in it related to us?
             
             # Do we have a list of source contact types that we are to allow?
-            if Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST in param_dict_IN:
+            if Article_Subject.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST in param_dict_IN:
             
                 # first, retrieve the value for the key
-                contact_type_in_list_IN = param_dict_IN.get( Article_Source.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST, None )
+                contact_type_in_list_IN = param_dict_IN.get( Article_Subject.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST, None )
                 
                 # is it populated and does it contain at least one thing?
                 if ( ( contact_type_in_list_IN is not None ) and ( len( contact_type_in_list_IN ) > 0 ) ):
@@ -5215,8 +5251,8 @@ class Article_Source( Article_Person ):
                     pass
                     
                     # old default: Only acceptable contact types were:
-                    # - Article_Source.SOURCE_CONTACT_TYPE_DIRECT
-                    # - Article_Source.SOURCE_CONTACT_TYPE_EVENT
+                    # - Article_Subject.SOURCE_CONTACT_TYPE_DIRECT
+                    # - Article_Subject.SOURCE_CONTACT_TYPE_EVENT
                     # if other than those, not connected.
                 
                 #-- END check to see if list is populated.
@@ -5225,10 +5261,10 @@ class Article_Source( Article_Person ):
             
             # Do we have list of source capacities to either
             #    include or exclude?
-            if Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST in param_dict_IN:
+            if Article_Subject.PARAM_SOURCE_CAPACITY_INCLUDE_LIST in param_dict_IN:
                 
                 # get include list.
-                capacity_in_list_IN = param_dict_IN[ Article_Source.PARAM_SOURCE_CAPACITY_INCLUDE_LIST ]
+                capacity_in_list_IN = param_dict_IN[ Article_Subject.PARAM_SOURCE_CAPACITY_INCLUDE_LIST ]
 
                 # see if our capacity is in the include list.
                 current_source_capacity = self.source_capacity
@@ -5242,10 +5278,10 @@ class Article_Source( Article_Person ):
 
             #-- END check to see if we have an include list. --#
 
-            if Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST in param_dict_IN:
+            if Article_Subject.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST in param_dict_IN:
 
                 # get include list.
-                capacity_not_in_list_IN = param_dict_IN[ Article_Source.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST ]
+                capacity_not_in_list_IN = param_dict_IN[ Article_Subject.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST ]
 
                 # see if our capacity is in the include list.
                 current_source_capacity = self.source_capacity
@@ -5273,13 +5309,13 @@ class Article_Source( Article_Person ):
            and deals with each appropriately.  person_match_list is a list of 
            Person instances of people who might be a match for a given name
            string.  For each, this method:
-           - checks to see if there is an Alternate_Author_Match present for
+           - checks to see if there is an Alternate_Subject_Match present for
               that person.
            - if so, moves on.
            - if not, makes one.
         '''
 
-        #print( "&&&&&&&& In Article_Source process_alternate_matches() &&&&&&&&" )
+        #print( "&&&&&&&& In Article_Subject process_alternate_matches() &&&&&&&&" )
         
         #define variables
         person_list = None
@@ -5287,7 +5323,7 @@ class Article_Source( Article_Person ):
         current_person = ""
         alt_match_qs = None
         alt_match_count = -1
-        alt_author_match = None
+        alt_subject_match = None
         
         # get person list
         person_list = self.person_match_list
@@ -5302,19 +5338,19 @@ class Article_Source( Article_Person ):
                 # loop
                 for current_person in person_list:
                 
-                    # see if there is already an Alternate_Source_Match for the
+                    # see if there is already an Alternate_Subject_Match for the
                     #    Person.
-                    alt_match_qs = self.alternate_source_match_set.filter( person = current_person )
+                    alt_match_qs = self.alternate_subject_match_set.filter( person = current_person )
                     
                     # got one?
                     alt_match_count = alt_match_qs.count()
                     if ( alt_match_count == 0 ):
                     
                         # no.  Make one.
-                        alt_author_match = Alternate_Source_Match()
-                        alt_author_match.article_source = self
-                        alt_author_match.person = current_person
-                        alt_author_match.save()
+                        alt_subject_match = Alternate_Subject_Match()
+                        alt_subject_match.article_subject = self
+                        alt_subject_match.person = current_person
+                        alt_subject_match.save()
                         
                     # Eventually, might want to check if more than one...
                         
@@ -5329,19 +5365,19 @@ class Article_Source( Article_Person ):
     #-- END function process_alternate_matches() --#
 
 
-#= End Article_Source Model ======================================================
+#= End Article_Subject Model ======================================================
 
 
-# Alternate_Source_Match model
+# Alternate_Subject_Match model
 @python_2_unicode_compatible
-class Alternate_Source_Match( models.Model ):
+class Alternate_Subject_Match( models.Model ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
 
 
-    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
     person = models.ForeignKey( Person, blank = True, null = True )
 
 
@@ -5362,11 +5398,11 @@ class Alternate_Source_Match( models.Model ):
             
         #-- END check for ID. --#
 
-        if ( self.article_source ):
+        if ( self.article_subject ):
         
-            string_OUT += str( self.article_source ) + " alternate = "
+            string_OUT += str( self.article_subject ) + " alternate = "
         
-        #-- END check to see if article_source. --#
+        #-- END check to see if article_subject. --#
         
         # got associated person?  We'd better...
         if ( self.person ):
@@ -5380,7 +5416,7 @@ class Alternate_Source_Match( models.Model ):
     #-- END __str__() method --#
 
 
-#= End Alternate_Source_Match Model ======================================================
+#= End Alternate_Subject_Match Model ======================================================
 
 
 # Abstract_Selected_Text model
@@ -5455,7 +5491,7 @@ class Abstract_Selected_Text( models.Model ):
         
             string_OUT += " ( index: " + str( self.value_offset ) + " ) : "
         
-        #-- END check to see if article_source. --#
+        #-- END check to see if value_offset. --#
         
         # got associated text?...
         if ( self.value ):
@@ -5516,17 +5552,17 @@ class Abstract_Selected_Text( models.Model ):
 #-- END abstract class Abstract_Selected_Text --#
 
 
-# Article_Source_Quotation model
+# Article_Subject_Mention model
 @python_2_unicode_compatible
-class Article_Source_Mention( Abstract_Selected_Text ):
+class Article_Subject_Mention( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
 
 
-    # source in a given article whom this quote belongs to.
-    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    # subject in a given article whom this quote belongs to.
+    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
     
     # is name a pronoun?
     is_speaker_name_pronoun = models.BooleanField( default = False )
@@ -5561,11 +5597,11 @@ class Article_Source_Mention( Abstract_Selected_Text ):
         
         #-- END check to see if got anything in list --#
 
-        if ( self.article_source ):
+        if ( self.article_subject ):
         
-            string_OUT += str( self.article_source ) + " : "
+            string_OUT += str( self.article_subject ) + " : "
         
-        #-- END check to see if article_source. --#
+        #-- END check to see if article_subject. --#
         
         # got associated text?...
         if ( self.value_in_context ):
@@ -5582,20 +5618,20 @@ class Article_Source_Mention( Abstract_Selected_Text ):
 
     #-- END __str__() method --#
 
-#= End Article_Source_Mention Model ======================================================
+#= End Article_Subject_Mention Model ======================================================
 
 
-# Article_Source_Quotation model
+# Article_Subject_Quotation model
 @python_2_unicode_compatible
-class Article_Source_Quotation( Abstract_Selected_Text ):
+class Article_Subject_Quotation( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
 
 
-    # source in a given article whom this quote belongs to.
-    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+    # subject in a given article whom this quote belongs to.
+    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
     
     # value_with_attribution
     value_with_attribution = models.TextField( blank = True, null = True )
@@ -5640,11 +5676,11 @@ class Article_Source_Quotation( Abstract_Selected_Text ):
         
         #-- END check to see if got anything in list --#
 
-        if ( self.article_source ):
+        if ( self.article_subject ):
         
-            string_OUT += str( self.article_source ) + " : "
+            string_OUT += str( self.article_subject ) + " : "
         
-        #-- END check to see if article_source. --#
+        #-- END check to see if article_subject. --#
         
         # got associated quotation?...
         if ( self.value ):
@@ -5657,14 +5693,14 @@ class Article_Source_Quotation( Abstract_Selected_Text ):
 
     #-- END __str__() method --#
 
-#= End Article_Source_Quotation Model ======================================================
+#= End Article_Subject_Quotation Model ======================================================
 
 
-# Source_Organization model
+# Subject_Organization model
 @python_2_unicode_compatible
-class Source_Organization( models.Model ):
+class Subject_Organization( models.Model ):
 
-    article_source = models.ForeignKey( Article_Source )
+    article_subject = models.ForeignKey( Article_Subject )
     organization = models.ForeignKey( Organization, blank = True, null = True )
     title = models.CharField( max_length = 255, blank = True )
 
@@ -5685,13 +5721,13 @@ class Source_Organization( models.Model ):
             string_OUT = string_OUT + " ( " + self.title + " )"
         return string_OUT
 
-#= End Source_Organization Model ======================================================
+#= End Subject_Organization Model ======================================================
 
 
-# Source_Organization model
-#class Source_Organization( models.Model ):
+# Subject_Organization model
+#class Subject_Organization( models.Model ):
 
-#    article_source = models.ForeignKey( Article_Source, blank = True, null = True )
+#    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
 #    organization = models.ForeignKey( Organization, blank = True, null = True )
 #    title = models.CharField( max_length = 255, blank = True )
 
@@ -5716,7 +5752,7 @@ class Source_Organization( models.Model ):
 
 #        return string_OUT
 
-#= End Source_Organization Model ======================================================
+#= End Subject_Organization Model ======================================================
 
 
 # Article_Location model

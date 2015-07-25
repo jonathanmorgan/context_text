@@ -62,8 +62,9 @@ for article_data in article_data_qs:
     # how many Article_Author?
     article_author_count = article_data.article_author_set.count()
     
-    # how many Article_Source
-    article_source_count = article_data.article_source_set.count()
+    # how many Article_Subject sources?
+    article_source_set = article_data.get_quoted_article_sources_qs()
+    article_source_count = article_source_set.count()
 
     print( "- Article_Data " + str( article_data.id ) + " - authors: " + str( article_author_count ) + "; sources: " + str( article_source_count ) + "; details: " + str( article_data ) )
     
@@ -78,12 +79,12 @@ for article_data in article_data_qs:
     #-- END loop over article_author_set --#
     
     # loop over article_sources
-    for article_source in article_data.article_source_set.all():
+    for article_source in article_source_set:
     
         # add id to data list
         article_source_id_list.append( str( article_source.id ) )
 
-        print( "    - ==> Article_Source: " + str( article_source ) )
+        print( "    - ==> Article_Subject: " + str( article_source ) )
         
     #-- END loop over article_author_set --#
     
@@ -120,7 +121,7 @@ print( "\n\nID lists:\n" )
 print( "- Article ( " + str( len( article_id_list ) ) + " ): " + str( ", ".join( article_id_list ) ) )
 print( "- Article_Data ( " + str( len( article_data_id_list ) ) + " ): " + str( ", ".join( article_data_id_list ) ) )
 print( "- Article_Author ( " + str( len( article_author_id_list ) ) + " ): " + str( ", ".join( article_author_id_list ) ) )
-print( "- Article_Source ( " + str( len( article_source_id_list ) ) + " ): " + str( ", ".join( article_source_id_list ) ) )
+print( "- Article_Subject sources ( " + str( len( article_source_id_list ) ) + " ): " + str( ", ".join( article_source_id_list ) ) )
 
 # delete Article_Data and children?
 if ( do_delete == False ):

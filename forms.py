@@ -90,7 +90,7 @@ from sourcenet.export.csv_article_output import CsvArticleOutput
 from sourcenet.export.network_output import NetworkOutput
 #from sourcenet.export.network_data_output import NetworkDataOutput
 from sourcenet.models import Article
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
 
@@ -273,25 +273,25 @@ class RelationSelectForm( forms.Form ):
     # to have them all selected, need to make a list of the values in choices
     #    to place in "initial".
     initial_selected_list = []
-    for selected_item in Article_Source.SOURCE_CONTACT_TYPE_CHOICES:
+    for selected_item in Article_Subject.SOURCE_CONTACT_TYPE_CHOICES:
     
         initial_selected_list.append( selected_item[ 0 ] )
         
     #-- END loop to populate initial selected items list --#
         
     include_source_contact_types = forms.MultipleChoiceField( required = False,
-        choices = Article_Source.SOURCE_CONTACT_TYPE_CHOICES,
+        choices = Article_Subject.SOURCE_CONTACT_TYPE_CHOICES,
         widget = forms.widgets.CheckboxSelectMultiple,
         initial = ( initial_selected_list ),
         label = "relations - Include source contact types" )
     
     # include and exclude source capacities
     include_capacities = forms.MultipleChoiceField( required = False,
-        choices = Article_Source.SOURCE_CAPACITY_CHOICES,
+        choices = Article_Subject.SOURCE_CAPACITY_CHOICES,
         label = "relations - Include source capacities" )
 
     exclude_capacities = forms.MultipleChoiceField( required = False,
-        choices = Article_Source.SOURCE_CAPACITY_CHOICES,
+        choices = Article_Subject.SOURCE_CAPACITY_CHOICES,
         label = "relations - Exclude source capacities" )
 
 #-- END RelationSelectForm -----------------------------------------------------#

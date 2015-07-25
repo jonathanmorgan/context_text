@@ -557,7 +557,7 @@ class Reliability_Names( object ):
                 
                 # get lists of authors and sources.
                 article_data_author_qs = current_article_data.article_author_set.all()
-                article_data_source_qs = current_article_data.article_source_set.all()
+                article_data_source_qs = current_article_data.get_quoted_article_sources_qs()
                 
                 # call process_person_qs for authors.
                 author_info_dict = self.process_person_qs( article_data_coder, article_data_author_qs, author_info_dict )
@@ -586,7 +586,7 @@ class Reliability_Names( object ):
         
         '''
         Accepts User instance of user who coded the Article, Article_Person QuerySet
-           (either Article_Author or Article_Source) and a dictionary to be used to
+           (either Article_Author or Article_Subject) and a dictionary to be used to
            build up a map of IDs to information on people found in a given article.
            Loops over entries and builds up this dictionary that maps IDs of persons
            identified in the text to details on the person (including the Person's

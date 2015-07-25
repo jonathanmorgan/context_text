@@ -29,7 +29,7 @@ if __name__ == "__main__":
 # Import the classes for our SourceNet application
 #from sourcenet.models import Article
 #from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
 

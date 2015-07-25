@@ -8,6 +8,7 @@ article_data_qs = None
 article_data_count = -1
 article_data = None
 article_author_count = -1
+article_source_set = None
 article_source_count = -1
 related_article = None
 article_tags = []
@@ -52,8 +53,10 @@ for article_data in article_data_qs:
     # how many Article_Author?
     article_author_count = article_data.article_author_set.count()
     
-    # how many Article_Source
-    article_source_count = article_data.article_source_set.count()
+    # how many sources (Article_Subject with subject_type of
+    #    SUBJECT_TYPE_QUOTED).
+    article_source_set = article_data.get_quoted_article_sources_qs()
+    article_source_count = article_source_set.count()
 
     print( "\n\n============================================================\n" )
     print( "- Article_Data " + str( article_data.id ) + " - status: " + article_data.status + "; authors: " + str( article_author_count ) + "; sources: " + str( article_source_count ) + "; coder_type: " + article_data.coder_type + "; details: " + str( article_data ) )
@@ -88,20 +91,20 @@ for article_data in article_data_qs:
     #-- END loop over article_author_set --#
     
     # loop over article_sources
-    for article_source in article_data.article_source_set.all():
+    for article_source in article_source_set:
     
         # add id to data list
         article_source_id_list.append( str( article_source.id ) )
 
         # Get quotations
-        source_quotation_qs = article_source.article_source_quotation_set.all()
+        source_quotation_qs = article_source.article_subject_quotation_set.all()
         source_quotation_count = source_quotation_qs.count()
 
         # Get mentions
-        source_mention_qs = article_source.article_source_mention_set.all()
+        source_mention_qs = article_source.article_subject_mention_set.all()
         source_mention_count = source_mention_qs.count()
             
-        print( "\n    - ====> Article_Source: " + str( article_source ) + " ( quotes: " + str( source_quotation_count ) + "; mentions: " + str( source_mention_count ) + " )" )
+        print( "\n    - ====> Article_Subject source: " + str( article_source ) + " ( quotes: " + str( source_quotation_count ) + "; mentions: " + str( source_mention_count ) + " )" )
         
         # output detail?
         if ( output_detail == True ):
@@ -138,4 +141,4 @@ print( "\n\nID lists:\n" )
 print( "- Article ( " + str( len( article_id_list ) ) + " ): " + str( ", ".join( article_id_list ) ) )
 print( "- Article_Data ( " + str( len( article_data_id_list ) ) + " ): " + str( ", ".join( article_data_id_list ) ) )
 print( "- Article_Author ( " + str( len( article_author_id_list ) ) + " ): " + str( ", ".join( article_author_id_list ) ) )
-print( "- Article_Source ( " + str( len( article_source_id_list ) ) + " ): " + str( ", ".join( article_source_id_list ) ) )
+print( "- Article_Subject source ( " + str( len( article_source_id_list ) ) + " ): " + str( ", ".join( article_source_id_list ) ) )

@@ -5,7 +5,7 @@ from nameparser import HumanName
 
 # sourcenet Person model
 from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 from sourcenet.models import Person_Newspaper
 

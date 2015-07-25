@@ -42,9 +42,9 @@ from python_utilities.sequences.sequence_helper import SequenceHelper
 # models
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Data_Notes
-from sourcenet.models import Article_Source
-from sourcenet.models import Article_Source_Mention
-from sourcenet.models import Article_Source_Quotation
+from sourcenet.models import Article_Subject
+from sourcenet.models import Article_Subject_Mention
+from sourcenet.models import Article_Subject_Quotation
 from sourcenet.models import Article_Text
 from sourcenet.models import Person
 
@@ -624,6 +624,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         person_name = ""
         person_details_dict = {}
         source_person = None
+        article_source_set = None
         article_source_qs = None
         article_source_count = -1
         person_paper = None
@@ -736,8 +737,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         
                         # try looking up source just like we look up authors.
             
-                        # make empty article source to work with, for now.
-                        article_source = Article_Source()
+                        # make empty article subject to work with, for now.
+                        article_source = Article_Subject()
+                        article_source.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
                         
                         # prepare person details.
                         person_details_dict = {}
@@ -748,7 +750,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
             
                         # lookup person - returns person and confidence score inside
-                        #    Article_Source instance.
+                        #    Article_Subject instance.
                         article_source = self.lookup_person( article_source, 
                                                              person_name,
                                                              create_if_no_match_IN = True,
@@ -759,7 +761,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         # got a person?
                         if ( source_person is not None ):
             
-                            # One Article_Source per person, and then have a new thing to
+                            # One Article_Subject per person, and then have a new thing to
                             #    hold quotations that hangs off that.
                             # At any rate, make method to process person/quote that you pass:
                             # - source_person
@@ -768,10 +770,13 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                             # - quote JSON?  OR quotes list for person, from person_to_quotes_map...?
                             # - ...?
                             
-                            # Now, we need to deal with Article_Source instance.  First, see
+                            # Now, we need to deal with Article_Subject instance.  First, see
                             #    if there already is one for this name.  If so, do nothing.
                             #    If not, make one.
-                            article_source_qs = article_data_IN.article_source_set.filter( person = source_person )
+
+                            # get sources
+                            article_source_set = article_data_IN.get_quoted_article_sources_qs()
+                            article_source_qs = article_source_set.filter( person = source_person )
                             article_source_count = article_source_qs.count()
                             
                             # got anything?
@@ -779,8 +784,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                                          
                                 # no - add - more stuff to set.  Need to see what we can get.
                                 
-                                # use the article_source created above.
-                                #article_source = Article_Source()
+                                # use the source Article_Subject created above.
+                                #article_source = Article_Subject()
                             
                                 article_source.article_data = article_data_IN
                                 article_source.person = source_person
@@ -788,12 +793,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                 # confidence level set in lookup_person() method.
                                 #article_source.match_confidence_level = 1.0
                 
-                                article_source.source_type = Article_Source.SOURCE_TYPE_INDIVIDUAL
+                                article_source.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
                                 article_source.title = ""
                                 article_source.more_title = ""
                                 article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
                                 #article_source.document = None
-                                article_source.source_contact_type = Article_Source.SOURCE_CONTACT_TYPE_OTHER
+                                article_source.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
                                 #article_source.source_capacity = None
                                 #article_source.localness = None
                                 article_source.notes = ""
@@ -811,11 +816,11 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                 #    a separate method.
                                 #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
             
-                                my_logger.debug( "In " + me + ": adding Article_Source instance for " + str( source_person ) + "." )
+                                my_logger.debug( "In " + me + ": adding Article_Subject source instance for " + str( source_person ) + "." )
                 
                             elif ( article_source_count == 1 ):
                             
-                                my_logger.debug( "In " + me + ": Article_Source instance already exists for " + str( source_person ) + "." )
+                                my_logger.debug( "In " + me + ": Article_Subject source instance already exists for " + str( source_person ) + "." )
                                 
                                 # retrieve article source from query set.
                                 article_source = article_source_qs.get()
@@ -826,9 +831,9 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                             
                                 # neither 0 or 1 sources - either invalid or multiple,
                                 #    either is not right.
-                                my_logger.debug( "In " + me + ": Article_Source count for " + str( source_person ) + " = " + str( article_source_count ) + ".  What to do?" )
+                                my_logger.debug( "In " + me + ": Article_Subject source count for " + str( source_person ) + " = " + str( article_source_count ) + ".  What to do?" )
                                                     
-                            #-- END check if need new Article_Source instance --#
+                            #-- END check if need new Article_Subject instance --#
                             
                             # make sure we have an article_source
                             if ( ( article_source is not None ) and ( article_source.id ) ):
@@ -883,7 +888,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                     
                                 #-- END loop over quotations --#
                                 
-                            #-- END check to make sure we have an Article_Source --#
+                            #-- END check to make sure we have an Article_Subject --#
             
                         else:
                         
@@ -923,14 +928,14 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END function process_json_api_response() --#
 
 
-    def process_json_mention( self, article_IN, article_source_IN, mention_JSON_IN ):
+    def process_json_mention( self, article_IN, article_subject_IN, mention_JSON_IN ):
     
         '''
-        Accepts Article, Article_Source, and JSON of a mention of the source.
-           Retrieves data from JSON.  Looks for mention that has same length,
-           offset, and value.  If present, does nothing.  If not, makes an
-           Article_Source_Mention instance for the mention, populates it, saves
-           it, then returns it.  If error, returns None.
+        Accepts Article, Article_Subject instance, and JSON of a
+           mention of the subject.  Retrieves data from JSON.  Looks for mention
+           that has same length, offset, and value.  If present, does nothing.
+           If not, makes an Article_Subject_Mention instance for the mention,
+           populates it, saves it, then returns it.  If error, returns None.
            
         Preconditions:  Assumes all input variables will be populated
            appropriately.  If any are missing or set to None, will break,
@@ -1037,7 +1042,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # is this mention already stored?
         
         # Filter on exact, offset, length, prefix, and suffix.
-        mention_qs = article_source_IN.article_source_mention_set.filter( value = mention_exact )
+        mention_qs = article_subject_IN.article_subject_mention_set.filter( value = mention_exact )
         mention_qs = mention_qs.filter( value_index = mention_offset )
         mention_qs = mention_qs.filter( value_length = mention_length )
         mention_qs = mention_qs.filter( context_before = mention_prefix )
@@ -1048,10 +1053,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         if ( mention_count == 0 ):
                         
             # no.  Create one.
-            current_mention = Article_Source_Mention()
+            current_mention = Article_Subject_Mention()
             
-            # store the Article_Source in it.
-            current_mention.article_source = article_source_IN
+            # store the Article_Subject in it.
+            current_mention.article_subject = article_subject_IN
             
             # store information from OpenCalais
             current_mention.value = mention_exact
@@ -1360,14 +1365,14 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method process_json_mention() --#
 
         
-    def process_json_quotation( self, article_IN, article_source_IN, quotation_URI_IN, quotation_JSON_IN ):
+    def process_json_quotation( self, article_IN, article_subject_IN, quotation_URI_IN, quotation_JSON_IN ):
     
         '''
-        Accepts Article, Article_Source, OpenCalais URI of a quotation, and JSON
-           of a quotation attributed to the source.  Uses URI to check if the
-           quotation has already been attributed to the source.  If so, returns
-           the instance.  If not, creates an instance and saves it, then returns
-           it.  If error, returns None.
+        Accepts Article, Article_Subject of a source, OpenCalais URI of a
+           quotation, and JSON of a quotation attributed to the source.  Uses
+           URI to check if the quotation has already been attributed to the
+           source.  If so, returns the instance.  If not, creates an instance
+           and saves it, then returns it.  If error, returns None.
            
         Preconditions:  Assumes all input variables will be populated
            appropriately.  If any are missing or set to None, will break,
@@ -1446,17 +1451,17 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # need to see if this quotation has already been stored.
 
         # Filter on UUID from Quotation JSON object.
-        quotation_qs = article_source_IN.article_source_quotation_set.filter( uuid = quotation_URI_IN )
+        quotation_qs = article_subject_IN.article_subject_quotation_set.filter( uuid = quotation_URI_IN )
                         
         # got one?
         quotation_count = quotation_qs.count()
         if ( quotation_count == 0 ):
                         
             # no.  Create one.
-            current_quotation = Article_Source_Quotation()
+            current_quotation = Article_Subject_Quotation()
             
-            # store the Article_Source in it.
-            current_quotation.article_source = article_source_IN
+            # store the Article_Subject in it.
+            current_quotation.article_subject = article_subject_IN
             
             # get actual quotation information from JSON
             
@@ -1729,13 +1734,13 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             # Deferring handling of attribution information for now.
             # fields to track locations of data this coding was based on within
             #    article.  References are based on results of ParsedArticle.parse().
-            #article_source.attribution_verb_word_index = -1
-            #article_source.attribution_verb_word_number = -1
-            #article_source.attribution_paragraph_number = -1
-            #article_source.attribution_speaker_name_string = -1
-            #article_source.is_speaker_name_pronoun = False
-            #article_source.attribution_speaker_name_index_range = ""
-            #article_source.attribution_speaker_name_word_range = ""
+            #article_subject.attribution_verb_word_index = -1
+            #article_subject.attribution_verb_word_number = -1
+            #article_subject.attribution_paragraph_number = -1
+            #article_subject.attribution_speaker_name_string = -1
+            #article_subject.is_speaker_name_pronoun = False
+            #article_subject.attribution_speaker_name_index_range = ""
+            #article_subject.attribution_speaker_name_word_range = ""
             
             # save the quotation instance.
             current_quotation.save()

@@ -389,7 +389,7 @@ class NetworkOutput( SourcenetBase ):
                 person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
 
                 # retrieve sources and add them to dict
-                source_qs = current_article_data.article_source_set.all()
+                source_qs = current_article_data.get_quoted_article_sources_qs()
                 person_dict_OUT = self.add_people_to_dict( source_qs, person_dict_OUT, load_person_IN )
 
             #-- END loop over articles --#

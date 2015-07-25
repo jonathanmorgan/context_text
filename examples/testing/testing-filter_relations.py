@@ -1,7 +1,7 @@
 # imports
 from sourcenet.models import Article
 from sourcenet.models import Article_Data
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 
 # Django imports
 from django.db.models import Q
@@ -64,8 +64,8 @@ article_data_qs = article_data_qs.distinct( "article_id" )
 print( "- after distinct( \"article\" ) filtering: " + str( article_data_qs.count() ) ) # 121
 
 # valid contact types.
-#valid_contact_type_list = [ Article_Source.SOURCE_CONTACT_TYPE_DIRECT, Article_Source.SOURCE_CONTACT_TYPE_EVENT, Article_Source.SOURCE_CONTACT_TYPE_OTHER ]
-valid_contact_type_list = [ Article_Source.SOURCE_CONTACT_TYPE_DIRECT, Article_Source.SOURCE_CONTACT_TYPE_EVENT ]
+#valid_contact_type_list = [ Article_Subject.SOURCE_CONTACT_TYPE_DIRECT, Article_Subject.SOURCE_CONTACT_TYPE_EVENT, Article_Subject.SOURCE_CONTACT_TYPE_OTHER ]
+valid_contact_type_list = [ Article_Subject.SOURCE_CONTACT_TYPE_DIRECT, Article_Subject.SOURCE_CONTACT_TYPE_EVENT ]
 
 # now, count how many article_source of each contact type.
 contact_type_count_dict = {}
@@ -82,7 +82,7 @@ source_person_count = 0
 for current_article_data in article_data_qs:
 
     # get list of article sources.
-    article_source_qs = current_article_data.article_source_set.all()
+    article_source_qs = current_article_data.get_quoted_article_sources_qs()
     
 #===============================================================================
 # Article Sources.
@@ -104,7 +104,7 @@ for current_article_data in article_data_qs:
         source_type = current_article_source.source_type
         
         # only process if individual
-        if ( ( source_type is not None ) and ( source_type == Article_Source.SOURCE_TYPE_INDIVIDUAL ) ):
+        if ( ( source_type is not None ) and ( source_type == Article_Subject.SOURCE_TYPE_INDIVIDUAL ) ):
         
             # increment counter.
             individual_source_count += 1

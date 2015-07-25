@@ -74,7 +74,7 @@ from sourcenet.export.network_output import NetworkOutput
 from sourcenet.models import Article
 #from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
-#from sourcenet.models import Article_Source
+#from sourcenet.models import Article_Subject
 #from sourcenet.models import Person
 #from sourcenet.models import Topic
 

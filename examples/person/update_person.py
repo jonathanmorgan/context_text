@@ -2,7 +2,7 @@
 
 # sourcenet Person model
 from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 from sourcenet.models import Person_Newspaper
 
@@ -57,8 +57,7 @@ if ( DO_UPDATE_PERSONS == True ):
         # build list of related newspapers
         current_person_newspaper_list = []
         
-        # check to see if there is an Article_Author or Article_Source for the
-        #    person.
+        # check to see if there is an Article_Author for the person.
         current_person_author_qs = Article_Author.objects.filter( person = current_person )
         
         # got any Article_Author records?
@@ -88,18 +87,17 @@ if ( DO_UPDATE_PERSONS == True ):
             
         # end check to see if related Article_Author records. --#
         
-        # check to see if there is an Article_Author or Article_Source for the
-        #    person.
-        current_person_source_qs = Article_Source.objects.filter( person = current_person )
+        # check to see if there is an Article_Subject for the person.
+        current_person_subject_qs = Article_Subject.objects.filter( person = current_person )
         
-        # got any Article_Source records?
-        if ( current_person_source_qs.count() > 0 ):
+        # got any Article_Subject records?
+        if ( current_person_subject_qs.count() > 0 ):
         
             # got at least one source record.
-            for current_person_source in current_person_source_qs:
+            for current_person_subject in current_person_subject_qs:
             
                 # get article_data
-                current_person_article_data = current_person_source.article_data
+                current_person_article_data = current_person_subject.article_data
                 
                 # get article
                 current_person_article = current_person_article_data.article
@@ -115,9 +113,9 @@ if ( DO_UPDATE_PERSONS == True ):
                     
                 #-- END check to see if newspaper in newspaper list. --#
                 
-            #-- END loop over Article_Source records. --#
+            #-- END loop over Article_Subject records. --#
             
-        # end check to see if related Article_Source records. --#
+        # end check to see if related Article_Subject records. --#
         
         print( "- Newspaper list: " + str( current_person_newspaper_list ) )
 

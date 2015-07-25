@@ -2,7 +2,7 @@
 
 # sourcenet Person model
 from sourcenet.models import Article_Author
-from sourcenet.models import Article_Source
+from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 
 # constants-ish
@@ -20,11 +20,11 @@ article_author_qs = None
 article_author = None
 article_author_id = -1
 article_author_count = -1
-article_source_id_list = []
-article_source_qs = None
-article_source = None
-article_source_id = -1
-article_source_count = -1
+article_subject_id_list = []
+article_subject_qs = None
+article_subject = None
+article_subject_id = -1
+article_subject_count = -1
 
 # first, set the IDs of the persons we will be switching from and to.
 
@@ -41,10 +41,10 @@ TO_person = Person.objects.get( id = TO_person_id )
 # make sure we found one for each.
 if ( ( FROM_person is not None ) and ( TO_person is not None ) ):
 
-    # find all Article_Source and Article_Author records that refer the the FROM
+    # find all Article_Subject and Article_Author records that refer the the FROM
     #    person.
     article_author_qs = FROM_person.sourcenet_article_author_original_person_set.all()
-    article_source_qs = FROM_person.sourcenet_article_source_original_person_set.all()
+    article_subject_qs = FROM_person.sourcenet_article_subject_original_person_set.all()
     
     # loop over author records
     for article_author in article_author_qs:
@@ -71,30 +71,30 @@ if ( ( FROM_person is not None ) and ( TO_person is not None ) ):
     
     #-- END loop over authors --#
 
-    # loop over source records
-    for article_source in article_source_qs:
+    # loop over subject records
+    for article_subject in article_subject_qs:
     
         # get ID, add to list.
-        article_source_id = article_source.id
-        article_source_id_list.append( article_source_id )
+        article_subject_id = article_subject.id
+        article_subject_id_list.append( article_subject_id )
         
         # do updates?
         if ( DO_UPDATES == True ):
         
             # yes.
             
-            # then set article_source.person to article_source.original_person.
-            article_source.person = article_source.original_person
+            # then set article_subject.person to article_subject.original_person.
+            article_subject.person = article_subject.original_person
             
-            # empty out article_source.original_person.
-            article_source.original_person = None
+            # empty out article_subject.original_person.
+            article_subject.original_person = None
 
             # save
-            article_source.save()
+            article_subject.save()
         
         #-- END check to see if we update. --#
     
-    #-- END loop over sources --#
+    #-- END loop over subjects --#
 
 else:
 
@@ -119,7 +119,7 @@ else:
 #-- END check to see if we made updates or not --#article_author_count = len( article_author_id_list )
 
 article_author_count = len( article_author_id_list )
-article_source_count = len( article_source_id_list )
+article_subject_count = len( article_subject_id_list )
 
 print( "\nUpdating " + str( article_author_count ) + " Article_Author instances: " + str( article_author_id_list ) )
-print( "Updating " + str( article_source_count ) + " Article_Source instances: " + str( article_source_id_list ) )
+print( "Updating " + str( article_subject_count ) + " Article_Subject instances: " + str( article_subject_id_list ) )
