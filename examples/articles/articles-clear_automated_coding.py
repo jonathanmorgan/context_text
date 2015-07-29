@@ -28,8 +28,23 @@ automated_user = User.objects.filter( username = "automated" ).get()
 # find all Article_Data for automated user.
 article_data_qs = Article_Data.objects.filter( coder = automated_user )
 
-# filter on related article tags?
-article_tag_in_list = [ 'prelim_network' ]
+#------------------------------------------------------------------------------#
+# FILTER - filter on coder type?
+#------------------------------------------------------------------------------#
+
+article_data_coder_type_in_list = [ 'OpenCalais_REST_API' ]
+if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_coder_type_in_list ) > 0 ) ):
+
+    # filter on coder type.
+    article_data_qs = article_data_qs.filter( coder_type__in = article_data_coder_type_in_list )
+
+#-- END check to see if coder types to filter on --#
+
+#------------------------------------------------------------------------------#
+# FILTER - filter on related article tags?
+#------------------------------------------------------------------------------#
+
+article_tag_in_list = [ 'prelim_network', 'prelim_reliability' ]
 if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) ):
 
     # filter on tags
@@ -37,11 +52,14 @@ if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) 
 
 #-- END check to see if tags to filter on --#
 
-# filter on related article IDs?
+#------------------------------------------------------------------------------#
+# FILTER - filter on related article IDs?
+#------------------------------------------------------------------------------#
+
 #article_id_in_list = [ 360962 ]
 #article_id_in_list = [ 28598 ]
 # article_id_in_list = [ 21653, 21756 ]
-if ( len( article_id_in_list ) > 0 ):
+if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
 
     # yes.
     article_data_qs = article_data_qs.filter( article__id__in = article_id_in_list )
