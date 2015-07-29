@@ -2,17 +2,111 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-from django.conf import settings
 from decimal import Decimal
+from django.conf import settings
+import taggit.managers
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('taggit', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='Alternate_Author_Match',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Alternate_Name',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('first_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('middle_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('last_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('name_prefix', models.CharField(max_length=255, null=True, blank=True)),
+                ('name_suffix', models.CharField(max_length=255, null=True, blank=True)),
+                ('nickname', models.CharField(max_length=255, null=True, blank=True)),
+                ('full_name_string', models.CharField(max_length=255, null=True, blank=True)),
+                ('original_name_string', models.CharField(max_length=255, null=True, blank=True)),
+                ('gender', models.CharField(blank=True, max_length=6, null=True, choices=[('na', 'Unknown'), ('female', 'Female'), ('male', 'Male')])),
+                ('title', models.CharField(max_length=255, null=True, blank=True)),
+                ('nameparser_pickled', models.TextField(null=True, blank=True)),
+                ('is_ambiguous', models.BooleanField(default=False)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                'ordering': ['last_name', 'first_name', 'middle_name'],
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='Alternate_Subject_Match',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Analysis_Reliability_Names',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('person_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('person_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder1_detected', models.IntegerField(null=True, blank=True)),
+                ('coder1_person_id', models.IntegerField(null=True, blank=True)),
+                ('coder1_source_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder1_article_data_id', models.IntegerField(null=True, blank=True)),
+                ('coder2_detected', models.IntegerField(null=True, blank=True)),
+                ('coder2_person_id', models.IntegerField(null=True, blank=True)),
+                ('coder2_source_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder2_article_data_id', models.IntegerField(null=True, blank=True)),
+                ('coder3_detected', models.IntegerField(null=True, blank=True)),
+                ('coder3_person_id', models.IntegerField(null=True, blank=True)),
+                ('coder3_source_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder3_article_data_id', models.IntegerField(null=True, blank=True)),
+                ('label', models.CharField(max_length=255, null=True, blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                'ordering': ['article', 'person_type', 'person'],
+            },
+        ),
+        migrations.CreateModel(
+            name='Analysis_Reliability_Ties',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('person_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('person_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('relation_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('relation_person_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('relation_person_type', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder1_mention_count', models.IntegerField(null=True, blank=True)),
+                ('coder1_id_list', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder2_mention_count', models.IntegerField(null=True, blank=True)),
+                ('coder2_id_list', models.CharField(max_length=255, null=True, blank=True)),
+                ('coder3_mention_count', models.IntegerField(null=True, blank=True)),
+                ('coder3_id_list', models.CharField(max_length=255, null=True, blank=True)),
+                ('label', models.CharField(max_length=255, null=True, blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+                ('coder1', models.ForeignKey(related_name='reliability_ties_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('coder2', models.ForeignKey(related_name='reliability_ties_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('coder3', models.ForeignKey(related_name='reliability_ties_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+            ],
+            options={
+                'ordering': ['person_type', 'person', 'relation_person'],
+            },
+        ),
         migrations.CreateModel(
             name='Article',
             fields=[
@@ -24,6 +118,7 @@ class Migration(migrations.Migration):
                 ('page', models.CharField(max_length=255, null=True, blank=True)),
                 ('author_string', models.TextField(null=True, blank=True)),
                 ('author_varchar', models.CharField(max_length=255, null=True, blank=True)),
+                ('author_affiliation', models.CharField(max_length=255, null=True, blank=True)),
                 ('headline', models.CharField(max_length=255)),
                 ('corrections', models.TextField(null=True, blank=True)),
                 ('edition', models.CharField(max_length=255, null=True, blank=True)),
@@ -42,60 +137,86 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['pub_date', 'section', 'page'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Article_Author',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('match_confidence_level', models.DecimalField(default=0.0, null=True, max_digits=11, decimal_places=10, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
                 ('author_type', models.CharField(default='staff', max_length=255, null=True, blank=True, choices=[('staff', 'News Staff'), ('editorial', 'Editorial Staff'), ('government', 'Government Official'), ('business', 'Business Representative'), ('organization', 'Other Organization Representative'), ('public', 'Member of the Public'), ('other', 'Other')])),
                 ('organization_string', models.CharField(max_length=255, null=True, blank=True)),
             ],
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Article_Data',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('coder_type', models.CharField(max_length=255, null=True, blank=True)),
                 ('article_type', models.CharField(default='news', max_length=255, blank=True, choices=[('news', 'News'), ('sports', 'Sports'), ('feature', 'Feature'), ('opinion', 'Opinion'), ('other', 'Other')])),
                 ('is_sourced', models.BooleanField(default=True)),
                 ('can_code', models.BooleanField(default=True)),
                 ('status', models.CharField(default='new', max_length=255, null=True, blank=True)),
+                ('status_messages', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
                 ('article', models.ForeignKey(to='sourcenet.Article')),
                 ('coder', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Article_Data_Notes',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('content_type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('canonical', 'Canonical'), ('text', 'Text'), ('html', 'HTML'), ('json', 'JSON'), ('xml', 'XML'), ('other', 'Other'), ('none', 'None')])),
+                ('content', models.TextField()),
+                ('status', models.CharField(max_length=255, null=True, blank=True)),
+                ('source', models.CharField(max_length=255, null=True, blank=True)),
+                ('content_description', models.TextField(null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+                ('article_data', models.ForeignKey(to='sourcenet.Article_Data')),
+            ],
+            options={
+                'ordering': ['article_data', 'last_modified', 'create_date'],
+            },
         ),
         migrations.CreateModel(
             name='Article_Notes',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('html', 'HTML'), ('text', 'Text'), ('other', 'Other'), ('none', 'None')])),
+                ('content_type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('canonical', 'Canonical'), ('text', 'Text'), ('html', 'HTML'), ('json', 'JSON'), ('xml', 'XML'), ('other', 'Other'), ('none', 'None')])),
                 ('content', models.TextField()),
+                ('status', models.CharField(max_length=255, null=True, blank=True)),
+                ('source', models.CharField(max_length=255, null=True, blank=True)),
+                ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('article', models.ForeignKey(to='sourcenet.Article', unique=True)),
+                ('article', models.ForeignKey(to='sourcenet.Article')),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Article_RawData',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('html', 'HTML'), ('text', 'Text'), ('other', 'Other'), ('none', 'None')])),
+                ('content_type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('canonical', 'Canonical'), ('text', 'Text'), ('html', 'HTML'), ('json', 'JSON'), ('xml', 'XML'), ('other', 'Other'), ('none', 'None')])),
                 ('content', models.TextField()),
+                ('status', models.CharField(max_length=255, null=True, blank=True)),
+                ('source', models.CharField(max_length=255, null=True, blank=True)),
+                ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('article', models.ForeignKey(to='sourcenet.Article', unique=True)),
@@ -104,13 +225,17 @@ class Migration(migrations.Migration):
                 'ordering': ['article', 'last_modified', 'create_date'],
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='Article_Source',
+            name='Article_Subject',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('match_confidence_level', models.DecimalField(default=0.0, null=True, max_digits=11, decimal_places=10, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
                 ('source_type', models.CharField(blank=True, max_length=255, null=True, choices=[('anonymous', 'Anonymous/Unnamed'), ('individual', 'Individual Person'), ('organization', 'Organization'), ('document', 'Document'), ('other', 'Other')])),
+                ('subject_type', models.CharField(blank=True, max_length=255, null=True, choices=[('mentioned', 'Subject Mentioned'), ('quoted', 'Source Quoted')])),
                 ('title', models.CharField(max_length=255, null=True, blank=True)),
                 ('more_title', models.CharField(max_length=255, null=True, blank=True)),
                 ('source_contact_type', models.CharField(blank=True, max_length=255, null=True, choices=[('direct', 'Direct contact'), ('event', 'Press conference/event'), ('past_quotes', 'Past quotes/statements'), ('document', 'Press release/document'), ('other', 'Other')])),
@@ -122,14 +247,79 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Article_Subject_Mention',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('value', models.TextField(null=True, blank=True)),
+                ('value_in_context', models.TextField(null=True, blank=True)),
+                ('value_index', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_length', models.IntegerField(default=0, null=True, blank=True)),
+                ('canonical_index', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_word_number_start', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_word_number_end', models.IntegerField(default=0, null=True, blank=True)),
+                ('paragraph_number', models.IntegerField(default=0, null=True, blank=True)),
+                ('context_before', models.TextField(null=True, blank=True)),
+                ('context_after', models.TextField(null=True, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('uuid', models.TextField(null=True, blank=True)),
+                ('uuid_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+                ('is_speaker_name_pronoun', models.BooleanField(default=False)),
+                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True)),
+            ],
+            options={
+                'ordering': ['paragraph_number', 'last_modified', 'create_date'],
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='Article_Subject_Quotation',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('value', models.TextField(null=True, blank=True)),
+                ('value_in_context', models.TextField(null=True, blank=True)),
+                ('value_index', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_length', models.IntegerField(default=0, null=True, blank=True)),
+                ('canonical_index', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_word_number_start', models.IntegerField(default=0, null=True, blank=True)),
+                ('value_word_number_end', models.IntegerField(default=0, null=True, blank=True)),
+                ('paragraph_number', models.IntegerField(default=0, null=True, blank=True)),
+                ('context_before', models.TextField(null=True, blank=True)),
+                ('context_after', models.TextField(null=True, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('uuid', models.TextField(null=True, blank=True)),
+                ('uuid_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+                ('value_with_attribution', models.TextField(null=True, blank=True)),
+                ('attribution_verb_word_index', models.IntegerField(default=0, null=True, blank=True)),
+                ('attribution_verb_word_number', models.IntegerField(default=0, null=True, blank=True)),
+                ('attribution_paragraph_number', models.IntegerField(default=0, null=True, blank=True)),
+                ('attribution_speaker_name_string', models.TextField(null=True, blank=True)),
+                ('is_speaker_name_pronoun', models.BooleanField(default=False)),
+                ('attribution_speaker_name_index_range', models.CharField(max_length=255, null=True, blank=True)),
+                ('attribution_speaker_name_word_range', models.CharField(max_length=255, null=True, blank=True)),
+                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True)),
+            ],
+            options={
+                'ordering': ['paragraph_number', 'last_modified', 'create_date'],
+                'abstract': False,
+            },
         ),
         migrations.CreateModel(
             name='Article_Text',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('html', 'HTML'), ('text', 'Text'), ('other', 'Other'), ('none', 'None')])),
+                ('content_type', models.CharField(default='none', max_length=255, null=True, blank=True, choices=[('canonical', 'Canonical'), ('text', 'Text'), ('html', 'HTML'), ('json', 'JSON'), ('xml', 'XML'), ('other', 'Other'), ('none', 'None')])),
                 ('content', models.TextField()),
+                ('status', models.CharField(max_length=255, null=True, blank=True)),
+                ('source', models.CharField(max_length=255, null=True, blank=True)),
+                ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('article', models.ForeignKey(to='sourcenet.Article', unique=True)),
@@ -138,7 +328,6 @@ class Migration(migrations.Migration):
                 'ordering': ['article', 'last_modified', 'create_date'],
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Articles_To_Migrate',
@@ -159,7 +348,6 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['pub_date', 'section', 'page'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Document',
@@ -168,9 +356,6 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Import_Error',
@@ -188,9 +373,6 @@ class Migration(migrations.Migration):
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Location',
@@ -207,7 +389,6 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['name', 'city', 'county', 'state', 'zip_code'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Newspaper',
@@ -222,7 +403,6 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['name'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Organization',
@@ -235,28 +415,52 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['name', 'location'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Person',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('first_name', models.CharField(max_length=255)),
-                ('middle_name', models.CharField(max_length=255, blank=True)),
-                ('last_name', models.CharField(max_length=255)),
+                ('first_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('middle_name', models.CharField(max_length=255, null=True, blank=True)),
+                ('last_name', models.CharField(max_length=255, null=True, blank=True)),
                 ('name_prefix', models.CharField(max_length=255, null=True, blank=True)),
                 ('name_suffix', models.CharField(max_length=255, null=True, blank=True)),
+                ('nickname', models.CharField(max_length=255, null=True, blank=True)),
                 ('full_name_string', models.CharField(max_length=255, null=True, blank=True)),
-                ('gender', models.CharField(max_length=6, choices=[('na', 'Unknown'), ('female', 'Female'), ('male', 'Male')])),
-                ('title', models.CharField(max_length=255, blank=True)),
+                ('original_name_string', models.CharField(max_length=255, null=True, blank=True)),
+                ('gender', models.CharField(blank=True, max_length=6, null=True, choices=[('na', 'Unknown'), ('female', 'Female'), ('male', 'Male')])),
+                ('title', models.CharField(max_length=255, null=True, blank=True)),
                 ('nameparser_pickled', models.TextField(null=True, blank=True)),
                 ('is_ambiguous', models.BooleanField(default=False)),
-                ('notes', models.TextField(blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
             ],
             options={
                 'ordering': ['last_name', 'first_name', 'middle_name'],
+                'abstract': False,
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Person_External_UUID',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=255, null=True, blank=True)),
+                ('uuid', models.TextField(null=True, blank=True)),
+                ('source', models.CharField(max_length=255, null=True, blank=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('person', models.ForeignKey(to='sourcenet.Person')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Person_Newspaper',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('notes', models.TextField(null=True, blank=True)),
+                ('newspaper', models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True)),
+                ('person', models.ForeignKey(to='sourcenet.Person')),
+            ],
         ),
         migrations.CreateModel(
             name='Person_Organization',
@@ -266,21 +470,26 @@ class Migration(migrations.Migration):
                 ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True)),
                 ('person', models.ForeignKey(to='sourcenet.Person')),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='Source_Organization',
+            name='Project',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=255)),
+                ('description', models.TextField(null=True, blank=True)),
+            ],
+            options={
+                'ordering': ['name'],
+            },
+        ),
+        migrations.CreateModel(
+            name='Subject_Organization',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('title', models.CharField(max_length=255, blank=True)),
-                ('article_source', models.ForeignKey(to='sourcenet.Article_Source')),
+                ('article_subject', models.ForeignKey(to='sourcenet.Article_Subject')),
                 ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Temp_Section',
@@ -306,9 +515,6 @@ class Migration(migrations.Migration):
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Topic',
@@ -321,78 +527,145 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['name'],
             },
-            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='newspaper',
             name='organization',
             field=models.ForeignKey(to='sourcenet.Organization'),
-            preserve_default=True,
         ),
         migrations.AddField(
             model_name='document',
             name='organization',
             field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
             model_name='articles_to_migrate',
             name='newspaper',
             field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
-            model_name='article_source',
+            model_name='article_subject',
             name='document',
             field=models.ForeignKey(blank=True, to='sourcenet.Document', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
-            model_name='article_source',
+            model_name='article_subject',
             name='organization',
             field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
-            model_name='article_source',
+            model_name='article_subject',
+            name='original_person',
+            field=models.ForeignKey(related_name='sourcenet_article_subject_original_person_set', blank=True, to='sourcenet.Person', null=True),
+        ),
+        migrations.AddField(
+            model_name='article_subject',
             name='person',
             field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
-            model_name='article_source',
+            model_name='article_subject',
             name='topics',
-            field=models.ManyToManyField(to='sourcenet.Topic', null=True, blank=True),
-            preserve_default=True,
+            field=models.ManyToManyField(to='sourcenet.Topic', blank=True),
         ),
         migrations.AddField(
             model_name='article_data',
             name='locations',
             field=models.ManyToManyField(to='sourcenet.Location', blank=True),
-            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='article_data',
+            name='projects',
+            field=models.ManyToManyField(to='sourcenet.Project'),
         ),
         migrations.AddField(
             model_name='article_data',
             name='topics',
-            field=models.ManyToManyField(to='sourcenet.Topic', null=True, blank=True),
-            preserve_default=True,
+            field=models.ManyToManyField(to='sourcenet.Topic', blank=True),
         ),
         migrations.AddField(
             model_name='article_author',
             name='article_data',
             field=models.ForeignKey(to='sourcenet.Article_Data'),
-            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='article_author',
+            name='original_person',
+            field=models.ForeignKey(related_name='sourcenet_article_author_original_person_set', blank=True, to='sourcenet.Person', null=True),
         ),
         migrations.AddField(
             model_name='article_author',
             name='person',
             field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
-            preserve_default=True,
         ),
         migrations.AddField(
             model_name='article',
             name='newspaper',
             field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True),
-            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='article',
+            name='tags',
+            field=taggit.managers.TaggableManager(to='taggit.Tag', through='taggit.TaggedItem', blank=True, help_text='A comma-separated list of tags.', verbose_name='Tags'),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_ties',
+            name='person',
+            field=models.ForeignKey(related_name='reliability_ties_from_set', blank=True, to='sourcenet.Person', null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_ties',
+            name='relation_person',
+            field=models.ForeignKey(related_name='reliability_ties_to_set', blank=True, to='sourcenet.Person', null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_names',
+            name='article',
+            field=models.ForeignKey(blank=True, to='sourcenet.Article', null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_names',
+            name='coder1',
+            field=models.ForeignKey(related_name='reliability_names_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_names',
+            name='coder2',
+            field=models.ForeignKey(related_name='reliability_names_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_names',
+            name='coder3',
+            field=models.ForeignKey(related_name='reliability_names_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+        ),
+        migrations.AddField(
+            model_name='analysis_reliability_names',
+            name='person',
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+        ),
+        migrations.AddField(
+            model_name='alternate_subject_match',
+            name='article_subject',
+            field=models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True),
+        ),
+        migrations.AddField(
+            model_name='alternate_subject_match',
+            name='person',
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+        ),
+        migrations.AddField(
+            model_name='alternate_name',
+            name='person',
+            field=models.ForeignKey(to='sourcenet.Person'),
+        ),
+        migrations.AddField(
+            model_name='alternate_author_match',
+            name='article_author',
+            field=models.ForeignKey(blank=True, to='sourcenet.Article_Author', null=True),
+        ),
+        migrations.AddField(
+            model_name='alternate_author_match',
+            name='person',
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
         ),
     ]
