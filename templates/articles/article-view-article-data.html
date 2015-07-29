@@ -52,7 +52,7 @@
                     </li>
                     <li><strong><em>status:</em></strong> {{ article_data.status }}</li>
                     <li><strong><em>authors:</em></strong> {{ article_data.article_author_set.count }}</li>
-                    <li><strong><em>sources:</em></strong> {{ article_data.article_source_set.count }}</li>
+                    <li><strong><em>sources:</em></strong> {{ article_data.article_subject_set.count }}</li>
                     <li><strong><em>coder:</em></strong> {{ article_data.coder }} ( {{ article_data.coder_type }} )</li>
                 </ul>
                 <h4>Article_Author(s)</h4>
@@ -67,21 +67,21 @@
                     {% endfor %}
 
                 </ul>
-                <h4>Article_Source(s)</h4>
+                <h4>Article_Subject source(s)</h4>
                 <ul>
 
-                    {# loop over article_sources #}
-                    {% for article_source in article_data.article_source_set.all %}
+                    {# loop over source Article_Subject(s) #}
+                    {% for article_source in article_data.get_quoted_article_sources_qs %}
 
                         <li>
-                            {{ article_source }} ( quotes: {{ article_source.article_source_quotation_set.all.count }}; mentions: {{ article_source.article_source_mention_set.all.count }} )
+                            {{ article_source }} ( quotes: {{ article_source.article_subject_quotation_set.all.count }}; mentions: {{ article_source.article_subject_mention_set.all.count }} )
                             <br />
                             <br />
                             <strong><em>Quotations</em></strong>
                             <br />
                             <table class="gridtable">
                                 <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>quote</th><th>notes</th></tr>
-                                {% for source_quotation in article_source.article_source_quotation_set.all %}
+                                {% for source_quotation in article_source.article_subject_quotation_set.all %}
                         
                                     <tr>
                                         <td align="center">{{ source_quotation.id }}</td>
@@ -90,7 +90,7 @@
                                         <td align="center">{{ source_quotation.value_word_number_end }}</td>
                                         <td align="center">{{ source_quotation.value_index }}</td>
                                         <td align="center">{{ source_quotation.canonical_index }}</td>                                        
-                                        <td align="center">{{ source_quotation.article_source.person.id }}</td>
+                                        <td align="center">{{ source_quotation.article_subject.person.id }}</td>
                                         
                                         {% if source_quotation.value_in_context %}
                                         
@@ -113,7 +113,7 @@
                             <br />
                             <table class="gridtable">
                                 <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>quote</th><th>notes</th></tr>
-                                {% for source_mention in article_source.article_source_mention_set.all %}
+                                {% for source_mention in article_source.article_subject_mention_set.all %}
                         
                                     <tr>
                                         <td align="center">{{ source_mention.id }}</td>
@@ -122,7 +122,7 @@
                                         <td align="center">{{ source_mention.value_word_number_end }}</td>
                                         <td align="center">{{ source_mention.value_index }}</td>
                                         <td align="center">{{ source_mention.canonical_index }}</td>                                        
-                                        <td align="center">{{ source_mention.article_source.person.id }}</td>
+                                        <td align="center">{{ source_mention.article_subject.person.id }}</td>
                                         
                                         {% if source_mention.value_in_context %}
                                         
@@ -142,7 +142,7 @@
                             <br />
                         </li>
                         
-                    {% endfor %} {# END loop over Article_Sources #}
+                    {% endfor %} {# END loop over source Article_Subject(s) #}
                         
                 </ul>
                     

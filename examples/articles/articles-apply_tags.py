@@ -52,11 +52,15 @@ tag_value = ""
 # set tag value and list of article IDs to tag.
 #tag_value = "prelim_unit_test_005"
 #article_id_list = [ 4831, 428321, 224205, 38250, 65897, 204366, 11502, 360962, 55309, 168322 ]
-'''
 
 # set tag value and list of article IDs to tag.
 tag_value = "prelim_unit_test_006"
 article_id_list = [ 206821, 393270, 205305, 502312, 124085, 194572, 507668, 144914, 26961, 212046 ]
+'''
+
+# set tag value and list of article IDs to tag.
+tag_value = "prelim_unit_test_007"
+article_id_list = [ 301421, 278674, 129226, 442001, 8522, 393832, 133315, 933, 392292, 210845 ]
 
 # get articles whose IDs are in the article_id_list
 article_qs = Article.objects.filter( id__in = article_id_list )
