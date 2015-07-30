@@ -64,6 +64,9 @@ from sourcenet.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 # Import sourcenet shared classes.
 from sourcenet.shared.sourcenet_base import SourcenetBase
 
+# and, one coding class.
+from sourcenet.article_coding.article_coder import ArticleCoder
+
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -111,6 +114,10 @@ class NetworkOutput( SourcenetBase ):
     # parameters for person selection.
     PARAM_PERSON_QUERY_TYPE = NetworkDataOutput.PARAM_PERSON_QUERY_TYPE
 
+    # parameters for filtering Article_Data based on coder type
+    PARAM_CODER_TYPE_FILTER_TYPE =  NetworkDataOutput.PARAM_CODER_TYPE_FILTER_TYPE # "coder_type_filter_type"
+    PARAM_PERSON_CODER_TYPE_FILTER_TYPE = NetworkDataOutput.PARAM_PERSON_CODER_TYPE_FILTER_TYPE # "person_coder_type_filter_type"
+
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
         SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
@@ -118,6 +125,7 @@ class NetworkOutput( SourcenetBase ):
         SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
         SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
         SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,        
@@ -138,6 +146,7 @@ class NetworkOutput( SourcenetBase ):
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -186,6 +195,13 @@ class NetworkOutput( SourcenetBase ):
 
     PERSON_QUERY_TYPE_CHOICES_LIST = NetworkDataOutput.PERSON_QUERY_TYPE_CHOICES_LIST
 
+    # Filtering Article_Data on coder_type.
+    CODER_TYPE_FILTER_TYPE_NONE = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_NONE
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_AUTOMATED
+    CODER_TYPE_FILTER_TYPE_ALL = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_ALL
+    CODER_TYPE_FILTER_TYPE_DEFAULT = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_DEFAULT
+    
+    CODER_TYPE_FILTER_TYPE_CHOICES_LIST = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST
 
     #---------------------------------------------------------------------------
     # __init__() method
@@ -489,6 +505,7 @@ class NetworkOutput( SourcenetBase ):
         coder_id_string = ""
         coder_id_int = -1
         coder_int_list = None
+        coder_type_filter_type_IN = None
         coder_type_list_IN = None
         tag_list_IN = None
         topic_list_IN = None
@@ -505,6 +522,10 @@ class NetworkOutput( SourcenetBase ):
         query_list = []
         has_unique_id_list = False
         
+        # filtering Article_Data coder_type
+        automated_coder_user = None
+        automated_coder_pk = -1
+        
         # get logger
         my_logger = self.get_logger()
 
@@ -514,6 +535,7 @@ class NetworkOutput( SourcenetBase ):
         date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
         publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+        coder_type_filter_type_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_FILTER_TYPE, '' )
         coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
         topic_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TOPIC_LIST )
         tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST )
@@ -619,17 +641,60 @@ class NetworkOutput( SourcenetBase ):
 
         #-- END processing of coders --#
 
-        # coder types
-        #if ( coder_list_IN ):
-        if ( ( coder_type_list_IN is not None ) and ( len( coder_type_list_IN ) > 0 ) ):
+        my_logger.debug( "In " + me + ": coder_type_filter_type = " + str( coder_type_filter_type_IN ) )
 
-            # set up query instance
-            current_query = Q( coder_type__in = coder_type_list_IN )
+        # Article_Data coder_type values - check if we are filtering.
+        if ( ( coder_type_filter_type_IN is not None )
+            and ( coder_type_filter_type_IN != "" )
+            and ( coder_type_filter_type_IN != self.CODER_TYPE_FILTER_TYPE_NONE ) ):
+        
+            # yes, but still need to make sure there is something in the list.
+            #if ( coder_type_list_IN ):
+            if ( ( coder_type_list_IN is not None ) and ( len( coder_type_list_IN ) > 0 ) ):
+    
+                # we have a list.  See what our filter type is.
+                if ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_ALL ): 
 
-            # add it to the query list
-            query_list.append( current_query )
+                    # "all" - plain old filter - set up query instance
+                    current_query = Q( coder_type__in = coder_type_list_IN )
+        
+                    # add it to the query list
+                    query_list.append( current_query )
+    
+                elif ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_AUTOMATED ):
+                
+                    # only want to filter records coded by automated user.
+                    
+                    # get pk of automated coder.
+                    automated_coder_user = ArticleCoder.get_automated_coding_user()
+                    automated_coder_pk = automated_coder_user.pk
+                    
+                    # filter - either:
 
-        #-- END processing of coder types --#
+                    # ( coder = automated_coder AND coder_type IN coder_type_list_IN )
+                    current_query = Q( coder = automated_coder_user ) & Q ( coder_type__in = coder_type_list_IN )
+
+                    # OR coder != automated_coder
+                    current_query = ~Q( coder = automated_coder_user ) | current_query
+
+                    # add it to the query list
+                    query_list.append( current_query )
+                    
+                else:
+                
+                    # not a valid type.  No filter.
+                    my_logger.debug( "In " + me + ": unknown coder_type_filter_type = " + str( coder_type_filter_type_IN ) )
+
+                #-- END check to see what the coder_type_filter_type is --#
+                        
+            else:
+            
+                # nothing in coder type list, so no filtering to do.
+                my_logger.debug( "In " + me + ": coder_type filtering requested ( " + coder_type_filter_type_IN + " ), but no coder_type values passed in.  Moving on." )
+            
+            #-- END processing of coder types --#
+            
+        #-- END check to see if we filter on coder_type --#
 
         # topics
         #if ( topic_list_IN ):

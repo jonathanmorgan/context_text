@@ -72,6 +72,21 @@ properly passed through to all the things that might use it:
 
         person_query_type = forms.ChoiceField( required = False, choices = NetworkOutput.PERSON_QUERY_TYPE_CHOICES_LIST )
 
+- 5) Into what function or method do I then update processing to include the
+    new field?:
+    - For network output, method that creates QuerySets from form parameters is
+        create_query_set(), in sourcenet/export/network_output.py,
+        NetworkOutput.create_query_set().  This method is called by both
+        create_person_query_set() and create_network_query_set().  If you add
+        a parameter to the article select and the person select, make sure
+        make the name of the person input the same as the article one, but
+        preceded by "person_".  That will make the single method able to
+        process values for either the article or person form.  For example, the
+        coder_type_filter_type, from NetworkDataOutput class:
+
+            PARAM_CODER_TYPE_FILTER_TYPE = "coder_type_filter_type"
+            PARAM_PERSON_CODER_TYPE_FILTER_TYPE = "person_" + PARAM_CODER_TYPE_FILTER_TYPE
+
 '''
 
 # import django form object.
@@ -163,8 +178,14 @@ class ArticleSelectForm( forms.Form ):
     # coders to include
     coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
 
-    # list of unique identifiers to limit to.
-    coder_types_list = forms.CharField( required = False, label = "Coder Type List (comma-delimited)" )
+    # type of filtering on Article_Data coder_type identifiers we want to do.
+    coder_type_filter_type = forms.ChoiceField( required = False,
+        choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
+        initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
+        label = "Article_Data coder_type Filter Type" )
+    
+    # list of Article_Data coder_type identifiers to limit to.
+    coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
     
     # topics to include
     topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
@@ -219,7 +240,16 @@ class PersonSelectForm( forms.Form ):
 
     person_publications = forms.ModelMultipleChoiceField( required = False, queryset = Newspaper.objects.all() )
     person_coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
-    person_coder_types_list = forms.CharField( required = False, label = "Coder Type List (comma-delimited)" )
+
+    # filtering on Article_Data coder_type identifiers...  filter type:
+    person_coder_type_filter_type = forms.ChoiceField( required = False,
+        choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
+        initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
+        label = "Article_Data coder_type Filter Type" )
+        
+    # and values on which to filter.
+    person_coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
+
     person_topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
     person_tag_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
     person_unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )

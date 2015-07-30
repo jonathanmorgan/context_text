@@ -103,6 +103,18 @@ class NetworkDataOutput( SourcenetBase ):
         ( PERSON_QUERY_TYPE_CUSTOM, "Custom, defined below" ),
     ]
 
+    # Filtering Article_Data on coder_type.
+    CODER_TYPE_FILTER_TYPE_NONE = "none"
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = "automated"
+    CODER_TYPE_FILTER_TYPE_ALL = "all"
+    CODER_TYPE_FILTER_TYPE_DEFAULT = CODER_TYPE_FILTER_TYPE_NONE
+    
+    CODER_TYPE_FILTER_TYPE_CHOICES_LIST = [ 
+        ( CODER_TYPE_FILTER_TYPE_NONE, "Do not filter" ),
+        ( CODER_TYPE_FILTER_TYPE_AUTOMATED, "Just automated" ),
+        ( CODER_TYPE_FILTER_TYPE_ALL, "All users" ),
+    ]
+
     # person types
     PERSON_TYPE_UNKNOWN = 'unknown'
     PERSON_TYPE_AUTHOR = 'author'
@@ -144,6 +156,8 @@ class NetworkDataOutput( SourcenetBase ):
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Subject.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Subject.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
     PARAM_PERSON_QUERY_TYPE = "person_query_type"
+    PARAM_CODER_TYPE_FILTER_TYPE = "coder_type_filter_type"
+    PARAM_PERSON_CODER_TYPE_FILTER_TYPE = "person_" + PARAM_CODER_TYPE_FILTER_TYPE
     
     # node attributes
     NODE_ATTRIBUTE_PERSON_ID = "person_id"
