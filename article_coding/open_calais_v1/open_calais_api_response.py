@@ -57,7 +57,7 @@ class OpenCalaisApiResponse( LoggingHelper ):
 
 
     # Logging variables
-    LOGGING_NAME = "sourcenet.article_coding.open_calais_api_response"
+    LOGGING_NAME = "sourcenet.article_coding.open_calais_v1.open_calais_api_response"
 
     # Known JSON object attribute names
     JSON_NAME_DOC = "doc"
@@ -86,8 +86,21 @@ class OpenCalaisApiResponse( LoggingHelper ):
     JSON_NAME_SUFFIX = "suffix"
     
     # OpenCalais item types
-    OC_ITEM_TYPE_QUOTATION = "Quotation"
+    OC_ITEM_TYPE_ALLIANCE = "Alliance"
+    OC_ITEM_TYPE_BANKRUPTCY = "Bankruptcy"
+    OC_ITEM_TYPE_CITY = "City"
+    OC_ITEM_TYPE_COMPANY = "Company"
+    OC_ITEM_TYPE_COMPANY_LOCATION = "CompanyLocation"
+    OC_ITEM_TYPE_COUNTRY = "Country"
+    OC_ITEM_TYPE_INDUSTRY_TERM = "IndustryTerm"
     OC_ITEM_TYPE_PERSON = "Person"
+    OC_ITEM_TYPE_PERSON_CAREER = "PersonCareer"
+    OC_ITEM_TYPE_PERSON_LOCATION = "PersonLocation"
+    OC_ITEM_TYPE_POSITION = "Position"
+    OC_ITEM_TYPE_PRODUCT = "Product"
+    OC_ITEM_TYPE_PROVINCE_OR_STATE = "ProvinceOrState"
+    OC_ITEM_TYPE_PUBLISHED_MEDIUM = "PublishedMedium"
+    OC_ITEM_TYPE_QUOTATION = "Quotation"
     
     # debugging
     DEBUG_FLAG = False

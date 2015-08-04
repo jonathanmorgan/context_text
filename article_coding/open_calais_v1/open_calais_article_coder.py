@@ -52,7 +52,7 @@ from sourcenet.models import Person
 from sourcenet.article_coding.article_coder import ArticleCoder
 
 # class to help with parsing and processing OpenCalaisApiResponse.
-from sourcenet.article_coding.open_calais_api_response import OpenCalaisApiResponse
+from sourcenet.article_coding.open_calais_v1.open_calais_api_response import OpenCalaisApiResponse
 
 #================================================================================
 # Package constants-ish
@@ -88,7 +88,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     # STATUS_ERROR_PREFIX = "Error: "
     
     # config application
-    CONFIG_APPLICATION = "OpenCalais_REST_API"
+    CONFIG_APPLICATION = "OpenCalais_REST_API_v1"
     
     # config property names.
     CONFIG_PROP_OPEN_CALAIS_API_KEY = "open_calais_api_key"
@@ -114,6 +114,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     
     # variables to hold strings related to OpenCalais.
     OPEN_CALAIS_UUID_NAME = "OpenCalais API URI (URL)"
+    
+    # Processing types
+    JSON_PROCESS_BY_PERSON = "by_person"
+    JSON_PROCESS_BY_QUOTATION = "by_quotation"
+    JSON_PROCESS_BY_BOTH = "by_both"
+    JSON_DEFAULT_PROCESS_BY = JSON_PROCESS_BY_PERSON
     
 
     #============================================================================
@@ -153,7 +159,20 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
         #    BasicRateLimited --> ArticleCoder --> OpenCalaisArticleCoder).
-        self.set_logger_name( "sourcenet.article_coding.open_calais_article_coder" )
+        self.set_logger_name( "sourcenet.article_coding.open_calais_v1.open_calais_article_coder" )
+        
+        # items for processing a given JSON response - should be updated with
+        #    every new article coded.
+        
+        # capture method.
+        self.article_capture_method = ""
+        
+        # OpenCalaisApiRespnse helper instance
+        self.response_helper = None
+        
+        # map of person URIs to that person's quotations, stored in a dict that
+        #    maps Quotation URIs to Quotation JSON.
+        self.person_to_quotes_dict = {}
 
     #-- END method __init__() --#
 
@@ -444,6 +463,136 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method process_article() --#
     
 
+    def create_person_to_quotation_dict( self, oc_api_response_helper_IN = None ):
+    
+        '''
+        Accepts optional OpenCalaisApiResponse instance (parameter named
+           "oc_api_response_helper_IN").  If instance passed in, uses it, else
+           uses the OpenCalaisApiResponse stored in self.response_helper.
+           Uses helper to find all quotations and the people they are tied to.
+           Creates a dict that maps Person URIs to a map of quotation URIs to
+           quotation JSON for the quotes attributed to them.  Returns the dict
+           that maps persons to quotes.
+
+        preconditions: OpenCalaisApiResponse instance must already have a JSON
+           response in it and have been initialized so the JSON was parsed and
+           the items in it broken out by type group and type.
+           
+        postconditions: In addition to returning the dict, also stores it in
+           instance variable named "self.person_to_quotes_dict".
+        '''
+        
+        # return reference
+        dict_OUT = {}
+        
+        # declare variables
+        me = "create_person_to_quotation_dict"
+        my_logger = None
+        my_reponse_helper = None
+        
+        # quote processing variables.
+        quotation_dict = None
+        quote_count = -1
+        current_oc_URI = None
+        current_quotation_json = None
+        quote_counter = -1
+        quote_person_URI = ""
+        quote_person = None
+        person_to_quotes_map = {}
+        person_quote_dict = {}
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # get response helper.
+        my_response_helper = self.response_helper
+        
+        # got one passed in?
+        if ( oc_api_response_helper_IN is not None ):
+        
+            # yes - use it instead.
+            my_response_helper = oc_api_response_helper_IN
+            
+        #-- END check to see if response helper passed in. --#
+        
+        # got a helper?
+        if ( my_response_helper is not None ):
+        
+            # get all the quotations.
+            quotation_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+    
+            # make sure it isn't None
+            if ( quotation_dict is not None ):
+    
+                quote_count = len( quotation_dict )
+                my_logger.debug( "In " + me + ": quote count = " + str( quote_count ) )
+                
+                # make sure we have one or more quotes
+                if ( quote_count > 0 ):
+                
+                    # loop over them
+                    quote_counter = 0
+                    for current_oc_URI, current_quotation_json in six.iteritems( quotation_dict ):
+                    
+                        # increment counter
+                        quote_counter = quote_counter + 1
+                        
+                        # log the URI
+                        my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
+                        
+                        # get the URI of the person who was quoted.
+                        quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
+                        
+                        # is person already in person-to-quote map?
+                        if quote_person_URI in person_to_quotes_map:
+                        
+                            # yes - get quote dictionary...
+                            person_quote_dict = person_to_quotes_map[ quote_person_URI ]
+            
+                            # then add current quote to dictionary.
+                            person_quote_dict[ current_oc_URI ] = current_quotation_json
+                        
+                        else:
+                        
+                            # person not in map.  Make dict of quotes...
+                            person_quote_dict = {}
+            
+                            # add current quote...
+                            person_quote_dict[ current_oc_URI ] = current_quotation_json
+            
+                            # then associate quotes with person URI.
+                            person_to_quotes_map[ quote_person_URI ] = person_quote_dict
+                        
+                        #-- END check to see if person in person-to-quotes map. --#
+                        
+                    #-- END loop over quotation items --#
+                    
+                else:
+        
+                    my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article, so nothing else to do." )
+        
+                #-- END check to see if any quotes in article.  If not, no attribution. --#
+    
+            else:
+    
+                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article (None returned), so nothing else to do." )
+    
+            #-- END check to see if any quotes in article.  If not, no attribution. --#
+            
+        else:
+        
+            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No response helper passed in, so nothing else to do." )
+
+        #-- END check to see if we have a helper --#
+        
+        self.person_to_quotes_dict = person_to_quotes_map
+        dict_OUT = person_to_quotes_map
+
+        return dict_OUT
+    
+    #-- END function create_person_to_quotation_dict() --#
+
+
     def get_content_type( self ):
 
         '''
@@ -509,6 +658,46 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         return value_OUT
 
     #-- END get_output_format() --#
+
+
+    def get_person_to_quotation_dict( self, oc_api_response_helper_IN = None ):
+    
+        '''
+        Accepts optional OpenCalaisApiResponse instance (parameter named
+           "oc_api_response_helper_IN").  Checks to see if there is already an
+           instance in self.person_to_quotes_dict.  If yes, returns it.  If
+           no, calls create_person_to_quotation_dict(), then returns the result.
+
+        preconditions: OpenCalaisApiResponse instance must already have a JSON
+           response in it and have been initialized so the JSON was parsed and
+           the items in it broken out by type group and type.
+           
+        postconditions: Returns dict that is stored in instance variable
+           self.person_to_quotes_dict.
+        '''
+        
+        # return reference
+        dict_OUT = {}
+        
+        # declare variables
+        me = "get_person_to_quotation_dict"
+        my_logger = None
+                
+        # get logger
+        my_logger = self.get_logger()
+        
+        # got an instance already?
+        dict_OUT = self.person_to_quotes_dict
+        if ( dict_OUT is None ):
+        
+            # nothing stored so far - create, then return.
+            dict_OUT = self.create_person_to_quotation_dict( oc_api_response_helper_IN )
+            
+        #-- END check to see if dict already in instance --#
+        
+        return dict_OUT
+    
+    #-- END function get_person_to_quotation_dict() --#
 
 
     def init_config_properties( self, *args, **kwargs ):
@@ -582,40 +771,159 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END abstract method initialize_from_params() --#
     
 
-    def process_json_api_response( self, article_IN, article_data_IN, json_response_IN ):
+    def process_json_api_response( self, 
+                                   article_IN,
+                                   article_data_IN,
+                                   json_response_IN,
+                                   process_by_IN = JSON_DEFAULT_PROCESS_BY ):
+    
+        '''
+        Accepts Article, Article_Data instance of article we are processing, the
+           JSON response from passing that article's text to the OpenCalais
+           API, and an optional flag to tell whether we want to process by
+           persons in article, quotations in article, or run them both (defaults
+           to processing by person).  Parses response, finds and captures people
+           and quotations in the text by calling other, more specific processing
+           methods, returns a status.
+
+        preconditions: Must have already retrieved the article's OpenCalais
+           JSON before calling this method.
+           
+        postconditions: returns status, but also results in database being
+           updated with Article_Subject instances for people found in article,
+           including capturing mentions of each person and quotations by the
+           person if present.
+        '''
+        
+        # return reference
+        status_OUT = ""
+        
+        # declare variables
+        me = "process_json_api_response"
+        my_logger = None
+        current_status = ""
+
+        # get logger
+        my_logger = self.get_logger()
+        
+        # initialize variables from article_data_IN
+        my_capture_method = article_data_IN.coder_type
+        
+        # see what methods we call based on the process by value.
+        if ( ( process_by_IN is not None ) and ( process_by_IN != "" ) ):
+        
+            # got a process by value - what does it say we do?
+            
+            # check if by person or both.
+            if ( ( process_by_IN == self.JSON_PROCESS_BY_PERSON )
+                 or ( process_by_IN == self.JSON_PROCESS_BY_BOTH ) ):
+                 
+                # call the method to process by person.
+                current_status += self.process_json_api_response_by_person( article_IN, article_data_IN, json_response_IN )
+                
+                # check if status was not success
+                if ( current_status != self.STATUS_SUCCESS ):
+                
+                    # not success - add to or overwrite status_OUT.
+                    if ( status_OUT == "" ):
+                    
+                        # was success - overwrite.
+                        status_OUT = current_status
+
+                    else:
+                    
+                        # already an error in status.  Append.
+                        status_OUT += "; " + current_status
+                        
+                    #-- END check for status --#
+
+                #-- END check to see if ERROR status (other than success) --#
+                
+            #-- END check to see if process by person or both. --#
+                 
+            # check if by quotation or both.
+            if ( ( process_by_IN == self.JSON_PROCESS_BY_QUOTATION )
+                 or ( process_by_IN == self.JSON_PROCESS_BY_BOTH ) ):
+
+                # call the method to process by person.
+                current_status += self.process_json_api_response_by_person( article_IN, article_data_IN, json_response_IN )
+                
+                # check if status was not success
+                if ( current_status != self.STATUS_SUCCESS ):
+                
+                    # not success - add to or overwrite status_OUT.
+                    if ( status_OUT == "" ):
+                    
+                        # was empty - overwrite.
+                        status_OUT = current_status
+
+                    else:
+                    
+                        # already an error in status.  Append.
+                        status_OUT += "; " + current_status
+                        
+                    #-- END check for status --#
+                
+                #-- END check to see if ERROR status (other than success) --#
+                
+            #-- END check to see if process by quotation or both. --#
+            
+        else:
+        
+            status_OUT = "ERROR - no process-by value.  Did not process."
+        
+        #-- END check to see if we have a process-by value.
+        
+        # Got a status?  If no, then success!
+        if ( status_OUT == "" ):
+        
+            # success
+            status_OUT = self.STATUS_SUCCESS
+            
+        #-- END check to see if status set --#
+        
+        return status_OUT
+        
+    #-- END function process_json_api_response() --#
+
+
+    def process_json_api_response_by_person( self, article_IN, article_data_IN, json_response_IN ):
     
         '''
         Accepts Article, Article_Data instance of article we are processing, and
            the JSON response from passing that article's text to the OpenCalais
-           API.  Parses response, finds all quotations and the people they are
-           tied to.  Then, for each quotation:
-           - look up the people who are quoted by name.
+           API.  Parses response into OpenCalaisApiResponse instance, then looks
+           for all people who are subjects of the article.  For each person
+           (make process_json_person() method):
+           - look up the person.
               - If ambiguity, make a new person, but also keep track of other
                  potential matches (will need to add this to the database).
               - will probably need to refine the person lookup, too.  Right now, 
-           - add sources to Article_Data.
-           - save the article data.
+           - add sources to Article_Data as Article_Subject instances.
+           - add mentions to new Article_Subject as Article_Subject_Mention
+               instances.
+           - check to see if quotations.  If yes:
+              - change subject_type to "quoted".
+              - add quotations to Article_Subject as Article_Subject_Quotation
+                 instances.
+           - save the Article_Subject and Article_Data.
         '''
         
         # return reference
         status_OUT = self.STATUS_SUCCESS
         
         # declare variables
-        me = "process_json_api_response"
+        me = "process_json_api_response_by_person"
         my_logger = None
         my_reponse_helper = None
         my_capture_method = ""
         
-        # quote processing variables.
-        quotation_dict = None
-        quote_count = -1
+        # declare variables - person processing.
+        person_dict = None
+        person_count = -1
+        person_counter = -1
         current_oc_URI = None
-        current_quotation_json = None
-        quote_counter = -1
-        quote_person_URI = ""
-        quote_person = None
-        person_to_quotes_map = {}
-        person_quote_dict = {}
+        current_person_json = None
         
         # person processing variables.
         person_counter = -1
@@ -627,22 +935,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         article_source_set = None
         article_source_qs = None
         article_source_count = -1
-        person_paper = None
-        
-        # mention processing variables.
-        mention_list = []
-        mention_counter = -1
-        current_mention = None
-        
-        # quotation processing variables.
-        uri_to_quotation_dictionary = {}
-        person_quote_list = None
-        quote_counter = -1
-        current_quotation_URI = ""
-        quotation_JSON = None
-        quotation_qs = None
-        current_quotation = None
-        status_string = ""
 
         # get logger
         my_logger = self.get_logger()
@@ -661,59 +953,129 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # chuck the response in there.
         my_response_helper.set_json_response_object( json_response_IN )
         
-        # once we get response JSON sorted out, then use it to interact.
+        # once we get response JSON sorted out, store it in instance.
+        self.response_helper = my_response_helper
         
-        # get all the quotations.
-        quotation_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+        # get map of people to quotations (uses newly nested response helper).
+        person_to_quotes_map = self.create_person_to_quotation_dict()
+                
+        # get all the people.
+        person_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_PERSON )
 
         # make sure it isn't None
-        if ( quotation_dict is not None ):
+        if ( person_dict is not None ):
 
-            quote_count = len( quotation_dict )
-            my_logger.debug( "In " + me + ": quote count = " + str( quote_count ) )
+            person_count = len( person_dict )
+            my_logger.debug( "In " + me + ": person count = " + str( person_count ) )
             
-            # make sure we have one or more quotes
-            if ( quote_count > 0 ):
+            # make sure we have one or more person
+            if ( person_count > 0 ):
             
                 # loop over them
-                quote_counter = 0
-                for current_oc_URI, current_quotation_json in six.iteritems( quotation_dict ):
+                person_counter = 0
+                for current_oc_URI, current_person_json in six.iteritems( person_dict ):
                 
                     # increment counter
-                    quote_counter = quote_counter + 1
+                    person_counter = person_counter + 1
                     
                     # log the URI
-                    my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
+                    my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + current_oc_URI )
                     
-                    # get the URI of the person who was quoted.
-                    quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
-                    
-                    # is person already in person-to-quote map?
-                    if quote_person_URI in person_to_quotes_map:
-                    
-                        # yes - get quote dictionary...
-                        person_quote_dict = person_to_quotes_map[ quote_person_URI ]
-        
-                        # then add current quote to dictionary.
-                        person_quote_dict[ current_oc_URI ] = current_quotation_json
-                    
-                    else:
-                    
-                        # person not in map.  Make dict of quotes...
-                        person_quote_dict = {}
-        
-                        # add current quote...
-                        person_quote_dict[ current_oc_URI ] = current_quotation_json
-        
-                        # then associate quotes with person URI.
-                        person_to_quotes_map[ quote_person_URI ] = person_quote_dict
-                    
-                    #-- END check to see if person in person-to-quotes map. --#
-                    
-                #-- END loop over quotation items --#
+                    # call the method to process person.
+                    self.process_json_person( article_IN, article_data_IN, current_oc_URI, current_person_json )
                 
-                my_logger.debug( "In " + me + ": done with quote loop, on to person loop, over person-to-quote map." )
+                #-- END loop over persons --#
                 
+            else:
+    
+                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No persons in article, so nothing else to do." )
+    
+            #-- END check to see if any quotes in article.  If not, no attribution. --#
+
+        else:
+
+            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No persons in article (None returned), so nothing else to do." )
+
+        #-- END check to see if any quotes in article.  If not, no attribution. --#
+
+        return status_OUT
+    
+    #-- END function process_json_api_response_by_person() --#
+
+
+    def process_json_api_response_by_quotation( self, article_IN, article_data_IN, json_response_IN ):
+    
+        '''
+        Accepts Article, Article_Data instance of article we are processing, and
+           the JSON response from passing that article's text to the OpenCalais
+           API.  Parses response, finds all quotations and the people they are
+           tied to.  Then, for each quotation:
+           - look up the people who are quoted by name.
+              - If ambiguity, make a new person, but also keep track of other
+                 potential matches (will need to add this to the database).
+              - will probably need to refine the person lookup, too.  Right now, 
+           - add sources to Article_Data.
+           - save the article data.
+        '''
+        
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables
+        me = "process_json_api_response_by_quotation"
+        my_logger = None
+        my_reponse_helper = None
+        my_capture_method = ""
+        
+        # quote processing variables.
+        person_to_quotes_map = {}
+
+        # person processing variables.
+        person_counter = -1
+        person_URI = ""
+        person_json = None
+        status_string = ""
+
+        # get logger
+        my_logger = self.get_logger()
+        
+        # initialize variables from article_data_IN
+        my_capture_method = article_data_IN.coder_type
+        
+        # got a capture method?
+        if ( ( my_capture_method != None ) and ( my_capture_method != "" ) ):
+        
+            # store it.
+            self.article_capture_method = my_capture_method
+            
+        #-- END check to see if capture method already present in article data --#
+        
+        # get response helper.
+        my_response_helper = OpenCalaisApiResponse()
+        
+        #temp_dict_1 = my_response_helper.type_group_to_items_dict
+        #my_logger.debug( "In " + me + ": type_group_to_items_dict = " + str( temp_dict_1 ) )
+        #temp_dict_2 = my_response_helper.type_to_items_dict
+        #my_logger.debug( "In " + me + ": type_to_items_dict = " + str( temp_dict_2 ) )
+        
+        # chuck the response in there.
+        my_response_helper.set_json_response_object( json_response_IN )
+        
+        # once we get response JSON sorted out, store it in instance.
+        self.response_helper = my_response_helper
+        
+        # get map of people to quotations (uses newly nested response helper).
+        person_to_quotes_map = self.create_person_to_quotation_dict()
+        
+        # make sure it isn't None
+        if ( person_to_quotes_map is not None ):
+
+            person_count = len( person_to_quotes_map )
+            my_logger.debug( "In " + me + ": count of people with quotations = " + str( person_count ) )
+    
+            # got any people quoted?
+            if ( person_count > 0 ):
+            
                 # now, look at people who were quoted.
                 person_counter = 0
                 for person_URI in person_to_quotes_map:
@@ -721,211 +1083,26 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     # increment counter
                     person_counter = person_counter + 1
                     
-                    # try to get person from URI.
-                    person_json = my_response_helper.get_item_from_response( person_URI )
-                    person_json_string = JSONHelper.pretty_print_json( person_json )
-                    
-                    self.output_debug( "+++++ Person JSON for URI: \"" + person_URI + "\"\n\n\n" + person_json_string )
-                    
-                    # Do we have JSON for this URI?
-                    if ( ( person_json is not None ) and ( person_json_string.strip() != "null" ) ):
-                    
-                        # get and output name.
-                        person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
-                        
-                        my_logger.debug( "In " + me + ": person #" + str( person_counter ) + " = " + person_name )
-                        
-                        # try looking up source just like we look up authors.
-            
-                        # make empty article subject to work with, for now.
-                        article_source = Article_Subject()
-                        article_source.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
-                        
-                        # prepare person details.
-                        person_details_dict = {}
-                        person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
-                        person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
-                        person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
-                        person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
-                        person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
-            
-                        # lookup person - returns person and confidence score inside
-                        #    Article_Subject instance.
-                        article_source = self.lookup_person( article_source, 
-                                                             person_name,
-                                                             create_if_no_match_IN = True,
-                                                             update_person_IN = True,
-                                                             person_details_IN = person_details_dict )
-                        source_person = article_source.person
-                                    
-                        # got a person?
-                        if ( source_person is not None ):
-            
-                            # One Article_Subject per person, and then have a new thing to
-                            #    hold quotations that hangs off that.
-                            # At any rate, make method to process person/quote that you pass:
-                            # - source_person
-                            # - article_data_IN
-                            # - my_response_helper (including JSON, etc.)
-                            # - quote JSON?  OR quotes list for person, from person_to_quotes_map...?
-                            # - ...?
-                            
-                            # Now, we need to deal with Article_Subject instance.  First, see
-                            #    if there already is one for this name.  If so, do nothing.
-                            #    If not, make one.
-
-                            # get sources
-                            article_source_set = article_data_IN.get_quoted_article_sources_qs()
-                            article_source_qs = article_source_set.filter( person = source_person )
-                            article_source_count = article_source_qs.count()
-                            
-                            # got anything?
-                            if ( article_source_count == 0 ):
-                                                         
-                                # no - add - more stuff to set.  Need to see what we can get.
-                                
-                                # use the source Article_Subject created above.
-                                #article_source = Article_Subject()
-                            
-                                article_source.article_data = article_data_IN
-                                article_source.person = source_person
-                                
-                                # confidence level set in lookup_person() method.
-                                #article_source.match_confidence_level = 1.0
-                
-                                article_source.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
-                                article_source.title = ""
-                                article_source.more_title = ""
-                                article_source.organization = None # models.ForeignKey( Organization, blank = True, null = True )
-                                #article_source.document = None
-                                article_source.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
-                                #article_source.source_capacity = None
-                                #article_source.localness = None
-                                article_source.notes = ""
-                
-                                # field to store how source was captured.
-                                article_source.capture_method = self.CONFIG_APPLICATION
-                            
-                                article_source.save()
-                                
-                                # !TODO - topics?
-                                # if we want to set topics, first save article_source, then
-                                #    we can parse them out of the JSON, make sure they exist
-                                #    in topics table, then add relation.  Probably want to
-                                #    make Person_Topic also.  So, if we do this, it will be
-                                #    a separate method.
-                                #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
-            
-                                my_logger.debug( "In " + me + ": adding Article_Subject source instance for " + str( source_person ) + "." )
-                
-                            elif ( article_source_count == 1 ):
-                            
-                                my_logger.debug( "In " + me + ": Article_Subject source instance already exists for " + str( source_person ) + "." )
-                                
-                                # retrieve article source from query set.
-                                article_source = article_source_qs.get()
-                                
-                                # !TODO - want to do any updates?
-                                
-                            else:
-                            
-                                # neither 0 or 1 sources - either invalid or multiple,
-                                #    either is not right.
-                                my_logger.debug( "In " + me + ": Article_Subject source count for " + str( source_person ) + " = " + str( article_source_count ) + ".  What to do?" )
-                                                    
-                            #-- END check if need new Article_Subject instance --#
-                            
-                            # make sure we have an article_source
-                            if ( ( article_source is not None ) and ( article_source.id ) ):
-            
-                                # !deal with mentions.
-                                
-                                # get list of mentions from Person's "instances"
-                                mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
-                
-                                # loop
-                                mention_counter = 0
-                                for current_mention in mention_list:
-                                
-                                    # incremenet counter
-                                    mention_counter = mention_counter + 1
-                                
-                                    self.output_debug( "Mention " + str( mention_counter ) )
-                                    
-                                    # call method to process mention.
-                                    self.process_json_mention( article_IN, article_source, current_mention )
-                
-                                #-- END loop over mentions --#
-                
-                                # !deal with quotes.
-                                # to start, loop over the quotes associated with the current
-                                #    person and see what is in them.
-                                
-                                # get map of URIs to JSON for "Quotation" item type.
-                                uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
-                                
-                                # get quote list for current person.
-                                person_quote_list = person_to_quotes_map.get( person_URI, [] )
-                                
-                                # loop
-                                quote_counter = 0
-                                for current_quotation_URI in person_quote_list:
-                
-                                    # increment counter
-                                    quote_counter = quote_counter + 1
-                
-                                    self.output_debug( "Quotation " + str( quote_counter ) + " URI: " + current_quotation_URI )
-                                    
-                                    # get JSON from URI_to_quotation_dictionary.
-                                    quotation_JSON = uri_to_quotation_dictionary.get( current_quotation_URI, None )
-                
-                                    # got one?
-                                    if ( quotation_JSON is not None ):
-                
-                                        self.process_json_quotation( article_IN, article_source, current_quotation_URI, quotation_JSON )
-                                        
-                                    #-- END check to see if Quotation JSON --#
-                                    
-                                #-- END loop over quotations --#
-                                
-                            #-- END check to make sure we have an Article_Subject --#
-            
-                        else:
-                        
-                            my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + person_name + "\"" )
-            
-                        #-- END check to see if person found. --#
-                        
-                    else:
-                    
-                        # !TODO - need to set something on article_data_IN here, so we
-                        #    can track when this odd error occurs - was a problem with
-                        #    OpenCalais.
-                        status_string = "In OpenCalaisArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
-                        article_data_IN.set_status( Article_Data.STATUS_SERVICE_ERROR, status_string  )
-                    
-                        # log it.
-                        my_logger.debug( status_string )
-                        
-                    #-- END check to see if JSON present for URI --#
+                    # call the method to process person.
+                    self.process_json_person( article_IN, article_data_IN, person_URI )
                 
                 #-- END loop over persons --#
-                
+                    
             else:
     
-                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article, so nothing else to do." )
+                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No people quoted in article, so nothing else to do." )
     
             #-- END check to see if any quotes in article.  If not, no attribution. --#
 
         else:
 
-            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article (None returned), so nothing else to do." )
+            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No people quoted in article (None returned), so nothing else to do." )
 
         #-- END check to see if any quotes in article.  If not, no attribution. --#
 
         return status_OUT
     
-    #-- END function process_json_api_response() --#
+    #-- END function process_json_api_response_by_quotation() --#
 
 
     def process_json_mention( self, article_IN, article_subject_IN, mention_JSON_IN ):
@@ -1365,6 +1542,314 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method process_json_mention() --#
 
         
+    def process_json_person( self, article_IN, article_data_IN, person_URI_IN, person_JSON_IN = None ):
+        
+        '''
+        Accepts Article, Article_Data instance of article we are processing, and
+           the JSON for the person who is the subject of the article that we are
+           currently processing.  For each person:
+           - look up the person.
+              - If ambiguity, make a new person, but also keep track of other
+                 potential matches (will need to add this to the database).
+              - will probably need to refine the person lookup, too.  Right now, 
+           - add person to Article_Data as Article_Subject instance.
+           - add mentions to person's Article_Subject as Article_Subject_Mention
+               instances.
+           - check to see if quotations.  If yes:
+              - change subject_type to "quoted".
+              - add quotations to Article_Subject as Article_Subject_Quotation
+                 instances.
+           - save the Article_Subject and Article_Data.
+           
+        Returns Article_Subject instance for this person.
+        
+        Preconditions: Must have properly set up the following variables in the
+           instance:
+           - self.request_helper - instance of OpenCalaisApiResponse instance
+              initialized with response JSON.
+           - self.article_capture_method - capture method from Article_Data
+              instance, if one present.
+           - self.person_to_quotes_dict - dictionary of Person URIs to their
+              quotations, created by method create_person_to_quotation_dict().
+           
+        Postconditions: If successful, a new Article_Subject for this person
+           will have been created and saved to database on method completion.
+           This Article_Subject instance will be returned.  If None returned,
+           then there was an error and nothing was saved to the database.  See
+           log file for more details on error.
+        '''
+        
+        # return reference
+        article_subject_OUT = None
+        
+        # declare variables
+        me = "process_json_person"
+        my_logger = None
+        person_URI = ""
+        person_json = None
+        person_json_string = ""
+        my_capture_method = ""
+        
+        # declare variables - person lookup
+        person_name = ""
+        article_subject = None
+        person_details_dict = {}
+        subject_person = None
+        article_subject_set = None
+        article_subject_qs = None
+        article_subject_count = -1
+
+        # mention processing variables.
+        mention_list = []
+        mention_counter = -1
+        current_mention = None
+        
+        # quotation processing variables
+        person_to_quotes_map = {}
+        uri_to_quotation_dictionary = {}
+        person_quote_list = None
+        quote_counter = -1
+        current_quotation_URI = ""
+        quotation_JSON = None
+        quotation_qs = None
+        current_quotation = None
+        status_string = ""
+
+        # get logger
+        my_logger = self.get_logger()
+        
+        # get response helper
+        my_response_helper = self.response_helper
+        
+        # initialize person variables from input arguments, instance variables.
+        my_article_capture_method = self.article_capture_method
+        person_URI = person_URI_IN
+        
+        # got URI?
+        if ( ( person_URI is not None ) and ( person_URI != "" ) ):
+        
+            # yes - good.  Got JSON?
+            if ( ( person_JSON_IN is not None ) and ( person_JSON_IN != "" ) ):
+            
+                # yes - use it.
+                person_json = person_JSON_IN
+                
+            else:
+            
+                # no - look it up using URI.
+                person_json = my_response_helper.get_item_from_response( person_URI )
+                
+            #-- END check to see if we have person JSON --#
+            
+            # convert JSON to string, for debugging and check to see if populated.
+            person_json_string = JSONHelper.pretty_print_json( person_json )
+                        
+            self.output_debug( "+++++ Person JSON for URI: \"" + person_URI + "\"\n\n\n" + person_json_string )
+                        
+            # Do we have JSON?
+            if ( ( person_json is not None ) and ( person_json_string.strip() != "null" ) ):
+                        
+                # yes - get and output name.
+                person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+                
+                my_logger.debug( "In " + me + ": person name = " + person_name )
+                
+                # try looking up source just like we look up authors.
+    
+                # make empty article subject to work with, for now.
+                article_subject = Article_Subject()
+                article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
+                
+                # prepare person details.
+                person_details_dict = {}
+                person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+                person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
+                person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
+                person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
+                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
+    
+                # lookup person - returns person and confidence score inside
+                #    Article_Subject instance.
+                article_subject = self.lookup_person( article_subject, 
+                                                      person_name,
+                                                      create_if_no_match_IN = True,
+                                                      update_person_IN = True,
+                                                      person_details_IN = person_details_dict )
+                subject_person = article_subject.person
+                                        
+                # got a person?
+                if ( subject_person is not None ):
+    
+                    # One Article_Subject per person, and then have a new thing to
+                    #    hold mentions and quotations that hangs off that.
+                    
+                    # Now, we need to deal with Article_Subject instance.  First, see
+                    #    if there already is one for this name.  If so, do nothing.
+                    #    If not, make one.
+    
+                    # get sources
+                    article_subject_set = article_data_IN.article_subject_set.all()
+                    article_subject_qs = article_subject_set.filter( person = subject_person )
+                    article_subject_count = article_subject_qs.count()
+                                
+                    # got anything?
+                    if ( article_subject_count == 0 ):
+                                                 
+                        # no - add - more stuff to set.  Need to see what we can get.
+                        
+                        # use the source Article_Subject created above.
+                        #article_source = Article_Subject()
+                    
+                        article_subject.article_data = article_data_IN
+                        article_subject.person = subject_person
+                        
+                        # confidence level set in lookup_person() method.
+                        #article_subject.match_confidence_level = 1.0
+        
+                        article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
+                        article_subject.title = ""
+                        article_subject.more_title = ""
+                        article_subject.organization = None # models.ForeignKey( Organization, blank = True, null = True )
+                        #article_subject.document = None
+                        article_subject.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
+                        #article_subject.source_capacity = None
+                        #article_subject.localness = None
+                        article_subject.notes = ""
+        
+                        # field to store how source was captured.
+                        article_subject.capture_method = self.CONFIG_APPLICATION
+                    
+                        article_subject.save()
+                        
+                        # !TODO - topics?
+                        # if we want to set topics, first save article_source, then
+                        #    we can parse them out of the JSON, make sure they exist
+                        #    in topics table, then add relation.  Probably want to
+                        #    make Person_Topic also.  So, if we do this, it will be
+                        #    a separate method.
+                        #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
+    
+                        my_logger.debug( "In " + me + ": adding Article_Subject instance for " + str( subject_person ) + "." )
+        
+                    elif ( article_subject_count == 1 ):
+                    
+                        my_logger.debug( "In " + me + ": Article_Subject instance already exists for " + str( subject_person ) + "." )
+                        
+                        # retrieve article source from query set.
+                        article_subject = article_subject_qs.get()
+                        
+                        # !TODO - want to do any updates?
+                        
+                    else:
+                    
+                        # neither 0 or 1 sources - either invalid or multiple,
+                        #    either is not right.
+                        my_logger.debug( "In " + me + ": Article_Subject count for " + str( subject_person ) + " = " + str( article_subject_count ) + ".  What to do?" )
+                                            
+                    #-- END check if need new Article_Subject instance --#
+                                
+                    # make sure we have an article_subject
+                    if ( ( article_subject is not None ) and ( article_subject.id ) ):
+    
+                        # !deal with mentions.
+                        
+                        # get list of mentions from Person's "instances"
+                        mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
+        
+                        # loop
+                        mention_counter = 0
+                        for current_mention in mention_list:
+                        
+                            # incremenet counter
+                            mention_counter = mention_counter + 1
+                        
+                            self.output_debug( "Mention " + str( mention_counter ) )
+                            
+                            # call method to process mention.
+                            self.process_json_mention( article_IN, article_subject, current_mention )
+        
+                        #-- END loop over mentions --#
+        
+                        # !deal with quotes.
+                        # to start, loop over the quotes associated with the current
+                        #    person and see what is in them.
+                        
+                        # get map of URIs to JSON for "Quotation" item type.
+                        uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+                        
+                        # get map of people to quotes, quote list for
+                        #    current person.
+                        person_to_quotes_map = self.person_to_quotes_dict
+                        person_quote_list = person_to_quotes_map.get( person_URI, [] )
+                        
+                        # loop
+                        quote_counter = 0
+                        for current_quotation_URI in person_quote_list:
+        
+                            # increment counter
+                            quote_counter = quote_counter + 1
+        
+                            self.output_debug( "Quotation " + str( quote_counter ) + " URI: " + current_quotation_URI )
+                            
+                            # get JSON from URI_to_quotation_dictionary.
+                            quotation_JSON = uri_to_quotation_dictionary.get( current_quotation_URI, None )
+        
+                            # got one?
+                            if ( quotation_JSON is not None ):
+        
+                                self.process_json_quotation( article_IN, article_subject, current_quotation_URI, quotation_JSON )
+                                
+                            #-- END check to see if Quotation JSON --#
+                            
+                        #-- END loop over quotations --#
+                        
+                        # How many quotes?
+                        if ( quote_counter > 0 ):
+                        
+                            # at least one - set subject-type to quoted.
+                            article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
+                            article_subject.save()
+                            
+                        #-- END check to see if quotes present. --#
+                        
+                        # return reference to article_subject.
+                        article_subject_OUT = article_subject
+                        
+                    #-- END check to make sure we have an Article_Subject --#
+                
+                else:
+                
+                    # error - no person found for name.
+                    my_logger.debug( "In " + me + ": ERROR - no matching person found - must have been a problem looking up name \"" + person_name + "\"" )
+                    article_subject_OUT = None
+    
+                #-- END check to see if person found. --#
+                
+            else:
+            
+                # When JSON is not present for a person URI, is a problem with OpenCalais.
+                status_string = "In OpenCalaisArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
+                article_data_IN.set_status( Article_Data.STATUS_SERVICE_ERROR, status_string  )
+                article_subject_OUT = None
+            
+                # log it.
+                my_logger.debug( status_string )
+                
+            #-- END check to see if JSON present for person URI --#
+            
+        else:
+        
+            # No URI, nothing we can do.  Who is it?
+            my_logger.debug( "In " + me + ": ERROR - no URI passed in for person.  Can not continue." )
+            article_subject_OUT = None
+        
+        #-- END check to make sure we have a URI --#
+        
+        return article_subject_OUT
+    
+    #-- END function process_json_person() --#
+
+
     def process_json_quotation( self, article_IN, article_subject_IN, quotation_URI_IN, quotation_JSON_IN ):
     
         '''

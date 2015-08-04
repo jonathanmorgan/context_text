@@ -37,7 +37,7 @@ from sourcenet.models import Article_Data
 
 # Import other Article coder classes
 from sourcenet.article_coding.article_coder import ArticleCoder
-from sourcenet.article_coding.open_calais_article_coder import OpenCalaisArticleCoder
+from sourcenet.article_coding.open_calais_v1.open_calais_article_coder import OpenCalaisArticleCoder
 from python_utilities.logging.summary_helper import SummaryHelper
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
