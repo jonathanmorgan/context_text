@@ -40,6 +40,7 @@ from python_utilities.sequences.sequence_helper import SequenceHelper
 # sourcenet classes
 
 # models
+from sourcenet.models import Alternate_Subject_Match
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Data_Notes
 from sourcenet.models import Article_Subject
@@ -136,7 +137,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
 
     #============================================================================
-    # Instance methods
+    # Constructor
     #============================================================================
 
 
@@ -164,8 +165,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # items for processing a given JSON response - should be updated with
         #    every new article coded.
         
-        # capture method.
-        self.article_capture_method = ""
+        # coder type (defaults to self.CONFIG_APPLICATION).
+        self.coder_type = self.CONFIG_APPLICATION
         
         # OpenCalaisApiRespnse helper instance
         self.response_helper = None
@@ -177,291 +178,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method __init__() --#
 
 
-    def process_article( self, article_IN, coding_user_IN = None, *args, **kwargs ):
+    #============================================================================
+    # Instance methods
+    #============================================================================
 
-        '''
-        purpose: After the ArticleCoder is initialized, this method accepts one
-           article instance and codes it for sourcing.  In regards to articles,
-           this class is stateless, so you can process many articles with a
-           single instance of this object without having to reconfigure each
-           time.
-        preconditions: load_config_properties() should have been invoked before
-           running this method.
-        postconditions: article passed in is coded, which means an Article_Data
-           instance is created for it and populated to the extent the child
-           class is capable of coding the article.
-        '''
-
-        # return reference
-        status_OUT = self.STATUS_SUCCESS
-        
-        # declare variables
-        me = "process_article"
-        my_logger = None
-        my_exception_helper = None
-        exception_message = ""
-        debug_string = ""
-        process_all_IN = False
-        process_authors_IN = False
-        automated_coding_user = None
-        article_text = None
-        article_body_html = ""
-        request_data = ""
-        my_http_helper = None
-        my_content_type = ""
-        requests_response = None
-        requests_raw_text = ""
-        requests_response_json = None
-        is_response_OK = True
-        article_data = None
-        my_author_string = ""
-        latest_status = ""
-        do_save_article = True
-        do_save_data = False
-        my_json_note = None
-        
-        # get logger
-        my_logger = self.get_logger()
-        
-        # get exception_helper
-        my_exception_helper = self.get_exception_helper()
-        
-        # parse params
-        process_all_IN = self.get_config_property( self.PARAM_AUTOPROC_ALL, True )
-        
-        # if not process all, do we process any?
-        if ( process_all_IN == False ):
-
-            # how about authors?
-            process_authors_IN = self.get_config_property( self.PARAM_AUTOPROC_AUTHORS, True )
-            
-        #-- END check to see if we set processing flags by item --#
-        
-        my_logger.debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
-        
-        # get automated_coding_user
-        automated_coding_user = coding_user_IN
-        
-        # got a user?
-        if ( automated_coding_user is not None ):
-
-            # got an article?
-            if ( article_IN is not None ):
-    
-                # get Article_Data instance for user and coder_type.  Grab it
-                #    first so we can store error information in it if problem
-                #    on OpenCalais side.
-                article_data = article_IN.get_article_data_for_coder( automated_coding_user, self.CONFIG_APPLICATION )
-                
-                # got article data?
-                if ( article_data is not None ):
-                
-                    self.output_debug( "\n\nIn " + me + ": Article_Data instance id = " + str( article_data.id ) )
-                
-                    # wrap in try/except to aim to catch unexpected exceptions,
-                    #    so we can set a status in the Article_Data instance.
-                    try:
-                
-                        # then, get text.
-                        article_text = article_IN.article_text_set.get()
-                        
-                        # retrieve article body with HTML
-                        article_body_html = article_text.get_content()
-                        
-                        # AND get without HTML - OpenCalais API does not deal well
-                        #    with HTML - just pass plain text.
-                        article_body_text = article_text.get_content_sans_html()
-                        
-                        # store whatever we are passing in the request_data variable.
-                        request_data = article_body_text
-                        
-                        if ( self.DEBUG_FLAG == True ):
-                        
-                            my_logger.debug( "In " + me + ": Article " + str( article_IN.id ) + " - " + article_IN.headline )
-                            my_logger.debug( "In " + me + ": current article body:" )
-                            my_logger.debug( request_data )
-                        
-                        #-- END debug --#
-                        
-                        # encode the data, so (hopefully) HTTPHelper doesn't have to.
-                        #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
-                        # - moved this into load_url_requests().
-                        
-                        # get Http_Helper instance
-                        my_http_helper = self.get_http_helper()
-                        
-                        # what is the content type?
-                        my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
-                        
-                        if ( self.DEBUG_FLAG == True ):
-                        
-                            my_logger.debug( "In " + me + ": content type = " + my_content_type )
-                            
-                        #-- END debug --#
-                        
-                        # make the request.
-                        requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
-                        
-                        # raw text:
-                        requests_raw_text = requests_response.text
-                        
-                        # convert to a json object, inside try since sometimes OpenCalais
-                        #    returns non-parsable stuff.
-                        try:
-                        
-                            # convert to JSON object
-                            requests_response_json = requests_response.json()
-                            is_response_OK = True
-                            
-                        except ValueError as ve:
-                        
-                            # problem parsing JSON - log body of article, response,
-                            #    and exception.
-                            exception_message = "ValueError parsing OpenCalais JSON."
-                            my_logger.debug( "\n ! " + exception_message )
-                            my_logger.debug( "\n ! article text:\n" + request_data )
-                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
-                            my_exception_helper.process_exception( ve, exception_message )
-                            
-                            # set status on article data to service_error
-                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
-                            
-                            # let rest of program know it is not OK to proceed.
-                            is_response_OK = False
-                        
-                        except Exception as e:
-                        
-                            # unknown problem parsing JSON - log body of article,
-                            #    response, and exception.
-                            exception_message = "Exception parsing OpenCalais JSON."
-                            my_logger.debug( "\n ! " + exception_message )
-                            my_logger.debug( "\n ! article text:\n" + request_data )
-                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
-                            my_exception_helper.process_exception( e, exception_message )
-                            
-                            # set status on article data to service_error
-                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
-                            
-                            # let rest of program know it is not OK to proceed.
-                            is_response_OK = False
-                        
-                        #-- END try/except around JSON processing. --#
-                        
-                        # render some of it as a string, for debug.
-                        if ( self.DEBUG_FLAG == True ):
-                        
-                            # render and output debug string.
-                            debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
-                            self.output_debug( debug_string )
-            
-                        #-- END debug --#
-            
-                        self.output_debug( "In " + me + ": after parsing JSON, before processing it." )
-            
-                        # all parsed - OK to continue?
-                        if ( is_response_OK == True ):
-            
-                            # process contents of response.
-                        
-                            # Process authors?
-                            if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
-                            
-                                # process authors.  Get author string
-                                my_author_string = article_IN.author_string
-                                
-                                my_logger.info( "Article author string: " + my_author_string )
-                                
-                                # process author string.
-                                latest_status = self.process_author_string( article_data, my_author_string )
-                                
-                                do_save_data = True
-                                
-                                my_logger.debug( "After calling process_author_string() - " + latest_status )
-                                
-                            #-- End check to see if we process authors --#
-                            
-                            # call the process_json_api_response() method to parse
-                            #    the request JSON, find all quotations, people they
-                            #    are tied to, then make attribution relations.
-                            latest_status = self.process_json_api_response( article_IN, article_data, requests_response_json )
-
-                            # if we make it here, we're done processing.
-                            #    Complete!                            
-                            article_data.status = Article_Data.STATUS_COMPLETE
-
-                        #-- END check to see if OK to process information returned from OpenCalais. --#
-                            
-                        # regardless, Save Article_Data instance if flag indicates
-                        #    we are to save.
-                        if ( do_save_data == True ):
-                            
-                            article_data.save()
-                            
-                            # store the JSON in an Article_Data_Note.
-                            my_json_note = Article_Data_Notes()
-                            
-                            # set values
-                            my_json_note.article_data = article_data
-                            my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                            my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
-                            #my_json_note.status = ""
-                            my_json_note.source = self.CONFIG_APPLICATION
-                            my_json_note.content_description = "OpenCalais REST API response JSON"
-                            
-                            # save note.
-                            my_json_note.save()
-    
-                        #-- END check to see if we save article data --#
-                        
-                        # not saving article at this point - shouldn't be changing anything there.
-                        # save the article, as well?
-                        #if ( do_save_article == True ):
-                            
-                            # We do also save the article itself.
-                        #    article_IN.save()
-                            
-                        #-- END check to see if we save article. --#
-
-                    except Exception as e:
-                    
-                        # set status on article data to unknown_error and save().
-                        exception_message = "In OpenCalaisArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
-                        article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
-                        article_data.save()
-                        
-                        # unknown problem processing article
-                        my_logger.debug( "\n ! " + exception_message )
-                        my_logger.debug( "\n ! Article_Data:\n" + str( article_data ) )
-                        my_exception_helper.process_exception( e, exception_message )
-                        
-                        # return status.  Article_Data is already saved.  Might
-                        #    as well let this end gracefully.
-                        status_OUT = self.STATUS_ERROR_PREFIX + exception_message
-                        
-                        # OR, re-raise excpetion:
-                        # exception_type, exception_value, exception_traceback = sys.exc_info()
-                        # raise exception_type, exception_value, exception_traceback
-                    
-                    #-- END try/except around all article processing after retrieving article_data. --#
-                        
-                else:
-                
-                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.CONFIG_APPLICATION + "\""
-                    
-                #-- END check to see if we found article data into which we'll code.
-    
-            #-- END check to see if article. --#
-            
-        else:
-        
-            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"automated\".  Can't code articles without a user."
-            
-        #-- END check to make sure we have an automated coding user. --#
-        
-        return status_OUT
-
-    #-- END method process_article() --#
-    
 
     def create_person_to_quotation_dict( self, oc_api_response_helper_IN = None ):
     
@@ -709,7 +429,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
            need to be loaded should be set here.  To set a property use
            add_config_property( name_IN ).  To set application, use
            set_config_application( app_name_IN ).
+           
+        inheritance: This method overrides the abstract method of the same name in
+           the ArticleCoder parent class.
+
         preconditions: None.
+
         postconditions: This instance should be ready to have
            load_config_properties() called on it after this method is invoked.
         '''
@@ -726,7 +451,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         '''
         purpose: Accepts a dictionary of run-time parameters, uses them to
            initialize this instance.
+
+        inheritance: This method overrides the abstract method of the same name in
+           the ArticleCoder parent class.
+
         preconditions: None.
+
         postconditions: None.
         '''
 
@@ -771,6 +501,297 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END abstract method initialize_from_params() --#
     
 
+    def process_article( self, article_IN, coding_user_IN = None, *args, **kwargs ):
+
+        '''
+        purpose: After the ArticleCoder is initialized, this method accepts one
+           article instance and codes it for sourcing.  In regards to articles,
+           this class is stateless, so you can process many articles with a
+           single instance of this object without having to reconfigure each
+           time.
+           
+        inheritance: This method overrides the abstract method of the same name in
+           the ArticleCoder parent class.
+
+        preconditions: load_config_properties() should have been invoked before
+           running this method.
+
+        postconditions: article passed in is coded, which means an Article_Data
+           instance is created for it and populated to the extent the child
+           class is capable of coding the article.
+        '''
+
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables
+        me = "process_article"
+        my_logger = None
+        my_exception_helper = None
+        exception_message = ""
+        debug_string = ""
+        process_all_IN = False
+        process_authors_IN = False
+        automated_coding_user = None
+        article_text = None
+        article_body_html = ""
+        request_data = ""
+        my_http_helper = None
+        my_content_type = ""
+        requests_response = None
+        requests_raw_text = ""
+        requests_response_json = None
+        is_response_OK = True
+        article_data = None
+        my_author_string = ""
+        latest_status = ""
+        do_save_article = True
+        do_save_data = False
+        my_json_note = None
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # get exception_helper
+        my_exception_helper = self.get_exception_helper()
+        
+        # parse params
+        process_all_IN = self.get_config_property( self.PARAM_AUTOPROC_ALL, True )
+        
+        # if not process all, do we process any?
+        if ( process_all_IN == False ):
+
+            # how about authors?
+            process_authors_IN = self.get_config_property( self.PARAM_AUTOPROC_AUTHORS, True )
+            
+        #-- END check to see if we set processing flags by item --#
+        
+        my_logger.debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
+        
+        # get automated_coding_user
+        automated_coding_user = coding_user_IN
+        
+        # got a user?
+        if ( automated_coding_user is not None ):
+
+            # got an article?
+            if ( article_IN is not None ):
+    
+                # get Article_Data instance for user and coder_type.  Grab it
+                #    first so we can store error information in it if problem
+                #    on OpenCalais side.
+                article_data = article_IN.get_article_data_for_coder( automated_coding_user, self.coder_type )
+                
+                # got article data?
+                if ( article_data is not None ):
+                
+                    self.output_debug( "\n\nIn " + me + ": Article_Data instance id = " + str( article_data.id ) )
+                
+                    # wrap in try/except to aim to catch unexpected exceptions,
+                    #    so we can set a status in the Article_Data instance.
+                    try:
+                
+                        # then, get text.
+                        article_text = article_IN.article_text_set.get()
+                        
+                        # retrieve article body with HTML
+                        article_body_html = article_text.get_content()
+                        
+                        # AND get without HTML - OpenCalais API does not deal well
+                        #    with HTML - just pass plain text.
+                        article_body_text = article_text.get_content_sans_html()
+                        
+                        # store whatever we are passing in the request_data variable.
+                        request_data = article_body_text
+                        
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            my_logger.debug( "In " + me + ": Article " + str( article_IN.id ) + " - " + article_IN.headline )
+                            my_logger.debug( "In " + me + ": current article body:" )
+                            my_logger.debug( request_data )
+                        
+                        #-- END debug --#
+                        
+                        # encode the data, so (hopefully) HTTPHelper doesn't have to.
+                        #request_data = DjangoStringHelper.encode_string( request_data, DjangoStringHelper.ENCODING_UTF8 )
+                        # - moved this into load_url_requests().
+                        
+                        # get Http_Helper instance
+                        my_http_helper = self.get_http_helper()
+                        
+                        # what is the content type?
+                        my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
+                        
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            my_logger.debug( "In " + me + ": content type = " + my_content_type )
+                            
+                        #-- END debug --#
+                        
+                        # make the request.
+                        requests_response = my_http_helper.load_url_requests( self.OPEN_CALAIS_REST_API_URL, request_type_IN = Http_Helper.REQUEST_TYPE_POST, data_IN = request_data )
+                        
+                        # raw text:
+                        requests_raw_text = requests_response.text
+                        
+                        # convert to a json object, inside try since sometimes OpenCalais
+                        #    returns non-parsable stuff.
+                        try:
+                        
+                            # convert to JSON object
+                            requests_response_json = requests_response.json()
+                            is_response_OK = True
+                            
+                        except ValueError as ve:
+                        
+                            # problem parsing JSON - log body of article, response,
+                            #    and exception.
+                            exception_message = "ValueError parsing OpenCalais JSON."
+                            my_logger.debug( "\n ! " + exception_message )
+                            my_logger.debug( "\n ! article text:\n" + request_data )
+                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                            my_exception_helper.process_exception( ve, exception_message )
+                            
+                            # set status on article data to service_error
+                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            
+                            # let rest of program know it is not OK to proceed.
+                            is_response_OK = False
+                        
+                        except Exception as e:
+                        
+                            # unknown problem parsing JSON - log body of article,
+                            #    response, and exception.
+                            exception_message = "Exception parsing OpenCalais JSON."
+                            my_logger.debug( "\n ! " + exception_message )
+                            my_logger.debug( "\n ! article text:\n" + request_data )
+                            my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                            my_exception_helper.process_exception( e, exception_message )
+                            
+                            # set status on article data to service_error
+                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            
+                            # let rest of program know it is not OK to proceed.
+                            is_response_OK = False
+                        
+                        #-- END try/except around JSON processing. --#
+                        
+                        # render some of it as a string, for debug.
+                        if ( self.DEBUG_FLAG == True ):
+                        
+                            # render and output debug string.
+                            debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
+                            self.output_debug( debug_string )
+            
+                        #-- END debug --#
+            
+                        self.output_debug( "In " + me + ": after parsing JSON, before processing it." )
+            
+                        # all parsed - OK to continue?
+                        if ( is_response_OK == True ):
+            
+                            # process contents of response.
+                        
+                            # Process authors?
+                            if ( ( process_all_IN == True ) or ( process_authors_IN == True ) ):
+                            
+                                # process authors.  Get author string
+                                my_author_string = article_IN.author_string
+                                
+                                my_logger.info( "Article author string: " + my_author_string )
+                                
+                                # process author string.
+                                latest_status = self.process_author_string( article_data, my_author_string )
+                                
+                                do_save_data = True
+                                
+                                my_logger.debug( "After calling process_author_string() - " + latest_status )
+                                
+                            #-- End check to see if we process authors --#
+                            
+                            # call the process_json_api_response() method to parse
+                            #    the request JSON, find all quotations, people they
+                            #    are tied to, then make attribution relations.
+                            latest_status = self.process_json_api_response( article_IN, article_data, requests_response_json )
+
+                            # if we make it here, we're done processing.
+                            #    Complete!                            
+                            article_data.status = Article_Data.STATUS_COMPLETE
+
+                        #-- END check to see if OK to process information returned from OpenCalais. --#
+                            
+                        # regardless, Save Article_Data instance if flag indicates
+                        #    we are to save.
+                        if ( do_save_data == True ):
+                            
+                            article_data.save()
+                            
+                            # store the JSON in an Article_Data_Note.
+                            my_json_note = Article_Data_Notes()
+                            
+                            # set values
+                            my_json_note.article_data = article_data
+                            my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
+                            my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
+                            #my_json_note.status = ""
+                            my_json_note.source = self.coder_type
+                            my_json_note.content_description = "OpenCalais REST API response JSON"
+                            
+                            # save note.
+                            my_json_note.save()
+    
+                        #-- END check to see if we save article data --#
+                        
+                        # not saving article at this point - shouldn't be changing anything there.
+                        # save the article, as well?
+                        #if ( do_save_article == True ):
+                            
+                            # We do also save the article itself.
+                        #    article_IN.save()
+                            
+                        #-- END check to see if we save article. --#
+
+                    except Exception as e:
+                    
+                        # set status on article data to unknown_error and save().
+                        exception_message = "In OpenCalaisArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
+                        article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
+                        article_data.save()
+                        
+                        # unknown problem processing article
+                        my_logger.debug( "\n ! " + exception_message )
+                        my_logger.debug( "\n ! Article_Data:\n" + str( article_data ) )
+                        my_exception_helper.process_exception( e, exception_message )
+                        
+                        # return status.  Article_Data is already saved.  Might
+                        #    as well let this end gracefully.
+                        status_OUT = self.STATUS_ERROR_PREFIX + exception_message
+                        
+                        # OR, re-raise excpetion:
+                        # exception_type, exception_value, exception_traceback = sys.exc_info()
+                        # raise exception_type, exception_value, exception_traceback
+                    
+                    #-- END try/except around all article processing after retrieving article_data. --#
+                        
+                else:
+                
+                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.coder_type + "\""
+                    
+                #-- END check to see if we found article data into which we'll code.
+    
+            #-- END check to see if article. --#
+            
+        else:
+        
+            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"automated\".  Can't code articles without a user."
+            
+        #-- END check to make sure we have an automated coding user. --#
+        
+        return status_OUT
+
+    #-- END method process_article() --#
+    
+
     def process_json_api_response( self, 
                                    article_IN,
                                    article_data_IN,
@@ -801,13 +822,32 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # declare variables
         me = "process_json_api_response"
         my_logger = None
+        article_data_coder_type = ""
         current_status = ""
 
         # get logger
         my_logger = self.get_logger()
-        
+
         # initialize variables from article_data_IN
-        my_capture_method = article_data_IN.coder_type
+        article_data_coder_type = article_data_IN.coder_type
+        
+        # sanity check - make sure Article_Data has coder type
+        if ( ( article_data_coder_type != None ) and ( article_data_coder_type != "" ) ):
+        
+            # yes - different from coder_type?
+            if ( self.coder_type != article_data_coder_type ):
+            
+                # yes - strange.  Log message.
+                my_logger.debug( "In " + me + ": ERROR - self.coder_type ( \"" + self.coder_type + "\" ) != Article_Data.coder_type ( \"" + article_data_coder_type + "\" )" )
+            
+            #-- END check to see if Article_Data and self coder_types match. --#
+            
+        else:
+
+            # no - error.  Log message.
+            my_logger.debug( "In " + me + ": ERROR - nothing in Article_Data.coder_type - self.coder_type = \"" + self.coder_type + "\"" )
+        
+        #-- END check to see if capture method already present in article data --#
         
         # see what methods we call based on the process by value.
         if ( ( process_by_IN is not None ) and ( process_by_IN != "" ) ):
@@ -916,7 +956,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         me = "process_json_api_response_by_person"
         my_logger = None
         my_reponse_helper = None
-        my_capture_method = ""
         
         # declare variables - person processing.
         person_dict = None
@@ -938,9 +977,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
         # get logger
         my_logger = self.get_logger()
-        
-        # initialize variables from article_data_IN
-        my_capture_method = article_data_IN.coder_type
         
         # get response helper.
         my_response_helper = OpenCalaisApiResponse()
@@ -1025,7 +1061,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         me = "process_json_api_response_by_quotation"
         my_logger = None
         my_reponse_helper = None
-        my_capture_method = ""
         
         # quote processing variables.
         person_to_quotes_map = {}
@@ -1038,17 +1073,6 @@ class OpenCalaisArticleCoder( ArticleCoder ):
 
         # get logger
         my_logger = self.get_logger()
-        
-        # initialize variables from article_data_IN
-        my_capture_method = article_data_IN.coder_type
-        
-        # got a capture method?
-        if ( ( my_capture_method != None ) and ( my_capture_method != "" ) ):
-        
-            # store it.
-            self.article_capture_method = my_capture_method
-            
-        #-- END check to see if capture method already present in article data --#
         
         # get response helper.
         my_response_helper = OpenCalaisApiResponse()
@@ -1496,7 +1520,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             #-- END check to see if OK to update with info from FIT. --#
 
             # and store a few more details.
-            current_mention.capture_method = self.CONFIG_APPLICATION
+            current_mention.capture_method = self.coder_type
 
             # no UUID for a mention.
             #current_mention.uuid = quotation_URI_IN
@@ -1567,8 +1591,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
            instance:
            - self.request_helper - instance of OpenCalaisApiResponse instance
               initialized with response JSON.
-           - self.article_capture_method - capture method from Article_Data
-              instance, if one present.
+           - self.coder_type - should always be self.CONFIG_APPLICATION.
            - self.person_to_quotes_dict - dictionary of Person URIs to their
               quotations, created by method create_person_to_quotation_dict().
            
@@ -1588,16 +1611,22 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         person_URI = ""
         person_json = None
         person_json_string = ""
-        my_capture_method = ""
+        my_coder_type = ""
         
         # declare variables - person lookup
         person_name = ""
         article_subject = None
         person_details_dict = {}
         subject_person = None
+        subject_match_list = None
         article_subject_set = None
         article_subject_qs = None
         article_subject_count = -1
+        
+        # alternate match processing
+        alternate_person = None
+        alternate_match_qs = None
+        alternate_match = None
 
         # mention processing variables.
         mention_list = []
@@ -1622,7 +1651,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_response_helper = self.response_helper
         
         # initialize person variables from input arguments, instance variables.
-        my_article_capture_method = self.article_capture_method
+        my_coder_type = self.coder_type
         person_URI = person_URI_IN
         
         # got URI?
@@ -1665,8 +1694,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                 person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
                 person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
-                person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = self.config_application
-                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
+                person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = my_coder_type
+                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_coder_type                        
     
                 # lookup person - returns person and confidence score inside
                 #    Article_Subject instance.
@@ -1675,7 +1704,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                                       create_if_no_match_IN = True,
                                                       update_person_IN = True,
                                                       person_details_IN = person_details_dict )
+
+                # get results from article_subject
                 subject_person = article_subject.person
+                subject_person_match_list = article_subject.person_match_list  # list of Person instances
                                         
                 # got a person?
                 if ( subject_person is not None ):
@@ -1717,7 +1749,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         article_subject.notes = ""
         
                         # field to store how source was captured.
-                        article_subject.capture_method = self.CONFIG_APPLICATION
+                        article_subject.capture_method = self.coder_type
                     
                         article_subject.save()
                         
@@ -1751,6 +1783,58 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     # make sure we have an article_subject
                     if ( ( article_subject is not None ) and ( article_subject.id ) ):
     
+                        # !process alternate matches.
+                        
+                        # got multiple alternate matches?
+                        if ( ( subject_person_match_list is not None ) and ( len( subject_person_match_list ) > 0 ) ):
+                        
+                            # for each, check in list of Alternate_Subject_Match
+                            #    records to see if it has already been captured.
+                            #    If so, move on.  If not, add.
+                            
+                            # get the set of existing alternate matches.
+                            alternate_match_qs = article_subject.alternate_subject_match_set.all()
+                            
+                            # loop over alternate match persons!
+                            for alternate_person in subject_person_match_list:
+                            
+                                # does this person already have an alternate
+                                #    match record?
+                                try:
+                                
+                                    # try getting match with this person.
+                                    alternate_match = alternate_match_qs.get( person = alternate_person )
+                                
+                                except DoesNotExist as dne:
+                                
+                                    # not yet present.  Add it.
+                                    alternate_match = Alternate_Subject_Match()
+                                    alternate_match.person = alternate_person
+                                    alternate_match.article_subject = article_subject
+                                    alternate_match.save()
+                                    
+                                except MultipleObjectsReturned as mor:
+                                
+                                    # more than one altenrate subjects found for person.
+                                    exception_message = "MultipleObjectsReturned caught while looking for alternate match record for person " + str( alternate_person ) + ", Article_Subject: " + str( article_subject ) + ".  Should never be more than one per person."
+                                    my_logger.debug( "\n ! in " + me + " - ERROR - " + exception_message )
+                                    my_logger.debug( "\n ! Article_Data:\n" + str( article_data_IN ) )
+                                    my_exception_helper.process_exception( mor, exception_message )
+                                    
+                                except Exception as e:
+                                
+                                    # Unexpected exception.  Log it.
+                                    exception_message = "Unexpected Exception caught looking for alternate match record for person " + str( alternate_person ) + ", Article_Subject: " + str( article_subject ) + ".  What?"
+                                    my_logger.debug( "\n ! in " + me + " - ERROR - " + exception_message )
+                                    my_logger.debug( "\n ! Article_Data:\n" + str( article_data_IN ) )
+                                    my_exception_helper.process_exception( e, exception_message )
+
+                                #-- END attempt to retrieve alternate match. --#
+                            
+                            #-- END loop over alternate person matches --#
+                        
+                        #-- END check to see if we have alternate matches --#
+                        
                         # !deal with mentions.
                         
                         # get list of mentions from Person's "instances"
@@ -2203,7 +2287,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             #-- END check to see if OK to update with info from FIT. --#
 
             # and store a few more details.
-            current_quotation.capture_method = self.CONFIG_APPLICATION
+            current_quotation.capture_method = self.coder_type
             current_quotation.uuid = quotation_URI_IN
             current_quotation.uuid_name = self.OPEN_CALAIS_UUID_NAME
             

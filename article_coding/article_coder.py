@@ -705,7 +705,16 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method load_config_properties() --#
     
     
-    def lookup_person( self, article_person_IN, full_name_IN, create_if_no_match_IN = True, update_person_IN = True, person_details_IN = {}, *args, **kwargs ):
+    def lookup_person( self,
+                       article_person_IN,
+                       full_name_IN,
+                       create_if_no_match_IN = True,
+                       update_person_IN = True,
+                       person_details_IN = {},
+                       on_multiple_match_try_exact_lookup_IN = False,
+                       on_multiple_create_new_person_IN = True,
+                       *args,
+                       **kwargs ):
     
         '''
         Accepts:
@@ -721,6 +730,15 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
               - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
               - PARAM_CAPTURE_METHOD = "capture_method"
+           - on_multiple_match_try_exact_lookup_IN - optional boolean, defaults 
+              to False.  If True, tries an exact match - exactly what is in the
+              name passed in, including making sure that fields that are not
+              present in the name are also empty in match.  This is a slippery
+              slope - this increases the probability of false positives.  Use
+              at your own risk.
+           - on_multiple_create_new_person_IN - optional boolean, defaults to
+              True.  If True, when multiples are detected and disambiguation
+              fails, creates a new person, stores the potential matches as well.
            
         Starting with the methods on Person object:
 
@@ -862,9 +880,6 @@ class ArticleCoder( BasicRateLimited ):
                             
                         #-- END loop over QuerySet. --#
 
-                        # make new person instance for name.
-                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
-                    
                     else:
                     
                         self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + ", which is neither 0, 1, or > 1.  Error." )
@@ -1025,31 +1040,21 @@ class ArticleCoder( BasicRateLimited ):
                 
                 #-- END check to see if we need to try full-name lookup. --#
                     
-        #------------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         # !Disambiguation Phase
-        # !TODO - if multiple matches, disambiguate?
         # - try exact match on each?
+        # - create an entirely new person?
         # - UUID?
         # - newspaper?
-        #------------------------------------------------------------------------
-        
-                '''
+        #-----------------------------------------------------------------------
+                
+                # multiple matches...        
                 if ( match_status == self.MATCH_STATUS_MULTIPLE ):
 
                     # found_person initialize to False
                     found_person = False
                     
-                    # try an exact search using the name.
-                    person_qs = Person.look_up_person_from_name( full_name_IN, do_strict_match_IN = True )
-                    
-                    # how many results?  And, if only one, is this really better?
-                    if ( person_qs.count() == 1 ):
-                    
-                        # For now, do nothing - better to just make a new one and
-                        #    acknowledge ambiguity.
-                        pass
-                    
-                    #-- END check to see if only 1 returned from exact. --#
+                    #== filter criteria on Person QuerySet ====================#
 
                     # convert multiple list into a QuerySet of those Persons.
                     person_id_list = []
@@ -1065,7 +1070,7 @@ class ArticleCoder( BasicRateLimited ):
                     # filter on IDs.
                     person_qs = Person.objects.filter( id__in = person_id_list )
 
-                    # got a UUID?
+                    #-- got a UUID? -------------------------------------------#
                     if ( ( uuid_IN is not None ) and ( uuid_IN != "" ) ):
 
                         # yes.  See if we have one that matches.
@@ -1085,7 +1090,7 @@ class ArticleCoder( BasicRateLimited ):
                     #-- END check to see if UUID --#
                     
                     # got a newspaper (and UUID didn't match)?
-                    if ( ( newspaper_IN is not None ) and ( found_person == False ) ):
+                    if ( ( found_person == False ) and ( newspaper_IN is not None ) ):
                     
                         # see if any have same paper as that passed in.
                         person_filter_qs = person_qs.filter( person_newspaper__newspaper = newspaper_IN )
@@ -1102,9 +1107,38 @@ class ArticleCoder( BasicRateLimited ):
                         #-- END check to see if single match. --#                            
                         
                     #-- END check to see if newspaper passed in. --#
+                    
+                    #== last resort - exact match? ============================#
+
+                    # if still no match, try an exact search using the name?
+                    if ( ( found_person == False ) and ( on_multiple_match_try_exact_lookup_IN == True ) ):
+                    
+                        # try a strict match lookup.
+                        person_qs = Person.look_up_person_from_name( full_name_IN, do_strict_match_IN = True )
+                    
+                        # how many results?  And, if only one, is this really better?
+                        if ( person_qs.count() == 1 ):
+                        
+                            # Well, caller asked for it.  OK!
+                            person_instance = person_filter_qs.get()
+                            found_person = True
+                            confidence_level = 0.7  # not sure of level of confidence here - if small sample, might be right...                           
+                        
+                        #-- END check to see if only 1 returned from exact. --#
+                        
+                    #-- END check to see if we want to do a strict match. --#
+                    
+                    #== finally, if all has failed, create new? ===============#
+                    if ( ( found_person == False ) and ( on_multiple_create_new_person_IN == True ) ):
+                    
+                        # well, we've been asked to create a new person...
+                        person_instance = Person.create_person_for_name( full_name_IN )
+                        found_person = True
+                        confidence_level = 0.0  # not sure what to do when you just give up and make a new person.
+                    
+                    #-- END check to see if we make a new person --#
                 
                 #-- END check to see if multiple. --#
-                '''
 
         #------------------------------------------------------------------------
         # !Verification/Confidence phase

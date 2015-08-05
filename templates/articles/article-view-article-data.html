@@ -67,11 +67,11 @@
                     {% endfor %}
 
                 </ul>
-                <h4>Article_Subject source(s)</h4>
+                <h4>Article_Subject(s)</h4>
                 <ul>
 
                     {# loop over source Article_Subject(s) #}
-                    {% for article_source in article_data.get_quoted_article_sources_qs %}
+                    {% for article_source in article_data.article_subject_set.all %}
 
                         <li>
                             {{ article_source }} ( quotes: {{ article_source.article_subject_quotation_set.all.count }}; mentions: {{ article_source.article_subject_mention_set.all.count }} )

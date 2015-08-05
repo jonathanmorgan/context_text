@@ -486,6 +486,38 @@ class Abstract_Person( models.Model ):
     
     
     @classmethod
+    def create_person_for_name( cls, name_IN ):
+    
+        '''
+        Accepts name string.  Creates instance of cls, stores name in it, then
+           returns the instance.  Eventually, might do more fancy or
+           sophisticated things, but for now, not so much.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # got a name?
+        if ( ( name_IN is not None ) and ( name_IN != "" ) ):
+        
+            # create new Person!
+            instance_OUT = cls()
+            
+            # store name
+            instance_OUT.set_name( name_IN )
+            
+        else:
+        
+            instance_OUT = None
+            
+        #-- END check to make sure there is a name. --#
+        
+        return instance_OUT
+        
+    #-- END class method create_person_for_name() --#
+        
+        
+    @classmethod
     def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None, do_strict_match_IN = False ):
     
         '''
@@ -532,10 +564,7 @@ class Abstract_Person( models.Model ):
                 if ( create_if_no_match_IN == True ):
                 
                     # create new Person!
-                    instance_OUT = cls()
-                    
-                    # store name
-                    instance_OUT.set_name( name_IN )
+                    instance_OUT = cls.create_person_for_name( name_IN )
                     
                     output_debug( "In " + me + ": no match for name: \"" + name_IN + "\"; so, creating new Person instance (but not saving yet)!" )
                     
@@ -4304,7 +4333,7 @@ class Article_Data( models.Model ):
 
     def __str__( self ):
 
-        string_OUT = str( self.id ) + " - " + str( self.article )
+        string_OUT = str( self.id ) + " - " + self.coder_type + " - " + str( self.article )
         
         return string_OUT
 
@@ -5161,7 +5190,7 @@ class Article_Subject( Article_Person ):
         
         #-- END check to see what type of source --#
 
-        string_OUT = string_OUT + " (" + self.source_type + ")"
+        string_OUT = string_OUT + " (" + self.subject_type + "; " + self.source_type + ")"
 
         return string_OUT
 
