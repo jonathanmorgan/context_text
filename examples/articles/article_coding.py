@@ -22,7 +22,9 @@ start_pub_date = "2009-12-06"
 end_pub_date = "2009-12-12"
 #tag_in_list = "prelim_reliability"
 #tag_in_list = "prelim_network"
-tag_in_list = "prelim_unit_test_007"
+#tag_in_list = "prelim_unit_test_007"
+# NOTE - THIS DOES NOT WORK: tag_in_list = [ "prelim_reliability", "prelim_network" ]
+tag_in_list = "prelim_reliability,prelim_network"
 paper_id_in_list = "1"
 section_list = "Lakeshore,Front Page,City and Region,Business"
 

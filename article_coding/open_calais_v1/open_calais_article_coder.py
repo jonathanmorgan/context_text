@@ -1729,7 +1729,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                                                  
                         # no - add - more stuff to set.  Need to see what we can get.
                         
-                        # use the source Article_Subject created above.
+                        # use the source Article_Subject created for call to
+                        #    lookup_person().
                         #article_source = Article_Subject()
                     
                         article_subject.article_data = article_data_IN
@@ -1751,6 +1752,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         # field to store how source was captured.
                         article_subject.capture_method = self.coder_type
                     
+                        # save, and as part of save, record alternate matches.
                         article_subject.save()
                         
                         # !TODO - topics?
@@ -1770,71 +1772,37 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         # retrieve article source from query set.
                         article_subject = article_subject_qs.get()
                         
-                        # !TODO - want to do any updates?
+                        # !UPDATE existing Article_Subject
+                        # !UPDATE alternate matches
+
+                        # Were there alternate matches?
+                        if ( len( subject_person_match_list ) > 0 ):
+                        
+                            # yes - store the list of alternate matches in the
+                            #    Article_Subject instance variable
+                            #    "person_match_list".
+                            article_subject.person_match_list = subject_person_match_list
+                            
+                            # call method to process alternate matches.
+                            my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Subject found for person, calling process_alternate_matches." )
+                            article_subject.process_alternate_matches()
+                            
+                        #-- END check to see if there were alternate matches --#
                         
                     else:
                     
                         # neither 0 or 1 sources - either invalid or multiple,
                         #    either is not right.
                         my_logger.debug( "In " + me + ": Article_Subject count for " + str( subject_person ) + " = " + str( article_subject_count ) + ".  What to do?" )
+                        
+                        # make sure we don't go any further.
+                        article_subject = None
                                             
                     #-- END check if need new Article_Subject instance --#
                                 
                     # make sure we have an article_subject
                     if ( ( article_subject is not None ) and ( article_subject.id ) ):
     
-                        # !process alternate matches.
-                        
-                        # got multiple alternate matches?
-                        if ( ( subject_person_match_list is not None ) and ( len( subject_person_match_list ) > 0 ) ):
-                        
-                            # for each, check in list of Alternate_Subject_Match
-                            #    records to see if it has already been captured.
-                            #    If so, move on.  If not, add.
-                            
-                            # get the set of existing alternate matches.
-                            alternate_match_qs = article_subject.alternate_subject_match_set.all()
-                            
-                            # loop over alternate match persons!
-                            for alternate_person in subject_person_match_list:
-                            
-                                # does this person already have an alternate
-                                #    match record?
-                                try:
-                                
-                                    # try getting match with this person.
-                                    alternate_match = alternate_match_qs.get( person = alternate_person )
-                                
-                                except DoesNotExist as dne:
-                                
-                                    # not yet present.  Add it.
-                                    alternate_match = Alternate_Subject_Match()
-                                    alternate_match.person = alternate_person
-                                    alternate_match.article_subject = article_subject
-                                    alternate_match.save()
-                                    
-                                except MultipleObjectsReturned as mor:
-                                
-                                    # more than one altenrate subjects found for person.
-                                    exception_message = "MultipleObjectsReturned caught while looking for alternate match record for person " + str( alternate_person ) + ", Article_Subject: " + str( article_subject ) + ".  Should never be more than one per person."
-                                    my_logger.debug( "\n ! in " + me + " - ERROR - " + exception_message )
-                                    my_logger.debug( "\n ! Article_Data:\n" + str( article_data_IN ) )
-                                    my_exception_helper.process_exception( mor, exception_message )
-                                    
-                                except Exception as e:
-                                
-                                    # Unexpected exception.  Log it.
-                                    exception_message = "Unexpected Exception caught looking for alternate match record for person " + str( alternate_person ) + ", Article_Subject: " + str( article_subject ) + ".  What?"
-                                    my_logger.debug( "\n ! in " + me + " - ERROR - " + exception_message )
-                                    my_logger.debug( "\n ! Article_Data:\n" + str( article_data_IN ) )
-                                    my_exception_helper.process_exception( e, exception_message )
-
-                                #-- END attempt to retrieve alternate match. --#
-                            
-                            #-- END loop over alternate person matches --#
-                        
-                        #-- END check to see if we have alternate matches --#
-                        
                         # !deal with mentions.
                         
                         # get list of mentions from Person's "instances"

@@ -4610,7 +4610,7 @@ class Article_Person( models.Model ):
         super( Article_Person, self ).__init__( *args, **kwargs )
 
         # then, initialize variable.
-        self.person_match_list = []
+        self.person_match_list = []  # expects a list of person instances.
         
     #-- END method __init__() --#
 
@@ -4858,13 +4858,15 @@ class Article_Author( Article_Person ):
         #print( "@@@@@@@@ In Article_Author process_alternate_matches() @@@@@@@@" )
         
         #define variables
+        me = "Article_Author.process_alternate_matches"
         person_list = None
         person_count = -1
         current_person = ""
         alt_match_qs = None
         alt_match_count = -1
         alt_author_match = None
-        
+        exception_message = ""
+
         # get person list
         person_list = self.person_match_list
         
@@ -4892,8 +4894,14 @@ class Article_Author( Article_Person ):
                         alt_author_match.person = current_person
                         alt_author_match.save()
                         
-                    # Eventually, might want to check if more than one...
-                        
+                    # got more than one (an error)?
+                    elif ( alt_match_count > 1 ):
+                    
+                        # more than one alternate subjects found for person.
+                        exception_message = "In " + me + ": Multiple records found looking for alternate match record for person " + str( alternate_person ) + ", Article_Author: " + str( self ) + ".  Should never be more than one per person."
+                        output_debug( "\n ! in " + me + " - ERROR - " + exception_message )
+                        output_debug( "\n ! Article_Data:\n" + str( self.article_data ) )
+                                                
                     #-- END check to see if match present. --#
                 
                 #-- END loop over persons --#
@@ -5344,15 +5352,17 @@ class Article_Subject( Article_Person ):
            - if not, makes one.
         '''
 
-        #print( "&&&&&&&& In Article_Subject process_alternate_matches() &&&&&&&&" )
+        #output_debug( "&&&&&&&& In Article_Subject process_alternate_matches() &&&&&&&&" )
         
-        #define variables
+        # define variables
+        me = "Article_Subject.process_alternate_matches"
         person_list = None
         person_count = -1
         current_person = ""
         alt_match_qs = None
         alt_match_count = -1
         alt_subject_match = None
+        exception_message = ""
         
         # get person list
         person_list = self.person_match_list
@@ -5381,7 +5391,13 @@ class Article_Subject( Article_Person ):
                         alt_subject_match.person = current_person
                         alt_subject_match.save()
                         
-                    # Eventually, might want to check if more than one...
+                    # got more than one (an error)?
+                    elif ( alt_match_count > 1 ):
+                    
+                        # more than one alternate subjects found for person.
+                        exception_message = "In " + me + ": Multiple records found looking for alternate match record for person " + str( alternate_person ) + ", Article_Subject: " + str( self ) + ".  Should never be more than one per person."
+                        output_debug( "\n ! in " + me + " - ERROR - " + exception_message )
+                        output_debug( "\n ! Article_Data:\n" + str( self.article_data ) )
                         
                     #-- END check to see if match present. --#
                 

@@ -1353,6 +1353,8 @@ class ArticleCoder( BasicRateLimited ):
         author_name = ""
         person_details_dict = {}
         author_person = None
+        author_person_match_list = []
+        article_author_count = -1
         alternate_author_list = []
         article_author = None
         article_author_qs = None
@@ -1457,6 +1459,7 @@ class ArticleCoder( BasicRateLimited ):
 
                         # retrieve information from Article_Author
                         author_person = article_author.person
+                        author_person_match_list = article_author.person_match_list  # list of Person instances
 
                         # got a person?
                         if ( author_person ):
@@ -1467,7 +1470,8 @@ class ArticleCoder( BasicRateLimited ):
                             article_author_qs = article_data_IN.article_author_set.filter( person = author_person )
                             
                             # got anything?
-                            if ( article_author_qs.count() == 0 ):
+                            article_author_count = article_author_qs.count()
+                            if ( article_author_count == 0 ):
                                                          
                                 # no - add - including organization string.
 
@@ -1477,16 +1481,43 @@ class ArticleCoder( BasicRateLimited ):
                                 article_author.person = author_person
                                 article_author.organization_string = author_organization
                                 article_author.capture_method = my_capture_method
-                                article_author.save()
                                 
-                                # got alternate authors?
+                                # save, and as part of save, record alternate matches.
+                                article_author.save()
                                 
                                 my_logger.debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
     
-                            else:
+                            elif ( article_author_count == 1 ):
                             
                                 my_logger.debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
                                 
+                                # retrieve article author from query set.
+                                article_author = article_author_qs.get()
+                                
+                                # !UPDATE existing Article_Author
+                                # !UPDATE alternate matches
+        
+                                # Were there alternate matches?
+                                if ( len( author_person_match_list ) > 0 ):
+                                
+                                    # yes - store the list of alternate matches in the
+                                    #    Article_Author instance variable
+                                    #    "person_match_list".
+                                    article_author.person_match_list = author_person_match_list
+                                    
+                                    # call method to process alternate matches.
+                                    my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Author found for person, calling process_alternate_matches." )
+                                    article_author.process_alternate_matches()
+                                    
+                                #-- END check to see if there were alternate matches --#
+                                
+                            else:
+                            
+                                my_logger.debug( "In " + me + ": Article_Subject count for " + str( author_person ) + " = " + str( article_author_count ) + ".  What to do?" )
+                                
+                                # definitely no article_author.
+                                article_author = None  
+
                             #-- END check if need new Article_Author instance --#
     
                         else:
