@@ -17,11 +17,11 @@ This code file contains a class that implements functions for interacting with
    the Open Calais natural language processing API.  It includes methods for
    interacting with the Open Calais REST API and for processing the JSON response
    that the Open Calais REST API returns.
-
+   
 Configuration properties for it are stored in django's admins, in the
    django_config application.  The properties are stored in Application
-   "OpenCalais_REST_API_v1":
-   - open_calais_api_key - API key for accessing OpenCalais version 1 API.
+   "OpenCalais_REST_API_v2":
+   - open_calais_access_token - permid.org access token for accessing OpenCalais version 2 API.
    - submitter - submitter you want to report to the API.
 '''
 
@@ -58,8 +58,8 @@ from sourcenet.models import Person
 # parent abstract class.
 from sourcenet.article_coding.article_coder import ArticleCoder
 
-# class to help with parsing and processing OpenCalaisApiResponse.
-from sourcenet.article_coding.open_calais_v1.open_calais_api_response import OpenCalaisApiResponse
+# class to help with parsing and processing OpenCalaisV2ApiResponse.
+from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
 
 #================================================================================
 # Package constants-ish
@@ -67,11 +67,11 @@ from sourcenet.article_coding.open_calais_v1.open_calais_api_response import Ope
 
 
 #================================================================================
-# OpenCalaisArticleCoder class
+# OpenCalaisV2ArticleCoder class
 #================================================================================
 
-# define OpenCalaisArticleCoder class.
-class OpenCalaisArticleCoder( ArticleCoder ):
+# define OpenCalaisV2ArticleCoder class.
+class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
     '''
     This class is a helper for Collecting articles out of NewsBank.  It implements
@@ -95,32 +95,35 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     # STATUS_ERROR_PREFIX = "Error: "
     
     # config application
-    CONFIG_APPLICATION = "OpenCalais_REST_API_v1"
+    CONFIG_APPLICATION = "OpenCalais_REST_API_v2"
     
     # config property names.
-    CONFIG_PROP_OPEN_CALAIS_API_KEY = "open_calais_api_key"
+    CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN = "open_calais_access_token"
     CONFIG_PROP_SUBMITTER = "submitter"
     
     # HTTP header names
-    HTTP_HEADER_NAME_X_CALAIS_LICENSE_ID = "x-calais-licenseID"
+    HTTP_HEADER_NAME_X_AG_ACCESS_TOKEN = "x-ag-access-token"
     HTTP_HEADER_NAME_CONTENT_TYPE = "Content-Type"
-    HTTP_HEADER_NAME_OUTPUT_FORMAT = "outputformat"
+    HTTP_HEADER_NAME_OUTPUT_FORMAT = "outputFormat"
+    HTTP_HEADER_NAME_X_CALAIS_LANGUAGE = "x-calais-language"
     HTTP_HEADER_NAME_SUBMITTER = "submitter"
     
     # content types
-    CONTENT_TYPE_TEXT = "TEXT/RAW"
-    CONTENT_TYPE_HTML = "TEXT/HTML"
+    CONTENT_TYPE_TEXT = "text/raw"
+    CONTENT_TYPE_HTML = "text/html"
     CONTENT_TYPE_DEFAULT = CONTENT_TYPE_TEXT
     
     # output formats
-    OUTPUT_FORMAT_JSON = "Application/JSON"
+    OUTPUT_FORMAT_JSON = "application/json"
+    OUTPUT_FORMAT_RDF = "xml/rdf"
+    OUTPUT_FORMAT_N3 = "text/n3"
     OUTPUT_FORMAT_DEFAULT = OUTPUT_FORMAT_JSON
     
-    # Open Calais API URL
-    OPEN_CALAIS_REST_API_URL = "http://api.opencalais.com/tag/rs/enrich"
+    # Open Calais V2 API URL
+    OPEN_CALAIS_REST_API_URL = "https://api.thomsonreuters.com/permid/calais"
     
     # variables to hold strings related to OpenCalais.
-    OPEN_CALAIS_UUID_NAME = "OpenCalais API URI (URL)"
+    OPEN_CALAIS_UUID_NAME = "OpenCalais API V2 URI (URL)"
     
     # Processing types
     JSON_PROCESS_BY_PERSON = "by_person"
@@ -150,7 +153,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     def __init__( self ):
 
         # call parent's __init__() - I think...
-        super( OpenCalaisArticleCoder, self ).__init__()
+        super( OpenCalaisV2ArticleCoder, self ).__init__()
         
         # declare variables
         
@@ -165,8 +168,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         self.rate_limit_daily_limit = 10000
     
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
-        #    BasicRateLimited --> ArticleCoder --> OpenCalaisArticleCoder).
-        self.set_logger_name( "sourcenet.article_coding.open_calais_v1.open_calais_article_coder" )
+        #    BasicRateLimited --> ArticleCoder --> OpenCalaisV2ArticleCoder).
+        self.set_logger_name( "sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder" )
         
         # items for processing a given JSON response - should be updated with
         #    every new article coded.
@@ -192,15 +195,15 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     def create_person_to_quotation_dict( self, oc_api_response_helper_IN = None ):
     
         '''
-        Accepts optional OpenCalaisApiResponse instance (parameter named
+        Accepts optional OpenCalaisV2ApiResponse instance (parameter named
            "oc_api_response_helper_IN").  If instance passed in, uses it, else
-           uses the OpenCalaisApiResponse stored in self.response_helper.
+           uses the OpenCalaisV2ApiResponse stored in self.response_helper.
            Uses helper to find all quotations and the people they are tied to.
            Creates a dict that maps Person URIs to a map of quotation URIs to
            quotation JSON for the quotes attributed to them.  Returns the dict
            that maps persons to quotes.
 
-        preconditions: OpenCalaisApiResponse instance must already have a JSON
+        preconditions: OpenCalaisV2ApiResponse instance must already have a JSON
            response in it and have been initialized so the JSON was parsed and
            the items in it broken out by type group and type.
            
@@ -245,7 +248,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         if ( my_response_helper is not None ):
         
             # get all the quotations.
-            quotation_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+            quotation_dict = my_response_helper.get_items_of_type( OpenCalaisV2ApiResponse.OC_ITEM_TYPE_QUOTATION )
     
             # make sure it isn't None
             if ( quotation_dict is not None ):
@@ -267,7 +270,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         my_logger.debug( "In " + me + ": quote #" + str( quote_counter ) + " = " + current_oc_URI )
                         
                         # get the URI of the person who was quoted.
-                        quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisApiResponse.JSON_NAME_QUOTE_PERSON_URI )
+                        quote_person_URI = JSONHelper.get_json_object_property( current_quotation_json, OpenCalaisV2ApiResponse.JSON_NAME_QUOTE_PERSON_URI )
                         
                         # is person already in person-to-quote map?
                         if quote_person_URI in person_to_quotes_map:
@@ -295,19 +298,19 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     
                 else:
         
-                    my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article, so nothing else to do." )
+                    my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No quotations in article, so nothing else to do." )
         
                 #-- END check to see if any quotes in article.  If not, no attribution. --#
     
             else:
     
-                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No quotations in article (None returned), so nothing else to do." )
+                my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No quotations in article (None returned), so nothing else to do." )
     
             #-- END check to see if any quotes in article.  If not, no attribution. --#
             
         else:
         
-            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No response helper passed in, so nothing else to do." )
+            my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No response helper passed in, so nothing else to do." )
 
         #-- END check to see if we have a helper --#
         
@@ -328,7 +331,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # return reference
         value_OUT = None
 
-        # get Http_Helper instance.
+        # get content type.
         value_OUT = self.content_type
         
         # got anything?
@@ -389,12 +392,12 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     def get_person_to_quotation_dict( self, oc_api_response_helper_IN = None ):
     
         '''
-        Accepts optional OpenCalaisApiResponse instance (parameter named
+        Accepts optional OpenCalaisV2ApiResponse instance (parameter named
            "oc_api_response_helper_IN").  Checks to see if there is already an
            instance in self.person_to_quotes_dict.  If yes, returns it.  If
            no, calls create_person_to_quotation_dict(), then returns the result.
 
-        preconditions: OpenCalaisApiResponse instance must already have a JSON
+        preconditions: OpenCalaisV2ApiResponse instance must already have a JSON
            response in it and have been initialized so the JSON was parsed and
            the items in it broken out by type group and type.
            
@@ -446,7 +449,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         '''
 
         self.set_config_application( self.CONFIG_APPLICATION )
-        self.add_config_property( self.CONFIG_PROP_OPEN_CALAIS_API_KEY )
+        self.add_config_property( self.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
         self.add_config_property( self.CONFIG_PROP_SUBMITTER )
 
     #-- END abstract method init_config_properties() --#
@@ -469,7 +472,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # declare variables
         me = "initialize_from_params"
         my_http_helper = None
-        my_open_calais_api_key = ""
+        my_open_calais_access_token = ""
         my_content_type = ""
         my_output_format = ""
         my_submitter = "sourcenet"
@@ -480,8 +483,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # create Http_Helper
         my_http_helper = Http_Helper()
         
-        # retrieve API key.
-        my_open_calais_api_key = self.get_config_property( self.CONFIG_PROP_OPEN_CALAIS_API_KEY )
+        # retrieve access token.
+        my_open_calais_access_token = self.get_config_property( self.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
         
         # content type
         my_content_type = self.get_content_type()
@@ -493,7 +496,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_submitter = self.get_config_property( self.CONFIG_PROP_SUBMITTER, "sourcenet" )
         
         # set http headers
-        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_X_CALAIS_LICENSE_ID, my_open_calais_api_key )
+        my_http_helper.set_http_header( self.HTTP_HEADER_NAME_X_AG_ACCESS_TOKEN, my_open_calais_access_token )
         my_http_helper.set_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE, my_content_type )
         my_http_helper.set_http_header( self.HTTP_HEADER_NAME_OUTPUT_FORMAT, my_output_format )
         my_http_helper.set_http_header( self.HTTP_HEADER_NAME_SUBMITTER, my_submitter )
@@ -686,7 +689,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         if ( self.DEBUG_FLAG == True ):
                         
                             # render and output debug string.
-                            debug_string = OpenCalaisApiResponse.print_calais_json( requests_response_json )
+                            debug_string = OpenCalaisV2ApiResponse.print_calais_json( requests_response_json )
                             self.output_debug( debug_string )
             
                         #-- END debug --#
@@ -760,7 +763,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     except Exception as e:
                     
                         # set status on article data to unknown_error and save().
-                        exception_message = "In OpenCalaisArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
+                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
                         article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
                         article_data.save()
                         
@@ -938,7 +941,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         '''
         Accepts Article, Article_Data instance of article we are processing, and
            the JSON response from passing that article's text to the OpenCalais
-           API.  Parses response into OpenCalaisApiResponse instance, then looks
+           API.  Parses response into OpenCalaisV2ApiResponse instance, then looks
            for all people who are subjects of the article.  For each person
            (make process_json_person() method):
            - look up the person.
@@ -985,7 +988,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_logger = self.get_logger()
         
         # get response helper.
-        my_response_helper = OpenCalaisApiResponse()
+        my_response_helper = OpenCalaisV2ApiResponse()
         
         #temp_dict_1 = my_response_helper.type_group_to_items_dict
         #my_logger.debug( "In " + me + ": type_group_to_items_dict = " + str( temp_dict_1 ) )
@@ -1002,7 +1005,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         person_to_quotes_map = self.create_person_to_quotation_dict()
                 
         # get all the people.
-        person_dict = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_PERSON )
+        person_dict = my_response_helper.get_items_of_type( OpenCalaisV2ApiResponse.OC_ITEM_TYPE_PERSON )
 
         # make sure it isn't None
         if ( person_dict is not None ):
@@ -1030,13 +1033,13 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                 
             else:
     
-                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No persons in article, so nothing else to do." )
+                my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No persons in article, so nothing else to do." )
     
             #-- END check to see if any quotes in article.  If not, no attribution. --#
 
         else:
 
-            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No persons in article (None returned), so nothing else to do." )
+            my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No persons in article (None returned), so nothing else to do." )
 
         #-- END check to see if any quotes in article.  If not, no attribution. --#
 
@@ -1081,7 +1084,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         my_logger = self.get_logger()
         
         # get response helper.
-        my_response_helper = OpenCalaisApiResponse()
+        my_response_helper = OpenCalaisV2ApiResponse()
         
         #temp_dict_1 = my_response_helper.type_group_to_items_dict
         #my_logger.debug( "In " + me + ": type_group_to_items_dict = " + str( temp_dict_1 ) )
@@ -1120,13 +1123,13 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                     
             else:
     
-                my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No people quoted in article, so nothing else to do." )
+                my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No people quoted in article, so nothing else to do." )
     
             #-- END check to see if any quotes in article.  If not, no attribution. --#
 
         else:
 
-            my_logger.debug( "In OpenCalaisArticleCoder." + me + ": No people quoted in article (None returned), so nothing else to do." )
+            my_logger.debug( "In OpenCalaisV2ArticleCoder." + me + ": No people quoted in article (None returned), so nothing else to do." )
 
         #-- END check to see if any quotes in article.  If not, no attribution. --#
 
@@ -1227,24 +1230,24 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         # "detection" is the "exact" (mention), with "prefix" and "suffix"
         #    before and after, each enclosed in square brackets.
         #    - Example: [<"prefix">]<"exact">[<"suffix">]
-        mention_detection = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_DETECTION, None )
+        mention_detection = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_DETECTION, None )
         
         # "exact" is the mention itself.
         #    - Examples: "he" or "Jim Morrison"
-        mention_exact = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_EXACT, None )
+        mention_exact = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_EXACT, None )
         
         # "length" is the length of the mention string.
-        mention_length = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_LENGTH, None )
+        mention_length = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_LENGTH, None )
         
         # "offset" is the index of the start of the mention string in the
         #    article text passed to OpenCalais (plain text).
-        mention_offset = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_OFFSET, None )
+        mention_offset = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_OFFSET, None )
         
         # "prefix" is the text directly before the mention, for context.
-        mention_prefix = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_PREFIX, None )
+        mention_prefix = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_PREFIX, None )
 
         # "suffix" is the text directly after the mention, for context.
-        mention_suffix = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_SUFFIX, None )
+        mention_suffix = mention_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_SUFFIX, None )
 
         # is this mention already stored?
         
@@ -1595,7 +1598,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         Preconditions: Must have properly set up the following variables in the
            instance:
-           - self.request_helper - instance of OpenCalaisApiResponse instance
+           - self.request_helper - instance of OpenCalaisV2ApiResponse instance
               initialized with response JSON.
            - self.coder_type - should always be self.CONFIG_APPLICATION.
            - self.person_to_quotes_dict - dictionary of Person URIs to their
@@ -1685,7 +1688,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             if ( ( person_json is not None ) and ( person_json_string.strip() != "null" ) ):
                         
                 # yes - get and output name.
-                person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_PERSON_NAME )
+                person_name = JSONHelper.get_json_object_property( person_json, OpenCalaisV2ApiResponse.JSON_NAME_PERSON_NAME )
                 
                 my_logger.debug( "In " + me + ": person name = " + person_name )
                 
@@ -1812,7 +1815,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         # !deal with mentions.
                         
                         # get list of mentions from Person's "instances"
-                        mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisApiResponse.JSON_NAME_INSTANCES )
+                        mention_list = JSONHelper.get_json_object_property( person_json, OpenCalaisV2ApiResponse.JSON_NAME_INSTANCES )
         
                         # loop
                         mention_counter = 0
@@ -1833,7 +1836,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
                         #    person and see what is in them.
                         
                         # get map of URIs to JSON for "Quotation" item type.
-                        uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisApiResponse.OC_ITEM_TYPE_QUOTATION )
+                        uri_to_quotation_dictionary = my_response_helper.get_items_of_type( OpenCalaisV2ApiResponse.OC_ITEM_TYPE_QUOTATION )
                         
                         # get map of people to quotes, quote list for
                         #    current person.
@@ -1886,7 +1889,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             else:
             
                 # When JSON is not present for a person URI, is a problem with OpenCalais.
-                status_string = "In OpenCalaisArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
+                status_string = "In OpenCalaisV2ArticleCoder." + me + ": ERROR - No Person JSON for URI: \"" + person_URI + "\".  When OpenCalais includes URIs that don't have matches in the JSON, that usually means an error occurred.  Probably should reprocess this article.  JSON contents: " + person_json_string.strip()
                 article_data_IN.set_status( Article_Data.STATUS_SERVICE_ERROR, status_string  )
                 article_subject_OUT = None
             
@@ -1924,25 +1927,26 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         Postconditions:  If quotation wasn't already stored, it will be after
            this call.
            
-        Example JSON (bonus - can you find the OpenCalais parsing error?):
-        {
-            "_type": "Quotation",
-            "_typeGroup": "relations",
-            "_typeReference": "http://s.opencalais.com/1/type/em/r/Quotation",
-            "instances": [
-                {
-                    "detection": "[went on sale in 2005 to limited success. ]Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production, said spokesman John McCandless.[ \"A lot of people have tried the idea of creating]",
-                    "exact": "Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production, said spokesman John McCandless.",
-                    "length": 281,
-                    "offset": 2110,
-                    "prefix": "went on sale in 2005 to limited success. ",
-                    "suffix": " \"A lot of people have tried the idea of creating"
-                }
-            ],
-            "person": "http://d.opencalais.com/pershash-1/52f81716-30d1-3b2b-bc98-16e50eb06782",
-            "persondescription": "spokesman",
-            "quote": "Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production"
-        }
+        Example OpenCalais API v.2 JSON:
+            "http://d.opencalais.com/genericHasher-1/8b835f21-6b62-33c8-9767-3d5c1a23a0e7": {
+                "_type": "Quotation",
+                "_typeGroup": "relations",
+                "_typeReference": "http://s.opencalais.com/1/type/em/r/Quotation",
+                "forenduserdisplay": "true",
+                "instances": [
+                    {
+                        "detection": "[a car struck her vehicle and fled the scene. ]The officer's cruiser was stopped about 8:25 p.m. Friday at the intersection of Baxter Street and Fuller Avenue SE, when a Chevy Impala, driving at a high rate of speed, sideswiped the vehicle, Lt. Scott Weitzel said.[ The Chevy then sped off the wrong way on Baxter,]",
+                        "exact": "The officer's cruiser was stopped about 8:25 p.m. Friday at the intersection of Baxter Street and Fuller Avenue SE, when a Chevy Impala, driving at a high rate of speed, sideswiped the vehicle, Lt. Scott Weitzel said.",
+                        "length": 217,
+                        "offset": 111,
+                        "prefix": "a car struck her vehicle and fled the scene. ",
+                        "suffix": " The Chevy then sped off the wrong way on Baxter,"
+                    }
+                ],
+                "quotation": "The officer's cruiser was stopped about 8:25 p.m. Friday at the intersection of Baxter Street and Fuller Avenue SE, when a Chevy Impala, driving at a high rate of speed, sideswiped the vehicle",
+                "quotationtype": "Paraphrase",
+                "speaker": "http://d.opencalais.com/pershash-1/8d60562c-b807-3bdc-99bf-c59c9ea8f2bc"
+            },
         '''
         
         # return reference
@@ -1955,7 +1959,7 @@ class OpenCalaisArticleCoder( ArticleCoder ):
         
         # declare variables - Information from OpenCalais JSON
         quotation_string = ""
-        quotation_person_title = ""
+        #quotation_person_title = ""
         quotation_instances_list = None
         current_quotation = None
         quotation_detection = ""
@@ -2008,8 +2012,11 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             
             # get actual quotation information from JSON
             
-            # "quote" is the quotation without an attribution string.
-            quotation_string = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_QUOTE, None )
+            # "quotation" is the quotation without an attribution string.
+            quotation_string = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTATION, None )
+        
+            # "quotationtype" is the type of quote ("Paraphrase" or "Primary").
+            quotation_type = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTE_QUOTATION_TYPE, None )
             
             self.output_debug( "In " + me + ": quotation_string = \"" + quotation_string + "\"" )
 
@@ -2017,10 +2024,10 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             #    accompanied attribution for the quote.
             #    - Example: would be "spokesman" for atttribution string
             #       ", said spokesman John McCandless."
-            quotation_person_title = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_PERSON_DESCRIPTION, None )
+            #quotation_person_title = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_PERSON_DESCRIPTION, None )
 
             # more details are stored in JSON object referred to as "instances".
-            quotation_instances_list = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_INSTANCES, None )
+            quotation_instances_list = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_INSTANCES, None )
             current_instance = quotation_instances_list[ 0 ]
             
             # get values from OpenCalais instance
@@ -2029,29 +2036,30 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             #    and "suffix" before and after, each enclosed in square
             #    brackets.
             #    - Example: [<"prefix">]<"exact">[<"suffix">]
-            quotation_detection = current_instance.get( OpenCalaisApiResponse.JSON_NAME_DETECTION, None )
+            quotation_detection = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_DETECTION, None )
             
             # "exact" is the quotation plus the attribution string.
             #    - Example: "quote", said Jim.
-            quotation_exact = current_instance.get( OpenCalaisApiResponse.JSON_NAME_EXACT, None )
+            quotation_exact = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_EXACT, None )
             
             # "length" is the length of the quotation string.
-            quotation_length = current_instance.get( OpenCalaisApiResponse.JSON_NAME_LENGTH, None )
+            quotation_length = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_LENGTH, None )
             
             # "offset" is the index of the start of the quotation string in the
             #    article text passed to OpenCalais (plain text).
-            quotation_offset = current_instance.get( OpenCalaisApiResponse.JSON_NAME_OFFSET, None )
+            quotation_offset = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_OFFSET, None )
             
             # "prefix" is the text directly before the quotation, included for
             #    context.
-            quotation_prefix = current_instance.get( OpenCalaisApiResponse.JSON_NAME_PREFIX, None )
+            quotation_prefix = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_PREFIX, None )
 
             # "suffix" is the text directly after the quotation, included for
             #    context.
-            quotation_suffix = current_instance.get( OpenCalaisApiResponse.JSON_NAME_SUFFIX, None )
+            quotation_suffix = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_SUFFIX, None )
 
             # store information from OpenCalais
             current_quotation.value = quotation_string
+            current_quotation.quotation_type = quotation_type
             current_quotation.value_with_attribution = quotation_exact
             current_quotation.value_in_context = quotation_detection
             current_quotation.value_index = quotation_offset
@@ -2442,4 +2450,4 @@ class OpenCalaisArticleCoder( ArticleCoder ):
     #-- END method validate_FIT_results() --#
 
 
-#-- END class OpenCalaisArticleCoder --#
+#-- END class OpenCalaisV2ArticleCoder --#

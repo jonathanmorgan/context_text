@@ -4333,7 +4333,28 @@ class Article_Data( models.Model ):
 
     def __str__( self ):
 
-        string_OUT = str( self.id ) + " - " + self.coder_type + " - " + str( self.article )
+        # return reference
+        string_OUT = ""
+
+        # got an ID?
+        if ( self.id ):
+        
+            string_OUT = str( self.id )
+            
+        #-- END check to see if there is an ID. --#
+        
+        # got a coder_type?
+        if ( self.coder_type ):
+        
+            string_OUT += " - " + str( self.coder_type )
+            
+        else:
+        
+            string_OUT += " - no coder_type"
+            
+        #-- END - got coder type? --#
+        
+        string_OUT += " - " + str( self.article )
         
         return string_OUT
 
@@ -5691,6 +5712,8 @@ class Article_Subject_Quotation( Abstract_Selected_Text ):
     attribution_speaker_name_index_range = models.CharField( max_length = 255, blank = True, null = True )
     attribution_speaker_name_word_range = models.CharField( max_length = 255, blank = True, null = True )
     
+    # meta-data about quotation
+    quotation_type = models.CharField( max_length = 255, blank = True, null = True )
 
     #----------------------------------------------------------------------
     # instance methods

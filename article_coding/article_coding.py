@@ -10,6 +10,29 @@ sourcenet is free software: you can redistribute it and/or modify it under the t
 sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+
+How to add a new ArticleCoder implementation:
+- make a class that extends sourcenet.article_coding.article_coder.ArticleCoder.
+- add an import of that class to the imports section of this file, in the
+   section commented as "# Import other Article coder classes".
+- Add a the coder to the article coder implementation choices below (preceded
+   by the comment "# Article coding implementation choices.").  This will
+   include adding a variable named "ARTICLE_CODING_IMPL_<name_of_coder>" and in
+   that variable, storing a string name that describes the coder that is unique
+   among the ARTICLE_CODING_IMPL_* variable contents, and then adding that
+   variable to the list in variable ARTICLE_CODING_IMPL_CHOICES_LIST.  If your
+   new coder should become the default, you should also set
+   ARTICLE_CODING_IMPL_DEFAULT to equal your new variable, as well.
+- Add a conditional branch for your new coder to method get_coder_instance().
+   In this branch, you'll check if the variable "coder_type_IN" equals the
+   value in your ARTICLE_CODING_IMPL_<name_of_coder> variable, defined above.
+   If so, you will set "coder_instance_OUT" to a new instance of your coder.
+   Example:
+   
+          elif ( coder_type_IN == self.ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2 ):
+
+            # Open Calais API v2.
+            coder_instance_OUT = OpenCalaisV2ArticleCoder()
 '''
 
 #===============================================================================
@@ -30,6 +53,7 @@ from django.db.models import Q
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.logging.summary_helper import SummaryHelper
 from python_utilities.parameters.param_container import ParamContainer
+from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article
@@ -38,8 +62,7 @@ from sourcenet.models import Article_Data
 # Import other Article coder classes
 from sourcenet.article_coding.article_coder import ArticleCoder
 from sourcenet.article_coding.open_calais_v1.open_calais_article_coder import OpenCalaisArticleCoder
-from python_utilities.logging.summary_helper import SummaryHelper
-from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
+from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 
 # Import sourcenet shared classes.
 from sourcenet.shared.sourcenet_base import SourcenetBase
@@ -105,8 +128,8 @@ class ArticleCoding( SourcenetBase ):
     ARTICLE_CODING_IMPL_OPEN_CALAIS_API = "open_calais_api"
     ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V1 = ARTICLE_CODING_IMPL_OPEN_CALAIS_API
     ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2 = "open_calais_api_v2"
-    ARTICLE_CODING_IMPL_CHOICES_LIST = [ ARTICLE_CODING_IMPL_OPEN_CALAIS_API, ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2 ]
-    ARTICLE_CODING_IMPL_DEFAULT = ARTICLE_CODING_IMPL_OPEN_CALAIS_API
+    ARTICLE_CODING_IMPL_CHOICES_LIST = [ ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V1, ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2 ]
+    ARTICLE_CODING_IMPL_DEFAULT = ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2
 
 
     #---------------------------------------------------------------------------
@@ -546,10 +569,15 @@ class ArticleCoding( SourcenetBase ):
             # Open Calais API.
             coder_instance_OUT = OpenCalaisArticleCoder()
         
+        elif ( coder_type_IN == self.ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2 ):
+
+            # Open Calais API v2.
+            coder_instance_OUT = OpenCalaisV2ArticleCoder()
+        
         else:
         
-            # no output type, or unknown.  Make simple output matrix.
-            coder_instance_OUT = OpenCalaisArticleCoder()
+            # no coder type, or unknown.  Use default.
+            coder_instance_OUT = OpenCalaisV2ArticleCoder()
         
         #-- END check to see what type we have. --#
         
