@@ -26,7 +26,14 @@
                 {# output article lookup form #}
                 {{ article_lookup_form }}
             </p>
-                
+
+            {% if article_data_select_form %}
+            <p>
+                {# if there is an article selected, include form to select certain Article_Data instances #}
+                {{ article_data_select_form }}
+            </p>
+            {% endif %}
+                    
             <p>
                 <input type="submit" />
             </p>

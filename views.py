@@ -60,6 +60,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.strings.string_helper import StringHelper
 
 # Import the form class for network output
+from sourcenet.forms import Article_DataSelectForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
@@ -445,6 +446,7 @@ def article_view_article_data( request_IN ):
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
+    request_inputs = None
     article_lookup_form = None
     is_form_ready = False
     article_id = -1
@@ -452,6 +454,10 @@ def article_view_article_data( request_IN ):
     article_data_count = -1
     article_data_instance = None
     article_data_list = []
+    
+    # devlare variables - for selecting specific article_data to output.
+    article_data_select_form = None
+    article_data_id_list = []
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -471,17 +477,36 @@ def article_view_article_data( request_IN ):
     # do we have output parameters?
     if ( request_IN.method == 'POST' ):
 
-        article_lookup_form = ArticleLookupForm( request_IN.POST )
-        article_id = request_IN.POST.get( "article_id", -1 )
-        is_form_ready = True
+        # use request_IN.POST as request_inputs.
+        request_inputs = request_IN.POST
         
     elif ( request_IN.method == 'GET' ):
     
-        article_lookup_form = ArticleLookupForm( request_IN.GET )
-        article_id = request_IN.GET.get( "article_id", -1 )
-        is_form_ready = True
+        # use request_IN.GET as request_inputs.
+        request_inputs = request_IN.GET
         
-    #-- END check to see request type so we initialize form correctly. --#
+    #-- END check of request method to set request_inputs --#
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create ArticleLookupForm
+        article_lookup_form = ArticleLookupForm( request_inputs )
+
+        # get information we need from request.
+        article_id = request_inputs.get( "article_id", -1 )
+
+        # need to also get Article_DataSelectForm?
+        if ( article_id > 0 ):
+
+            # yes - make one, pass it the article id.
+            article_data_select_form = Article_DataSelectForm( request_inputs, article_id = article_id )
+
+        #-- END check to see if article_id is populated. --#
+
+        is_form_ready = True
+    
+    #-- END check to see if inputs. --#
     
     # form ready?
     if ( is_form_ready == True ):
@@ -501,9 +526,25 @@ def article_view_article_data( request_IN ):
             # get count of queryset return items
             if ( ( article_data_qs != None ) and ( article_data_qs != "" ) ):
 
+                # do we need to further filter the list?
+                if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
+                
+                    # yes.  Get list of IDs.
+                    article_data_id_list = request_inputs.getlist( "article_data_id_select" )
+                    
+                    # got any?  If not, just display all.
+                    if ( len( article_data_id_list ) > 0 ):
+                    
+                        # filter to just Article_Data whose IDs were selected.
+                        article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
+                        
+                    #-- END check to see if any IDs selected --#
+                
+                #-- END check to see if we need to further filter Article_Data list --#
+    
                 # get count of articles
                 article_data_count = article_data_qs.count()
-    
+                
                 # to start, just make a list out of the article data and pass it
                 #    to the template.
                 article_data_list = list( article_data_qs )
@@ -512,6 +553,7 @@ def article_view_article_data( request_IN ):
                 response_dictionary[ 'article_id' ] = article_id
                 response_dictionary[ 'article_data_list' ] = article_data_list
                 response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                response_dictionary[ 'article_data_select_form' ] = article_data_select_form
 
             else:
             

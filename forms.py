@@ -105,6 +105,7 @@ from sourcenet.export.csv_article_output import CsvArticleOutput
 from sourcenet.export.network_output import NetworkOutput
 #from sourcenet.export.network_data_output import NetworkDataOutput
 from sourcenet.models import Article
+from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
@@ -118,6 +119,71 @@ class Article_DataLookupForm( forms.Form ):
     # Article_Data ID
     article_data_id = forms.IntegerField( required = True, label = "Article Data ID" )
     # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
+
+#-- END ArticleLookupForm --#
+
+
+class Article_DataSelectForm( forms.Form ):
+
+    '''
+    create a form to let a user select from Article_Data relates to an article
+       passed in to the form's __init__() method.
+    '''
+
+    def __init__( self, *args, **kwargs ):
+    
+        # declare variables
+        article_IN = None
+        article_data_qs = None
+        article_data_count = -1
+        article_data_choice_list = []
+        article_data_instance = None
+        ad_id = -1
+        ad_coder = None
+        ad_coder_type = ""
+        ad_display_string = ""
+        
+        # retrieve article passed in.
+        article_id_IN = kwargs.pop( 'article_id' )
+        
+        # call parent __init__() method.
+        super( Article_DataSelectForm, self ).__init__(*args, **kwargs)
+        
+        # got an article?
+        if ( ( article_id_IN is not None ) and ( article_id_IN > 0 ) ):
+        
+            # got any Article_Data instances?
+            article_data_qs = Article_Data.objects.filter( article_id = article_id_IN )
+            article_data_count = article_data_qs.count()
+            
+            if ( article_data_count > 0 ):
+            
+                # yes.  Loop, building a list of 2-tuples for each option,
+                #   ( <actual_value>, <display_string> ).
+                for article_data_instance in article_data_qs:
+                
+                    # get ID, coder, and coder type
+                    ad_id = article_data_instance.id
+                    ad_coder = article_data_instance.coder
+                    ad_coder_type = article_data_instance.coder_type
+            
+                    # create display string
+                    ad_display_string = str( ad_id ) + " - " + str( ad_coder ) + " ( " + str( ad_coder_type ) + " )"
+                    
+                    # add tuple to list
+                    article_data_choice_list.append( ( ad_id, ad_display_string ) )
+                    
+                #-- END loop over choices. --#
+        
+                # add a form field to allow user to select Article_Data
+                #    instances to display.
+                self.fields[ 'article_data_id_select' ] = forms.MultipleChoiceField( required = False, choices = article_data_choice_list )
+                
+            #-- END - check to see how many Article_Data --#
+            
+        #-- END - check to see if article present. --#
+    
+    #-- END overridden/extended function __init__() --#
 
 #-- END ArticleLookupForm --#
 
