@@ -15,16 +15,16 @@ article_qs = None
 article_id_in_list = []
 article_count = -1
 coding_status = ""
-do_coding = True
+do_coding = False
 
 # first, get a list of articles to code.
 start_pub_date = "2009-12-06"
 end_pub_date = "2009-12-12"
 #tag_in_list = "prelim_reliability"
 #tag_in_list = "prelim_network"
-#tag_in_list = "prelim_unit_test_007"
+tag_in_list = "prelim_unit_test_007"
 # NOTE - THIS DOES NOT WORK: tag_in_list = [ "prelim_reliability", "prelim_network" ]
-tag_in_list = "prelim_reliability,prelim_network"
+#tag_in_list = "prelim_reliability,prelim_network"
 paper_id_in_list = "1"
 section_list = "Lakeshore,Front Page,City and Region,Business"
 
@@ -38,7 +38,7 @@ params[ ArticleCoding.PARAM_TAG_LIST ] = tag_in_list
 # set coder you want to use.
 
 # OpenCalais REST API
-params[ ArticleCoding.PARAM_CODER_TYPE ] = ArticleCoding.ARTICLE_CODING_IMPL_OPEN_CALAIS_API
+params[ ArticleCoding.PARAM_CODER_TYPE ] = ArticleCoding.ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2
 
 # get instance of ArticleCoding
 my_article_coding = ArticleCoding()
@@ -55,7 +55,8 @@ article_qs = my_article_coding.create_article_query_set()
 # filter on related article IDs?
 #article_id_in_list = [ 360962 ]
 #article_id_in_list = [ 28598 ]
-# article_id_in_list = [ 21653, 21756 ]
+#article_id_in_list = [ 21653, 21756 ]
+#article_id_in_list = [ 90948 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.

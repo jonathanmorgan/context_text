@@ -20,7 +20,7 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
-do_delete = True
+do_delete = False
 
 # get User with name "automated"
 automated_user = User.objects.filter( username = "automated" ).get()
@@ -32,7 +32,7 @@ article_data_qs = Article_Data.objects.filter( coder = automated_user )
 # FILTER - filter on coder type?
 #------------------------------------------------------------------------------#
 
-article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v1' ]
+article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v2' ]
 if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_coder_type_in_list ) > 0 ) ):
 
     # filter on coder type.
@@ -60,6 +60,7 @@ if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) 
 #article_id_in_list = [ 360962 ]
 #article_id_in_list = [ 28598 ]
 # article_id_in_list = [ 21653, 21756 ]
+#article_id_in_list = [ 90948 ]
 if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
 
     # yes.
