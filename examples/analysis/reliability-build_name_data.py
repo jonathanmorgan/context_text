@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 # sourcenet imports
 from sourcenet.models import Analysis_Reliability_Names
 from sourcenet.models import Article
+from sourcenet.models import Article_Data
 from sourcenet.models import Person
 
 #-------------------------------------------------------------------------------
@@ -54,10 +55,46 @@ class Reliability_Names( object ):
         # declare instance variables
         self.article_id_to_info_map = {}
         self.coder_id_to_instance_map = {}        
-        self.coder_id_to_index_map = {}        
+        self.coder_id_to_index_map = {}
+        
+        # variable to hold desired automated coder type
+        self.limit_to_automated_coder_type = ""
         
     #-- END method __init__() --#
     
+
+    def filter_article_data( self, article_data_qs_IN ):
+        
+        '''
+        Accepts Article_Data QuerySet.  Filters it based on any nested variables
+           that relate to filtering (at this point, just
+           self.limit_to_automated_coder_type).  Returns filtered QuerySet.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        automated_coder_type = None
+        coder_type_list = []
+        
+        # start by just returning what is passed in.
+        qs_OUT = article_data_qs_IN
+        
+        # see if we have a coder type.
+        automated_coder_type = self.limit_to_automated_coder_type
+        if ( ( automated_coder_type is not None ) and ( automated_coder_type != "" ) ):
+        
+            # got one.  Filter the QuerySet.
+            coder_type_list = [ automated_coder_type, ]
+            qs_OUT = Article_Data.filter_automated_by_coder_type( qs_OUT, coder_type_list )
+        
+        #-- END check to see if automated coder type. --#
+        
+        return qs_OUT
+    
+    #-- END method filter_article_data() --#
+
 
     def get_coder_for_index( self, index_IN ):
         
@@ -235,7 +272,8 @@ class Reliability_Names( object ):
               recorded the presence of that person.
         - coder_id_to_index_map_IN, a map that tells this method which
            coder User IDs correspond to which coder index in the reliability row
-        - person_type_IN, the type of the person ("author" or "source").     
+        - person_type_IN, the type of the person ("author" or "source").
+        - label_IN - label to assign to this set of data in the database.
          
         Creates an instance of Analysis_Reliability_Names, stores values from the
            dictionary in the appropriate columns, then saves it.
@@ -259,13 +297,22 @@ class Reliability_Names( object ):
         current_coder_user = None
         index_used_list = []
         current_number = -1
-        current_index = -1     
+        current_index = -1
+        
+        # declare variables - getting appropriate Article_Data for automated
+        article_data_qs = None
+        coder_article_data_qs = None
+        coder_article_data = None
+        coder_article_data_id = -1
         
         # make sure we have everything we need.
         coder_id_to_index_map_IN = self.coder_id_to_index_map
-        
+
         # article
         if ( article_IN is not None ):
+    
+            # retrieve the Article_Data QuerySet.    
+            article_data_qs = article_IN.article_data_set.all()
         
             # person_info
             if ( person_info_dict_IN is not None ):
@@ -307,7 +354,24 @@ class Reliability_Names( object ):
                             
                             # get User instance
                             current_coder_user = User.objects.get( id = current_coder_id )
-    
+                            
+                            # retrieve coder's Article_Data.
+                            coder_article_data = None
+                            coder_article_data_id = -1
+                            coder_article_data_qs = article_data_qs.filter( coder = current_coder_user )
+                            
+                            # !if automated, filter on coder_type
+                            coder_article_data_qs = self.filter_article_data( coder_article_data_qs )
+                            
+                            # how many?
+                            if ( coder_article_data_qs.count() == 1 ):
+                            
+                                # got one! store information.
+                                coder_article_data = coder_article_data_qs.get()
+                                coder_article_data_id = coder_article_data.id
+                            
+                            #-- END check to see if single matching Article_Data --#    
+                                
                             # use index to decide in which columns to place
                             #    coder-specific information.
                             if ( current_coder_index != -1 ):
@@ -339,6 +403,17 @@ class Reliability_Names( object ):
                                 #    same name, different person IDs).
                                 field_name = "coder" + str( current_coder_index ) + "_person_id"
                                 setattr( reliability_instance, field_name, my_person_id )
+                                
+                                # coder#_article_data_id - id of coder's
+                                #    Article_Data row.
+                                # Got an ID?
+                                if ( coder_article_data_id > 0 ):
+                                
+                                    # yes.  store it.
+                                    field_name = "coder" + str( current_coder_index ) + "_article_data_id"
+                                    setattr( reliability_instance, field_name, coder_article_data_id )
+                                
+                                #-- END check to see if Article_Data ID --#
                             
                             else:
                             
@@ -427,6 +502,7 @@ class Reliability_Names( object ):
         article_qs = None
         current_article = None
         article_data_qs = None
+        current_query = None
         article_data_count = -1
         
         # declare variables - compiling information for articles.
@@ -486,6 +562,9 @@ class Reliability_Names( object ):
         
             # get article data for this article
             article_data_qs = current_article.article_data_set.all()
+            
+            # !filter on automated coder_type
+            article_data_qs = self.filter_article_data( article_data_qs )
             
             # how many Article_Data?
             article_data_count = len( article_data_qs )
@@ -694,10 +773,13 @@ label = ""
 # make reliability instance
 my_reliability_instance = Reliability_Names()
 
+# configure so that it limits to automated coder_type of OpenCalais_REST_API_v2.
+my_reliability_instance.limit_to_automated_coder_type = "OpenCalais_REST_API_v2"
+
 # process articles
-tag_list = [ "reliability_test", ]
+tag_list = [ "prelim_reliability", ]
 my_reliability_instance.process_articles( tag_list )
 
 # output to database.
-label = "reliability_test"
+label = "prelim_reliability_v2"
 my_reliability_instance.output_reliability_data( label )

@@ -17,8 +17,8 @@ source( "functions-sna.r" )
 
 # first, need to load in the two matrices we want to compare.
 # Start with loading in tab-delimited files.
-humanNetworkData <- read.delim( "./data/human-network-sourcenet_data-20150728-140113.txt", header = TRUE, row.names = 1, check.names = FALSE )
-calaisNetworkData <- read.delim( "./data/puter-network-sourcenet_data-20150728-142021.txt", header = TRUE, row.names = 1, check.names = FALSE )
+humanNetworkData <- read.delim( "./data/sourcenet_data-20150812-012632-human.tab", header = TRUE, row.names = 1, check.names = FALSE )
+calaisNetworkData <- read.delim( "./data/sourcenet_data-20150812-012701-compy.tab", header = TRUE, row.names = 1, check.names = FALSE )
 
 # remove the right-most 2 columns, which contains non-tie info on nodes.
 #humanNetworkTies <- humanNetworkData[ , c( -( ncol( humanNetworkData ) - 1 ), -ncol( humanNetworkData ) ) ]

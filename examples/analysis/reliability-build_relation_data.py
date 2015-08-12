@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 # sourcenet imports
 from sourcenet.models import Analysis_Reliability_Ties
 from sourcenet.models import Article
+from sourcenet.models import Article_Data
 from sourcenet.models import Person
 
 #-------------------------------------------------------------------------------
@@ -51,8 +52,44 @@ class Reliability_Ties( object ):
         # variables to filter reliability row lookup.
         self.reliability_row_label = ""
         
+        # variable to hold desired automated coder type
+        self.limit_to_automated_coder_type = ""
+        
     #-- END method __init__() --#
     
+
+    def filter_article_data( self, article_data_qs_IN ):
+        
+        '''
+        Accepts Article_Data QuerySet.  Filters it based on any nested variables
+           that relate to filtering (at this point, just
+           self.limit_to_automated_coder_type).  Returns filtered QuerySet.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        automated_coder_type = None
+        coder_type_list = []
+        
+        # start by just returning what is passed in.
+        qs_OUT = article_data_qs_IN
+        
+        # see if we have a coder type.
+        automated_coder_type = self.limit_to_automated_coder_type
+        if ( ( automated_coder_type is not None ) and ( automated_coder_type != "" ) ):
+        
+            # got one.  Filter the QuerySet.
+            coder_type_list = [ automated_coder_type, ]
+            qs_OUT = Article_Data.filter_automated_by_coder_type( qs_OUT, coder_type_list )
+        
+        #-- END check to see if automated coder type. --#
+        
+        return qs_OUT
+    
+    #-- END method filter_article_data() --#
+
 
     def get_coder_for_index( self, index_IN ):
         
@@ -304,6 +341,10 @@ class Reliability_Ties( object ):
             # get article data for this article
             article_data_qs = current_article.article_data_set.all()
             
+            # !filter on automated coder_type
+            article_data_qs = self.filter_article_data( article_data_qs )
+            
+            # !hack
             # order by coder ID, descending, so we always use coder 6 as
             #    coder #1 if they coded an article.
             article_data_qs = article_data_qs.order_by( "-coder__id" )
@@ -673,6 +714,9 @@ my_reliability_instance = Reliability_Ties()
 # place dictionaries in instance.
 my_reliability_instance.coder_id_to_instance_map = coder_id_to_instance_dict
 my_reliability_instance.coder_id_to_index_map = coder_id_to_index_dict
+
+# configure so that it limits to automated coder_type of OpenCalais_REST_API_v2.
+my_reliability_instance.limit_to_automated_coder_type = "OpenCalais_REST_API_v2"
 
 # label for reliability rows created and used in this session.
 label = "prelim_network_fixed_authors"

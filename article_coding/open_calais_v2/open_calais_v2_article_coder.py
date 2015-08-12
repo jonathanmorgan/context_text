@@ -659,6 +659,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             my_logger.debug( "\n ! " + exception_message )
                             my_logger.debug( "\n ! article text:\n" + request_data )
                             my_logger.debug( "\n ! response text:\n" + requests_raw_text )
+                            print( "exception parsing Article " + str( article_IN.id ) + " - " + requests_raw_text )
                             my_exception_helper.process_exception( ve, exception_message )
                             
                             # set status on article data to service_error
@@ -689,7 +690,20 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         if ( self.DEBUG_FLAG == True ):
                         
                             # render and output debug string.
-                            debug_string = OpenCalaisV2ApiResponse.print_calais_json( requests_response_json )
+                            # my_logger.debug( "\n ! JSON response:\n" + JSONHelper.pretty_print_json( requests_response_json ) )
+                            #debug_string = OpenCalaisV2ApiResponse.print_calais_json( requests_response_json, my_logger )
+                            
+                            # got JSON?
+                            if ( requests_response_json is not None ):
+                            
+                                debug_string = OpenCalaisV2ApiResponse.print_calais_json( requests_response_json )
+                                
+                            else:
+                            
+                                debug_string = "requests_response_json is None"
+                                
+                            #-- END check to see if JSON processed successfully --#
+
                             self.output_debug( debug_string )
             
                         #-- END debug --#
@@ -744,7 +758,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
                             #my_json_note.status = ""
                             my_json_note.source = self.coder_type
-                            my_json_note.content_description = "OpenCalais REST API response JSON"
+                            my_json_note.content_description = self.CONFIG_APPLICATION + " response JSON"
                             
                             # save note.
                             my_json_note.save()
@@ -763,7 +777,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     except Exception as e:
                     
                         # set status on article data to unknown_error and save().
-                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unknown exception caught while processing article.  Exception: " + str( e )
+                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unexpected exception caught while processing article.  Exception: " + str( e )
                         article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
                         article_data.save()
                         
@@ -2422,7 +2436,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             elif ( match_count > 1 ):
             
                 # error - multiple matches returned for quotation.  What to do?
-                status_OUT = "In " + me + ": ERROR - search for string in text yielded " + str( match_count ) + " matches."
+                status_OUT = "In " + me + ": WARNING - search for string in text yielded " + str( match_count ) + " matches."
                 status_list_OUT.append( status_OUT )
                 self.output_debug( status_OUT )
                 
@@ -2439,7 +2453,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         else:
 
             # error - unique_count_list does not have only one thing in it.
-            status_OUT = "In " + me + ": ERROR - search for string in text yielded different numbers of results for different ways of searching: " + str( unique_count_list )
+            status_OUT = "In " + me + ": WARNING - search for string in text yielded different numbers of results for different ways of searching: " + str( unique_count_list )
             status_list_OUT.append( status_OUT )
             self.output_debug( status_OUT )
             

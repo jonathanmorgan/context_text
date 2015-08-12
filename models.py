@@ -12,31 +12,6 @@ sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
 '''
 
-#================================================================================
-# Imports
-#================================================================================
-
-# python imports
-from abc import ABCMeta, abstractmethod
-import datetime
-from decimal import Decimal
-from decimal import getcontext
-import gc
-import logging
-import pickle
-#import re
-
-# nameparse import
-# http://pypi.python.org/pypi/nameparser
-from nameparser import HumanName
-
-# BeautifulSoup import
-from bs4 import BeautifulSoup
-from bs4 import NavigableString
-
-# taggit tagging APIs
-from taggit.managers import TaggableManager
-
 '''
 Code sample:
 
@@ -75,6 +50,31 @@ u''
 True!
 '''
 
+#================================================================================
+# Imports
+#================================================================================
+
+# python imports
+from abc import ABCMeta, abstractmethod
+import datetime
+from decimal import Decimal
+from decimal import getcontext
+import gc
+import logging
+import pickle
+#import re
+
+# nameparse import
+# http://pypi.python.org/pypi/nameparser
+from nameparser import HumanName
+
+# BeautifulSoup import
+from bs4 import BeautifulSoup
+from bs4 import NavigableString
+
+# taggit tagging APIs
+from taggit.managers import TaggableManager
+
 # Django core imports
 #import django
 #django.setup()
@@ -108,6 +108,9 @@ from python_utilities.logging.logging_helper import LoggingHelper
 
 # python_utilities - sequences
 from python_utilities.sequences.sequence_helper import SequenceHelper
+
+# sourcenet imports
+from sourcenet.shared.sourcenet_base import SourcenetBase
 
 #================================================================================
 # Shared variables and functions
@@ -4326,6 +4329,173 @@ class Article_Data( models.Model ):
     # Meta-data for this class.
     class Meta:
         ordering = [ 'article', 'last_modified', 'create_date' ]
+
+
+    #----------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------
+
+    @classmethod
+    def create_q_filter_automated_by_coder_type( cls, coder_type_in_list_IN = None ):
+        
+        '''
+        Accepts list of coder types we want included in Article_Data instances
+           that were coded by an automated coder.  Returns Q() object that can
+           be applied to an Article_Data QuerySet to filter any rows that were
+           coded by the automated coder to only include those with coder_type
+           in the list passed in.
+           
+        postconditions: Does not actually filter anything.  Returns a Q()
+           instance that you can use to filter.
+        '''
+        
+        # return reference
+        q_OUT = None
+        
+        # declare variables
+        automated_coder_user = None
+        current_query = None
+        
+        # got a list?
+        if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
+    
+            # get automated coder.
+            automated_coder_user = SourcenetBase.get_automated_coding_user()
+                        
+            # filter - either:
+    
+            # ( coder = automated_coder AND coder_type = automated_coder_type )
+            current_query = Q( coder = automated_coder_user ) & Q ( coder_type__in = coder_type_in_list_IN )
+    
+            # OR coder != automated_coder
+            current_query = ~Q( coder = automated_coder_user ) | current_query
+            
+            # return the query
+            q_OUT = current_query
+    
+        #-- END check to see if list passed in. --#
+        
+        return q_OUT
+        
+    #-- END class method create_q_filter_automated_by_coder_type() --#
+
+
+    @classmethod
+    def create_q_only_automated( cls, coder_type_in_list_IN = None ):
+        
+        '''
+        Accepts list of coder types we want included in Article_Data instances
+           that were coded by an automated coder.  Returns Q() object that can
+           be applied to an Article_Data QuerySet to limit to Article_Data coded
+           by the automated coder, and then optionally filter any rows that were
+           coded by the automated coder to only include those with coder_type
+           in the list passed in.
+           
+        postconditions: Does not actually filter anything.  Returns a Q()
+           instance that you can use to filter.
+        '''
+        
+        # return reference
+        q_OUT = None
+        
+        # declare variables
+        automated_coder_user = None
+        current_query = None
+        
+        # get automated coder.
+        automated_coder_user = SourcenetBase.get_automated_coding_user()
+                        
+        # just include those coded by automated coder.
+        q_OUT = Q( coder = automated_coder_user )
+        
+        # got a list?
+        if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
+    
+            # yes - filter to only those with coder_type in list passed in.
+            current_query = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN )
+            
+            # add the filter to the Q() we will return.
+            q_OUT = q_OUT & current_query
+    
+        #-- END check to see if list passed in. --#
+        
+        return q_OUT
+        
+    #-- END class method create_q_only_automated() --#
+
+
+    @classmethod
+    def filter_automated_by_coder_type( cls, qs_IN, coder_type_in_list_IN = None ):
+        
+        '''
+        Accepts Article_Data QuerySet and list of coder types we want included
+           in Article_Data instances that were coded by an automated coder in
+           the QuerySet passed in.  Returns QuerySet object filtered so that any
+           Article_Data coded by the automated coder has one of the coder_type
+           values in the list passed in.
+           
+        postconditions: Returns new QuerySet filtered as described above.  If no
+           list specified, return same QuerySet as was passed in.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        filter_q = None
+        
+        # got a list?
+        if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
+    
+            # get Q() for list.
+            filter_q = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN )
+            
+            # return newly filtered QuerySet
+            qs_OUT = qs_IN.filter( filter_q )
+    
+        else:
+        
+            # no list - return what was passed in.
+            qs_OUT = qs_IN
+
+        #-- END check to see if list passed in. --#
+        
+        return qs_OUT
+        
+    #-- END class method filter_automated_by_coder_type() --#
+
+
+    @classmethod
+    def filter_only_automated( cls, qs_IN, coder_type_in_list_IN = None ):
+        
+        '''
+        Accepts Article_Data QuerySet and optional list of coder types we want
+           included in Article_Data instances that were coded by an automated
+           coder.  Returns QuerySet with any coders other than automated
+           removed, and then if coder type list is present, filters to only
+           include rows with coder_type in the list passed in.
+           
+        postconditions: Returns new QuerySet filtered as described above.  If no
+           list specified, return same QuerySet with only automated coded
+           Article_Data instances, with any coder_type.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        filter_q = None
+        
+        # get Q().
+        filter_q = cls.create_q_only_automated( coder_type_in_list_IN )
+        
+        # return newly filtered QuerySet
+        qs_OUT = qs_IN.filter( filter_q )
+        
+        return qs_OUT
+
+    #-- END class method filter_only_automated() --#
+
 
     #----------------------------------------------------------------------------
     # instance methods

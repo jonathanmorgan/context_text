@@ -48,6 +48,10 @@ article_data_qs = Article_Data.objects.filter( article__tags__name = "prelim_net
 #author_in_list.append( temp_author )
 #article_data_qs = article_data_qs.filter( article_author__person__in = author_in_list )
 
+# if we care, filter out based on automated coder having a certain coder_type
+coder_type_list = [ "OpenCalais_REST_API_v2", ]
+article_data_qs = Article_Data.filter_automated_by_coder_type( article_data_qs, coder_type_list )
+
 # loop over article datas
 for article_data_instance in article_data_qs:
 

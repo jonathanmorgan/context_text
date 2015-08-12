@@ -22,9 +22,9 @@ start_pub_date = "2009-12-06"
 end_pub_date = "2009-12-12"
 #tag_in_list = "prelim_reliability"
 #tag_in_list = "prelim_network"
-tag_in_list = "prelim_unit_test_007"
+#tag_in_list = "prelim_unit_test_007"
 # NOTE - THIS DOES NOT WORK: tag_in_list = [ "prelim_reliability", "prelim_network" ]
-#tag_in_list = "prelim_reliability,prelim_network"
+tag_in_list = "prelim_reliability,prelim_network"
 paper_id_in_list = "1"
 section_list = "Lakeshore,Front Page,City and Region,Business"
 
@@ -57,6 +57,7 @@ article_qs = my_article_coding.create_article_query_set()
 #article_id_in_list = [ 28598 ]
 #article_id_in_list = [ 21653, 21756 ]
 #article_id_in_list = [ 90948 ]
+#article_id_in_list = [ 21627, 21609, 21579 ]
 if ( len( article_id_in_list ) > 0 ):
 
     # yes.

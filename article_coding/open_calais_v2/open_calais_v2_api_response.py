@@ -23,6 +23,7 @@ import json
 # python utilities
 from python_utilities.json.json_helper import JSONHelper
 from python_utilities.logging.logging_helper import LoggingHelper
+from python_utilities.strings.string_helper import StringHelper
 
 
 #================================================================================
@@ -131,7 +132,7 @@ class OpenCalaisV2ApiResponse( LoggingHelper ):
 
 
     @classmethod
-    def print_calais_json( cls, json_IN ):
+    def print_calais_json( cls, json_IN, logger_IN = None ):
     
         '''
         Accepts OpenCalais API JSON object, prints selected parts of it to a
@@ -142,8 +143,13 @@ class OpenCalaisV2ApiResponse( LoggingHelper ):
         string_OUT = ""
         
         # declare variables
+        me = "OpenCalaisV2ApiResponse.print_calais_json()"
+        my_logger = None
+        temp_string = ""
         properties_to_output_list = []
         current_property = ""
+        
+        my_logger = logger_IN
         
         # set properties we want to output
         properties_to_output_list = [ "_type", "_typeGroup", "commonname", "name", "person" ]
@@ -151,33 +157,65 @@ class OpenCalaisV2ApiResponse( LoggingHelper ):
         # loop over the stuff in the response:
         item_counter = 0
         current_container = json_IN
-        for item in current_container.keys():
         
-            item_counter += 1
-            string_OUT += "==> " + str( item_counter ) + ": " + item + "\n"
+        # got something in current_container?
+        if ( current_container is not None ):
+
+            # yes - loop on keys.
+            for item in current_container.keys():
             
-            # loop over properties that we care about.
-            for current_property in properties_to_output_list:
+                item_counter += 1
+                temp_string = "==> " + str( item_counter ) + ": " + item + "\n"
+                string_OUT += temp_string
+    
+                if ( my_logger is not None ):
+                    my_logger.debug( "In " + me + ": " + temp_string )
+                #-- END check to see if logger --#
+                            
+                # loop over properties that we care about.
+                for current_property in properties_to_output_list:
+                            
+                    # is property in the current JSON item we are looking at?
+                    if ( current_property in current_container[ item ] ):
+    
+                        # yes - output.
+                        current_property_value = current_container[ item ][ current_property ]
                         
-                # is property in the current JSON item we are looking at?
-                if ( current_property in current_container[ item ] ):
-
-                    # yes - output.
-                    current_property_value = current_container[ item ][ current_property ]
-                    string_OUT += "----> " + current_property + ": " + str( current_property_value ) + "\n"
-
-                    # is it a Quotation or a Person?
-                    if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
-
-                        string_OUT += str( current_container[ item ] ) + "\n"
-
-                    #-- END check to see if type is "Quotation" --#
-
-                #-- END current_property --#
-
-            #-- END loop over list of properties we want to output. --#
+                        # exception handling to try to deal with unicode added in
+                        #    OpenCalais API version 2.
+                        try:
+                        
+                            # first, try using str()
+                            temp_string = str( current_property_value )
+                            
+                        except Exception as e:
+                        
+                            # on exception, try using StringHelper.encode_string()
+                            temp_string = StringHelper.encode_string( current_property_value )
+                            
+                        #-- END try/except --#
+    
+                        temp_string = "----> " + current_property + ": " + temp_string + "\n"
+                        string_OUT += temp_string
+    
+                        if ( my_logger is not None ):
+                            my_logger.debug( "In " + me + ": " + temp_string )
+                        #-- END check to see if logger --#
+    
+                        # is it a Quotation or a Person?
+                        if ( ( current_property_value == "Quotation" ) or ( current_property_value == "Person" ) ):
+    
+                            string_OUT += str( current_container[ item ] ) + "\n"
+    
+                        #-- END check to see if type is "Quotation" --#
+    
+                    #-- END current_property --#
+    
+                #-- END loop over list of properties we want to output. --#
+                
+            #-- END loop over items --#
             
-        #-- END loop over items --#
+        #-- END check to see if JSON passed in. --#
         
         return string_OUT
         

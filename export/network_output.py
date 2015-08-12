@@ -64,9 +64,6 @@ from sourcenet.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 # Import sourcenet shared classes.
 from sourcenet.shared.sourcenet_base import SourcenetBase
 
-# and, one coding class.
-from sourcenet.article_coding.article_coder import ArticleCoder
-
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -664,18 +661,7 @@ class NetworkOutput( SourcenetBase ):
                 elif ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_AUTOMATED ):
                 
                     # only want to filter records coded by automated user.
-                    
-                    # get pk of automated coder.
-                    automated_coder_user = ArticleCoder.get_automated_coding_user()
-                    automated_coder_pk = automated_coder_user.pk
-                    
-                    # filter - either:
-
-                    # ( coder = automated_coder AND coder_type IN coder_type_list_IN )
-                    current_query = Q( coder = automated_coder_user ) & Q ( coder_type__in = coder_type_list_IN )
-
-                    # OR coder != automated_coder
-                    current_query = ~Q( coder = automated_coder_user ) | current_query
+                    current_query = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_IN )
 
                     # add it to the query list
                     query_list.append( current_query )

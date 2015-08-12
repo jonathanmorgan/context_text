@@ -48,6 +48,7 @@ from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 from sourcenet.models import Person_External_UUID
 from sourcenet.models import Person_Newspaper
+from sourcenet.shared.sourcenet_base import SourcenetBase
 
 #================================================================================
 # Shared variables and functions
@@ -83,10 +84,6 @@ class ArticleCoder( BasicRateLimited ):
 
     # debug
     DEBUG_FLAG = True
-    
-    # coder user
-    CODER_USERNAME_AUTOMATED = "automated"
-    CODER_USER_AUTOMATED = None
     
     # config parameters
     PARAM_AUTOPROC_ALL = "autoproc_all"
@@ -151,53 +148,8 @@ class ArticleCoder( BasicRateLimited ):
         # return reference
         user_OUT = None
 
-        # declare variables
-        temp_user = None
-        temp_password = ""
-        
-        # User already retrieved?
-        if ( cls.CODER_USER_AUTOMATED == None ):
-        
-            # use a try to detect if no automated user.
-            try:
-            
-                # get user
-                temp_user = User.objects.get( username = cls.CODER_USERNAME_AUTOMATED )
-                
-                # store it
-                cls.CODER_USER_AUTOMATED = temp_user
-                
-            except:
-            
-                # exception in get() call - create and return new user?
-                if ( create_if_no_match_IN == True ):
-                
-                    # set password to current time stamp.
-                    temp_password = datetime.datetime.utcnow()
-                    temp_password = calendar.timegm( temp_password.timetuple() )
-                    temp_password = str( temp_password )
-                
-                    # create user with username, password, no email.
-                    temp_user = User.objects.create_user( cls.CODER_USERNAME_AUTOMATED, None, temp_password )
-                    
-                    # add information to user.
-                    temp_user.first_name = "Automated"
-                    temp_user.last_name = "Processing"
-                    
-                    # save user.
-                    temp_user.save()
-                    
-                    # store user in class
-                    cls.CODER_USER_AUTOMATED = temp_user
-                    
-                #-- END check to see if we create a user. ---#
-            
-            #-- END try/except for looking up automated user. --#
-            
-        #-- END check to see if user already stored in class. --#
-
-        # return it.
-        user_OUT = cls.CODER_USER_AUTOMATED
+        # logic moved to SourcenetBase - call method there.
+        user_OUT = SourcenetBase.get_automated_coding_user( create_if_no_match_IN )
 
         return user_OUT
         
