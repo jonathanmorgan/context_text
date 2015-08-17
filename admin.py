@@ -65,7 +65,12 @@ admin.site.register( Article_RawData )
 class OrganizationAdmin( admin.ModelAdmin ):
 
     fieldsets = [
-        ( None,                 { 'fields' : [ 'name', 'description', 'location' ] } ),
+        (
+            None,
+            { 
+                'fields' : [ 'name', 'description', 'location' ]
+            }
+        ),
     ]
 
     #inlines = [
@@ -91,7 +96,10 @@ class Person_OrganizationInline( admin.TabularInline ):
 
 class PersonAdmin( admin.ModelAdmin ):
     fieldsets = [
-        ( None,                 { 'fields' : [ 'first_name', 'middle_name', 'last_name', 'gender', 'title', 'is_ambiguous', 'notes' ] } ),
+        (
+            None,
+            { 'fields' : [ 'first_name', 'middle_name', 'last_name', 'gender', 'title', 'is_ambiguous', 'notes' ] }
+        ),
     ]
 
     # removing the organizational affiliation from the person area, for now, to
@@ -135,12 +143,14 @@ class ArticleTextInline( admin.StackedInline ):
 
 class ArticleAdmin( admin.ModelAdmin ):
     fieldsets = [
-        ( None,
+        (
+            None,
             {
                 'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'tags' ]
             }
         ),
-        ( "More details (Optional)",
+        ( 
+            "More details (Optional)",
             {
                 'fields' : [ 'index_terms'  ],
                 'classes' : ( "collapse", )
@@ -232,7 +242,8 @@ class Article_TextAdmin( admin.ModelAdmin ):
     form = make_ajax_form( Article_Text, dict( article = 'article' ) )
 
     fieldsets = [
-        ( None,
+        (
+            None,
             {
                 'fields' : [ 'article', 'content', 'content_type', 'status' ]
             }
@@ -263,12 +274,14 @@ class Article_DataAdmin( admin.ModelAdmin ):
     form = make_ajax_form( Article_Data, dict( article = 'article' ) )
 
     fieldsets = [
-        ( None,
+        (
+            None,
             {
                 'fields' : [ 'article', 'coder', 'projects', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
             }
         ),
-        ( "Article Locations (Optional)",
+        (
+            "Article Locations (Optional)",
             {
                 'fields' : [ 'locations'  ],
                 'classes' : ( "collapse", )
@@ -352,7 +365,10 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     form = make_ajax_form( Article_Author, dict( person = 'person' ) )
 
     fieldsets = [
-        ( None, { 'fields' : [ 'article_data', 'author_type', 'person' ] } ),
+        (
+            None,
+            { 'fields' : [ 'article_data', 'author_type', 'person' ] }
+        ),
     ]
 
     #inlines = [

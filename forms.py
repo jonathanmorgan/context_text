@@ -126,7 +126,7 @@ class Article_DataLookupForm( forms.Form ):
 class Article_DataSelectForm( forms.Form ):
 
     '''
-    create a form to let a user select from Article_Data relates to an article
+    create a form to let a user select from Article_Data related to an article
        passed in to the form's __init__() method.
     '''
 
@@ -186,6 +186,22 @@ class Article_DataSelectForm( forms.Form ):
     #-- END overridden/extended function __init__() --#
 
 #-- END ArticleLookupForm --#
+
+
+class ArticleCodingForm( forms.ModelForm ):
+
+    '''
+    Create a form to let a user look up the source.
+    '''
+
+    class Meta:
+        model = Article_Subject
+        exclude = [ 'article_data', 'original_person', 'match_confidence_level', 'capture_method', 'create_date', 'last_modified', 'source_type', 'subject_type', 'title', 'more_title', 'organization', 'document', 'topics', 'source_contact_type', 'source_capacity', 'localness', 'notes' ]
+
+    # AJAX lookup for person.
+    person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = None )
+
+#-- END ArticleCodingForm --#
 
 
 class ArticleLookupForm( forms.Form ):

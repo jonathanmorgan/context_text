@@ -263,3 +263,48 @@ class PersonLookup( LookupParent ):
     #-- END method get_objects --#
 
 #-- END class PersonLookup --#
+
+
+class ArticleCodingPersonLookup( LookupParent ):
+    
+    my_class = Person
+    
+    def get_query( self, q, request ):
+
+        """
+        return a query set.  you also have access to request.user if needed
+        """
+
+        # return reference
+        query_set_OUT = None
+
+        # define variables
+
+        # is the q a number and is it the ID of an contributor?
+        query_set_OUT = self.get_instance_query( q, request, self.my_class )
+
+        # got anything back?
+        if ( query_set_OUT is None ):
+
+            # No exact match for q as ID.  Return search of text in contributor.
+            query_set_OUT = self.my_class.objects.filter( Q( first_name__icontains = q ) | Q( middle_name__icontains = q ) | Q( last_name__icontains = q ) | Q( full_name_string__icontains = q ) )
+
+        #-- END retrieval of query set when no ID match. --#
+
+        return query_set_OUT
+
+    #-- END method get_query --#
+
+
+    def get_objects(self,ids):
+
+        """
+        given a list of ids, return the objects ordered as you would like them
+            on the admin page.  This is for displaying the currently selected
+            items (in the case of a ManyToMany field)
+        """
+        return self.my_class.objects.filter(pk__in=ids).order_by('last_name','first_name','middle_name')
+
+    #-- END method get_objects --#
+
+#-- END class ArticleCodingPersonLookup --#
