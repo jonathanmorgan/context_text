@@ -77,10 +77,32 @@
     </div>
     <div class="sidebarBox">
         <div style="position: static; top: 40px;" class="scrollingBox">
-            <h2>coding area</h2>
-            <input type="button" id="select-text" value="Get selected text / 選択部分のテキストを取得" />: <textarea id="selected-text" readonly="readonly" rows="4" cols="45"></textarea>
-            <br />
-            {{ person_lookup_form }}
+            <h2>subject coding area</h2>
+            <form name="subject_coding" id="subject_coding">
+                <input type="hidden" name="matched-person-id" id="matched-person-id" />
+<!--
+                <input type="button" id="select-text" value="Get selected text" />:
+                <br />
+                <textarea id="selected-text" readonly="readonly" rows="4" cols="35"></textarea>
+                <br />
+-->
+                <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="source-name" readonly="readonly"></textarea>
+                <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="is-quoted" name="is-quoted" /> Is Quoted
+                <br />
+                <input type="button" id="store-name-and-title" name="store-name-and-title" value="Name + Title ==>" />:
+                <br />
+                <textarea id="source-name-and-title" name="source-name-and-title" rows="4" cols="35"></textarea>
+                <br />
+                <input type="button" id="store-quote-text" name="store-quote-text" value="Quote Text ==>" />:
+                <br />
+                <textarea id="source-quote-text" name="source-quote-text" readonly="readonly" rows="4" cols="35"></textarea>
+                <br />
+                <hr id="lookupPersonRule" />
+                <input type="button" id="lookup-source-name" name="lookup-source-name" value="Lookup Name ==>" /> {{ person_lookup_form }}
+                <br />
+                <input type="button" id="process-subject" name="process-subject" value="Process Subject" onclick="process_subject_coding()" />
+            </form>
         </div>
     </div>
 </div>

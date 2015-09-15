@@ -322,7 +322,7 @@ class Location( models.Model ):
         ( 'SC', 'South Carolina' ),
         ( 'SD', 'South Dakota' ),
         ( 'TN', 'Tennessee' ),
-        ( 'TX', 'Texasv' ),
+        ( 'TX', 'Texas' ),
         ( 'UT', 'Utah' ),
         ( 'VT', 'Vermont' ),
         ( 'VI', 'Virgin Islands' ),
@@ -4761,6 +4761,7 @@ class Article_Person( models.Model ):
     person = models.ForeignKey( Person, blank = True, null = True )
     original_person = models.ForeignKey( Person, blank = True, null = True, related_name="%(app_label)s_%(class)s_original_person_set")
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
+    name = models.CharField( max_length = 255, blank = True, null = True )
 
     # capture match confidence - start with 1 or 0, but leave room for
     #    decimal values.
@@ -5272,7 +5273,7 @@ class Article_Subject( Article_Person ):
     source_type = models.CharField( max_length = 255, choices = SOURCE_TYPE_CHOICES, blank = True, null = True )
     subject_type = models.CharField( max_length = 255, choices = SUBJECT_TYPE_CHOICES, blank = True, null = True )
     title = models.CharField( max_length = 255, blank = True, null = True )
-    more_title = models.CharField( max_length = 255, blank = True, null = True )
+    more_title = models.TextField( blank = True, null = True )
     organization = models.ForeignKey( Organization, blank = True, null = True )
     document = models.ForeignKey( Document, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True )
