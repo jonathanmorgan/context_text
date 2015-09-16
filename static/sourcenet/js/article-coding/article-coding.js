@@ -3,17 +3,131 @@
 //============================================================================//
 
 //----------------------------------------------------------------------------//
+// namespace!
+//----------------------------------------------------------------------------//
+
+var SOURCENET = SOURCENET || {};
+
+//----------------------------------------------------------------------------//
+// object definitions
+//----------------------------------------------------------------------------//
+
+
+//=====================//
+// Subject
+//=====================//
+
+// Subject constructor
+
+SOURCENET.Subject = function()
+{
+    // instance variables
+    this.subject_name = "";
+    this.is_quoted = false;
+    this.name_and_title = "";
+    this.quote_text = "";
+    this.person_id = null;
+    //this.location_of_name = "";
+}
+
+// Subject methods
+
+SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
+{
+
+    // declare variables
+    var form_element = null;
+    var my_subject_name = "";
+    var my_is_quoted = false;
+    var my_name_and_title = "";
+    var my_quote_text = "";
+    var my_person_id = null;
+    var subject_name_input_element = null;
+
+    // get form element
+    form_element = form_element_IN
+    
+    // retrieve values from form inputs.
+    
+    // ! get input for subject_name - not sure best way to do this - reference form?  just go straight to the DOM?
+    
+    // must have a name
+    my_name = this.subject_name;
+    if ( ( my_name == null ) || ( my_name == "" ) )
+    {
+        // no name - invalid.
+        is_valid_OUT = false;
+    }
+    
+    alert( "is valid?" + is_valid_OUT )
+    
+    return is_valid_OUT;
+    
+} //-- END SOURCENET.Subject function validate() --//
+
+SOURCENET.Subject.prototype.validate = function()
+{
+
+    // return reference
+    var is_valid_OUT = true;
+
+    // declare variables
+    var my_name = "";
+    
+    // must have a name
+    my_name = this.subject_name;
+    if ( ( my_name == null ) || ( my_name == "" ) )
+    {
+        // no name - invalid.
+        is_valid_OUT = false;
+    }
+    
+    //alert( "is valid?" + is_valid_OUT )
+    
+    return is_valid_OUT;
+    
+} //-- END SOURCENET.Subject function validate() --//
+
+//=====================//
+// END Subject
+//=====================//
+
+
+//----------------------------------------------------------------------------//
 // function definitions
 //----------------------------------------------------------------------------//
 
-function process_subject_coding()
+
+SOURCENET.process_subject_coding = function()
 {
     alert( "PROCESS SUBJECT CODING!!!" );
+    
+    // declare variables
+    form_element = null;
+    subject_instance = null;
+    is_subject_valid = false;
+    
+    // get form element.
+    form_element = $( '#subject-coding' );
+    
+    // create Subject instance.
+    subject_instance = new SOURCENET.Subject();
+    
+    // populate it from the form.
+    subject_instance.populate_from_form( form_element );
+    
+    // validate
+    is_subject_valid = subject_instance.validate();
+    
+    alert( "made a subject instance... valid? " + is_subject_valid );
+    
 } //-- END function process_subject_coding() --#
+
 
 //----------------------------------------------------------------------------//
 // jquery event handlers
 //----------------------------------------------------------------------------//
+
 
 // javascript to keep the coding area on right from scrolling off page.
 $( function(){
@@ -177,7 +291,7 @@ $( document ).ready(
 $( document ).ready(
     function()
     {
-        $( '#lookup-source-name' ).click(        
+        $( '#lookup-subject-name' ).click(        
             function()
             {
                 // declare variables
