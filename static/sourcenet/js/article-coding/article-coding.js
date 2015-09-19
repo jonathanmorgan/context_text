@@ -6,11 +6,111 @@
 // namespace!
 //----------------------------------------------------------------------------//
 
+
 var SOURCENET = SOURCENET || {};
+
+
+//----------------------------------------------------------------------------//
+// namespaced variables
+//----------------------------------------------------------------------------//
+
+
+// JSON to prepopulate page if we are editing.
+var SOURCENET.subject_JSON = "";
+
+// subject store used to keep track of subjects while coding.
+var SOURCENET.subject_store = null;
+
 
 //----------------------------------------------------------------------------//
 // object definitions
 //----------------------------------------------------------------------------//
+
+
+//=====================//
+// SubjectStore
+//=====================//
+
+// SubjectStore constructor
+
+/**
+ * Stores and indexes subjects in an article.
+ * @constructor
+ */
+SOURCENET.SubjectStore = function()
+{
+    // instance variables
+    this.subject_array = [];
+    this.next_subject_index = 0;
+    this.name_to_subject_index_map = {};
+    this.id_to_subject_index_map = {};
+    //this.location_of_name = "";
+}
+
+// SubjectStore methods
+
+/**
+ * Accepts a Subject instance.  First, checks to see if the subject is valid.
+ *    If no, returns validation messages as error.  If subject has a person ID,
+ *    checks to see if the ID is already a key in this.id_to_subject_map.  If
+ *    so, returns an error.  If no ID, checks to see if name is already in
+ *    this.name_to_subject_map.  If so, returns an error.  If no errors, then
+ *    adds the subject to all the appropriate places:
+ *    - this.subject_array
+ *    - this.name_to_subject_map with subject_name as key, subject instance as
+ *       value.
+ *    - if person ID, this.id_to_subject_map with person ID as key, subject
+ *       instance as value.
+ */
+SOURCENET.SubjectStore.prototype.add_subject = function( subject_IN )
+{
+    
+    // return reference
+    status_array_OUT = [];
+    
+    // declare variables.
+    subject_type = "";
+    validation_status_array = [];
+    
+    // make sure we have a subject.
+    subject_type = 
+    if ( ( subject_IN !== undefined ) && ( subject_IN != null ) )
+    {
+        
+        // got a subject.  See if it is new.
+        alert( "TODO" );
+        
+    }
+    else
+    {
+        
+        // no subject passed in.  Error.
+        status_array_OUT.push( "No subject instance passed in." );
+        
+    }
+    
+    return status_array_OUT;
+    
+} //-- END SOURCENET.SubjectStore method add_subject() --//
+
+
+/**
+ * Accepts a Subject instance - adds it to the subject array at the next index.
+ *    Returns the index.  Subject is not checked to see if it is a duplicate.
+ *    At this point, it is too late for that.  You should have checked earlier.
+ *
+ * @param {Subject} subject_IN - subject we want to add to the subject array.
+ * @returns {int} - index of subject in subject array.
+ */
+SOURCENET.SubjectStore.prototype.add_subject_to_array = function( subject_IN )
+{
+    alert( "NEED TO MAKE SubjectStore.add_subject_to_array()." );
+} //-- END SOURCENET.SubjectStore method add_subject_to_array() --//
+
+
+//=====================//
+// END SubjectStore
+//=====================//
 
 
 //=====================//
@@ -19,6 +119,10 @@ var SOURCENET = SOURCENET || {};
 
 // Subject constructor
 
+/**
+ * Represents a subject in an article.
+ * @constructor
+ */
 SOURCENET.Subject = function()
 {
     // instance variables
@@ -28,15 +132,24 @@ SOURCENET.Subject = function()
     this.quote_text = "";
     this.person_id = null;
     //this.location_of_name = "";
-}
+} //-- END SOURCENET.Subject constructor --//
 
 // Subject methods
 
+/**
+ * populates Subject object instance from form inputs.
+ * @param {jquery element} form_element_IN - Form element that contains inputs we will use to populate this instance.
+ * @returns {Array} - list of validation messages.  If empty, all is well.  If array.length > 0, then there were validation errors.
+ */
 SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
 {
+    
+    // return reference
+    var validate_status_array_OUT = [];
 
     // declare variables
     var form_element = null;
+    var temp_element = null;
     var my_subject_name = "";
     var my_is_quoted = false;
     var my_name_and_title = "";
@@ -47,46 +160,81 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     // get form element
     form_element = form_element_IN
     
-    // retrieve values from form inputs.
+    // retrieve values from form inputs and store in instance.
     
-    // ! get input for subject_name - not sure best way to do this - reference form?  just go straight to the DOM?
+    // subject-name
+    temp_element = $( '#subject-name' );
+    my_subject_name = temp_element.val();
+    this.subject_name = my_subject_name;
     
-    // must have a name
-    my_name = this.subject_name;
-    if ( ( my_name == null ) || ( my_name == "" ) )
-    {
-        // no name - invalid.
-        is_valid_OUT = false;
-    }
-    
-    alert( "is valid?" + is_valid_OUT )
-    
-    return is_valid_OUT;
-    
-} //-- END SOURCENET.Subject function validate() --//
+    // is-quoted
+    temp_element = $( '#is-quoted' );
+    my_is_quoted = temp_element.prop( 'checked' );    
+    this.is_quoted = my_is_quoted;
 
+    // subject-name-and-title
+    temp_element = $( '#subject-name-and-title' );
+    my_name_and_title = temp_element.val();
+    this.name_and_title = my_name_and_title;
+    
+    // source-quote-text
+    temp_element = $( '#source-quote-text' );
+    my_quote_text = temp_element.val();
+    this.quote_text = my_quote_text;
+    
+    // id_person
+    temp_element = $( '#id_person' );
+    my_person_id = temp_element.val();
+    this.person_id = my_person_id;
+
+    alert( JSON.stringify( this ) )
+    
+    // validate
+    validate_status_array_OUT = this.validate()
+    
+    // alert( "validate_status = " + validate_status )
+    
+    return validate_status_array_OUT;
+    
+} //-- END SOURCENET.Subject method populate_from_form() --//
+
+
+/**
+ * validates Subject object instance.
+ * @returns {Array} - list of validation messages.  If empty, all is well.  If array.length > 0, then there were validation errors.
+ */
 SOURCENET.Subject.prototype.validate = function()
 {
 
     // return reference
-    var is_valid_OUT = true;
+    var status_array_OUT = [];  // empty list = valid, non-empty list = list of error messages, invalid.
 
     // declare variables
     var my_name = "";
+    var status_string = "";
+    
     
     // must have a name
     my_name = this.subject_name;
     if ( ( my_name == null ) || ( my_name == "" ) )
     {
         // no name - invalid.
-        is_valid_OUT = false;
+        status_array_OUT.push( "Must have a name." );
     }
     
-    //alert( "is valid?" + is_valid_OUT )
+    // convert list of status messages to string.
+    //if ( status_list_OUT.length > 0 )
+    //{
+        
+        // join the messages.
+        //status_string = status_list_OUT.join( ", " );
+        // alert( "status = " + status_string )
+        
+    //}
     
-    return is_valid_OUT;
+    return status_array_OUT;
     
-} //-- END SOURCENET.Subject function validate() --//
+} //-- END SOURCENET.Subject method validate() --//
 
 //=====================//
 // END Subject
@@ -98,6 +246,37 @@ SOURCENET.Subject.prototype.validate = function()
 //----------------------------------------------------------------------------//
 
 
+/**
+ * checks to see if SubjectStore instance already around.  If so, returns it.
+ *    If not, creates one, stores it, then returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: If SubjectStore instance not already present in
+ *    SOURCENET.subject_store, one is created and stored there before it is
+ *    returned.
+ */
+SOURCENET.get_subject_store = function()
+{
+    
+    alert( "Getting Subject Store...eventually!" );
+    
+} //-- END function SOURCENET.get_subject_store() --//
+
+
+/**
+ * Event function that is called when coder is finished coding a particular
+ *    subject and is ready to add him or her to the list of subjects in the
+ *    article.
+ *
+ * Preconditions: Subject coding form should be filled out as thoroughly as
+ *    possible.  At the least, must have a subject name.  If none present, the
+ *    subject is invalid, will not be accepted.
+ *
+ * Postconditions: If subject accepted, after this function is called, the
+ *    subject will be added to the internal structures to list and map subjects,
+ *    and will also be added to the list of subjects who have been coded so far.
+ */
 SOURCENET.process_subject_coding = function()
 {
     alert( "PROCESS SUBJECT CODING!!!" );
@@ -105,8 +284,10 @@ SOURCENET.process_subject_coding = function()
     // declare variables
     form_element = null;
     subject_instance = null;
-    is_subject_valid = false;
-    
+    status_message_array = [];
+    status_message_count = -1;
+    status_string = "";
+
     // get form element.
     form_element = $( '#subject-coding' );
     
@@ -114,12 +295,25 @@ SOURCENET.process_subject_coding = function()
     subject_instance = new SOURCENET.Subject();
     
     // populate it from the form.
-    subject_instance.populate_from_form( form_element );
+    status_message_array = subject_instance.populate_from_form( form_element );
     
-    // validate
-    is_subject_valid = subject_instance.validate();
-    
-    alert( "made a subject instance... valid? " + is_subject_valid );
+    // valid?
+    status_message_count = status_message_array.length
+    if ( status_message_count == 0 )
+    {
+        
+        // valid.
+        alert( "Valid subject.  Adding to SubjectStore." );
+        
+    }
+    else
+    {
+        
+        // not valid - for now, output message(s).
+        status_string = status_message_array.join( ", " );
+        alert( "Subject not valid: " + status_string );
+        
+    }
     
 } //-- END function process_subject_coding() --#
 
@@ -191,7 +385,7 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 //alert( "selected text : " + selected_text );
-                $( '#source-name' ).val( selected_text );
+                $( '#subject-name' ).val( selected_text );
             }
         )
     }
@@ -207,7 +401,7 @@ $( document ).ready(
             {
                 // declare variables
                 var selected_text = "";
-                var source_name_and_title_element = null;
+                var subject_name_and_title_element = null;
                 var existing_text = "";
     
                 // get selection
@@ -215,8 +409,8 @@ $( document ).ready(
                 //alert( "selected text : " + selected_text );
                 
                 // see if there is already something there.
-                source_name_and_title_element = $( '#source-name-and-title' )
-                existing_text = source_name_and_title_element.val()
+                subject_name_and_title_element = $( '#subject-name-and-title' )
+                existing_text = subject_name_and_title_element.val()
                 //alert( "Existing text: " + existing_text )
                 
                 // something already there?
@@ -224,14 +418,14 @@ $( document ).ready(
                 {
 
                     // yes - append new to the end.
-                    source_name_and_title_element.val( existing_text + " " + selected_text );
+                    subject_name_and_title_element.val( existing_text + " " + selected_text );
                     
                 }
                 else
                 {
                     
                     // no - just overwrite.
-                    source_name_and_title_element.val( selected_text );
+                    subject_name_and_title_element.val( selected_text );
                     
                 }
 
@@ -299,7 +493,7 @@ $( document ).ready(
                 var person_lookup = "";
     
                 // get selection
-                source_text = $( '#source-name' ).val();
+                source_text = $( '#subject-name' ).val();
                 //alert( "source text : " + source_text );
 
                 // get lookup text field,  place value, then change().
