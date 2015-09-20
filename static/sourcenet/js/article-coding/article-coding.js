@@ -44,7 +44,10 @@ SOURCENET.SubjectStore = function()
     this.next_subject_index = 0;
     this.name_to_subject_index_map = {};
     this.id_to_subject_index_map = {};
-    //this.location_of_name = "";
+    
+    // instance variables - status messages
+    this.status_message_array = [];
+    this.latest_subject_index = -1;
 }
 
 // SubjectStore methods
@@ -69,16 +72,65 @@ SOURCENET.SubjectStore.prototype.add_subject = function( subject_IN )
     status_array_OUT = [];
     
     // declare variables.
+    is_ok_to_add = true;
     subject_type = "";
     validation_status_array = [];
+    validation_status_count = -1;
+    my_person_id = -1;
+    is_id_in_map = false;
+    my_subject_name = "";
     
     // make sure we have a subject.
     subject_type = 
     if ( ( subject_IN !== undefined ) && ( subject_IN != null ) )
     {
         
-        // got a subject.  See if it is new.
-        alert( "TODO" );
+        // got a subject.  Is it valid?
+        validation_status_array = subject_IN.validate();
+        validation_status_count = validation_status_array.length;
+        if ( validation_status_count == 0 )
+        {
+            
+            // valid.  Got a person ID?
+            my_person_id = subject_IN.person_id;
+            if ( ( my_person_id != null ) && ( my_person_id > 0 ) )
+            {
+                
+                // got a person ID.  Is that ID already in map of IDs to array
+                //    indices?
+                is_id_in_map = this.id_to_subject_index_map.hasOwnProperty( my_person_id );
+                if ( is_id_in_map == true )
+                {
+                    
+                    // already in map...  Error.
+                    is_ok_to_add = false;
+                    status_array_OUT.push( "Person ID " + my_person_id + " already present in SubjectStore." )
+                    
+                }
+                
+            } //-- END check to see if person ID present. --//
+            
+            // Got a subject name?
+            my_subject_name = subject_IN.subject_name;
+            if ( ( my_subject_name != null ) && ( my_subject_name != "" ) )
+            {
+                
+                // subject name present (as it should be at this point).  See if
+                //    this name is already in the SubjectStore
+                
+                
+            }
+
+            
+        }
+        else
+        {
+
+            // not valid.  Error.  Concat validation errors with any other
+            //    errors.
+            status_array_OUT = status_array_OUT.concat( validation_status_array );
+
+        } //-- END check to see if subject is valid. --//
         
     }
     else
@@ -87,7 +139,7 @@ SOURCENET.SubjectStore.prototype.add_subject = function( subject_IN )
         // no subject passed in.  Error.
         status_array_OUT.push( "No subject instance passed in." );
         
-    }
+    } //-- END check to see if subject passed in. --//
     
     return status_array_OUT;
     
@@ -106,6 +158,42 @@ SOURCENET.SubjectStore.prototype.add_subject_to_array = function( subject_IN )
 {
     alert( "NEED TO MAKE SubjectStore.add_subject_to_array()." );
 } //-- END SOURCENET.SubjectStore method add_subject_to_array() --//
+
+
+/**
+ * Accepts a person ID - Checks to see if ID is a key in the 
+ *
+ * @param {Subject} subject_IN - subject we want to add to the subject array.
+ * @returns {int} - index of subject in subject array.
+ */
+SOURCENET.SubjectStore.prototype.get_index_for_person_id = function( person_id_IN )
+{
+    
+    // return reference.
+    index_OUT = -1;
+    
+    // declare variables
+    id_to_index_map = null
+    is_in_map = false;
+    
+    // get id_to_index_map.
+    id_to_index_map = this.id_to_subject_index_map[ person_id_IN ];
+    
+    // see if ID passed in is a key in this.id_to_subject_index_map.hasOwnProperty( my_person_id );
+    is_in_map = id_to_index_map.hasOwnProperty( person_id_IN );
+    if ( is_in_map == true )
+    {
+        
+        // it is in the subject store.  retrieve index for this person ID.
+        index_OUT = id_to_index_map[ person_id_IN ];
+        
+    }
+
+    alert( "!NEED TO FINISH;" );
+    
+    return index_OUT;
+
+} //-- END SOURCENET.SubjectStore method get_index_for_person_id() --//
 
 
 //=====================//
