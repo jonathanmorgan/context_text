@@ -16,10 +16,10 @@ var SOURCENET = SOURCENET || {};
 
 
 // JSON to prepopulate page if we are editing.
-var SOURCENET.subject_JSON = "";
+SOURCENET.subject_JSON = "";
 
 // subject store used to keep track of subjects while coding.
-var SOURCENET.subject_store = null;
+SOURCENET.subject_store = null;
 
 
 //----------------------------------------------------------------------------//
@@ -28,7 +28,7 @@ var SOURCENET.subject_store = null;
 
 
 //=====================//
-// !SubjectStore
+// !----> SubjectStore
 //=====================//
 
 // SubjectStore constructor
@@ -688,7 +688,7 @@ SOURCENET.SubjectStore.prototype.update_subject_in_person_id_map = function( sub
         {
             
             // yes.  Set value for that name in map.
-            my_name_to_index_map[ subject_name ] = index_IN;
+            my_person_id_to_index_map[ subject_person_id ] = index_IN;
             
         }
         else
@@ -719,7 +719,7 @@ SOURCENET.SubjectStore.prototype.update_subject_in_person_id_map = function( sub
 
 
 //=====================//
-// !Subject
+// !----> Subject
 //=====================//
 
 // Subject constructor
@@ -790,6 +790,7 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     // id_person
     temp_element = $( '#id_person' );
     my_person_id = temp_element.val();
+    my_person_id = parseInt( my_person_id, 10 );
     this.person_id = my_person_id;
 
     alert( JSON.stringify( this ) )
@@ -993,7 +994,7 @@ SOURCENET.is_integer_OK = function( integer_IN, min_value_IN )
         
     }
     
-    if ( ( integer_IN !== undefined ) && ( index_IN != null ) && ( index_IN >= min_value ) )
+    if ( ( integer_IN !== undefined ) && ( integer_IN != null ) && ( integer_IN >= min_value ) )
     {
         
         // OK!
