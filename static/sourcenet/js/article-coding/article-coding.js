@@ -587,6 +587,171 @@ SOURCENET.SubjectStore.prototype.get_subject_for_person_id = function( person_id
 
 
 /**
+ * Accepts an index into the subject array - Retrieves subject at that index.
+ *    If null, nothing there, nothing to remove.  If not null, makes that index
+ *    in the array refer to null.  Then, looks for the index value in the values
+ *    stored within the name-to-index and person-id-to-index maps.  If index
+ *    value found, each key-value pair with the index as the value is removed.
+ *    Returns a reference to the subject (null if there was no subject to
+ *    remove).
+ *
+ * @param {int} index_IN - index in subject array that contains subject we want to remove.
+ * @returns {Array:string} - array of status messages that result from processing.
+ */
+SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
+{
+    
+    // return reference.
+    var status_array_OUT = [];
+    
+    // declare variables
+    var selected_index = -1;
+    var is_index_OK = false;
+    var my_subject_array = -1;
+    var subject_to_remove = null;
+    var my_subject_name = "";
+    var my_subject_person_id = -1;
+    var name_to_index_map = {};
+    var person_id_to_index_map = {};
+    var current_key = "";
+    var current_value = "";
+    
+    // make sure index is an integer.
+    selected_index = parseInt( index_IN );
+    
+    // got an index?
+    is_index_OK = SOURCENET.is_integer_OK( selected_index, 0 );
+    if ( is_index_OK == true )
+    {
+        
+        // I think so...  Get subject array
+        my_subject_array = this.subject_array;
+        
+        //  check to see if index present.
+        subject_to_remove = my_subject_array[ selected_index ];
+        
+        // is it undefined or null?
+        if ( subject_to_remove === undefined )
+        {
+            
+            // it is undefined.  Index not present in array.
+            status_array_OUT.push( "Index " + selected_index + " is undefined - not present in array." );
+            my_subject_name = null;
+            my_subject_person_id = null;
+            
+        }
+        else if ( subject_to_remove == null )
+        {
+            
+            // it is null.  Subject already removed at this index.
+            status_array_OUT.push( "Subject at index " + selected_index + " already removed (== null)." );
+            my_subject_name = null;
+            my_subject_person_id = null;
+            
+        }
+        else
+        {
+            
+            // there is a subject here.  Get name and person id.
+            my_subject_name = subject_to_remove.subject_name;
+            my_subject_person_id = subject_to_remove.person_id;
+            
+            // and, set the index to null.
+            my_subject_array[ selected_index ] = null;
+            
+        } //-- END check to see if subject instance referenced by index is undefined or null. --//
+            
+            
+        // look for values that reference index in:
+        // - this.name_to_subject_index_map
+        // - this.id_to_subject_index_map
+        
+        // always check, even of index reference is null or undefined, just as a
+        //    sanity check to keep the maps clean.
+
+        // name-to-index map --> this.name_to_subject_index_map
+        name_to_index_map = this.name_to_subject_index_map;
+        
+        // loop over keys, checking if value for each matches value of index_IN.
+        for ( current_key in name_to_index_map )
+        {
+            
+            // get value.
+            current_value = name_to_index_map[ current_key ];
+            
+            // convert to integer (just in case).
+            current_value = parseInt( current_value );
+            
+            // compare to selected_index.
+            if ( current_value == selected_index )
+            {
+                
+                // we have a match.  Sanity check - see if the key matches the
+                //    name from the subject.
+                if ( current_key != my_subject_name )
+                {
+                    
+                    // matching index, but key doesn't match.  Output message.
+                    status_array_OUT.push( "Subject name key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_name + "\".  Hmmm..." );
+                    
+                }
+                
+                // remove key-value pair from object.
+                delete name_to_index_map[ current_key ];
+                
+            } //-- END check to see if vkey references the index we've been asked to remove --//
+            
+        } //-- END loop over keys in this.name_to_subject_index_map --//
+        
+        // person ID to index map --> this.id_to_subject_index_map
+        person_id_to_index_map = this.id_to_subject_index_map;
+        
+        // loop over keys, checking if value for each matches value of index_IN.
+        for ( current_key in person_id_to_index_map )
+        {
+            
+            // get value.
+            current_value = person_id_to_index_map[ current_key ];
+            
+            // convert to integer (just in case).
+            current_value = parseInt( current_value );
+            
+            // compare to selected_index.
+            if ( current_value == selected_index )
+            {
+                
+                // we have a match.  Sanity check - see if the key matches the
+                //    person ID from the subject.
+                if ( current_key != my_subject_person_id )
+                {
+                    
+                    // matching index, but key doesn't match.  Output message.
+                    status_array_OUT.push( "Subject person ID key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_person_id + "\".  Hmmm..." );
+                    
+                }
+                
+                // remove key-value pair from object.
+                delete person_id_to_index_map[ current_key ];
+                
+            } //-- END check to see if key references the index we've been asked to remove --//
+            
+        } //-- END loop over keys in this.name_to_subject_index_map --//
+            
+    }
+    else //-- index is not OK. --//
+    {
+        
+        // no valid index - error - return null
+        status_array_OUT.push( "Index " + index_IN + " is not valid - could not remove subject." );
+        
+    } //-- END check to see if valid index passed in. --//
+    
+    return status_array_OUT;
+
+} //-- END SOURCENET.SubjectStore method remove_subject_at_index() --//
+
+
+/**
  * Accepts a Subject instance and that subject's index in the subject array.
  *    If both passed in, updates mapping of name to index in name_to_index_map
  *    in SubjectStore.  If not, does nothing.
