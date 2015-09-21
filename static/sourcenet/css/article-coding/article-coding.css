@@ -39,3 +39,16 @@ hr .lookupPersonRule
     margin-right: auto;
     border: 1px solid gray;
 }
+
+.statusMessageArea
+{
+	width: 280px; /* smaller than sidebar */
+	border: 1px solid green;
+	background-color: #c4e897;
+	padding: 5px;
+	margin: 5px;
+	font-style: italic;
+	/* font-size: 100%; */
+	font-family: monospace;
+	display: none;
+}

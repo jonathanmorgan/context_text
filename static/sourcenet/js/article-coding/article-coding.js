@@ -436,7 +436,7 @@ SOURCENET.SubjectStore.prototype.get_subject_at_index = function( index_IN )
     
     // declare variables
     var is_index_OK = false;
-    var subject_array = -1;
+    var my_subject_array = -1;
     
     // got an index?
     is_index_OK = SOURCENET.is_integer_OK( index_IN, 0 );
@@ -444,10 +444,10 @@ SOURCENET.SubjectStore.prototype.get_subject_at_index = function( index_IN )
     {
         
         // I think so...  Get subject array
-        subject_array = this.subject_array;
+        my_subject_array = this.subject_array;
         
         //  check to see if index present.
-        subject_OUT = subject_array[ index_IN ];
+        subject_OUT = my_subject_array[ index_IN ];
         
         // is it undefined?
         if ( subject_OUT === undefined )
@@ -760,6 +760,7 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     var my_name_and_title = "";
     var my_quote_text = "";
     var my_person_id = null;
+    var is_person_id_OK = false;
     var subject_name_input_element = null;
 
     // get form element
@@ -789,9 +790,26 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     
     // id_person
     temp_element = $( '#id_person' );
-    my_person_id = temp_element.val();
-    my_person_id = parseInt( my_person_id, 10 );
-    this.person_id = my_person_id;
+    
+    // element found?
+    if ( temp_element.length > 0 )
+    {    
+    
+        // get person ID from element.
+        my_person_id = temp_element.val();
+        
+        // is it an OK string?
+        is_person_id_OK = SOURCENET.is_string_OK( my_person_id )
+        if ( is_person_id_OK == true )
+        {
+
+            // looks OK (non-empty).  Convert to int and store it.
+            my_person_id = parseInt( my_person_id, 10 );
+            this.person_id = my_person_id;
+
+        } //-- END check to see if person_id value present. --//
+    
+    } //-- END check to see if id_person element present in HTML. --//
 
     alert( JSON.stringify( this ) )
     
@@ -803,6 +821,54 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     return validate_status_array_OUT;
     
 } //-- END SOURCENET.Subject method populate_from_form() --//
+
+
+/**
+ * Converts subject to a string value.
+ */
+SOURCENET.Subject.prototype.to_string = function()
+{
+    
+    // return reference
+    var value_OUT = "";
+    
+    // declare variables.
+    var my_person_id = -1;
+    var is_person_id_OK = false
+    var my_subject_name = "";
+    var am_I_quoted = false;
+    
+    // got person ID?
+    my_person_id = this.person_id;
+    is_person_id_OK = SOURCENET.is_integer_OK( my_person_id, 1 );
+    if ( is_person_id_OK == true )
+    {
+        value_OUT += my_person_id;
+    }
+    else
+    {
+        value_OUT += "new";
+    }
+    value_OUT += " - ";
+    
+    // name.
+    my_subject_name = this.subject_name;
+    value_OUT += my_subject_name;
+    
+    // subject type
+    am_I_quoted = this.is_quoted;
+    if( am_I_quoted == true )
+    {
+        value_OUT += " - source";
+    }
+    else
+    {
+        value_OUT += " - subject";
+    }
+    
+    return value_OUT;
+    
+} //-- END SOURCENET.Subject method to_string() --//
 
 
 /**
@@ -868,28 +934,52 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     var me = "SOURCENET.clear_coding_form";
     var is_status_message_OK = false;
     var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
     
-    // for now, display by alert()-ing JSON string.
+    // for now, just alert().
     alert( "Eventually will clear coding form.  Not just yet..." );
     
-    // !TODO - clear the coding form.
+    // clear the coding form.
     
-    // !TODO - clear the status message area.
+    // subject-name
+    temp_element = $( '#subject-name' );
+    temp_element.val( "" );
     
-    // if message, output it.
-    is_status_message_OK = SOURCENET.is_string_OK( status_message_IN );
-    if ( is_status_message_OK == true )
-    {
-        
-        // make status message array.
-        status_message_array = [];
-        status_message_array.push( status_message_IN );
-        
-        // output it.
-        SOURCENET.output_status_messages( status_message_array );
-        
-    } //-- END check to see if status message is OK. --//
+    // is-quoted
+    temp_element = $( '#is-quoted' );
+    temp_element.prop( 'checked', false );    
 
+    // subject-name-and-title
+    temp_element = $( '#subject-name-and-title' );
+    temp_element.val( "" );
+    
+    // source-quote-text
+    temp_element = $( '#source-quote-text' );
+    temp_element.val( "" );
+    
+    // id_person
+    temp_element = $( '#id_person' );
+    temp_element.val( "" );
+    
+    // clear out <div> inside <div id="id_person_on_deck">.
+    
+    // get on-deck <div>.
+    on_deck_person_element = $( '#id_person_on_deck' );
+    
+    // remove anonymous <div> inside.
+    on_deck_person_element.find( 'div' ).remove();
+    
+    // add a new empty div.
+    temp_element = $( '<div></div>' );
+    on_deck_person_element.append( temp_element );
+    
+    // make status message array (empty message will clear status area).
+    status_message_array = [];
+    status_message_array.push( status_message_IN );
+    
+    // output it.
+    SOURCENET.output_status_messages( status_message_array );
     
 } //-- END function SOURCENET.clear_coding_form() --//
 
@@ -905,15 +995,180 @@ SOURCENET.display_subjects = function()
     
     // declare variables.
     var me = "SOURCENET.display_subjects";
+    var li_id_prefix = "";
     var my_subject_store = null;
+    var subject_list_ul_element = null;
+    var subject_index = -1;
+    var subject_count = -1;
+    var current_subject = null;
+    var current_li_id = "";
+    var current_li_selector = "";
+    var current_li_element = null;
+    var current_li_element_count = -1;
+    var got_subject = false;
+    var subject_string = "";
+    var got_li = false;
+    var do_create_li = false;
+    var do_update_li = false;
+    var do_remove_li = false;
+    var li_contents = "";
+    
+    // initialize variables
+    li_id_prefix = "subject-";
     
     // get subject store
     my_subject_store = SOURCENET.get_subject_store();
     
     // for now, display by alert()-ing JSON string.
-    alert( "SubjectStore = " + JSON.stringify( my_subject_store ) );
+    //alert( "SubjectStore = " + JSON.stringify( my_subject_store ) );
     
-    // !TODO - repaint list of subjects.
+    // get <ul id="subject-list-ul" class="subjectListUl">
+    subject_list_ul_element = $( '#subject-list-ul' );
+    
+    // loop over the subjects in the list.
+    subject_count = my_subject_store.subject_array.length;
+    alert( "Subject Count = " + subject_count );
+    for( subject_index = 0; subject_index < subject_count; subject_index++ )
+    {
+        
+        // initialize variables.
+        got_subject = false;
+        got_li = false;
+        do_create_li = false;
+        do_update_li = false;
+        do_remove_li = false;
+        
+        // get subject.
+        current_subject = my_subject_store.get_subject_at_index( subject_index );
+
+        // got subject?
+        if ( current_subject != null )
+        {
+            // yes - set flag, update subject_string.
+            got_subject = true;
+            subject_string = current_subject.to_string();
+            
+        }
+        else
+        {
+            // alert( "In " + me + "(): no subject for index " + subject_index );
+            subject_string = "null";
+        } //-- END check to see if subject --//
+        
+        alert( "Subject " + subject_index + ": " + subject_string );
+        
+        // try to get <li> for that index.
+        current_li_id = li_id_prefix + subject_index;
+        current_li_selector = "#" + current_li_id;
+        current_li_element = subject_list_ul_element.find( current_li_selector );
+        current_li_element_count = current_li_element.length;
+        //alert( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
+        
+        // matching <li> found?
+        if ( current_li_element_count > 0 )
+        {
+            
+            // yes - set flag.
+            got_li = true;
+
+        } //-- END check to see if <li> --//
+        
+        // based on subject and li, what do we do?
+        if ( got_li == true )
+        {
+            
+            //alert( "In " + me + "(): FOUND <li> for " + current_li_id );
+            // got subject?
+            if ( got_subject == true )
+            {
+                
+                // yes.  convert to string and replace value, in case there have
+                //    been changes.
+                do_create_li = false;
+                do_update_li = true;
+                do_remove_li = false;
+                
+            }
+            else
+            {
+                
+                // no subject - remove <li>
+                do_create_li = false;
+                do_update_li = false;
+                do_remove_li = true;                
+                
+            }
+            
+        }
+        else //-- no <li> --//
+        {
+            
+            //alert( "In " + me + "(): NO <li> for " + current_li_id );
+            // got subject?
+            if ( got_subject == true )
+            {
+                
+                // yes.  convert to string and replace value, in case there have
+                //    been changes.
+                do_create_li = true;
+                do_update_li = true;
+                do_remove_li = false;
+                
+            }
+            else
+            {
+                
+                // no subject - nothing to do.
+                do_create_li = false;
+                do_update_li = false;
+                do_remove_li = false;                
+                
+            }
+
+        } //-- END check to see if <li> for current subject. --//
+        
+        // Do stuff!
+        
+        alert( "DO STUFF: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li )
+        
+        // crate new <li>?
+        if ( do_create_li == true )
+        {
+            
+            // create li with id = li_id_prefix + subject_index, store in
+            //    current_li_element.
+            current_li_element = $( '<li>Empty</li>' )
+            current_li_element.attr( "id", li_id_prefix + subject_index );
+            
+            // prepend it to the subject_list_ul_element
+            subject_list_ul_element.prepend( current_li_element )
+            
+        } //-- END check to see if do_create_li --//
+        
+        // update contents of <li>?
+        if ( do_update_li == true )
+        {
+            
+            // for now, just place subject string in <li>.
+            li_contents = subject_string;
+            
+            // !TODO - add "Delete" button
+            // (and other stuff needed for that to work.)
+            
+            current_li_element.html( li_contents );
+            
+        } //-- END check to see if do_update_li --//
+        
+        // delete <li>?
+        if ( do_remove_li == true )
+        {
+            
+            // delete <li>.
+            current_li_element.remove()
+            
+        } //-- END check to see if do_delete_li --//
+        
+    } //-- END loop over subjects in list --//
     
 } //-- END function SOURCENET.display_subjects() --//
 
@@ -1051,18 +1306,92 @@ SOURCENET.is_string_OK = function( string_IN )
  * Clears out coding form and status message area, and optionally displays a
  *    status message if one passed in.
  *
- * @param {Array:string} status_message_IN - array of messages to place in status area.  If undefined, null, or [], no messages output.
+ * @param {Array:string} status_message_array_IN - array of messages to place in status area.  If undefined, null, or [], no messages output and message area is cleared and hidden.
  */
 SOURCENET.output_status_messages = function( status_message_array_IN )
 {
     
     // declare variables.
     var me = "SOURCENET.output_status_messages";
+    var message_area_div_element = null;
+    var message_area_ul_id = "";
+    var message_area_ul_class = "";
+    var message_area_ul_empty_html = "";
+    var message_area_ul = null;
+    var message_count = -1;
+    var message_index = -1;
+    var current_message = "";
+    var message_li_element = null;
     
-    // for now, display by alert()-ing JSON string.
-    alert( "Status messages: " + JSON.stringify( status_message_array_IN ) );
+    // set variables
+    message_area_ul_id = "status-message-list";
+    message_area_ul_class = "statusMessageList";
+    message_area_ul_empty_html = '<ul id="' + message_area_ul_id + '" class="' + message_area_ul_class + '"></ul>';
+
+    // get <div id="status-message-area" class="statusMessageArea">
+    message_area_div_element = $( '#status-message-area' );
     
-    // !TODO - if messages, output them.
+    // get <ul id="status-message-list" class="statusMessageList">
+    message_area_ul_element = message_area_div_element.find( '#status-message-list' );
+    
+    // got message array?
+    if ( ( status_message_array_IN !== undefined ) && ( status_message_array_IN != null ) && ( status_message_array_IN.length > 0 ) )
+    {
+        
+        // got messages.
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+        // make new <ul>.
+        message_area_ul_element = $( message_area_ul_empty_html );
+        
+        // add it to the <div>.
+        message_area_div_element.append( message_area_ul_element );
+        
+        // loop over messages
+        message_count = status_message_array_IN.length;
+        for( message_index = 0; message_index < message_count; message_index++ )
+        {
+            
+            // get message
+            current_message = status_message_array_IN[ message_index ]
+            
+            // create <li>, append to <ul>.
+            message_li_element = $( '<li>' + current_message + '</li>' )
+            message_li_element.attr( "id", "message-" + message_index );
+            
+            // append it to the message_area_ul_element
+            message_area_ul_element.append( message_li_element )
+            
+        } //-- END loop over messages --//
+        
+        // show the <div> if not already.
+        message_area_div_element.show();
+        
+    }
+    else //-- no messages --//
+    {
+        
+        // Hide the <div>.
+        message_area_div_element.hide();
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+    } //-- END check to see if message array is populated.
     
 } //-- END function SOURCENET.output_status_messages() --//
 
@@ -1128,7 +1457,7 @@ SOURCENET.process_subject_coding = function()
             SOURCENET.display_subjects();
                     
             // clear the coding form.
-            SOURCENET.clear_coding_form( "Success!" );
+            SOURCENET.clear_coding_form( "Added: " + subject_instance.to_string() );
 
         }
         else
@@ -1218,6 +1547,7 @@ $( document ).ready(
     
                 // get selection
                 selected_text = $.selection();
+                selected_text = selected_text.trim();
                 //alert( "selected text : " + selected_text );
                 $( '#subject-name' ).val( selected_text );
             }
@@ -1240,6 +1570,7 @@ $( document ).ready(
     
                 // get selection
                 selected_text = $.selection();
+                selected_text = selected_text.trim();
                 //alert( "selected text : " + selected_text );
                 
                 // see if there is already something there.
@@ -1285,6 +1616,7 @@ $( document ).ready(
     
                 // get selection
                 selected_text = $.selection();
+                selected_text = selected_text.trim();
                 //alert( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
