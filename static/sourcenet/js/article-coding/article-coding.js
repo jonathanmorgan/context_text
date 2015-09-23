@@ -21,6 +21,9 @@ SOURCENET.subject_JSON = "";
 // subject store used to keep track of subjects while coding.
 SOURCENET.subject_store = null;
 
+// DEBUG!
+SOURCENET.debug_flag = true;
+
 
 //----------------------------------------------------------------------------//
 // !==> object definitions
@@ -275,7 +278,7 @@ SOURCENET.SubjectStore.prototype.add_subject_to_array = function( subject_IN )
             // hmmm... Disconnect.  Next index should equal length of current
             //    array since arrays are 0-indexed and we only ever add one.
             //    Output alert.
-            alert( "In " + me + "(), next index ( " + my_next_index + " ) not equal to array length ( " + subject_array_length + " )." );
+            SOURCENET.log_message( "In " + me + "(), next index ( " + my_next_index + " ) not equal to array length ( " + subject_array_length + " )." );
             
         }
                     
@@ -592,8 +595,15 @@ SOURCENET.SubjectStore.prototype.get_subject_for_person_id = function( person_id
  *    in the array refer to null.  Then, looks for the index value in the values
  *    stored within the name-to-index and person-id-to-index maps.  If index
  *    value found, each key-value pair with the index as the value is removed.
- *    Returns a reference to the subject (null if there was no subject to
- *    remove).
+ *    Returns a list of messages.  If empty, success.
+ *
+ * Postconditions: Also logs warnings to console.log(), so if you want to see if
+ *    there are any warnings (tells things like whether the subject exists at
+ *    the index passed in, if there might have been more than one name or person
+ *    ID that reference the index, etc.).  If it finds bad data, this method
+ *    will clean it up.  When we remove a subject at an index, removes all
+ *    references to that index in the name and ID to index maps, even if there
+ *    are mutiple name or IDs that map.
  *
  * @param {int} index_IN - index in subject array that contains subject we want to remove.
  * @returns {Array:string} - array of status messages that result from processing.
@@ -605,6 +615,7 @@ SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
     var status_array_OUT = [];
     
     // declare variables
+    var me = "SOURCENET.SubjectStore.remove_subject_at_index";
     var selected_index = -1;
     var is_index_OK = false;
     var my_subject_array = -1;
@@ -635,7 +646,7 @@ SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
         {
             
             // it is undefined.  Index not present in array.
-            status_array_OUT.push( "Index " + selected_index + " is undefined - not present in array." );
+            SOURCENET.log_message( "In " + me + "(): Index " + selected_index + " is undefined - not present in array." );
             my_subject_name = null;
             my_subject_person_id = null;
             
@@ -644,7 +655,7 @@ SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
         {
             
             // it is null.  Subject already removed at this index.
-            status_array_OUT.push( "Subject at index " + selected_index + " already removed (== null)." );
+            SOURCENET.log_message( "In " + me + "(): Subject at index " + selected_index + " already removed ( == null )." );
             my_subject_name = null;
             my_subject_person_id = null;
             
@@ -692,7 +703,7 @@ SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
                 {
                     
                     // matching index, but key doesn't match.  Output message.
-                    status_array_OUT.push( "Subject name key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_name + "\".  Hmmm..." );
+                    SOURCENET.log_message( "In " + me + "(): Subject name key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_name + "\".  Hmmm..." );
                     
                 }
                 
@@ -726,7 +737,7 @@ SOURCENET.SubjectStore.prototype.remove_subject_at_index = function( index_IN )
                 {
                     
                     // matching index, but key doesn't match.  Output message.
-                    status_array_OUT.push( "Subject person ID key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_person_id + "\".  Hmmm..." );
+                    SOURCENET.log_message( "In " + me + "(): Subject person ID key \"" + current_key + "\" references index " + current_value + ".  Key should be \"" + my_subject_person_id + "\".  Hmmm..." );
                     
                 }
                 
@@ -918,6 +929,7 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     var validate_status_array_OUT = [];
 
     // declare variables
+    var me = "SOURCENET.Subject.populate_from_form"
     var form_element = null;
     var temp_element = null;
     var my_subject_name = "";
@@ -976,12 +988,12 @@ SOURCENET.Subject.prototype.populate_from_form = function( form_element_IN )
     
     } //-- END check to see if id_person element present in HTML. --//
 
-    alert( JSON.stringify( this ) )
+    SOURCENET.log_message( "In " + me + "(): Subject JSON = " + JSON.stringify( this ) )
     
     // validate
     validate_status_array_OUT = this.validate()
     
-    // alert( "validate_status = " + validate_status )
+    // SOURCENET.log_message( "validate_status = " + validate_status )
     
     return validate_status_array_OUT;
     
@@ -1065,7 +1077,7 @@ SOURCENET.Subject.prototype.validate = function()
         
         // join the messages.
         //status_string = status_list_OUT.join( ", " );
-        // alert( "status = " + status_string )
+        // SOURCENET.log_message( "status = " + status_string )
         
     //}
     
@@ -1101,9 +1113,6 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     var status_message_array = [];
     var temp_element = null;
     var on_deck_person_element = null;
-    
-    // for now, just alert().
-    alert( "Eventually will clear coding form.  Not just yet..." );
     
     // clear the coding form.
     
@@ -1177,6 +1186,7 @@ SOURCENET.display_subjects = function()
     var do_update_li = false;
     var do_remove_li = false;
     var li_contents = "";
+    var button_element = null;
     
     // initialize variables
     li_id_prefix = "subject-";
@@ -1184,15 +1194,15 @@ SOURCENET.display_subjects = function()
     // get subject store
     my_subject_store = SOURCENET.get_subject_store();
     
-    // for now, display by alert()-ing JSON string.
-    //alert( "SubjectStore = " + JSON.stringify( my_subject_store ) );
+    // for now, display by SOURCENET.log_message()-ing JSON string.
+    //SOURCENET.log_message( "In " + me + "(): SubjectStore = " + JSON.stringify( my_subject_store ) );
     
     // get <ul id="subject-list-ul" class="subjectListUl">
     subject_list_ul_element = $( '#subject-list-ul' );
     
     // loop over the subjects in the list.
     subject_count = my_subject_store.subject_array.length;
-    alert( "Subject Count = " + subject_count );
+    SOURCENET.log_message( "In " + me + "(): Subject Count = " + subject_count );
     for( subject_index = 0; subject_index < subject_count; subject_index++ )
     {
         
@@ -1202,6 +1212,7 @@ SOURCENET.display_subjects = function()
         do_create_li = false;
         do_update_li = false;
         do_remove_li = false;
+        button_element = null;
         
         // get subject.
         current_subject = my_subject_store.get_subject_at_index( subject_index );
@@ -1216,18 +1227,18 @@ SOURCENET.display_subjects = function()
         }
         else
         {
-            // alert( "In " + me + "(): no subject for index " + subject_index );
+            // SOURCENET.log_message( "In " + me + "(): no subject for index " + subject_index );
             subject_string = "null";
         } //-- END check to see if subject --//
         
-        alert( "Subject " + subject_index + ": " + subject_string );
+        SOURCENET.log_message( "In " + me + "(): Subject " + subject_index + ": " + subject_string );
         
         // try to get <li> for that index.
         current_li_id = li_id_prefix + subject_index;
         current_li_selector = "#" + current_li_id;
         current_li_element = subject_list_ul_element.find( current_li_selector );
         current_li_element_count = current_li_element.length;
-        //alert( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
+        //SOURCENET.log_message( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
         
         // matching <li> found?
         if ( current_li_element_count > 0 )
@@ -1242,7 +1253,7 @@ SOURCENET.display_subjects = function()
         if ( got_li == true )
         {
             
-            //alert( "In " + me + "(): FOUND <li> for " + current_li_id );
+            //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
             // got subject?
             if ( got_subject == true )
             {
@@ -1268,7 +1279,7 @@ SOURCENET.display_subjects = function()
         else //-- no <li> --//
         {
             
-            //alert( "In " + me + "(): NO <li> for " + current_li_id );
+            //SOURCENET.log_message( "In " + me + "(): NO <li> for " + current_li_id );
             // got subject?
             if ( got_subject == true )
             {
@@ -1294,7 +1305,7 @@ SOURCENET.display_subjects = function()
         
         // Do stuff!
         
-        alert( "DO STUFF: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li )
+        SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li )
         
         // crate new <li>?
         if ( do_create_li == true )
@@ -1319,6 +1330,7 @@ SOURCENET.display_subjects = function()
             
             // !TODO - add "Delete" button
             // (and other stuff needed for that to work.)
+            li_contents += '<input type="button" id="remove-subject-' + subject_index + '" name="remove-subject-' + subject_index + '" value="Remove" onclick="SOURCENET.remove_subject( ' + subject_index + ' )" />'
             
             current_li_element.html( li_contents );
             
@@ -1468,6 +1480,31 @@ SOURCENET.is_string_OK = function( string_IN )
 
 
 /**
+ * Accepts a message.  If console.log() is available, calls that.  If not, does
+ *    nothing.
+ */
+SOURCENET.log_message = function( message_IN )
+{
+    
+    // declare variables
+    output_flag = true;
+    
+    // set to SOURCENET.debug_flag
+    output_flag = SOURCENET.debug_flag;
+    
+    // check to see if we have console.log() present.
+    if ( ( window.console ) && ( window.console.log ) && ( output_flag == true ) )
+    {
+
+        // console is available
+        console.log( message_IN );
+        
+    } //-- END check to see if console.log() present. --//
+    
+} //-- END function SOURCENET.log_message() --//
+
+
+/**
  * Clears out coding form and status message area, and optionally displays a
  *    status message if one passed in.
  *
@@ -1576,9 +1613,8 @@ SOURCENET.output_status_messages = function( status_message_array_IN )
  */
 SOURCENET.process_subject_coding = function()
 {
-    alert( "PROCESS SUBJECT CODING!!!" );
-    
     // declare variables
+    var me = "SOURCENET.process_subject_coding";
     var form_element = null;
     var subject_instance = null;
     var status_message_array = [];
@@ -1588,6 +1624,8 @@ SOURCENET.process_subject_coding = function()
     var subject_add_message_array = [];
     var subject_add_error_count = -1;
 
+    SOURCENET.log_message( "In " + me + "(): PROCESS SUBJECT CODING!!!" );
+    
     // get form element.
     form_element = $( '#subject-coding' );
     
@@ -1603,7 +1641,7 @@ SOURCENET.process_subject_coding = function()
     {
         
         // valid.
-        alert( "Valid subject.  Adding to SubjectStore." );
+        SOURCENET.log_message( "In " + me + "(): Valid subject.  Adding to SubjectStore." );
         
         // get subject store
         subject_store = SOURCENET.get_subject_store();
@@ -1637,13 +1675,103 @@ SOURCENET.process_subject_coding = function()
     else
     {
         
-        // not valid - for now, output message(s).
-        status_string = status_message_array.join( ", " );
-        alert( "Subject not valid: " + status_string );
+        // not valid - for now, add message overall status message.
+        status_message_array.push( "Subject not valid." );
         
     }
     
+    // got any messages?
+    status_message_count = status_message_array.length;
+    if ( status_message_count > 0 )
+    {
+        
+        // yes, there are messages.  Output them.
+        SOURCENET.output_status_messages( status_message_array )
+        
+    } //-- END check to see if messages --//    
+    
 } //-- END function SOURCENET.process_subject_coding() --#
+
+
+/**
+ * Accepts the index of a subject in the SubjectStore's subject_array that one
+ *    wants removed.  Gets the SubjectStore and calls the
+ *    remove_subject_at_index() method on it to remove the subject, then calls
+ *    SOURCENET.display_subjects() to repaint the list of subjects.  If any
+ *    status messages, outputs them at the end using
+ *    SOURCENET.output_status_messages()
+ */
+SOURCENET.remove_subject = function( subject_index_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.remove_subject";
+    var selected_index = -1;
+    var is_index_OK = false;
+    var status_message_array = [];
+    var status_message_count = -1;
+    var subject_store = null;
+    var subject_remove_message_array = [];
+    var subject_remove_error_count = -1;
+
+    // make sure index is an integer.
+    selected_index = parseInt( subject_index_IN );
+    
+    // got an index?
+    is_index_OK = SOURCENET.is_integer_OK( selected_index, 0 );
+    if ( is_index_OK == true )
+    {
+        
+        // get subject store
+        subject_store = SOURCENET.get_subject_store();
+        
+        // remove subject
+        subject_remove_message_array = subject_store.remove_subject_at_index( selected_index );
+        
+        SOURCENET.log_message( "In " + me + "(): Subject Store: " + JSON.stringify( subject_store ) );
+        
+        // errors?
+        subject_remove_error_count = subject_remove_message_array.length;
+        if ( subject_remove_error_count == 0 )
+        {
+            
+            // no errors.
+
+            // output subject store
+            SOURCENET.display_subjects();
+            
+            // add status message.
+            status_message_array.push( "Removed subject at index " + selected_index );
+            
+        }
+        else
+        {
+            
+            // errors - append to status_message_array.
+            status_message_array = status_message_array.concat( subject_remove_message_array );
+            
+        } //-- END check for errors adding subject to SubjectStore. --//
+        
+    }
+    else
+    {
+        
+        // not valid - for now, output message(s).
+        status_message_array.push( "Index value of " + selected_index + " is not valid.  Can't remove subject." );
+        
+    }
+    
+    // got any messages?
+    status_message_count = status_message_array.length;
+    if ( status_message_count > 0 )
+    {
+        
+        // yes, there are messages.  Output them.
+        SOURCENET.output_status_messages( status_message_array )
+        
+    } //-- END check to see if messages --//
+        
+} //-- END function SOURCENET.remove_subject --//
 
 
 //----------------------------------------------------------------------------//
@@ -1687,7 +1815,7 @@ $( document ).ready(
     
                 // get selection
                 selected_text = $.selection();
-                //alert( "selected text : " + selected_text );
+                //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get input
                 selected_text_input = $( '#selected-text' )
@@ -1713,7 +1841,7 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
-                //alert( "selected text : " + selected_text );
+                //SOURCENET.log_message( "selected text : " + selected_text );
                 $( '#subject-name' ).val( selected_text );
             }
         )
@@ -1736,12 +1864,12 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
-                //alert( "selected text : " + selected_text );
+                //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
                 subject_name_and_title_element = $( '#subject-name-and-title' )
                 existing_text = subject_name_and_title_element.val()
-                //alert( "Existing text: " + existing_text )
+                //SOURCENET.log_message( "Existing text: " + existing_text )
                 
                 // something already there?
                 if ( existing_text != "" )
@@ -1782,7 +1910,7 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
-                //alert( "selected text : " + selected_text );
+                //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
                 source_quote_text_element = $( '#source-quote-text' )
@@ -1825,7 +1953,7 @@ $( document ).ready(
     
                 // get selection
                 source_text = $( '#subject-name' ).val();
-                //alert( "source text : " + source_text );
+                //SOURCENET.log_message( "source text : " + source_text );
 
                 // get lookup text field,  place value, then change().
                 person_lookup = $( '#id_person_text' )

@@ -52,3 +52,21 @@ hr .lookupPersonRule
 	font-family: monospace;
 	display: none;
 }
+
+.statusMessageArea h4
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+.statusMessageArea ul
+{
+    padding: 0px;
+    margin: 0px 10px 0px;
+}
+
+.statusMessageArea li
+{
+    padding: 0px;
+    margin: 0px;
+}
