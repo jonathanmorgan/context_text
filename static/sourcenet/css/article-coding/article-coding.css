@@ -1,4 +1,12 @@
-body {
+/*
+*
+{
+    padding: 0; margin: 0;
+}
+*/
+
+body
+{
 	margin: 0;
 	padding: 0;
 	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
@@ -6,31 +14,56 @@ body {
 	line-height: 150%;
 	border-top: 8px solid #106870;
 }
-.contentBox {
-	max-width: 1000px;
+
+.contentBox
+{
+	max-width: 960px;
 	margin: 30px auto 0 auto;
 }
-.contentLeft {
-	width: 670px;
+
+.contentLeft
+{
+	width: 640px;
+	height: 100%;
 	float: left;
 	text-align: justify;
 }
+
 .sidebarBox
 {
 	width: 300px; /* Replace with your sidebar width */
+	height: 100%;
 	float: right;
 	position: relative;
+	/* overflow-y: scroll; */
 }
+
 .scrollingBox
 {
 	width: 300px; /* Replace with the same width as sidebar */
+	height:90%;
 	position: fixed;
 	top: 40px;
 	border: 1px solid black;
 	padding: 5px;
+	overflow: scroll;
+	/* overflow-y: hidden;
+	overflow-x: hidden;*/
 }
 
-hr .lookupPersonRule
+p.inputContainer
+{
+    /* nothing to see here for now */
+    padding: 1px 0px;
+}
+
+p.inputContainer#textarea-source-quote-text
+{
+    /* default to not shown - show when "source" type selected. */
+    display: none;
+}
+
+hr.lookupPersonRule
 {
     display: block;
     margin-top: 0;

@@ -13,7 +13,7 @@
 {% block content %}
 
 <div class="contentBox">
-    <div class="contentLeft">
+    <article class="contentLeft">
         <h1>Code article</h1>
         
         {# got an output_string? #}
@@ -51,6 +51,8 @@
             
             <div id="article_view" name="article_view">
                 <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
+                <li><em>Publication Date:</em> {{ article_instance.pub_date }}</li>
+                <li><em>Byline:</em> {{ article_instance.author_string }}</li>
                 {{ article_text.get_content|safe }}
             </div>
             
@@ -74,11 +76,11 @@
             -->
             
         {% endif %}
-    </div>
-    <div class="sidebarBox">
-        <div style="position: static; top: 40px;" class="scrollingBox">
-            <h2>subject coding area</h2>
-            <form name="subject-coding" id="subject-coding">
+    </article>
+    <aside class="sidebarBox">
+        <div class="scrollingBox">
+            <h2>Record Article People</h2>
+            <form name="person-coding" id="person-coding">
                 <input type="hidden" name="matched-person-id" id="matched-person-id" />
 <!--
                 <input type="button" id="select-text" value="Get selected text" />:
@@ -86,34 +88,45 @@
                 <textarea id="selected-text" readonly="readonly" rows="4" cols="35"></textarea>
                 <br />
 -->
-                <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="subject-name" name="subject-name" readonly="readonly"></textarea>
-                <br />
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="is-quoted" name="is-quoted" /> Is Quoted
-                <br />
-                <input type="button" id="store-name-and-title" name="store-name-and-title" value="Name + Title ==>" />:
-                <br />
-                <textarea id="subject-name-and-title" name="subject-name-and-title" rows="4" cols="35"></textarea>
-                <br />
-                <input type="button" id="store-quote-text" name="store-quote-text" value="Quote Text ==>" />:
-                <br />
-                <textarea id="source-quote-text" name="source-quote-text" readonly="readonly" rows="4" cols="35"></textarea>
-                <br />
+                <p class="inputContainer" id="select-person-type">
+                    &nbsp;&nbsp;Person Type: <select name="person-type" id="person-type" onchange="SOURCENET.process_selected_person_type()">
+                        <option value="" selected="selected" disabled="disabled">Choose Person Type</option>
+                        <option value="source">Source (quoted)</option>
+                        <option value="subject">Subject (not quoted)</option>
+                        <option value="author">Author</option>
+                    </select>
+                </p>
+                <p class="inputContainer" id="input-person-name">
+                    <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="person-name" name="person-name" readonly="readonly"></textarea>
+                </p>
+                <p class="inputContainer" id="textarea-name-and-title">
+                    <input type="button" id="store-name-and-title" name="store-name-and-title" value="Name + Title ==>" />:
+                    <br />
+                    <textarea id="person-name-and-title" name="person-name-and-title" rows="4" cols="35"></textarea>
+                </p>
+                <p class="inputContainer" id="textarea-source-quote-text">
+                    <input type="button" id="store-quote-text" name="store-quote-text" value="Quote Text ==>" />:
+                    <br />
+                    <textarea id="source-quote-text" name="source-quote-text" readonly="readonly" rows="4" cols="35"></textarea>
+                </p>
                 <hr id="lookupPersonRule" />
-                <input type="button" id="lookup-subject-name" name="lookup-subject-name" value="Lookup Name ==>" /> {{ person_lookup_form }}
-                <br />
-                <input type="button" id="process-subject" name="process-subject" value="Process Subject" onclick="SOURCENET.process_subject_coding()" />
+                <p class="inputContainer" id="lookup-person-id">
+                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Lookup Name ==>" /> {{ person_lookup_form }}
+                    <br />
+                    <input type="button" id="process-person" name="process-person" value="Process Person" onclick="SOURCENET.process_person_coding()" />
+                </p>
             </form>
             <hr />
             <div id="status-message-area" class="statusMessageArea">
-                <h4>status messages</h4>
+                <h4>Status Messages</h4>
             </div>
-            <h3>subject list</h3>
-            <div id="subject-list" class="subjectList">
-                <ul id="subject-list-ul" class="subjectListUl">
+            <h3>Person List</h3>
+            <div id="person-list" class="personList">
+                <ul id="person-list-ul" class="personListUl">
                 </ul>
             </div>
         </div>
-    </div>
+    </aside>
 </div>
 
 {% endblock %}
