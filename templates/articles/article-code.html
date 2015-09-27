@@ -124,6 +124,12 @@
             <div id="person-list" class="personList">
                 <ul id="person-list-ul" class="personListUl">
                 </ul>
+                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding">
+                    {# always include CSRF token #}
+                    {% csrf_token %}
+                    <input type="hidden" name="article_id" id="submit-article-coding-article-id" value="{{ article_instance.id }}" />
+                    <input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id="input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />
+                </form>
             </div>
         </div>
     </aside>

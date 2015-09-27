@@ -204,6 +204,19 @@ class ArticleCodingForm( forms.ModelForm ):
 #-- END ArticleCodingForm --#
 
 
+class ArticleCodingSubmitForm( forms.Form ):
+
+    '''
+    form to hold coding details for a given article.
+    '''
+
+    # PersonStore JSON
+    person_store_json = forms.CharField( required = True, widget = forms.HiddenInput() )
+    article_data_id = forms.IntegerField( required = False, widget = forms.HiddenInput() )
+
+#-- END ArticleLookupForm --#
+
+
 class ArticleLookupForm( forms.Form ):
 
     '''

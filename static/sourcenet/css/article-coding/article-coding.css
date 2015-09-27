@@ -103,3 +103,9 @@ hr.lookupPersonRule
     padding: 0px;
     margin: 0px;
 }
+
+.submitArticleCoding
+{
+    /* default to not shown - show one or more person coded. */
+    display: none;    
+}

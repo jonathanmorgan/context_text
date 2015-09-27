@@ -16,7 +16,8 @@ var SOURCENET = SOURCENET || {};
 
 
 // JSON to prepopulate page if we are editing.
-SOURCENET.person_JSON = "";
+SOURCENET.person_store_json = null;
+SOURCENET.article_data_id = -1;
 
 // person store used to keep track of authors and persons while coding.
 SOURCENET.person_store = null;
@@ -478,6 +479,105 @@ SOURCENET.PersonStore.prototype.get_person_at_index = function( index_IN )
     return person_OUT;
 
 } //-- END SOURCENET.PersonStore method get_person_at_index() --//
+
+
+/**
+ * Accepts a person ID - Checks to see if index in master person array tied to
+ *    the person ID.  If so, retrieves person at that index and returns it.  If
+ *    not, returns null.
+ *
+ * @param {string} person_name_IN - name string of person we want to find in
+ *    person array.
+ * @returns {SOURCENET.Person} - instance of person related to the person ID passed in.
+ */
+SOURCENET.PersonStore.prototype.get_person_count = function( person_type_IN )
+{
+    
+    // return reference.
+    var count_OUT = 0;
+    
+    // declare variables
+    var me = "SOURCENET.PersonStore.prototype.get_person_count";
+    var is_person_type_OK = false;
+    var person_type = null;
+    var my_person_array = null;
+    var person_array_length = -1;
+    var person_index = -1;
+    var person_counter = -1;
+    var current_person = -1;
+    var current_person_type = "";
+    
+    // got a type?
+    is_person_type_OK = SOURCENET.is_string_OK( person_type_IN );
+    if ( is_person_type_OK == true )
+    {
+
+        // yes.  store it.
+        person_type = person_type_IN;
+        
+    }
+    else
+    {
+        
+        // no - set to null.
+        person_type = null;
+        
+    } //-- END check to see if person type populated. --//
+    
+    // get person array.
+    my_person_array = this.person_array;
+    
+    // loop over array.
+    person_array_length = my_person_array.length;
+    person_counter = 0;
+    for( person_index = 0; person_index < person_array_length; person_index++ )
+    {
+        
+        // increment counter
+        person_counter += 1;
+        
+        // get item at current index.
+        current_person = my_person_array[ person_index ];
+        
+        // is it null?
+        if ( current_person != null )
+        {
+            
+            // not null.  Do we have a type?
+            if ( person_type != null )
+            {
+                
+                // we are limiting to a particular person type.  Get person's
+                //    type.
+                current_person_type = current_person.person_type;
+                
+                // is person's type = selected type?
+                if ( current_person_type == person_type )
+                {
+                    
+                    // yes - add to count.
+                    count_OUT += 1;
+                    
+                }
+                
+            }
+            else
+            {
+                
+                // no - increment count.
+                count_OUT += 1;
+                
+            } //-- END check to see if type --//
+            
+        } //-- END check if person associated with current array index --//
+        
+    } //-- END loop over person_array --//
+    
+    SOURCENET.log_message( "In " + me + "(): type = " + person_type + "; count = " + count_OUT );
+    
+    return count_OUT;
+
+} //-- END SOURCENET.PersonStore method get_person_count() --//
 
 
 /**
@@ -1233,6 +1333,7 @@ SOURCENET.display_persons = function()
     var button_element = null;
     
     // declare variables - make form to submit list.
+    var active_person_count = -1;
     var div_person_list_element = null;
     var form_element = null;
     
@@ -1257,6 +1358,7 @@ SOURCENET.display_persons = function()
     {
 
         // at least 1 - loop.
+        active_person_count = 0;
         for( person_index = 0; person_index < person_count; person_index++ )
         {
             
@@ -1276,6 +1378,7 @@ SOURCENET.display_persons = function()
             {
                 // yes - set flag, update person_string.
                 got_person = true;
+                active_person_count += 1;
                 person_string = current_person.to_string();
                 
             }
@@ -1402,16 +1505,26 @@ SOURCENET.display_persons = function()
             
         } //-- END loop over persons in list --//
         
-        // !TODO - Debug this mess.
-        // now, need to create a form so we can submit.  Get parent <div> of
-        //    <ul> ==> <div id="person-list" class="personList">
-        div_person_list_element = $( '#person-list' );
+        // try to find the form element.
+        form_element = $( '#submit-article-coding' );
         
-        // render PersonStore into a <form>.
-        form_element = SOURCENET.render_coding_form();
-        
-        // append to <div id="person-list" class="personList">
-        div_person_list_element.append( form_element );
+        // got active people?
+        if ( active_person_count > 0 )
+        {
+            
+            // make sure form is visible.
+            SOURCENET.log_message( "In " + me + "(): active people, show coding submit <form>." );
+            form_element.show()
+                        
+        }
+        else //-- no active people. --//
+        {
+            
+            // no active people, hide form.
+            SOURCENET.log_message( "In " + me + "(): no people, hide coding submit <form>." );
+            form_element.hide()
+                    
+        } //-- END check to see if active people. --//
         
     }
     else
@@ -1981,8 +2094,8 @@ SOURCENET.render_coding_form = function()
     form_HTML_string = "";
     
     // build form HTML string.
-    form_HTML_string = '<form method="post" name="submit-article-coding" id=""submit-article-coding">';
-    form_HTML_string = '<input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id=input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />';
+    form_HTML_string += '<form method="post" name="submit-article-coding" id="submit-article-coding">';
+    form_HTML_string += '<input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id=input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />';
     form_HTML_string += '</form>';
     
     // render into JQuery element.
@@ -2015,15 +2128,60 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     do_submit_OUT = true;
     
     // declare variables
+    my_person_store = null;
+    author_count = -1;
+    is_author_count_valid = false;
+    source_count = -1;
+    is_source_count_valid = false;
+    person_store_json = "";
     
-    // validation - check if there is at least one author.  If no, use confirm()
-    //    to ask user if that is correct.  If no, output message, return false.
+    // get person store
+    my_person_store = SOURCENET.get_person_store();
     
-    // need article ID.
+    //------------------------------------------------------------------------//
+    // validation
+    //------------------------------------------------------------------------//
+
+    // Is there at least one author?
+    author_count = my_person_store.get_person_count( SOURCENET.PERSON_TYPE_AUTHOR );
+    if ( author_count <= 0 )
+    {
+        
+        // no author - see if that is correct.
+        is_author_count_valid = confirm( "No authors coded.  Is this correct?" );
+        if ( is_author_count_valid == false )
+        {
+            
+            // oops - forgot to code author.  Back to form.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): forgot to code author - back to form!" );
+            
+        } //-- END check to see if no authors --//
+        
+    } //-- END check to see if author count is 0 --//
     
-    // need user ID?  Or is that available in python when request is handled?
+    // Is there at least one source?
+    source_count = my_person_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
+    if ( source_count <= 0 )
+    {
+        
+        // no sources - see if that is correct.
+        is_source_count_valid = confirm( "No sources coded.  Is this correct?" );
+        if ( is_source_count_valid == false )
+        {
+            
+            // oops - forgot to code sources.  Back to form.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): forgot to code sources - back to form!" );
+            
+        } //-- END check to see if no authors --//
+        
+    } //-- END check to see if author count is 0 --//
     
     // need JSON of PersonStore.
+    person_store_json = JSON.stringify( my_person_store );
+    
+    // add it to the input, details to come...
     
     return do_submit_OUT;
    
