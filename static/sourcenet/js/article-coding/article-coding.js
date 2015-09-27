@@ -1232,6 +1232,10 @@ SOURCENET.display_persons = function()
     var li_contents = "";
     var button_element = null;
     
+    // declare variables - make form to submit list.
+    var div_person_list_element = null;
+    var form_element = null;
+    
     // initialize variables
     li_id_prefix = "person-";
     
@@ -1247,150 +1251,177 @@ SOURCENET.display_persons = function()
     // loop over the persons in the list.
     person_count = my_person_store.person_array.length;
     SOURCENET.log_message( "In " + me + "(): Person Count = " + person_count );
-    for( person_index = 0; person_index < person_count; person_index++ )
+    
+    // check to see if one or more persons.
+    if ( person_count > 0 )
+    {
+
+        // at least 1 - loop.
+        for( person_index = 0; person_index < person_count; person_index++ )
+        {
+            
+            // initialize variables.
+            got_person = false;
+            got_li = false;
+            do_create_li = false;
+            do_update_li = false;
+            do_remove_li = false;
+            button_element = null;
+            
+            // get person.
+            current_person = my_person_store.get_person_at_index( person_index );
+    
+            // got person?
+            if ( current_person != null )
+            {
+                // yes - set flag, update person_string.
+                got_person = true;
+                person_string = current_person.to_string();
+                
+            }
+            else
+            {
+    
+                // SOURCENET.log_message( "In " + me + "(): no person for index " + person_index );
+                person_string = "null";
+    
+            } //-- END check to see if person --//
+            
+            SOURCENET.log_message( "In " + me + "(): Person " + person_index + ": " + person_string );
+            
+            // try to get <li> for that index.
+            current_li_id = li_id_prefix + person_index;
+            current_li_selector = "#" + current_li_id;
+            current_li_element = person_list_ul_element.find( current_li_selector );
+            current_li_element_count = current_li_element.length;
+            //SOURCENET.log_message( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
+            
+            // matching <li> found?
+            if ( current_li_element_count > 0 )
+            {
+                
+                // yes - set flag.
+                got_li = true;
+    
+            } //-- END check to see if <li> --//
+            
+            // based on person and li, what do we do?
+            if ( got_li == true )
+            {
+                
+                //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
+                // got person?
+                if ( got_person == true )
+                {
+                    
+                    // yes.  convert to string and replace value, in case there have
+                    //    been changes.
+                    do_create_li = false;
+                    do_update_li = true;
+                    do_remove_li = false;
+                    
+                }
+                else
+                {
+                    
+                    // no person - remove <li>
+                    do_create_li = false;
+                    do_update_li = false;
+                    do_remove_li = true;                
+                    
+                }
+                
+            }
+            else //-- no <li> --//
+            {
+                
+                //SOURCENET.log_message( "In " + me + "(): NO <li> for " + current_li_id );
+                // got person?
+                if ( got_person == true )
+                {
+                    
+                    // yes.  convert to string and replace value, in case there have
+                    //    been changes.
+                    do_create_li = true;
+                    do_update_li = true;
+                    do_remove_li = false;
+                    
+                }
+                else
+                {
+                    
+                    // no person - nothing to do.
+                    do_create_li = false;
+                    do_update_li = false;
+                    do_remove_li = false;                
+                    
+                }
+    
+            } //-- END check to see if <li> for current person. --//
+            
+            // Do stuff!
+            
+            SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li );
+            
+            // crate new <li>?
+            if ( do_create_li == true )
+            {
+                
+                // create li with id = li_id_prefix + person_index, store in
+                //    current_li_element.
+                current_li_element = $( '<li>Empty</li>' );
+                current_li_element.attr( "id", li_id_prefix + person_index );
+                
+                // prepend it to the person_list_ul_element
+                person_list_ul_element.prepend( current_li_element );
+                
+            } //-- END check to see if do_create_li --//
+            
+            // update contents of <li>?
+            if ( do_update_li == true )
+            {
+                
+                // for now, just place person string in <li>.
+                li_contents = person_string;
+                
+                // (and other stuff needed for that to work.)
+                li_contents += '<input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" />';
+                
+                current_li_element.html( li_contents );
+                
+            } //-- END check to see if do_update_li --//
+            
+            // delete <li>?
+            if ( do_remove_li == true )
+            {
+                
+                // delete <li>.
+                current_li_element.remove();
+                
+            } //-- END check to see if do_delete_li --//
+            
+        } //-- END loop over persons in list --//
+        
+        // !TODO - Debug this mess.
+        // now, need to create a form so we can submit.  Get parent <div> of
+        //    <ul> ==> <div id="person-list" class="personList">
+        div_person_list_element = $( '#person-list' );
+        
+        // render PersonStore into a <form>.
+        form_element = SOURCENET.render_coding_form();
+        
+        // append to <div id="person-list" class="personList">
+        div_person_list_element.append( form_element );
+        
+    }
+    else
     {
         
-        // initialize variables.
-        got_person = false;
-        got_li = false;
-        do_create_li = false;
-        do_update_li = false;
-        do_remove_li = false;
-        button_element = null;
+        // nothing in list.  Move on, but output log since I'm not sure why we
+        //    got here.
+        SOURCENET.log_message( "In " + me + "(): Nothing in person_array.  Moving on." );
         
-        // get person.
-        current_person = my_person_store.get_person_at_index( person_index );
-
-        // got person?
-        if ( current_person != null )
-        {
-            // yes - set flag, update person_string.
-            got_person = true;
-            person_string = current_person.to_string();
-            
-        }
-        else
-        {
-
-            // SOURCENET.log_message( "In " + me + "(): no person for index " + person_index );
-            person_string = "null";
-
-        } //-- END check to see if person --//
-        
-        SOURCENET.log_message( "In " + me + "(): Person " + person_index + ": " + person_string );
-        
-        // try to get <li> for that index.
-        current_li_id = li_id_prefix + person_index;
-        current_li_selector = "#" + current_li_id;
-        current_li_element = person_list_ul_element.find( current_li_selector );
-        current_li_element_count = current_li_element.length;
-        //SOURCENET.log_message( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
-        
-        // matching <li> found?
-        if ( current_li_element_count > 0 )
-        {
-            
-            // yes - set flag.
-            got_li = true;
-
-        } //-- END check to see if <li> --//
-        
-        // based on person and li, what do we do?
-        if ( got_li == true )
-        {
-            
-            //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
-            // got person?
-            if ( got_person == true )
-            {
-                
-                // yes.  convert to string and replace value, in case there have
-                //    been changes.
-                do_create_li = false;
-                do_update_li = true;
-                do_remove_li = false;
-                
-            }
-            else
-            {
-                
-                // no person - remove <li>
-                do_create_li = false;
-                do_update_li = false;
-                do_remove_li = true;                
-                
-            }
-            
-        }
-        else //-- no <li> --//
-        {
-            
-            //SOURCENET.log_message( "In " + me + "(): NO <li> for " + current_li_id );
-            // got person?
-            if ( got_person == true )
-            {
-                
-                // yes.  convert to string and replace value, in case there have
-                //    been changes.
-                do_create_li = true;
-                do_update_li = true;
-                do_remove_li = false;
-                
-            }
-            else
-            {
-                
-                // no person - nothing to do.
-                do_create_li = false;
-                do_update_li = false;
-                do_remove_li = false;                
-                
-            }
-
-        } //-- END check to see if <li> for current person. --//
-        
-        // Do stuff!
-        
-        SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li )
-        
-        // crate new <li>?
-        if ( do_create_li == true )
-        {
-            
-            // create li with id = li_id_prefix + person_index, store in
-            //    current_li_element.
-            current_li_element = $( '<li>Empty</li>' )
-            current_li_element.attr( "id", li_id_prefix + person_index );
-            
-            // prepend it to the person_list_ul_element
-            person_list_ul_element.prepend( current_li_element )
-            
-        } //-- END check to see if do_create_li --//
-        
-        // update contents of <li>?
-        if ( do_update_li == true )
-        {
-            
-            // for now, just place person string in <li>.
-            li_contents = person_string;
-            
-            // (and other stuff needed for that to work.)
-            li_contents += '<input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" />'
-            
-            current_li_element.html( li_contents );
-            
-        } //-- END check to see if do_update_li --//
-        
-        // delete <li>?
-        if ( do_remove_li == true )
-        {
-            
-            // delete <li>.
-            current_li_element.remove()
-            
-        } //-- END check to see if do_delete_li --//
-        
-    } //-- END loop over persons in list --//
+    } //-- END check to see if at least 1 item in list. --//
     
 } //-- END function SOURCENET.display_persons() --//
 
@@ -1673,14 +1704,14 @@ SOURCENET.output_status_messages = function( status_message_array_IN )
         {
             
             // get message
-            current_message = status_message_array_IN[ message_index ]
+            current_message = status_message_array_IN[ message_index ];
             
             // create <li>, append to <ul>.
-            message_li_element = $( '<li>' + current_message + '</li>' )
+            message_li_element = $( '<li>' + current_message + '</li>' );
             message_li_element.attr( "id", "message-" + message_index );
             
             // append it to the message_area_ul_element
-            message_area_ul_element.append( message_li_element )
+            message_area_ul_element.append( message_li_element );
             
         } //-- END loop over messages --//
         
@@ -1929,6 +1960,74 @@ SOURCENET.remove_person = function( person_index_IN )
     } //-- END check to see if messages --//
         
 } //-- END function SOURCENET.remove_person --//
+
+
+/**
+ * Creates basic form with a submit button whose onsubmit event calls
+ *    SOURCENET.render_coding_form_inputs.  On submit, that method pulls the
+ *    data needed to submit together and places it in hidden <inputs> associated
+ *    with this form, and if no problems, returns true so form submits.  Returns
+ *    <form> jquery element, suitable for adding to an element on the page.
+ *
+ * Postconditions: none.
+ */
+SOURCENET.render_coding_form = function()
+{
+
+    // return reference
+    form_element_OUT = true;
+    
+    // declare variables
+    form_HTML_string = "";
+    
+    // build form HTML string.
+    form_HTML_string = '<form method="post" name="submit-article-coding" id=""submit-article-coding">';
+    form_HTML_string = '<input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id=input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />';
+    form_HTML_string += '</form>';
+    
+    // render into JQuery element.
+    form_element_OUT = $( form_HTML_string );
+    
+    return form_element_OUT;
+   
+} //-- END function to render form to submit coding.
+
+
+/**
+ * Accepts <form> jquery instance.  Adds inputs to the form to hold serialized
+ *    JSON object of the PersonStore, the results of the coding.  Designed to
+ *    be used as a <form>'s onsubmit event handler.
+ *
+ * Postconditions: Will return false, causing submit to abort, if errors or
+ *    warnings.  If returns false, also outputs messages of why using
+ *    output_status_messages().
+ *
+ * References:
+ *    - http://stackoverflow.com/questions/6099301/dynamically-adding-html-form-field-using-jquery
+ *    - http://www.w3schools.com/js/js_popup.asp
+ *
+ * @param {jquery:element} form_IN - <form> we are going to append inputs to.
+ */
+SOURCENET.render_coding_form_inputs = function( form_IN )
+{
+
+    // return reference
+    do_submit_OUT = true;
+    
+    // declare variables
+    
+    // validation - check if there is at least one author.  If no, use confirm()
+    //    to ask user if that is correct.  If no, output message, return false.
+    
+    // need article ID.
+    
+    // need user ID?  Or is that available in python when request is handled?
+    
+    // need JSON of PersonStore.
+    
+    return do_submit_OUT;
+   
+} //-- END function to render form to submit coding.
 
 
 //----------------------------------------------------------------------------//
