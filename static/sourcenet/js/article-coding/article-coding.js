@@ -2128,12 +2128,19 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     do_submit_OUT = true;
     
     // declare variables
+    me = "SOURCENET.render_coding_form_inputs";
+    form_element = null;
     my_person_store = null;
     author_count = -1;
     is_author_count_valid = false;
     source_count = -1;
     is_source_count_valid = false;
     person_store_json = "";
+    person_store_json_input_element = null;
+    submit_button_element = null;
+        
+    // convert form DOM element to JQuery object.
+    //form_element = $( form_IN )
     
     // get person store
     my_person_store = SOURCENET.get_person_store();
@@ -2178,10 +2185,64 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
         
     } //-- END check to see if author count is 0 --//
     
-    // need JSON of PersonStore.
-    person_store_json = JSON.stringify( my_person_store );
+    // !TODO - check for sources that don't have quote selected?
     
-    // add it to the input, details to come...
+    // no sense doing anything more if we aren't submitting.
+    if ( do_submit_OUT == true )
+    {
+        
+        // need JSON of PersonStore.
+        person_store_json = JSON.stringify( my_person_store );
+        
+        // add it to the hidden input:
+        // <input id="id_person_store_json" name="person_store_json" type="hidden">
+        
+        // get <input> element
+        input_id_string = "#id_person_store_json";
+        person_store_json_input_element = $( input_id_string );
+
+        // make sure we found the element.
+        if ( person_store_json_input_element.length > 0 )
+        {
+            
+            // got it.  Place JSON in it.
+            person_store_json_input_element.val( person_store_json );
+            
+            // explicitly set to true.
+            do_submit_OUT = true;
+
+            // do_submit_OUT = false;
+            if ( do_submit_OUT == false )
+            {
+                
+                SOURCENET.log_message( "In " + me + "(): Placed the following JSON in \"" + input_id_string + "\"" );
+                SOURCENET.log_message( "In " + me + "(): " + person_store_json );            
+
+            } //-- END check to see if we output debug.
+            
+        }
+        else
+        {
+            
+            // did not find <input> element.  Log message, don't submit.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): Could not find input for selector: \"" + input_id_string + "\".  No place to put JSON.  Back to form!" );
+            
+        } //-- END check to see if we found input element. --//
+        
+    } //-- END check to see if validation was OK before we actually populate inputs. --//
+    
+    // are we allowing submit?
+    if ( do_submit_OUT == true )
+    {
+        
+        // we are.  Retrieve submit button, disable it, and then change text
+        //    to say "Please wait...".
+        submit_button_element = $( "#input-submit-article-coding" );
+        submit_button_element.prop( 'disabled', true );
+        submit_button_element.val( "Please wait..." );
+        
+    } //-- END check to see if we are submitting. --//
     
     return do_submit_OUT;
    

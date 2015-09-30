@@ -59,9 +59,10 @@ from python_utilities.logging.logging_helper import LoggingHelper
 # python_utilities - string helper
 from python_utilities.strings.string_helper import StringHelper
 
-# Import the form class for network output
+# Import the form classes for network output
 from sourcenet.forms import Article_DataSelectForm
 from sourcenet.forms import ArticleCodingForm
+from sourcenet.forms import ArticleCodingSubmitForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
@@ -603,6 +604,7 @@ def article_code( request_IN ):
     default_template = ''
     article_lookup_form = None
     is_form_ready = False
+    request_data = None
     article_id = -1
     article_qs = None
     article_count = -1
@@ -620,8 +622,11 @@ def article_code( request_IN ):
     p_tag_bs = None
     p_tag_html = ""
     
-    # trying to make AJAX person lookup form.
+    # declare variables - article coding
     person_lookup_form = None
+    
+    # declare variables - submit coding back to server
+    coding_submit_form = None
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -636,30 +641,41 @@ def article_code( request_IN ):
     # set my default rendering template
     default_template = 'articles/article-code.html'
     
-    # make instance of person_lookup_form.
-    person_lookup_form = ArticleCodingForm()
-
-    # variables for building, populating person array that is used to control
-    #    building of network data matrices.
-
-    # do we have output parameters?
+    # do we have input parameters?
     if ( request_IN.method == 'POST' ):
 
-        article_lookup_form = ArticleLookupForm( request_IN.POST )
-        article_id = request_IN.POST.get( "article_id", -1 )
+        request_data = request_IN.POST
         is_form_ready = True
         
     elif ( request_IN.method == 'GET' ):
     
-        article_lookup_form = ArticleLookupForm( request_IN.GET )
-        article_id = request_IN.GET.get( "article_id", -1 )
+        request_data = request_IN.GET
         is_form_ready = True
         
     #-- END check to see request type so we initialize form correctly. --#
     
+    # set up form objects.
+
+    # make instance of person_lookup_form.
+    person_lookup_form = ArticleCodingForm()
+    
+    # make instance of article coding submission form.
+    coding_submit_form = ArticleCodingSubmitForm( request_data )
+
+    # make instance of ArticleLookupForm
+    article_lookup_form = ArticleLookupForm( request_data )
+
+    # store the article ID if passed in.
+    article_id = request_data.get( "article_id", -1 )
+        
     # form ready?
     if ( is_form_ready == True ):
+    
+        # !TODO - process coding submission
+        
+        # short circuit article lookup (use empty copy of form) if success.
 
+        # process article lookup?
         if ( article_lookup_form.is_valid() == True ):
 
             # retrieve article specified by the input parameter, then create
@@ -749,6 +765,7 @@ def article_code( request_IN ):
                     response_dictionary[ 'article_content' ] = rendered_article_html
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     response_dictionary[ 'person_lookup_form' ] = person_lookup_form
+                    response_dictionary[ 'coding_submit_form' ] = coding_submit_form
                     response_dictionary[ 'base_include_django_ajax_selects' ] = True
 
                     # get paragraph list

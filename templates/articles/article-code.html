@@ -105,7 +105,7 @@
                     <textarea id="person-name-and-title" name="person-name-and-title" rows="4" cols="35"></textarea>
                 </p>
                 <p class="inputContainer" id="textarea-source-quote-text">
-                    <input type="button" id="store-quote-text" name="store-quote-text" value="Quote Text ==>" />:
+                    <input type="button" id="store-quote-text" name="store-quote-text" value="First Quote Text ==>" />:
                     <br />
                     <textarea id="source-quote-text" name="source-quote-text" readonly="readonly" rows="4" cols="35"></textarea>
                 </p>
@@ -124,11 +124,15 @@
             <div id="person-list" class="personList">
                 <ul id="person-list-ul" class="personListUl">
                 </ul>
-                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding">
+                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding" onsubmit="do_submit = SOURCENET.render_coding_form_inputs( this ); alert( 'Submit?: ' + do_submit ); return do_submit;">
                     {# always include CSRF token #}
                     {% csrf_token %}
+                    {# output coding_submit_form if present #}
+                    {% if coding_submit_form %}
+                        {{ coding_submit_form }}
+                    {% endif %}
                     <input type="hidden" name="article_id" id="submit-article-coding-article-id" value="{{ article_instance.id }}" />
-                    <input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id="input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />
+                    <input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id="input-submit-article-coding" />
                 </form>
             </div>
         </div>
