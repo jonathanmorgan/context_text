@@ -2276,6 +2276,7 @@ $( function(){
     });
 });
 
+// !#select-text
 // javascript to pull text selection into a text input.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2302,6 +2303,7 @@ $( document ).ready(
     }
 );
 
+// !#store-name
 // javascript to store selected text as source name.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2323,6 +2325,7 @@ $( document ).ready(
     }
 );
 
+// !#store-name-and-title
 // javascript to store selected text as source name + title.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2367,6 +2370,7 @@ $( document ).ready(
     }
 );
 
+// !#store-quote-text
 // javascript to store selected text as source's quotation text.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2415,6 +2419,7 @@ $( document ).ready(
     } //-- END ready() nested anonymous function --//
 ); //-- END document.ready() call --//
 
+// !#lookup-person-name
 // javascript to copy name from #source-name to the Lookup text field.
 $( document ).ready(
     function()
@@ -2433,9 +2438,20 @@ $( document ).ready(
                 // get lookup text field,  place value, then change().
                 person_lookup = $( '#id_person_text' )
                 person_lookup.val( source_text );
-                person_lookup.keyup()
+                //person_lookup.keyup()
                 //person_lookup.click()
-                //person_lookup.trigger('init-autocomplete');
+                //person_lookup.trigger( 'init-autocomplete' );
+                person_lookup.trigger( 'added' );
+                // get lookup text field,  place value, then change().
+
+                // try triggering to #id_person_on_deck.
+                //person_on_deck = $( '#id_person_on_deck' );
+                //person_on_deck.trigger( 'added' );
+
+                // try just #id_person
+                //person_element = $( '#id_person' );
+                //person_element.trigger( 'added' );
+
             }
         )
     }
