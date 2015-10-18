@@ -2435,22 +2435,31 @@ $( document ).ready(
                 source_text = $( '#person-name' ).val();
                 //SOURCENET.log_message( "source text : " + source_text );
 
-                // get lookup text field,  place value, then change().
-                person_lookup = $( '#id_person_text' )
-                person_lookup.val( source_text );
-                //person_lookup.keyup()
-                //person_lookup.click()
-                //person_lookup.trigger( 'init-autocomplete' );
-                person_lookup.trigger( 'added' );
-                // get lookup text field,  place value, then change().
+                // get id_person_text_element text field,  place value, then
+                //    fire lookup event.
+                id_person_text_element = $( '#id_person_text' )
+                id_person_text_element.val( source_text );
+                id_person_text_element.trigger( 'keydown' );
+                
+                // You'd think some of these might work to fire event...
+                //    ...but they don't.
+                //id_person_text_element.trigger( "search", "" );
+                //id_person_text_element.autocomplete( "search", "" );
+                //id_person_text_element.data( "ui-autocomplete" )._trigger( "change" );
+                //id_person_text_element.keyup()
+                //id_person_text_element.click()
+                //id_person_text_element.trigger( 'init-autocomplete' );
+                //id_person_text_element.trigger( 'added' );
 
-                // try triggering to #id_person_on_deck.
-                //person_on_deck = $( '#id_person_on_deck' );
-                //person_on_deck.trigger( 'added' );
+                // tried other elements, too - #id_person_on_deck.
+                //id_person_on_deck_element = $( '#id_person_on_deck' );
+                //id_person_on_deck_element.trigger( 'added' );
+                //id_person_on_deck_element.autocomplete( "search", "" );
 
-                // try just #id_person
-                //person_element = $( '#id_person' );
-                //person_element.trigger( 'added' );
+                // tried other elements, too - #id_person
+                //id_person_element = $( '#id_person' );
+                //id_person_element.trigger( 'added' );
+                //id_person_element.autocomplete( "search", "" );
 
             }
         )

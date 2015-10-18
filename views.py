@@ -688,7 +688,7 @@ def article_code( request_IN ):
             current_user = request_IN.user
             
             # process JSON
-            article_code_process_json( article_id, person_store_json_string, article_data_id, current_user, response_dictionary )
+            article_code_process_json( request_IN, article_id, person_store_json_string, article_data_id, response_dictionary )
             
             # short circuit article lookup (use empty copy of form) if success.
             
@@ -834,7 +834,7 @@ def article_code( request_IN ):
 
 
 @login_required
-def article_code_process_json( article_id_IN, coder_user_IN, person_store_json_string_IN, article_data_id_IN,  response_dictionary_IN ):
+def article_code_process_json( request_IN, article_id_IN, person_store_json_string_IN, article_data_id_IN,  response_dictionary_IN ):
 
     # return reference
     article_data_OUT = None
@@ -863,7 +863,7 @@ def article_code_process_json( article_id_IN, coder_user_IN, person_store_json_s
     if ( ( article_id_IN is not None ) and ( article_id_IN != "" ) and ( article_id_IN > 0 ) ):
     
         # yes, we have an article ID.  Got a coder user?
-        coder_user = coder_user_IN
+        coder_user = request_IN.user
         if ( coder_user is not None ):
         
             # Got a JSON string?
@@ -956,12 +956,12 @@ def article_code_process_json( article_id_IN, coder_user_IN, person_store_json_s
                 #-- END check to see if there are any persons. --#
                 
                 # store JSON string in response dictionary
-                response_dictionary_IN[ 'person_store_json' ] = person_store_json_string
-    
+                response_dictionary_IN[ 'person_store_json' ] = person_store_json_string    
+
             else:
             
                 # no JSON - can't process.
-                output_debut( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
+                output_debug( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
                 article_data_OUT = None
             
             #-- END check to see if JSON string passed in.
@@ -969,13 +969,13 @@ def article_code_process_json( article_id_IN, coder_user_IN, person_store_json_s
         else:
         
             # no coder user?  That is an odd error.
-            output_debut( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
+            output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
             article_data_OUT = None
         
     else:
     
         # no article ID - can't process.
-        output_debut( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
+        output_debug( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
         article_data_OUT = None
     
     #-- END check to see if article ID passed in.
