@@ -1561,7 +1561,7 @@ class ManualArticleCoder( ArticleCoder ):
                 else:
                 
                     # no JSON - can't process.
-                    output_debug( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
+                    self.output_debug( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
                     article_data_OUT = None
                 
                 #-- END check to see if JSON string passed in.
@@ -1569,13 +1569,13 @@ class ManualArticleCoder( ArticleCoder ):
             else:
             
                 # no coder user?  That is an odd error.
-                output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
+                self.output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
                 article_data_OUT = None
             
         else:
         
             # no article ID - can't process.
-            output_debug( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
+            self.output_debug( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
             article_data_OUT = None
         
         #-- END check to see if article ID passed in.
