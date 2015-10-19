@@ -1534,14 +1534,6 @@ class ArticleCoder( BasicRateLimited ):
         author_comma_part = ""
         author_name = ""
         process_author_name_status = ""
-        
-        person_details_dict = {}
-        author_person = None
-        author_person_match_list = []
-        article_author_count = -1
-        alternate_author_list = []
-        article_author = None
-        article_author_qs = None
         my_capture_method = ""
         
         # get logger
