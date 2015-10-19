@@ -1433,7 +1433,158 @@ class ManualArticleCoder( ArticleCoder ):
         
     #-- END method process_json_quotation() --#
 
+    
+    def process_person_store_json( self, request_IN, article_id_IN, person_store_json_string_IN, article_data_id_IN, response_dictionary_IN ):
+    
+        # return reference
+        article_data_OUT = None
+    
+        # declare variables
+        me = "article_code_process_json"
         
+        # declare variables - coding submission.
+        coder_user = None
+        person_store_json_string = ""
+        person_store_json = None
+        article_data_id = -1
+        person_list = []
+        person_count = -1
+        coder_user = None
+        person_type = ""
+        person_name = ""
+        name_and_title = ""
+        quote_text = ""
+        person_id = -1
+        current_article_data = None
+        current_article = None
+        current_person = None
+    
+        # got an article ID?
+        if ( ( article_id_IN is not None ) and ( article_id_IN != "" ) and ( article_id_IN > 0 ) ):
+        
+            # yes, we have an article ID.  Got a coder user?
+            coder_user = request_IN.user
+            if ( coder_user is not None ):
+            
+                # Got a JSON string?
+                person_store_json_string = person_store_json_string_IN
+                if ( ( person_store_json_string is not None ) and ( person_store_json_string != "" ) ):
+                
+                    # got a JSON string, convert to Python objects.
+                    person_store_json = json.loads( person_store_json_string )
+                    
+                    # get list of people.
+                    person_list = person_store_json[ "person_array" ]
+                    
+                    # get count of persons
+                    person_count = len( person_list )
+                    
+                    # got one or more people?
+                    if ( person_count > 0 ):
+                    
+                        # yes.  Got an Article_Data ID?
+                        if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
+                        
+                            # we have an Article_Data ID.  look up.
+                            try:
+        
+                                # use exception handling to see if record already exists.
+                                
+                                # filter on ID
+                                current_article_data = Article_Data.objects.filter( pk = article_data_id_IN )
+                                
+                                # then ues get() to make sure this ID belongs to the current user.
+                                current_article_data = current_article_data.get( coder = coder_user )
+                        
+                            except Exception as e:
+                            
+                                # not found.  Set current_article_data tp None.
+                                current_article_data = None
+                        
+                            #-- END check to see if we can find existing article data. --#
+                            
+                        #-- END check to see if article data already exists. --#
+                        
+                        # got article data?
+                        if ( current_article_data is None ):
+                        
+                            # no Article_Data.  Create a new record.
+                            current_article_data = Article_Data()
+                            
+                            # get article for ID, store in Article_Data.
+                            current_article = Article.objects.get( pk = article_id_IN )
+                            current_article_data.article = current_article
+                            current_article_data.coder = coder_user
+                        
+                        #-- END check to see if Article_Data instance. --#
+                    
+                        # loop over persons
+                        for current_person in person_array:
+                        
+                            # retrieve person information.
+                            person_type = current_person.get( "person_type" )
+                            person_name =  current_person.get( "person_name" )
+                            name_and_title =  current_person.get( "name_and_title" )
+                            quote_text =  current_person.get( "quote_text" )
+                            person_id =  current_person.get( "person_id" )
+                            
+                            # got a person ID?
+                            if ( ( person_id is not None ) and ( person_id > 0 ) ):
+                            
+                                # We have a person ID.  Lookup Person.
+                                current_person = Person.objects.get( pk = person_id )
+                            
+                            else:
+                            
+                                # no person ID.  Create person based on name.
+                                pass
+                                
+                                # !TODO - need ManualCoder, extension of ArticleCoder.
+                                
+                            # check person type to see what we are adding.
+                            
+                            # Article_Source
+                            
+                            # Article_Author
+                            
+                            # either way, if already a record for person ID, move on
+                            #    for now, we can always make an update routine
+                            #    later.
+                        
+                        #-- END loop over persons --#
+                        
+                    #-- END check to see if there are any persons. --#
+                    
+                    # store JSON string in response dictionary
+                    response_dictionary_IN[ 'person_store_json' ] = person_store_json_string    
+    
+                else:
+                
+                    # no JSON - can't process.
+                    output_debug( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
+                    article_data_OUT = None
+                
+                #-- END check to see if JSON string passed in.
+                
+            else:
+            
+                # no coder user?  That is an odd error.
+                output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
+                article_data_OUT = None
+            
+        else:
+        
+            # no article ID - can't process.
+            output_debug( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
+            article_data_OUT = None
+        
+        #-- END check to see if article ID passed in.
+    
+        return article_data_OUT
+    
+    #-- END function process_person_store_json() --#
+
+
     def validate_FIT_results( self, FIT_values_IN ):
 
         '''

@@ -665,6 +665,7 @@ class ArticleCoder( BasicRateLimited ):
                        person_details_IN = {},
                        on_multiple_match_try_exact_lookup_IN = False,
                        on_multiple_create_new_person_IN = True,
+                       article_person_id_IN = None,
                        *args,
                        **kwargs ):
     
@@ -751,9 +752,39 @@ class ArticleCoder( BasicRateLimited ):
         
             # yes.
             instance_OUT = article_person_IN
+            
+            # got a person ID passed in?
+            if ( ( article_person_id_IN is not None ) and ( article_person_id_IN != "" ) and ( article_person_id_IN > 0 ) )
+            
+                # yes.  Try to just get that person.
+                try:
+                
+                    person_instance = Person.objects.get( pk = article_person_id_IN )
+                
+                except DoesNotExist as dne:
+                
+                    # Not found.
+                    self.output_debug( "ERROR - In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), but DoesNotExist." )
+                    person_instance = None
+                    
+                except MultipleObjectsReturned as more:
+                
+                    # multiple found.  Big error.
+                    self.output_debug( "ERROR - In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), but MultipleObjectsReturned." )
+                    person_instance = None
+                    
+                except Exception as e:
+                
+                    # Unexpected exception.
+                    self.output_debug( "In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), unexpected Exception caught trying to look up in database: " + str( e ) )
+                    person_instance = None
+                    
+                #-- END try-except to look up person based on ID. --#
+            
+            #-- END check to see if person ID present. --#
         
-            # got a name?
-            if ( full_name_IN ):
+            # if no person from ID, got a name?
+            if ( ( person_instance is None ) and ( ( full_name_IN is not None ) and ( full_name_IN != "" ) ) ):
             
         #------------------------------------------------------------------------
         # !Search/Lookup phase
@@ -1141,59 +1172,59 @@ class ArticleCoder( BasicRateLimited ):
 
                 #-- END check to see what to do based on match status --#
                 
-                # should always be a Person to return at this point, but being
-                #    cautious, just in case.
+            #-- END check to see if person not found by ID, and full name present.--#
+                
+            # should always be a Person to return at this point, but being
+            #    cautious, just in case.
                 
         #------------------------------------------------------------------------
         # !save/update person
         #------------------------------------------------------------------------
             
-                # got a person (sanity check)?
-                if ( person_instance is not None ):
+            # got a person (sanity check)?
+            if ( person_instance is not None ):
+            
+                # !new person
+                # if no ID, is new.  Save to database.
+                if ( not( person_instance.id ) ):
                 
-                    # !new person
-                    # if no ID, is new.  Save to database.
-                    if ( not( person_instance.id ) ):
+                    # no ID.  See if there is a capture_method.
+                    capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
+                    if ( ( capture_method is not None ) and ( capture_method != "" ) ):
                     
-                        # no ID.  See if there is a capture_method.
-                        capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
-                        if ( ( capture_method is not None ) and ( capture_method != "" ) ):
-                        
-                            # got a capture method.  Add it to person instance.
-                            person_instance.capture_method = capture_method
-                        
-                        #-- END check to see if capture_method --#
-                        
-                        # Save the record.
-                        person_instance.save()
-                        self.output_debug( "In " + me + ": saved new person - " + str( person_instance ) )
-                        
-                    #-- END check to see if new Person. --#
-        
-                    # update person, too?
-                    if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                        # got a capture method.  Add it to person instance.
+                        person_instance.capture_method = capture_method
                     
-                        # yes.
-                        person_instance = self.update_person( person_instance, person_details_IN )
+                    #-- END check to see if capture_method --#
                     
-                    #-- END check to see if we update person --#
+                    # Save the record.
+                    person_instance.save()
+                    self.output_debug( "In " + me + ": saved new person - " + str( person_instance ) )
                     
-                    # place person inside Article_Person instance.
-                    instance_OUT.person = person_instance
-                    instance_OUT.match_confidence_level = confidence_level
-                    
-                #-- END check to see if person found or created --#
+                #-- END check to see if new Person. --#
+    
+                # update person, too?
+                if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                
+                    # yes.
+                    person_instance = self.update_person( person_instance, person_details_IN )
+                
+                #-- END check to see if we update person --#
+                
+                # place person inside Article_Person instance.
+                instance_OUT.person = person_instance
+                instance_OUT.match_confidence_level = confidence_level
+                
+            #-- END check to see if person found or created --#
 
-                # only print if debug is on.
-                if ( self.DEBUG_FLAG == True ):
-                
-                    # debug is on.  log it.
-                    self.output_debug( "In " + me + " person match = " + str( person_instance ) )
-                
-                #-- END check to see if debug is on --#
+            # only print if debug is on.
+            if ( self.DEBUG_FLAG == True ):
             
-            #-- END check to see if name. --#
+                # debug is on.  log it.
+                self.output_debug( "In " + me + " person match = " + str( person_instance ) )
             
+            #-- END check to see if debug is on --#
+                        
         #-- END check to see if Article_Person child instance present --#
             
         return instance_OUT
@@ -1251,6 +1282,170 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method process_article() --#
     
 
+    def process_author_name( self, article_data_IN, author_name_IN, author_organization_IN = "", author_person_id_IN = None ):
+    
+        '''
+        Accepts Article_Data container, string author name, optional string
+           author organization, and optional author person ID.  If ID present,
+           tries to look up person based on ID.  If not, looks up person based
+           name.  If person found, only adds to Article_Data if that person
+           does not already have an Article_Author row.
+           
+        preconditions: Assumes that there is an associated article.  If not,
+           there will be an exception.
+           
+        postconditions: If all goes well, results in Article_Author for author
+           passed in associated with Article_Data passed in, and returns status
+           self.STATUS_SUCCESS.  If error, no Article_Author created, and status
+           message describing the problem returned.  If person lookup works, but
+           person already has an Article_Author row, does nothing.
+        '''
+        
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables.
+        me = "process_author_name"
+        my_logger = None
+        debug_string = ""
+        author_name = ""
+        author_organization = ""
+        person_details_dict = {}
+        author_person = None
+        author_person_match_list = []
+        article_author_count = -1
+        alternate_author_list = []
+        article_author = None
+        article_author_qs = None
+        my_capture_method = ""
+        
+        # get logger
+        my_logger = self.get_logger()
+        
+        # got Article_Data instance?
+        if ( article_data_IN is not None ):
+        
+            # get author_name
+            author_name = author_name_IN
+
+            # got an author name or author person ID?
+            if ( ( ( author_name is not None ) and ( author_name != "" ) )
+                or ( ( author_person_id_IN is not None ) and ( author_person_id_IN != "" ) and ( author_person_id_IN > 0 ) ) ):
+            
+                # get capture method
+                my_capture_method = article_data_IN.coder_type
+        
+                debug_string = "--- In " + me + ": Processing author name: \"" + author_name + "\" ( id: " + str( author_person_id_IN ) + " )"
+                my_logger.debug( debug_string )
+                
+                # make empty article source to work with.
+                article_author = Article_Author()
+                    
+                # prepare person details.
+                person_details_dict = {}
+                person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
+    
+                # lookup person - returns person and confidence score inside
+                #    Article_Author instance.
+                article_author = self.lookup_person( article_author, 
+                                                     author_name,
+                                                     create_if_no_match_IN = True,
+                                                     update_person_IN = True,
+                                                     person_details_IN = person_details_dict,
+                                                     article_person_id_IN = author_person_id_IN )
+
+                # retrieve information from Article_Author
+                author_person = article_author.person
+                author_person_match_list = article_author.person_match_list  # list of Person instances
+
+                # got a person?
+                if ( author_person ):
+
+                    # Now, we need to deal with Article_Author instance.
+                    #    First, see if there already is one for this
+                    #    name.  If so, do nothing.  If not, make one.
+                    article_author_qs = article_data_IN.article_author_set.filter( person = author_person )
+                    
+                    # got anything?
+                    article_author_count = article_author_qs.count()
+                    if ( article_author_count == 0 ):
+                                                 
+                        # no - add - including organization string.
+
+                        # use article_author already created above.
+                        #article_author = Article_Author()
+                        article_author.article_data = article_data_IN
+                        article_author.person = author_person
+                        article_author.organization_string = author_organization
+                        article_author.capture_method = my_capture_method
+                        
+                        # save, and as part of save, record alternate matches.
+                        article_author.save()
+                        
+                        my_logger.debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
+
+                    elif ( article_author_count == 1 ):
+                    
+                        my_logger.debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
+                        
+                        # retrieve article author from query set.
+                        article_author = article_author_qs.get()
+                        
+                        # !UPDATE existing Article_Author
+                        # !UPDATE alternate matches
+
+                        # Were there alternate matches?
+                        if ( len( author_person_match_list ) > 0 ):
+                        
+                            # yes - store the list of alternate matches in the
+                            #    Article_Author instance variable
+                            #    "person_match_list".
+                            article_author.person_match_list = author_person_match_list
+                            
+                            # call method to process alternate matches.
+                            my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Author found for person, calling process_alternate_matches." )
+                            article_author.process_alternate_matches()
+                            
+                        #-- END check to see if there were alternate matches --#
+                        
+                    else:
+                    
+                        my_logger.debug( "In " + me + ": Article_Author count for " + str( author_person ) + " = " + str( article_author_count ) + ".  What to do?" )
+                        
+                        # definitely no article_author.
+                        article_author = None  
+
+                    #-- END check if need new Article_Author instance --#
+
+                else:
+                
+                    # No Person Found.
+                    status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no matching person found - must have been a problem looking up name \"" + author_name + "\""            
+                
+                    my_logger.debug( status_OUT )
+
+                #-- END check to see if person found. --#
+                    
+            else:
+            
+                # No author string - error.
+                status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no author string, so nothing to do."
+            
+            #-- END check to see if author name. --#
+            
+        else:
+        
+            # No Article_Data instance.
+            status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no Article_Data instance, so no place to store author data."            
+        
+        #-- END check to see if article data instance. --#
+        
+        return status_OUT
+    
+    #-- END method process_author_name() --#
+
+
     def process_author_string( self, article_data_IN = None, author_string_IN = "" ):
         
         '''
@@ -1303,6 +1498,8 @@ class ArticleCoder( BasicRateLimited ):
         author_and_part = ""
         author_comma_part = ""
         author_name = ""
+        process_author_name_status = ""
+        
         person_details_dict = {}
         author_person = None
         author_person_match_list = []
@@ -1393,90 +1590,26 @@ class ArticleCoder( BasicRateLimited ):
                     #    person.
                     for author_name in author_name_list:
                     
-                        # make empty article source to work with, for now.
-                        article_author = Article_Author()
+                        # call process_author_name() to deal with author.
+                        process_author_name_status = self.process_author_name( article_data_IN, author_name, author_organization, None)
                         
-                        # prepare person details.
-                        person_details_dict = {}
-                        person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
-                        person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method                        
-            
-                        # lookup person - returns person and confidence score inside
-                        #    Article_Author instance.
-                        article_author = self.lookup_person( article_author, 
-                                                             author_name,
-                                                             create_if_no_match_IN = True,
-                                                             update_person_IN = True,
-                                                             person_details_IN = person_details_dict )
+                        # do anything with status?
+                        if ( process_author_name_status != self.STATUS_SUCCESS ):
 
-                        # retrieve information from Article_Author
-                        author_person = article_author.person
-                        author_person_match_list = article_author.person_match_list  # list of Person instances
-
-                        # got a person?
-                        if ( author_person ):
-    
-                            # Now, we need to deal with Article_Author instance.
-                            #    First, see if there already is one for this
-                            #    name.  If so, do nothing.  If not, make one.
-                            article_author_qs = article_data_IN.article_author_set.filter( person = author_person )
-                            
-                            # got anything?
-                            article_author_count = article_author_qs.count()
-                            if ( article_author_count == 0 ):
-                                                         
-                                # no - add - including organization string.
-
-                                # use article_author already created above.
-                                #article_author = Article_Author()
-                                article_author.article_data = article_data_IN
-                                article_author.person = author_person
-                                article_author.organization_string = author_organization
-                                article_author.capture_method = my_capture_method
-                                
-                                # save, and as part of save, record alternate matches.
-                                article_author.save()
-                                
-                                my_logger.debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
-    
-                            elif ( article_author_count == 1 ):
-                            
-                                my_logger.debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
-                                
-                                # retrieve article author from query set.
-                                article_author = article_author_qs.get()
-                                
-                                # !UPDATE existing Article_Author
-                                # !UPDATE alternate matches
-        
-                                # Were there alternate matches?
-                                if ( len( author_person_match_list ) > 0 ):
-                                
-                                    # yes - store the list of alternate matches in the
-                                    #    Article_Author instance variable
-                                    #    "person_match_list".
-                                    article_author.person_match_list = author_person_match_list
-                                    
-                                    # call method to process alternate matches.
-                                    my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Author found for person, calling process_alternate_matches." )
-                                    article_author.process_alternate_matches()
-                                    
-                                #-- END check to see if there were alternate matches --#
+                            # any previous error messages?
+                            if ( status_OUT == self.STATUS_SUCCESS ):
+                        
+                                # no just replace success message
+                                status_OUT = process_author_name_status
                                 
                             else:
                             
-                                my_logger.debug( "In " + me + ": Article_Subject count for " + str( author_person ) + " = " + str( article_author_count ) + ".  What to do?" )
+                                # already one error message.  Append.
+                                status_OUT += "; " + process_author_name_status
                                 
-                                # definitely no article_author.
-                                article_author = None  
-
-                            #-- END check if need new Article_Author instance --#
-    
-                        else:
-                        
-                            my_logger.debug( "In " + me + ": error - no matching person found - must have been a problem looking up name \"" + author_name + "\"" )
-    
-                        #-- END check to see if person found. --#
+                            #-- END check to see if first error message. --#
+                            
+                        #-- END check to see if error status. --#
                     
                     #-- END loop over author names. --#
     
@@ -1503,7 +1636,7 @@ class ArticleCoder( BasicRateLimited ):
         
         return status_OUT
     
-    #-- END method process_author_string() --#
+    #-- END method process_newsbank_grpress_author_string() --#
 
 
     def set_config_application( self, value_IN ):
