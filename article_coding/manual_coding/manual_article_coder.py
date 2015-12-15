@@ -1571,6 +1571,8 @@ class ManualArticleCoder( ArticleCoder ):
                 # no coder user?  That is an odd error.
                 self.output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
                 article_data_OUT = None
+                
+            #-- END check to see if coder passed in. --#
             
         else:
         
