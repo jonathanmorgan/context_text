@@ -1026,7 +1026,8 @@ In order to test source detection using OpenCalais's API, you'll need to:
 - Connect and log into the django admin.
 
     - log into the django admin site at the same URL you set up previous to wanting to run tests (default is "`http://<your_server>/sourcenet/admin/`"), using your new superuser account.
-    - in the list of models that appears after logging in, click on 
+    - in the list of models that appears after logging in, in the DJANGO_CONFIG section, click the "Config_ properties" link.
+    - 
 
 # License
 
