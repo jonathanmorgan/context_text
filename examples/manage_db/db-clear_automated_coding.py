@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 # declare variables - filter article data to clear
 automated_user = None
 article_data_qs = None
+article_data_coder_type_in_list = []
+article_tag_in_list = []
 article_id_in_list = []
 
 # declare variables - variables used while clearing.
@@ -13,6 +15,7 @@ article_data = None
 article_author_count = -1
 article_source_count = -1
 related_article = None
+related_article_id = -1
 article_tags = []
 article_author = None
 article_source = None
@@ -20,7 +23,7 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
-do_delete = False
+do_delete = True
 
 # get User with name "automated"
 automated_user = User.objects.filter( username = "automated" ).get()
@@ -32,7 +35,7 @@ article_data_qs = Article_Data.objects.filter( coder = automated_user )
 # FILTER - filter on coder type?
 #------------------------------------------------------------------------------#
 
-article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v2' ]
+#article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v2' ]
 if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_coder_type_in_list ) > 0 ) ):
 
     # filter on coder type.
@@ -45,7 +48,8 @@ if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_cod
 #------------------------------------------------------------------------------#
 
 #article_tag_in_list = [ 'prelim_network', 'prelim_reliability' ]
-article_tag_in_list = []
+#article_tag_in_list = []
+article_tag_in_list = [ 'prelim_reliability' ]
 if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) ):
 
     # filter on tags
@@ -110,9 +114,15 @@ for article_data in article_data_qs:
     
     # get article...
     related_article = article_data.article
+    related_article_id = related_article.id
     
-    # add ID to list
-    article_id_list.append( str( related_article.id ) )
+    # add ID to list?
+    if ( str( related_article_id ) not in article_id_list ):
+    
+        # not there yet.  Add it.
+        article_id_list.append( str( related_article_id ) )
+        
+    #-- END check to see if we need to add article to the list --#
     
     # ...and get tags
     article_tags = related_article.tags.all()
