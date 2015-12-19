@@ -970,6 +970,40 @@ To import data into UCINet:
 - Click "Save" in the menu bar, then choose "Save active sheet as UCINET dataset".
 - Choose a name and location to save, and you are done!
 
+# Testing
+
+## Test data
+
+There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
+
+- **_`sourcenet_unittest_auth_data.json`_** - User data for article-coding comparison.
+- **_`sourcenet_unittest_django_config_data.json`_** - configuration properties for sourcenet (in particular, for external APIs).
+- **_`sourcenet_unittest_data.json`_** - actual sourcenet data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
+- **_`sourcenet_unittest_taggit_data.json`_** - tag data for sourcenet data.
+
+## Testing configuration
+
+- create a database where the unit test data can live.  The name should be "test_", followed by the name of your main production database.  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
+
+    - postgresql example, where production database name is "`sourcenet`" and database user is "`django_user`":
+
+            CREATE DATABASE test_sourcenet;
+            GRANT ALL PRIVILEGES ON DATABASE test_sourcenet TO django_user;
+
+- update the DATABASES dictionary in settings.py of the application that contains sourcenet to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`test_sourcenet`" rather than "`sourcenet`".
+- cd into your django application's home directory, activate your virtualenv if you created one, then run migrate to create all the tables in the database.
+
+        cd <django_app_directory>
+        workon sourcenet
+        python manage.py migrate
+
+- load the unit test fixtures into the database:
+
+        python manage.py loaddata sourcenet_unittest_auth_data.json
+        python manage.py loaddata sourcenet_unittest_django_config_data.json
+        python manage.py loaddata sourcenet_unittest_data.json
+        python manage.py loaddata sourcenet_unittest_taggit_data.json
+
 # License
 
 Copyright 2010-present (2014) Jonathan Morgan
