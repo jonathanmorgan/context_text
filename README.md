@@ -991,11 +991,15 @@ There is a set of test data stored in the `fixtures` folder inside this django a
             GRANT ALL PRIVILEGES ON DATABASE test_sourcenet TO django_user;
 
 - update the DATABASES dictionary in settings.py of the application that contains sourcenet to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`test_sourcenet`" rather than "`sourcenet`".
-- cd into your django application's home directory, activate your virtualenv if you created one, then run migrate to create all the tables in the database.
+- cd into your django application's home directory, activate your virtualenv if you created one, then run "`python manage.py migrate`" to create all the tables in the database.
 
         cd <django_app_directory>
         workon sourcenet
         python manage.py migrate
+
+- use the command "`python manage.py createsuperuser`" to make an admin user, for logging into the django admins.
+
+        python manage.py createsuperuser
 
 - load the unit test fixtures into the database:
 
@@ -1003,6 +1007,26 @@ There is a set of test data stored in the `fixtures` folder inside this django a
         python manage.py loaddata sourcenet_unittest_django_config_data.json
         python manage.py loaddata sourcenet_unittest_data.json
         python manage.py loaddata sourcenet_unittest_taggit_data.json
+
+### OpenCalais API configuration
+
+In order to test source detection using OpenCalais's API, you'll need to:
+
+- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
+
+    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
+   
+- Get your API token ()
+
+    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
+    - click the "Login" button in the upper right.
+    - log in with your username and password.
+    - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
+
+- Connect and log into the django admin.
+
+    - log into the django admin site at the same URL you set up previous to wanting to run tests (default is "`http://<your_server>/sourcenet/admin/`"), using your new superuser account.
+    - in the list of models that appears after logging in, click on 
 
 # License
 
