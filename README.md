@@ -972,6 +972,40 @@ To import data into UCINet:
 
 # Testing
 
+The sourcenet project has a small but growing set of unit tests that once can auto-run.  These tests use django's testing framework, based on the Python `unittest` package.
+
+## Unit Tests
+
+### Configuration
+
+#### OpenCalais API configuration
+
+In order to run unit tests using OpenCalais's API, you'll need to:
+
+- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
+
+    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
+   
+- Get your API token ()
+
+    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
+    - click the "Login" button in the upper right.
+    - log in with your username and password.
+    - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
+
+- Store that token and only that token in a file named "`open_calais_access_token.txt`" in the root of your django project/site (the same folder where `manage.py` lives).
+
+#### Database configuration
+
+In order to run unit tests, your database configuration in `settings.py` will need to be connecting to the database with a user who is allowed to create databases.  When django runs unit tests, it creates a test database, then deletes it once testing is done.
+- _NOTE: This means the database user you use for unit testing SHOULD NOT be the user you'd use in production.  The production database user should not be able to do anything outside a given database._
+
+### Running unit tests
+
+To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
+
+    python manage.py test sourcenet.tests
+
 ## Test data
 
 There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
@@ -981,7 +1015,7 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 - **_`sourcenet_unittest_data.json`_** - actual sourcenet data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
 - **_`sourcenet_unittest_taggit_data.json`_** - tag data for sourcenet data.
 
-## Testing configuration
+### Using unittest data for development
 
 - create a database where the unit test data can live.  The name should be "test_", followed by the name of your main production database.  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
 
@@ -1007,27 +1041,6 @@ There is a set of test data stored in the `fixtures` folder inside this django a
         python manage.py loaddata sourcenet_unittest_django_config_data.json
         python manage.py loaddata sourcenet_unittest_data.json
         python manage.py loaddata sourcenet_unittest_taggit_data.json
-
-### OpenCalais API configuration
-
-In order to test source detection using OpenCalais's API, you'll need to:
-
-- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
-
-    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
-   
-- Get your API token ()
-
-    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
-    - click the "Login" button in the upper right.
-    - log in with your username and password.
-    - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
-
-- Connect and log into the django admin.
-
-    - log into the django admin site at the same URL you set up previous to wanting to run tests (default is "`http://<your_server>/sourcenet/admin/`"), using your new superuser account.
-    - in the list of models that appears after logging in, in the DJANGO_CONFIG section, click the "Config_ properties" link.
-    - 
 
 # License
 
