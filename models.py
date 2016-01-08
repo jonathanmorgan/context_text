@@ -4763,9 +4763,11 @@ class Article_Person( models.Model ):
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
     name = models.CharField( max_length = 255, blank = True, null = True )
 
+    # details on automated matching, if attempted.
     # capture match confidence - start with 1 or 0, but leave room for
     #    decimal values.
     match_confidence_level = models.DecimalField( max_digits = 11, decimal_places = 10, blank = True, null = True, default = 0.0 )
+    match_status = models.TextField( blank = True, null = True )
 
     # field to store how person was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )

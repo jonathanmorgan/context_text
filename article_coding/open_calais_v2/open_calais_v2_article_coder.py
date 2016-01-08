@@ -908,8 +908,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             if ( ( process_by_IN == self.JSON_PROCESS_BY_QUOTATION )
                  or ( process_by_IN == self.JSON_PROCESS_BY_BOTH ) ):
 
-                # call the method to process by person.
-                current_status += self.process_json_api_response_by_person( article_IN, article_data_IN, json_response_IN )
+                # call the method to process by quotation.
+                current_status += self.process_json_api_response_by_quotation( article_IN, article_data_IN, json_response_IN )
                 
                 # check if status was not success
                 if ( current_status != self.STATUS_SUCCESS ):
@@ -1641,16 +1641,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         article_subject = None
         person_details_dict = {}
         subject_person = None
-        subject_match_list = None
-        article_subject_set = None
-        article_subject_qs = None
-        article_subject_count = -1
         
-        # alternate match processing
-        alternate_person = None
-        alternate_match_qs = None
-        alternate_match = None
-
         # mention processing variables.
         mention_list = []
         mention_counter = -1
@@ -1708,122 +1699,25 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                 
                 # try looking up source just like we look up authors.
     
-                # make empty article subject to work with, for now.
-                article_subject = Article_Subject()
-                article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
-                
                 # prepare person details.
                 person_details_dict = {}
                 person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                 person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
                 person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
                 person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = my_coder_type
-                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_coder_type                        
-    
-                # lookup person - returns person and confidence score inside
-                #    Article_Subject instance.
-                article_subject = self.lookup_person( article_subject, 
-                                                      person_name,
-                                                      create_if_no_match_IN = True,
-                                                      update_person_IN = True,
-                                                      person_details_IN = person_details_dict )
+                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_coder_type
+                
+                # call process_subject_name() - returns person, confidence
+                #    score, and match status inside Article_Subject instance.
+                article_subject = self.process_subject_name( article_data_IN, person_name, person_details_IN = person_details_dict )
 
                 # get results from article_subject
                 subject_person = article_subject.person
-                subject_person_match_list = article_subject.person_match_list  # list of Person instances
                                         
                 # got a person?
                 if ( subject_person is not None ):
     
-                    # One Article_Subject per person, and then have a new thing to
-                    #    hold mentions and quotations that hangs off that.
-                    
-                    # Now, we need to deal with Article_Subject instance.  First, see
-                    #    if there already is one for this name.  If so, do nothing.
-                    #    If not, make one.
-    
-                    # get sources
-                    article_subject_set = article_data_IN.article_subject_set.all()
-                    article_subject_qs = article_subject_set.filter( person = subject_person )
-                    article_subject_count = article_subject_qs.count()
-                                
-                    # got anything?
-                    if ( article_subject_count == 0 ):
-                                                 
-                        # no - add - more stuff to set.  Need to see what we can get.
-                        
-                        # use the source Article_Subject created for call to
-                        #    lookup_person().
-                        #article_source = Article_Subject()
-                    
-                        article_subject.article_data = article_data_IN
-                        article_subject.person = subject_person
-                        
-                        # confidence level set in lookup_person() method.
-                        #article_subject.match_confidence_level = 1.0
-        
-                        article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
-                        article_subject.title = ""
-                        article_subject.more_title = ""
-                        article_subject.organization = None # models.ForeignKey( Organization, blank = True, null = True )
-                        #article_subject.document = None
-                        article_subject.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
-                        #article_subject.source_capacity = None
-                        #article_subject.localness = None
-                        article_subject.notes = ""
-        
-                        # field to store how source was captured.
-                        article_subject.capture_method = self.coder_type
-                    
-                        # save, and as part of save, record alternate matches.
-                        article_subject.save()
-                        
-                        # !TODO - topics?
-                        # if we want to set topics, first save article_source, then
-                        #    we can parse them out of the JSON, make sure they exist
-                        #    in topics table, then add relation.  Probably want to
-                        #    make Person_Topic also.  So, if we do this, it will be
-                        #    a separate method.
-                        #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
-    
-                        my_logger.debug( "In " + me + ": adding Article_Subject instance for " + str( subject_person ) + "." )
-        
-                    elif ( article_subject_count == 1 ):
-                    
-                        my_logger.debug( "In " + me + ": Article_Subject instance already exists for " + str( subject_person ) + "." )
-                        
-                        # retrieve article source from query set.
-                        article_subject = article_subject_qs.get()
-                        
-                        # !UPDATE existing Article_Subject
-                        # !UPDATE alternate matches
-
-                        # Were there alternate matches?
-                        if ( len( subject_person_match_list ) > 0 ):
-                        
-                            # yes - store the list of alternate matches in the
-                            #    Article_Subject instance variable
-                            #    "person_match_list".
-                            article_subject.person_match_list = subject_person_match_list
-                            
-                            # call method to process alternate matches.
-                            my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Subject found for person, calling process_alternate_matches." )
-                            article_subject.process_alternate_matches()
-                            
-                        #-- END check to see if there were alternate matches --#
-                        
-                    else:
-                    
-                        # neither 0 or 1 sources - either invalid or multiple,
-                        #    either is not right.
-                        my_logger.debug( "In " + me + ": Article_Subject count for " + str( subject_person ) + " = " + str( article_subject_count ) + ".  What to do?" )
-                        
-                        # make sure we don't go any further.
-                        article_subject = None
-                                            
-                    #-- END check if need new Article_Subject instance --#
-                                
-                    # make sure we have an article_subject
+                    # make sure we have a populated, saved article_subject
                     if ( ( article_subject is not None ) and ( article_subject.id ) ):
     
                         # !deal with mentions.
@@ -1887,6 +1781,14 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                         #-- END check to see if quotes present. --#
                         
+                        # !TODO - topics?
+                        # if we want to set topics, first save article_source, then
+                        #    we can parse them out of the JSON, make sure they exist
+                        #    in topics table, then add relation.  Probably want to
+                        #    make Person_Topic also.  So, if we do this, it will be
+                        #    a separate method.
+                        #article_source.topics = None # models.ManyToManyField( Topic, blank = True, null = True )
+    
                         # return reference to article_subject.
                         article_subject_OUT = article_subject
                         

@@ -885,8 +885,8 @@ class OpenCalaisArticleCoder( ArticleCoder ):
             if ( ( process_by_IN == self.JSON_PROCESS_BY_QUOTATION )
                  or ( process_by_IN == self.JSON_PROCESS_BY_BOTH ) ):
 
-                # call the method to process by person.
-                current_status += self.process_json_api_response_by_person( article_IN, article_data_IN, json_response_IN )
+                # call the method to process by quotation.
+                current_status += self.process_json_api_response_by_quotation( article_IN, article_data_IN, json_response_IN )
                 
                 # check if status was not success
                 if ( current_status != self.STATUS_SUCCESS ):
