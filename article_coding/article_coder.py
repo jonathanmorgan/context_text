@@ -692,6 +692,8 @@ class ArticleCoder( BasicRateLimited ):
            - on_multiple_create_new_person_IN - optional boolean, defaults to
               True.  If True, when multiples are detected and disambiguation
               fails, creates a new person, stores the potential matches as well.
+           - article_person_id_IN - optional ID of Person when the person is
+              already known, and so does not need to be looked up by name.
            
         Starting with the methods on Person object:
 
