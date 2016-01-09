@@ -1005,6 +1005,18 @@ In order to run unit tests, your database configuration in `settings.py` will ne
 To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
 
     python manage.py test sourcenet.tests
+    
+Specific sets of tests:
+
+- OpenCalais API (v.2)
+
+    - test OpenCalais configuration:
+
+            python manage.py test sourcenet.tests.open_calais.tests-open_calais-config
+
+    - test OpenCalais automated coding (assumes configuration tests passed):
+
+            python manage.py test sourcenet.tests.open_calais.tests-open_calais-api 
 
 ## Test data
 
@@ -1013,7 +1025,7 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 - **_`sourcenet_unittest_auth_data.json`_** - User data for article-coding comparison.
 - **_`sourcenet_unittest_django_config_data.json`_** - configuration properties for sourcenet (in particular, for external APIs).
 - **_`sourcenet_unittest_data.json`_** - actual sourcenet data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
-- **_`sourcenet_unittest_taggit_data.json`_** - tag data for sourcenet data.
+- **_`sourcenet_unittest_taggit_data.json`_** - tag data for sourcenet data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
 
 ### Using unittest data for development
 
@@ -1044,7 +1056,7 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 
 # License
 
-Copyright 2010-present (2014) Jonathan Morgan
+Copyright 2010-present (2016) Jonathan Morgan
 
 This file is part of [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).
 

@@ -1771,7 +1771,7 @@ class ArticleCoder( BasicRateLimited ):
         person_UUID = ""
         subject_person = None        
         subject_person_match_list = []
-        article_subject_qs
+        article_subject_qs = None
         article_subject_count = -1
         alternate_author_list = []
         article_author = None

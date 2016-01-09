@@ -211,6 +211,7 @@ class ArticleCoding( SourcenetBase ):
         status_OUT = ''
 
         # declare variables
+        me = "code_article_data"
         my_logger = None
         my_summary_helper = None
         summary_string = ""
@@ -227,6 +228,7 @@ class ArticleCoding( SourcenetBase ):
         # auditing variables
         article_counter = -1
         exception_counter = -1
+        error_counter = -1
         
         # grab a logger.
         my_logger = self.get_logger()
@@ -258,6 +260,7 @@ class ArticleCoding( SourcenetBase ):
             #    processing.
             article_counter = 0
             exception_counter = 0
+            error_counter = 0
             continue_work = True
             for current_article in query_set_IN:
             
@@ -284,6 +287,15 @@ class ArticleCoding( SourcenetBase ):
                 
                         # code the article.
                         current_status = article_coder.code_article( current_article )
+                        
+                        # success?
+                        if ( current_status != ArticleCoder.STATUS_SUCCESS ):
+                        
+                            # nope.  Error.
+                            error_counter += 1
+                            my_logger.debug( "======> In " + me + "(): ERROR - " + current_status + "; article = " + str( current_article ) )
+                            
+                        #-- END check to see if success --#
                         
                     except Exception as e:
                         
@@ -338,6 +350,9 @@ class ArticleCoding( SourcenetBase ):
         my_summary_helper.set_prop_value( "article_counter", article_counter )
         my_summary_helper.set_prop_desc( "article_counter", "Articles processed" )
 
+        my_summary_helper.set_prop_value( "error_counter", error_counter )
+        my_summary_helper.set_prop_desc( "error_counter", "Error count" )
+
         my_summary_helper.set_prop_value( "exception_counter", exception_counter )
         my_summary_helper.set_prop_desc( "exception_counter", "Exception count" )
 
@@ -346,7 +361,7 @@ class ArticleCoding( SourcenetBase ):
         my_logger.info( summary_string )
         
         # output summary string as status.
-        status_OUT += "\n\n" + summary_string
+        status_OUT += summary_string
 
         return status_OUT
 

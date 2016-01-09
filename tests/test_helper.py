@@ -30,6 +30,9 @@ from django.core.management import call_command
 # import basic django configuration application.
 from django_config.models import Config_Property
 
+# python_utilities - logging
+from python_utilities.logging.logging_helper import LoggingHelper
+
 # sourcenet imports
 from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 
@@ -66,6 +69,9 @@ class TestHelper( object ):
     #    if not set there, shared!
     #----------------------------------------------------------------------------
 
+    
+    DEBUG = True
+
 
     #-----------------------------------------------------------------------------
     # class methods
@@ -73,7 +79,7 @@ class TestHelper( object ):
 
 
     @classmethod
-    def load_fixture( cls, fixture_path_IN = "" ):
+    def load_fixture( cls, fixture_path_IN = "", verbosity_IN = 0 ):
         
         # declare variables
         
@@ -81,7 +87,7 @@ class TestHelper( object ):
         if ( ( fixture_path_IN is not None ) and ( fixture_path_IN != "" ) ):
         
             # got a path - try to load it.
-            call_command( 'loaddata', fixture_path_IN, verbosity = 0 )
+            call_command( 'loaddata', fixture_path_IN, verbosity = verbosity_IN )
             
         #-- END check to make sure we have a path --#
         
@@ -164,6 +170,171 @@ class TestHelper( object ):
     #-- END function load_open_calais_access_token() --#
     
     
+    @classmethod
+    def output_debug( cls, message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
+        
+        '''
+        Accepts message string.  If debug is on, logs it.  If not,
+           does nothing for now.
+        '''
+        
+        # declare variables
+        my_message = ""
+        my_logger = None
+        my_logger_name = ""
+    
+        # got a message?
+        if ( message_IN ):
+        
+            # only print if debug is on.
+            if ( cls.DEBUG == True ):
+            
+                my_message = message_IN
+            
+                # got a method?
+                if ( method_IN ):
+                
+                    # We do - append to front of message.
+                    my_message = "In " + method_IN + ": " + my_message
+                    
+                #-- END check to see if method passed in --#
+                
+                # indent?
+                if ( indent_with_IN ):
+                    
+                    my_message = indent_with_IN + my_message
+                    
+                #-- END check to see if we indent. --#
+            
+                # debug is on.  Start logging rather than using print().
+                #print( my_message )
+                
+                # got a logger name?
+                my_logger_name = "sourcenet.tests"
+                if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
+                
+                    # use logger name passed in.
+                    my_logger_name = logger_name_IN
+                    
+                #-- END check to see if logger name --#
+                    
+                # get logger
+                my_logger = LoggingHelper.get_a_logger( my_logger_name )
+                
+                # log debug.
+                my_logger.debug( my_message )
+            
+            #-- END check to see if debug is on --#
+        
+        #-- END check to see if message. --#
+    
+    #-- END method output_debug() --#
+    
+    
+    @classmethod
+    def standardSetUp( cls, test_case_IN = None ):
+        
+        """
+        setup tasks.  Call function that we'll re-use.
+        """
+
+        # declare variables
+        me = "standardSetUp"
+        status_instance = None
+        current_fixture = ""
+        
+        print( "In TestHelper." + me + "(): starting standard setup." )
+        
+        # see if test case passed in.  If so, set status variables on it.
+        if ( test_case_IN is not None ):
+        
+            # not None, set status variables on it.
+            status_instance = test_case_IN
+            
+        else:
+        
+            # no test case passed in.  Just set on self.
+            status_instance = self
+        
+        #-- END check to see if test case --#
+        
+        # janky way to add variables to instance since you can't override init.
+        status_instance.setup_error_count = 0
+        status_instance.setup_error_list = []
+        
+        # Load auth data fixture
+        current_fixture = cls.FIXTURE_UNIT_TEST_AUTH_DATA
+        try:
+        
+            cls.load_fixture( current_fixture )
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( current_fixture )
+            
+        #-- END try/except --#
+        
+        # Load config property data fixture
+        current_fixture = cls.FIXTURE_UNIT_TEST_CONFIG_PROPERTIES
+        try:
+        
+            cls.load_fixture( current_fixture )
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( current_fixture )
+            
+        #-- END try/except --#
+        
+        # Load base unit test data fixture
+        current_fixture = cls.FIXTURE_UNIT_TEST_BASE_DATA
+        try:
+        
+            cls.load_fixture( current_fixture )
+        
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( current_fixture )
+            
+        #-- END try/except --#
+        
+        # Load taggit tag data fixture
+        current_fixture = cls.FIXTURE_UNIT_TEST_TAGGIT_DATA
+        try:
+        
+            cls.load_fixture( current_fixture )
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( current_fixture )
+            
+        #-- END try/except --#
+        
+        # Load OpenCalais Access Token.
+        try:
+        
+            cls.load_open_calais_access_token()
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
+            
+        #-- END try/except --#
+        
+    #-- END function setUp() --#
+        
+
     #----------------------------------------------------------------------------
     # __init__() method
     #----------------------------------------------------------------------------

@@ -1,8 +1,6 @@
 """
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
-
-Replace this with more appropriate tests for your application.
+This file tests to see if configuration for connecting to and using the
+OpenCalais API for detecting people in articles is correct.
 """
 
 # django imports
@@ -16,7 +14,7 @@ from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import 
 from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 from sourcenet.tests.test_helper import TestHelper
 
-class PrereqTest( django.test.TestCase ):
+class OpenCalaisConfigTest( django.test.TestCase ):
     
     
     #----------------------------------------------------------------------------
@@ -30,83 +28,8 @@ class PrereqTest( django.test.TestCase ):
         setup tasks.  Call function that we'll re-use.
         """
 
-        # declare variables
-        current_fixture = ""
-        
-        # janky way to add variables to instance since you can't override init.
-        self.setup_error_count = 0
-        self.setup_error_list = []
-        
-        # Load auth data fixture
-        current_fixture = TestHelper.FIXTURE_UNIT_TEST_AUTH_DATA
-        try:
-        
-            TestHelper.load_fixture( current_fixture )
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            self.setup_error_count += 1
-            self.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load config property data fixture
-        current_fixture = TestHelper.FIXTURE_UNIT_TEST_CONFIG_PROPERTIES
-        try:
-        
-            TestHelper.load_fixture( current_fixture )
-        
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            self.setup_error_count += 1
-            self.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load base unit test data fixture
-        current_fixture = TestHelper.FIXTURE_UNIT_TEST_BASE_DATA
-        try:
-        
-            TestHelper.load_fixture( current_fixture )
-        
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            self.setup_error_count += 1
-            self.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load taggit tag data fixture
-        current_fixture = TestHelper.FIXTURE_UNIT_TEST_TAGGIT_DATA
-        try:
-        
-            TestHelper.load_fixture( current_fixture )
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            self.setup_error_count += 1
-            self.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load OpenCalais Access Token.
-        try:
-        
-            TestHelper.load_open_calais_access_token()
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            self.setup_error_count += 1
-            self.setup_error_list.append( OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
-            
-        #-- END try/except --#
+        # call TestHelper.standardSetUp()
+        TestHelper.standardSetUp( self )
         
     #-- END function setUp() --#
         
@@ -352,4 +275,4 @@ class PrereqTest( django.test.TestCase ):
     #-- END test method test_open_calais_access_token() --#
 
 
-#-- END test class PrereqTest --#
+#-- END test class OpenCalaisConfigTest --#

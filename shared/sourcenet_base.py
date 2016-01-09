@@ -18,8 +18,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 
 # python base imports
+import calendar
 #from datetime import date
-from datetime import datetime
+import datetime
 
 # django classes
 from django.contrib.auth.models import User
@@ -395,9 +396,9 @@ class SourcenetBase( BasicRateLimited ):
                 if ( ( from_string != '' ) and ( to_string != '' ) ):
 
                     # convert to date instances
-                    from_date = datetime.strptime( from_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
+                    from_date = datetime.datetime.strptime( from_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
                     from_date = from_date.date()
-                    to_date = datetime.strptime( to_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
+                    to_date = datetime.datetime.strptime( to_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
                     to_date = to_date.date()
 
                     # put the date()s in a list.
