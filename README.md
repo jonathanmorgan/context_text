@@ -205,7 +205,7 @@ Edit the research/research/settings.py file and update it with details of your d
 
 ### applications
 
-Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', 'taggit', and 'tastypie' to your list of INSTALLED\_APPS:
+Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', and 'taggit' to your list of INSTALLED\_APPS:
 
         INSTALLED_APPS = (
             'django.contrib.auth',
@@ -221,7 +221,24 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             'sourcenet',
             'django_config',
             'taggit',
-            'tastypie',
+        )
+
+- you can also add sourcenet and django_config using the new django Config classes, rather than the app name:
+
+        INSTALLED_APPS = (
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.sites',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+            # Uncomment the next line to enable the admin:
+            'django.contrib.admin',
+            # Uncomment the next line to enable admin documentation:
+            # 'django.contrib.admindocs',
+            'sourcenet.apps.SourcenetConfig',
+            'django_config.apps.Django_ConfigConfig',
+            'taggit',
         )
 
 - add settings properties that tell django how to log people in and out.
@@ -245,14 +262,90 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
 - the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
+        python manage.py createsuperuser
+
 
 ## Enable django admins:
         
-- you need to install a web server on your machine (apache works well).
+- Install apache and mod-wsgi (as root):
 
-- configure it so it can run python WSGI applications.  For apache, install mod_wsgi:
+    - you need to install a web server on your machine (apache works well).
 
-        (sudo) apt-get install libapache2-mod-wsgi
+            (sudo) apt-get install apache2
+
+    - configure it so it can run python WSGI applications.  For apache, install mod_wsgi:
+
+            (sudo) apt-get install libapache2-mod-wsgi
+
+        then enable it:
+
+            (sudo) a2enmod wsgi
+
+        and restart apache:
+
+            (sudo) service apache2 restart
+
+- Update your django project's wsgi.py file to reflect your Python environment (`<path_to_django_project_parent>/research/wsgi.py`):
+
+    - Add a line that adds your project's directory to the python path:
+
+            # Add the app's directory to the PYTHONPATH
+            sys.path.append( '<path_to_django_project_parent>/research' )
+        
+    - If you are using virtualenv:
+    
+        - import the `site` packge:
+        
+                import site
+                
+        - Add the `site-packages` of the desired virtualenv:
+                
+                # Add the site-packages of the desired virtualenv
+                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+        
+        - Activate your virtualenv:
+        
+                # Activate your virtualenv
+                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                execfile( activate_env, dict( __file__ = activate_env ) )
+        
+        - here's how it all should look:
+    
+                """
+                WSGI config for research project.
+                
+                It exposes the WSGI callable as a module-level variable named ``application``.
+                
+                For more information on this file, see
+                https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                """
+                
+                # imports
+                import os
+                import sys
+                import site
+                from django.core.wsgi import get_wsgi_application
+                                
+                # Add the site-packages of the desired virtualenv
+                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                
+                # Add the app's directory to the PYTHONPATH
+                sys.path.append( '<path_to_django_project_parent>/research' )
+                
+                # Set DJANGO_SETTINGS_MODULE
+                os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
+                
+                # Activate your virtualenv
+                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                execfile( activate_env, dict( __file__ = activate_env ) )
+                
+                # load django application
+                application = get_wsgi_application()
+                
+            make sure to replace:
+            
+            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
+            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
 
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
@@ -298,71 +391,11 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 (sudo) a2enconf django-sourcenet
                 (sudo) service apache2 restart
 
-- Update the wsgi.py file (`<path_to_django_project_parent>/research/wsgi.py`):
-
-    - Add a line that adds your project's directory to the python path:
-
-            # Add the app's directory to the PYTHONPATH
-            sys.path.append( '<path_to_django_project_parent>/research' )
-        
-    - If you are using virtualenv:
-    
-        - import the `site` packge:
-        
-                import site
-                
-        - Add the `site-packages` of the desired virtualenv:
-                
-                # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
-        
-        - Activate your virtualenv:
-        
-                # Activate your virtualenv
-                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
-                execfile( activate_env, dict( __file__ = activate_env ) )
-        
-        - here's how it all should look:
-    
-                """
-                WSGI config for research project.
-                
-                It exposes the WSGI callable as a module-level variable named ``application``.
-                
-                For more information on this file, see
-                https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
-                """
-                
-                # imports
-                import os
-                import sys
-                import site
-                
-                # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
-                
-                # Add the app's directory to the PYTHONPATH
-                sys.path.append( '<path_to_django_project_parent>/research' )
-                
-                os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
-                
-                # Activate your virtualenv
-                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
-                execfile( activate_env, dict( __file__ = activate_env ) )
-                
-                from django.core.wsgi import get_wsgi_application
-                application = get_wsgi_application()
-                
-            make sure to replace:
-            
-            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
-            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
-
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
 
 - open up the `settings.py` file in `<project_folder>/research` and:
 
-    - make sure the following are in the INSTALLED_APPLICATIONS list to get the admins to work.
+    - make sure the following are in the INSTALLED_APPS list to get the admins to work.
 
             'django.contrib.admin',
             'django.contrib.admindocs',
@@ -371,7 +404,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
             
 - if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py migrate`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
     
-    - In django 1.6 and up, the django.contrib.admin application will already be uncommented by default, so you'll have done this above.
+    - In django 1.6 and up, the django.contrib.admin application will already be uncommented by default, so you'll have done this above when you "`migrate`"-ed.
 
 - open up the `urls.py` file in the folder where settings.py lives and add the following line to the urlpatterns variable to complete admin documentation setup:
 
@@ -415,7 +448,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
         STATIC_ROOT = '/var/www/html/static'
     
-- run the following command to initialize static files for your applications (have to sudo if the folder is in webroot, owned by root):
+- run the following command to initialize static files for your applications (have to sudo if the folder is in webroot, owned by root if you changed permissions to 777, should not need `sudo`):
 
         (sudo) python manage.py collectstatic
         
@@ -446,7 +479,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 'ajax_select',
             )
         
-    - add the following to the bottom of the file:
+    - add the following to the bottom of the `settings.py` file:
     
             AJAX_LOOKUP_CHANNELS = {
 
@@ -515,6 +548,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
     - Add:
 
+            # sourcenet URLs:
             url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
 
     - Result:
