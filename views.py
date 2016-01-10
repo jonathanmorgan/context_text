@@ -693,7 +693,9 @@ def article_code( request_IN ):
             
             # process JSON with instance of ManualArticleCoder
             manual_article_coder = ManualArticleCoder()
-            manual_article_coder.process_person_store_json( request_IN, article_id, person_store_json_string, article_data_id, response_dictionary )
+            
+            # need to get call set up for new parameters.
+            #manual_article_coder.process_person_store_json( request_IN, article_id, person_store_json_string, article_data_id, response_dictionary )
             
             # short circuit article lookup (use empty copy of form) if success.
             
