@@ -22,6 +22,7 @@ from django.conf.urls import url
 from django.contrib.auth import views as auth_views
 
 # import polls from mysite
+import sourcenet.views
 from sourcenet.models import Article
 
 '''
@@ -39,7 +40,7 @@ v1_api.register( ArticleResource() )
 
 # polls-specific URL settings, intended to be included in master urls.py file.
 #urlpatterns = patterns( 'mysite.polls.views',
-urlpatterns = patterns( '',
+urlpatterns = [
     # Example:
     # url(r'^mysite/', include('mysite.foo.urls')),
 
@@ -74,25 +75,21 @@ urlpatterns = patterns( '',
     # left in all the stuff above as a sample.  Making an output view, to let a
     #    user specify what they want in output, and then an output/display view
     #    to display the results of the rendering.
-    url( r'^output/network$', 'sourcenet.views.output_network'),
-    url( r'^output/articles$', 'sourcenet.views.output_articles'),
+    url( r'^output/network$', sourcenet.views.output_network ),
+    url( r'^output/articles$', sourcenet.views.output_articles ),
     #( r'^output/display$', 'mysite.sourcenet.views.output_display'),
 
     # link the default authentication page to the admin login page.
     url( r'^accounts/login/$', auth_views.login ),
     
     # created a view to log people out that redirects to server root.    
-    url( r'^accounts/logout/$', 'sourcenet.views.logout' ),
+    url( r'^accounts/logout/$', sourcenet.views.logout ),
 
     # article views
-    url( r'^article/view/$', 'sourcenet.views.article_view' ),
-    url( r'^article/article_data/view/$', 'sourcenet.views.article_view_article_data' ),
+    url( r'^article/view/$', sourcenet.views.article_view ),
+    url( r'^article/article_data/view/$', sourcenet.views.article_view_article_data ),
 
     # article coding page
-    url( r'^article/code/', 'sourcenet.views.article_code' ),
+    url( r'^article/code/', sourcenet.views.article_code ),
 
-    # !tastypie API
-    # APIs
-    #url( r'^api/', include( v1_api.urls) ),
-
-)
+]

@@ -90,9 +90,9 @@ class ManualArticleCoder( ArticleCoder ):
     CONFIG_APPLICATION = "Manual_Coding"
     
     # kwarg parameter names
-    KWARG_REQUEST = "request_IN"
     KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN"
-    KWARG_ARTICLE_DATA = "article_data_id_IN"
+    KWARG_ARTICLE_DATA_ID = "article_data_id_IN"
+    KWARG_REQUEST = "request_IN"
     KWARG_RESPONSE_DICTIONARY = "response_dictionary_IN"
 
     #============================================================================
@@ -129,6 +129,9 @@ class ManualArticleCoder( ArticleCoder ):
         
         # coder type (defaults to self.CONFIG_APPLICATION).
         self.coder_type = self.CONFIG_APPLICATION
+
+        # most recent Article_Data instance.
+        self.latest_article_data = None
         
     #-- END method __init__() --#
 
@@ -196,9 +199,10 @@ class ManualArticleCoder( ArticleCoder ):
            
         Accepts:
         - article_IN - article instance we will be coding.
-        - KWARG_REQUEST = "request_IN" - if manual coding via web form, request instance of form submission.
+        - coding_user_IN - user instance for coder who coded this article.
         - KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN" - JSON string that contains coding for article we are processing.
-        - KWARG_ARTICLE_DATA = "article_data_id_IN" - ID of article data for this coder's coding on this article, if we are updating, not creating new.
+        - KWARG_ARTICLE_DATA_ID = "article_data_id_IN" - ID of article data for this coder's coding on this article, if we are updating, not creating new.
+        - KWARG_REQUEST = "request_IN" - if manual coding via web form, request instance of form submission.
         - KWARG_RESPONSE_DICTIONARY = "response_dictionary_IN" - if manual coding via web form, response dictionary that will be used to render response sent back to user.
         
         inheritance: This method overrides the abstract method of the same name in
@@ -219,8 +223,12 @@ class ManualArticleCoder( ArticleCoder ):
         me = "process_article"
         my_logger = None
         my_exception_helper = None
-        automated_coding_user = None
+        person_store_json_string = ""
+        article_data_id = -1
+        request = None
+        response_dictionary = ""
         article_data = None
+        article_data_status_messages = "" 
         
         # get logger
         my_logger = self.get_logger()
@@ -228,906 +236,70 @@ class ManualArticleCoder( ArticleCoder ):
         # get exception_helper
         my_exception_helper = self.get_exception_helper()
         
-        # get automated_coding_user
-        automated_coding_user = coding_user_IN
+        # get parameters for calling process_person_store_json()
+        person_store_json_string = kwargs[ self.KWARG_PERSON_STORE_JSON_STRING ]
+        article_data_id = kwargs[ self.KWARG_ARTICLE_DATA_ID ]
+        request = kwargs[ self.KWARG_REQUEST ]
+        response_dictionary = kwargs[ KWARG_RESPONSE_DICTIONARY ]
         
-        # got a user?
-        if ( automated_coding_user is not None ):
+        # call process_person_store_json()
+        article_data = self.process_person_store_json( article_IN,
+                                                       coding_user_IN,
+                                                       person_store_json_string,
+                                                       article_data_id,
+                                                       request,
+                                                       response_dictionary )
 
-            # got an article?
-            if ( article_IN is not None ):
-    
-                # get Article_Data instance for user and coder_type.  Grab it
-                #    first so we can store error information in it if problem
-                #    on OpenCalais side.
-                article_data = article_IN.get_article_data_for_coder( automated_coding_user, self.coder_type )
-                
-                # got article data?
-                if ( article_data is not None ):
-                
-                    self.output_debug( "\n\nIn " + me + ": Article_Data instance id = " + str( article_data.id ) )
-                
-                else:
-                
-                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.coder_type + "\""
-                    
-                #-- END check to see if we found article data into which we'll code.
-    
-            #-- END check to see if article. --#
-            
+        # got article data?
+        if ( article_data is not None ):
+
+            # yes - store it off.
+            self.latest_article_data = article_data
+
+            # got status messages?
+            article_data_status_messages = article_data.status_messages
+            if ( ( article_data_status_messages is not None ) and ( article_data_status_messages != "" ) ):
+
+                # yes.  what do you know.  Return it.
+                status_OUT = article_data_status_messages
+
+            #-- END check to see if status messages in Article_Data instance --#
+
         else:
-        
-            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"automated\".  Can't code articles without a user."
-            
-        #-- END check to make sure we have an automated coding user. --#
+
+            # ERROR - should have gotten Article_Data instance back.
+            status_OUT = self.STATUS_ERROR_PREFIX + "In " + me + "(): ERROR - call to process_person_store_json() did not return Article_Data."
+
+        #-- END check to see if we got anything back. --#
         
         return status_OUT
 
     #-- END method process_article() --#
     
 
-    def process_json_mention( self, article_IN, article_subject_IN, mention_JSON_IN ):
-    
-        '''
-        Accepts Article, Article_Subject instance, and JSON of a
-           mention of the subject.  Retrieves data from JSON.  Looks for mention
-           that has same length, offset, and value.  If present, does nothing.
-           If not, makes an Article_Subject_Mention instance for the mention,
-           populates it, saves it, then returns it.  If error, returns None.
-           
-        Preconditions:  Assumes all input variables will be populated
-           appropriately.  If any are missing or set to None, will break,
-           throwing exceptions.
-           
-        Postconditions:  If mention wasn't already stored, it will be after
-           this call.
-           
-        Example JSON:
-        {
-            "detection": "[ Fiat (SpA) that we have and we need to examine,\" ]Fred Diaz[, head of the Ram brand, said in an interview]",
-            "exact": "Fred Diaz",
-            "length": 9,
-            "offset": 382,
-            "prefix": " Fiat (SpA) that we have and we need to examine,\" ",
-            "suffix": ", head of the Ram brand, said in an interview"
-        }
-
-        '''
-        
-        # return reference
-        instance_OUT = None
-        
-        # declare variables
-        me = "process_json_mention"
-        mention_qs = None
-        mention_count = -1
-        current_mention = None
-        
-        # declare variables - Information from OpenCalais JSON
-        mention_instances_list = None
-        mention_detection = ""
-        mention_exact = ""
-        mention_length = ""
-        mention_offset = ""
-        mention_prefix = ""
-        mention_suffix = ""
-        
-        # declare variables - get values from article text.
-        article_text = None
-        find_string = ""
-        mention_FIT_values = {}
-        FIT_status_list = []
-        FIT_status_count = -1
-        canonical_index_list = []
-        plain_text_index_list = []
-        paragraph_list = []
-        first_word_list = []
-        last_word_list = []
-        
-        # declare variables - values we'll place in instance at the end.
-        canonical_index = -1
-        plain_text_index = -1
-        paragraph_number = -1
-        first_word_number = -1
-        last_word_number = -1
-        is_ok_to_update = False
-        current_value = None
-        notes_list = []
-        notes_count = -1
-        notes_string = ""
-        found_list = []
-        found_list_count = -1
-        sanity_check_index = -1
-        found_dict = {}
-        mention_prefix_length = -1
-        mention_prefix_word_list = []
-        mention_prefix_word_count = -1
-        
-        # declare variables - troubleshooting
-        current_match = -1
-        full_string_index = -1
-        mention_prefix_length = -1
-        calculated_match_index = -1
-        
-        # output JSON.
-        self.output_debug( "++++++++ In " + me + " - Mention JSON:\n\n\n" + JSONHelper.pretty_print_json( mention_JSON_IN )  )
-
-        # first, retrieve values from JSON, so we can use them to see if already
-        #    added.
-        
-        # "detection" is the "exact" (mention), with "prefix" and "suffix"
-        #    before and after, each enclosed in square brackets.
-        #    - Example: [<"prefix">]<"exact">[<"suffix">]
-        mention_detection = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_DETECTION, None )
-        
-        # "exact" is the mention itself.
-        #    - Examples: "he" or "Jim Morrison"
-        mention_exact = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_EXACT, None )
-        
-        # "length" is the length of the mention string.
-        mention_length = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_LENGTH, None )
-        
-        # "offset" is the index of the start of the mention string in the
-        #    article text passed to OpenCalais (plain text).
-        mention_offset = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_OFFSET, None )
-        
-        # "prefix" is the text directly before the mention, for context.
-        mention_prefix = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_PREFIX, None )
-
-        # "suffix" is the text directly after the mention, for context.
-        mention_suffix = mention_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_SUFFIX, None )
-
-        # is this mention already stored?
-        
-        # Filter on exact, offset, length, prefix, and suffix.
-        mention_qs = article_subject_IN.article_subject_mention_set.filter( value = mention_exact )
-        mention_qs = mention_qs.filter( value_index = mention_offset )
-        mention_qs = mention_qs.filter( value_length = mention_length )
-        mention_qs = mention_qs.filter( context_before = mention_prefix )
-        mention_qs = mention_qs.filter( context_after = mention_suffix )
-                        
-        # got one?
-        mention_count = mention_qs.count()
-        if ( mention_count == 0 ):
-                        
-            # no.  Create one.
-            current_mention = Article_Subject_Mention()
-            
-            # store the Article_Subject in it.
-            current_mention.article_subject = article_subject_IN
-            
-            # store information from OpenCalais
-            current_mention.value = mention_exact
-            current_mention.value_in_context = mention_detection
-            current_mention.value_index = mention_offset
-            current_mention.value_length = mention_length
-            current_mention.context_before = mention_prefix
-            current_mention.context_after = mention_suffix
-            
-            # derive a few more details based on finding the mention in the text
-            #    of the article.
-            
-            # get article text for article.
-            article_text = article_IN.article_text_set.get()
-            
-            # then, call find_in_text (FIT) method on mention plus suffix (to
-            #    make sure we get the right "he", for example).
-            find_string = mention_exact + mention_suffix
-            mention_FIT_values = article_text.find_in_text( find_string )
-            
-            # Validate results.
-            FIT_status_list = self.validate_FIT_results( mention_FIT_values )
-            
-            # any error statuses passed back?
-            FIT_status_count = len( FIT_status_list )
-            if ( FIT_status_count == 0 ):
-            
-                # None - success!  Load items into variables.
-                
-                # get result lists.
-                canonical_index_list = mention_FIT_values.get( Article_Text.FIT_CANONICAL_INDEX_LIST, [] )
-                plain_text_index_list = mention_FIT_values.get( Article_Text.FIT_TEXT_INDEX_LIST, [] )
-                paragraph_list = mention_FIT_values.get( Article_Text.FIT_PARAGRAPH_NUMBER_LIST, [] )
-                first_word_list = mention_FIT_values.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
-                last_word_list = mention_FIT_values.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
-
-                # load values from lists.
-                plain_text_index = plain_text_index_list[ 0 ]
-                
-                if ( mention_offset != plain_text_index ):
-                
-                    # not the same.  output debug.
-                    notes_string = "In " + me + ": ERROR - mention index from OpenCalais ( " + str( mention_offset ) + " ) doesn't match what we found ( " + str( plain_text_index ) + " ). Using local match index instead."
-                    notes_list.append( notes_string )
-                    self.output_debug( notes_string )
-                    
-                    # AND use what we calculated, not what OpenCalais returned.
-                    plain_text_index = current_value
-
-                #-- END check to see if index from OpenCalais matches --#
-
-                canonical_index = canonical_index_list[ 0 ]
-                paragraph_number = paragraph_list[ 0 ]
-                first_word_number = first_word_list[ 0 ]
-
-                # add the count of words in the actual mention minus
-                #    1 (to account for the first word already being
-                #    counted) to the first word value to get the last
-                #    word number.
-                mention_word_list = mention_exact.split()
-                mention_word_count = len( mention_word_list )
-                last_word_number = first_word_number + mention_word_count - 1
-
-                # flag that it is OK to update.
-                is_ok_to_update = True
-
-            else:
-            
-                # add FIT_status_list to notes_list.
-                notes_list = notes_list + FIT_status_list
-
-                # try one-by-one.  Start with is_ok_to_update = True, then set
-                #    to False if anything goes wrong.
-                is_ok_to_update = True
-
-                # to start, make sure the text is in the article.
-                find_full_string = mention_prefix + mention_exact + mention_suffix
-                found_list = article_text.find_in_plain_text( find_full_string )
-                found_list_count = len( found_list )
-                if ( found_list_count == 1 ):
-                
-                    # we know we have one match, so we can dig in and try to get
-                    #    all the things.
-                    sanity_check_index = found_list[ 0 ]
-                    full_string_index = sanity_check_index
-                    
-                    #-----------------------------------------------------------
-                    # plain text index
-                    #-----------------------------------------------------------
-
-                    # get actual plain text index (no prefix)
-                    find_string = mention_exact + mention_suffix
-                    found_list = article_text.find_in_plain_text( find_string )
-                    found_list_count = len( found_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # load value.
-                        plain_text_index = found_list[ 0 ]
-                        
-                        # see if it agrees with OpenCalais
-                        if ( mention_offset != plain_text_index ):
-                        
-                            # not the same.  output debug.
-                            notes_string = "In " + me + ": ERROR - mention index from OpenCalais ( " + str( mention_offset ) + " ) doesn't match what we found ( " + str( plain_text_index ) + " ). Using local match index instead."
-                            notes_list.append( notes_string )
-                            self.output_debug( notes_string )
-                            
-                            # AND use what we calculated, not what OpenCalais returned.
-                            plain_text_index = current_value
-        
-                        #-- END check to see if index from OpenCalais matches --#
-                        
-                    elif ( found_list_count > 1 ):
-                    
-                        # multiple matches.  If at end of entire article, could
-                        #    be because suffix is one or two words, there are
-                        #    other matches in the article.
-                        # Match = full_string_index + mention_prefix_length
-                        mention_prefix_length = len( mention_prefix )
-                        calculated_match_index = full_string_index + mention_prefix_length
-                        if calculated_match_index in found_list:
-                        
-                            # the calculated match index is in list.  That is
-                            #    the match.  Use it.
-                            plain_text_index = calculated_match_index
-                            
-                        #-- END check to see which match is the right one.
-                    
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - plain text index - `mention + suffix` match count = " + str( found_list_count ) + ", `prefix + mention + suffix` was at index " + str( sanity_check_index )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-                        
-                        #is_ok_to_update = False
-                        # might as well update, so we can see what else for
-                        #    debugging. just set the plain text index to -1.
-                        plain_text_index = -1
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                    #-----------------------------------------------------------
-                    # canonical index
-                    #-----------------------------------------------------------
-
-                    # canonical text seems to be a troublesome one.  Start out
-                    #    looking for the full string.
-                    found_list = article_text.find_in_canonical_text( find_full_string )
-                    found_list_count = len( found_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load value from list.
-                        canonical_index = found_list[ 0 ]
-                        
-                        # then, add the length of the prefix to the value, to
-                        #    get to the actual value.
-                        mention_prefix_length = len( mention_prefix )
-                        canonical_index = canonical_index + mention_prefix_length
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - canonical index - prefix + mention + suffix ( \"" + find_full_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                    #-----------------------------------------------------------
-                    # word first and last numbers
-                    #-----------------------------------------------------------
-
-                    # Start out looking for the full string.
-                    found_dict = article_text.find_in_word_list( find_full_string )
-                    first_word_list = found_dict.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
-                    last_word_list = found_dict.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
-                    found_list_count = len( first_word_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load values from lists.
-                        first_word_number = first_word_list[ 0 ]
-                        last_word_number = last_word_list[ 0 ]
-                        
-                        # then, add the number of words of the prefix to the
-                        #    first word value, to get to the actual value.
-                        mention_prefix_word_list = mention_prefix.split()
-                        mention_prefix_word_count = len( mention_prefix_word_list )
-                        first_word_number = first_word_number + mention_prefix_word_count
-                        
-                        # and add the count of words in the actual mention minus
-                        #    1 (to account for the first word already being
-                        #    counted) to the first word value to get the last
-                        #    word number.
-                        mention_word_list = mention_exact.split()
-                        mention_word_count = len( mention_word_list )
-                        last_word_number = first_word_number + mention_word_count - 1
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - word first and last numbers - prefix + mention + suffix ( \"" + find_full_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                    #-----------------------------------------------------------
-                    # paragraph number
-                    #-----------------------------------------------------------
-
-                    # Start out looking for the full string.
-                    found_list = article_text.find_in_paragraph_list( find_full_string )
-                    found_list_count = len( found_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load value from list.
-                        paragraph_number = found_list[ 0 ]
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - paragraph number - prefix + mention + suffix ( \"" + find_full_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                                        
-                else:
-                
-                    # Either no match or multiple.
-                    notes_string = "In " + me + ": ERROR - plain text index - prefix + mention + suffix ( \"" + find_full_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                    notes_list.append( notes_string )
-                    self.output_debug( notes_string )
-                    is_ok_to_update = False
-                
-                #-- END check to see if match for prefix + mention + suffix --#
-                
-            #-- END check to make sure all searches returned same count of matches. --#
-            
-            # OK to update the stuff from FIT?
-            if ( is_ok_to_update == True ):
-
-                # Yes.  Update them.
-                current_mention.value_index = plain_text_index
-                current_mention.canonical_index = canonical_index
-                current_mention.value_word_number_start = first_word_number
-                current_mention.value_word_number_end = last_word_number
-                current_mention.paragraph_number = paragraph_number
-            
-            #-- END check to see if OK to update with info from FIT. --#
-
-            # and store a few more details.
-            current_mention.capture_method = self.coder_type
-
-            # no UUID for a mention.
-            #current_mention.uuid = quotation_URI_IN
-            #current_mention.uuid_name = self.OPEN_CALAIS_UUID_NAME
-            
-            # notes?
-            notes_count = len( notes_list )
-            if ( notes_count > 0 ):
-            
-                # yes - join with newline, add to notes.
-                notes_string = "\n".join( notes_list )
-                current_mention.notes = notes_string
-                
-            #-- END check to see if notes. --#
-                        
-            # save the quotation instance.
-            current_mention.save()
-            
-            # and return it.
-            instance_OUT = current_mention
-            
-        elif ( mention_count == 1 ):
-        
-            # already got one.  Return it.
-            instance_OUT = mention_qs.get()
-        
-        elif ( mention_count > 1 ):
-        
-            # trouble - more than one quotation for the UUID.
-            self.output_debug( "++++++++ In " + me + " - ERROR - more than one mention matches.  Something is off..." )
-            instance_OUT = None
-
-        else:
-        
-            # trouble - count is invalid.
-            self.output_debug( "++++++++ In " + me + " - ERROR - count of mention matches is neither 0, 1, or greater than 1.  Something is off..." )
-            instance_OUT = None
-
-        #-- END check to see if mention already stored. --#
-        
-        return instance_OUT
-        
-    #-- END method process_json_mention() --#
-
-        
-    def process_json_quotation( self, article_IN, article_subject_IN, quotation_URI_IN, quotation_JSON_IN ):
-    
-        '''
-        Accepts Article, Article_Subject of a source, OpenCalais URI of a
-           quotation, and JSON of a quotation attributed to the source.  Uses
-           URI to check if the quotation has already been attributed to the
-           source.  If so, returns the instance.  If not, creates an instance
-           and saves it, then returns it.  If error, returns None.
-           
-        Preconditions:  Assumes all input variables will be populated
-           appropriately.  If any are missing or set to None, will break,
-           throwing exceptions.
-           
-        Postconditions:  If quotation wasn't already stored, it will be after
-           this call.
-           
-        Example JSON (bonus - can you find the OpenCalais parsing error?):
-        {
-            "_type": "Quotation",
-            "_typeGroup": "relations",
-            "_typeReference": "http://s.opencalais.com/1/type/em/r/Quotation",
-            "instances": [
-                {
-                    "detection": "[went on sale in 2005 to limited success. ]Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production, said spokesman John McCandless.[ \"A lot of people have tried the idea of creating]",
-                    "exact": "Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production, said spokesman John McCandless.",
-                    "length": 281,
-                    "offset": 2110,
-                    "prefix": "went on sale in 2005 to limited success. ",
-                    "suffix": " \"A lot of people have tried the idea of creating"
-                }
-            ],
-            "person": "http://d.opencalais.com/pershash-1/52f81716-30d1-3b2b-bc98-16e50eb06782",
-            "persondescription": "spokesman",
-            "quote": "Sales through November are less than 15,000, down 54 percent, according to Autodata Corp. Toyota Motor Corp. showed the A-BAT concept, a small hybrid unibody pickup, at the 2008 Detroit auto show but has no immediate plans to put it into production"
-        }
-        '''
-        
-        # return reference
-        instance_OUT = None
-        
-        # declare variables
-        me = "process_json_quotation"
-        quotation_qs = None
-        quotation_count = -1
-        
-        # declare variables - Information from OpenCalais JSON
-        quotation_string = ""
-        quotation_person_title = ""
-        quotation_instances_list = None
-        current_quotation = None
-        quotation_detection = ""
-        quotation_exact = ""
-        quotation_length = ""
-        quotation_offset = ""
-        quotation_prefix = ""
-        quotation_suffix = ""
-        
-        # declare variables - get values from article text.
-        article_text = None
-        quotation_FIT_values = {}
-        FIT_status_list = []
-        FIT_status_count = -1
-        canonical_index_list = []
-        plain_text_index_list = []
-        paragraph_list = []
-        first_word_list = []
-        last_word_list = []
-        
-        # declare variables - values we'll place in instance at the end.
-        canonical_index = -1
-        plain_text_index = -1
-        paragraph_number = -1
-        first_word_number = -1
-        last_word_number = -1
-        is_ok_to_update = False
-        current_value = None
-        notes_list = []
-        notes_count = -1
-        notes_string = ""
-        
-        # output JSON.
-        self.output_debug( "++++++++ In " + me + " - Quotation JSON:\n\n\n" + JSONHelper.pretty_print_json( quotation_JSON_IN )  )
-
-        # need to see if this quotation has already been stored.
-
-        # Filter on UUID from Quotation JSON object.
-        quotation_qs = article_subject_IN.article_subject_quotation_set.filter( uuid = quotation_URI_IN )
-                        
-        # got one?
-        quotation_count = quotation_qs.count()
-        if ( quotation_count == 0 ):
-                        
-            # no.  Create one.
-            current_quotation = Article_Subject_Quotation()
-            
-            # store the Article_Subject in it.
-            current_quotation.article_subject = article_subject_IN
-            
-            # get actual quotation information from JSON
-            
-            # "quote" is the quotation without an attribution string.
-            quotation_string = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_QUOTE, None )
-            
-            self.output_debug( "In " + me + ": quotation_string = \"" + quotation_string + "\"" )
-
-            # "persondescription" is the description of the person that
-            #    accompanied attribution for the quote.
-            #    - Example: would be "spokesman" for atttribution string
-            #       ", said spokesman John McCandless."
-            quotation_person_title = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_PERSON_DESCRIPTION, None )
-
-            # more details are stored in JSON object referred to as "instances".
-            quotation_instances_list = quotation_JSON_IN.get( OpenCalaisApiResponse.JSON_NAME_INSTANCES, None )
-            current_instance = quotation_instances_list[ 0 ]
-            
-            # get values from OpenCalais instance
-            
-            # "detection" is the "exact" (quote plus attribution), with "prefix"
-            #    and "suffix" before and after, each enclosed in square
-            #    brackets.
-            #    - Example: [<"prefix">]<"exact">[<"suffix">]
-            quotation_detection = current_instance.get( OpenCalaisApiResponse.JSON_NAME_DETECTION, None )
-            
-            # "exact" is the quotation plus the attribution string.
-            #    - Example: "quote", said Jim.
-            quotation_exact = current_instance.get( OpenCalaisApiResponse.JSON_NAME_EXACT, None )
-            
-            # "length" is the length of the quotation string.
-            quotation_length = current_instance.get( OpenCalaisApiResponse.JSON_NAME_LENGTH, None )
-            
-            # "offset" is the index of the start of the quotation string in the
-            #    article text passed to OpenCalais (plain text).
-            quotation_offset = current_instance.get( OpenCalaisApiResponse.JSON_NAME_OFFSET, None )
-            
-            # "prefix" is the text directly before the quotation, included for
-            #    context.
-            quotation_prefix = current_instance.get( OpenCalaisApiResponse.JSON_NAME_PREFIX, None )
-
-            # "suffix" is the text directly after the quotation, included for
-            #    context.
-            quotation_suffix = current_instance.get( OpenCalaisApiResponse.JSON_NAME_SUFFIX, None )
-
-            # store information from OpenCalais
-            current_quotation.value = quotation_string
-            current_quotation.value_with_attribution = quotation_exact
-            current_quotation.value_in_context = quotation_detection
-            current_quotation.value_index = quotation_offset
-            current_quotation.value_length = quotation_length
-            current_quotation.context_before = quotation_prefix
-            current_quotation.context_after = quotation_suffix
-            
-            # derive a few more details based on finding the quote in the text
-            #    of the article.
-            
-            # get article text for article.
-            article_text = article_IN.article_text_set.get()
-            
-            # then, call find_in_text (FIT) method.  When we deal with words, we
-            #    split on spaces.  Because of this, "words" must include the
-            #    punctuation around them for them to match.  The quotation_string
-            #    doesn't include punctuation, so we can't use it.  Instead, we
-            #    need to use the "exact" string, since it includes punctuation.
-            quotation_FIT_values = article_text.find_in_text( quotation_exact )
-            
-            # Validate results.
-            FIT_status_list = self.validate_FIT_results( quotation_FIT_values )
-
-            # any error statuses passed back?
-            FIT_status_count = len( FIT_status_list )
-            if ( FIT_status_count == 0 ):
-            
-                # None - success!
-                
-                self.output_debug( "In " + me + ": FIT status was good - single match for each element we are looking for." )
-
-                # get result lists.
-                canonical_index_list = quotation_FIT_values.get( Article_Text.FIT_CANONICAL_INDEX_LIST, [] )
-                plain_text_index_list = quotation_FIT_values.get( Article_Text.FIT_TEXT_INDEX_LIST, [] )
-                paragraph_list = quotation_FIT_values.get( Article_Text.FIT_PARAGRAPH_NUMBER_LIST, [] )
-                first_word_list = quotation_FIT_values.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
-                last_word_list = quotation_FIT_values.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
-
-                # this is the normal case.  Save the values into our current
-                #    quotation instance.
-                
-                # make sure that the plain text index matches the one from
-                #    OpenCalais.
-                plain_text_index = plain_text_index_list[ 0 ]
-                if ( quotation_offset != plain_text_index ):
-                
-                    # not the same.  output debug.
-                    notes_string = "In " + me + ": ERROR - quotation index from OpenCalais ( " + str( quotation_offset ) + " ) doesn't match what we found ( " + str( plain_text_index ) + " ).  Using local match index instead."
-                    notes_list.append( notes_string )
-                    self.output_debug( notes_string )
-                    
-                    # AND use what we calculated, not what OpenCalais returned.
-                    current_quotation.value_index = plain_text_index
-
-                #-- END check to see if index from OpenCalais matches --#
-                
-                # canonical index
-                canonical_index = canonical_index_list[ 0 ]
-                
-                # value_word_number_start
-                first_word_number = first_word_list[ 0 ]
-                
-                # value_word_number_end
-                last_word_number = last_word_list[ 0 ]
-
-                # paragraph_number
-                paragraph_number = paragraph_list[ 0 ]
-                
-                # flag that it is OK to update.
-                is_ok_to_update = True
-
-            else:
-
-                # add FIT_status_list to notes_list.
-                notes_list = notes_list + FIT_status_list
-
-                self.output_debug( "In " + me + ": FIT status was bad - see if the string is actually in the article." )
-
-                # try one-by-one.  Start with is_ok_to_update = True, then set
-                #    to False if anything goes wrong.
-                is_ok_to_update = True
-
-                # to start, make sure the text is in the article.
-                found_list = article_text.find_in_plain_text( quotation_exact )
-                found_list_count = len( found_list )
-                if ( found_list_count == 1 ):
-                
-                    # we know we have one match, so we can dig in and try to get
-                    #    all the things.
-                    
-                    #-----------------------------------------------------------
-                    # plain text index
-                    #-----------------------------------------------------------
-
-                    # store the plain text index from check above.
-                    plain_text_index = found_list[ 0 ]
-                    
-                    # see if it agrees with OpenCalais
-                    if ( quotation_offset != plain_text_index ):
-                    
-                        # not the same.  output debug.
-                        notes_string = "In " + me + ": ERROR - quotation index from OpenCalais ( " + str( quotation_offset ) + " ) doesn't match what we found ( " + str( plain_text_index ) + " ).  Using local match index instead."
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-                        
-                        # AND use what we calculated, not what OpenCalais returned.
-                        plain_text_index = plain_text_index
-    
-                    #-- END check to see if index from OpenCalais matches --#
-                        
-                    #-----------------------------------------------------------
-                    # canonical index
-                    #-----------------------------------------------------------
-
-                    # canonical text seems to be a troublesome one.  Start out
-                    #    looking for the full string.
-                    found_list = article_text.find_in_canonical_text( quotation_exact )
-                    found_list_count = len( found_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load value from list.
-                        canonical_index = found_list[ 0 ]
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - canonical index - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-                        
-                        # set canonical_index to -1.
-                        canonical_index = -1
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                    #-----------------------------------------------------------
-                    # word first and last numbers
-                    #-----------------------------------------------------------
-
-                    # Start out looking for the full string.
-                    found_dict = article_text.find_in_word_list( quotation_exact )
-                    
-                    self.output_debug( "In " + me + ": results of looking for string in word list: " + str( found_dict ) )
-                    
-                    first_word_list = found_dict.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
-                    last_word_list = found_dict.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
-                    found_list_count = len( first_word_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load values from lists.
-                        first_word_number = first_word_list[ 0 ]
-                        last_word_number = last_word_list[ 0 ]
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - word first and last numbers - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( first_word_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                    #-----------------------------------------------------------
-                    # paragraph number
-                    #-----------------------------------------------------------
-
-                    # Start out looking for the full string.
-                    found_list = article_text.find_in_paragraph_list( quotation_exact )
-                    found_list_count = len( found_list )
-                    if ( found_list_count == 1 ):
-                    
-                        # found it.  load value from list.
-                        paragraph_number = found_list[ 0 ]
-                        
-                    else:
-                    
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - paragraph number - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
-                        notes_list.append( notes_string )
-                        self.output_debug( notes_string )
-
-                        # OK to update...  Just broken.
-                        # is_ok_to_update = False
-                    
-                    #-- END check to see if found mention + suffix
-                    
-                #-- END check to see if quotation is in plain text string --#
-                                        
-            #-- END check to make sure all searches returned same count of matches. --#
-
-            # OK to update the stuff from FIT?
-            if ( is_ok_to_update == True ):
-
-                # Yes.  Update them.
-                current_quotation.value_index = plain_text_index
-                current_quotation.canonical_index = canonical_index
-                current_quotation.value_word_number_start = first_word_number
-                current_quotation.value_word_number_end = last_word_number
-                current_quotation.paragraph_number = paragraph_number
-            
-            #-- END check to see if OK to update with info from FIT. --#
-
-            # and store a few more details.
-            current_quotation.capture_method = self.coder_type
-            current_quotation.uuid = quotation_URI_IN
-            current_quotation.uuid_name = self.OPEN_CALAIS_UUID_NAME
-            
-            # notes?
-            if ( len( notes_list ) > 0 ):
-            
-                # yes - join with newline, add to notes.
-                notes_string = "\n".join( notes_list )
-                current_quotation.notes = notes_string
-                
-            #-- END check to see if notes. --#
-                        
-            # Deferring handling of attribution information for now.
-            # fields to track locations of data this coding was based on within
-            #    article.  References are based on results of ParsedArticle.parse().
-            #article_subject.attribution_verb_word_index = -1
-            #article_subject.attribution_verb_word_number = -1
-            #article_subject.attribution_paragraph_number = -1
-            #article_subject.attribution_speaker_name_string = -1
-            #article_subject.is_speaker_name_pronoun = False
-            #article_subject.attribution_speaker_name_index_range = ""
-            #article_subject.attribution_speaker_name_word_range = ""
-            
-            # save the quotation instance.
-            current_quotation.save()
-            
-            # and return it.
-            instance_OUT = current_quotation
-            
-        elif ( quotation_count == 1 ):
-        
-            # already got one.  Return it.
-            instance_OUT = quotation_qs.get()
-        
-        elif ( quotation_count > 1 ):
-        
-            # trouble more than one quotation for the UUID.
-            self.output_debug( "++++++++ In " + me + " - ERROR - more than one quotation matches URI \"" + quotation_URI_IN + "\".  Something is off..." )
-            instance_OUT = None
-
-        else:
-        
-            # trouble - count is invalid.
-            self.output_debug( "++++++++ In " + me + " - ERROR - count of matches to URI \"" + quotation_URI_IN + "\" is neither 0, 1, or greater than 1.  Something is off..." )
-            instance_OUT = None
-
-        #-- END check to see if quote already stored. --#
-        
-        return instance_OUT
-        
-    #-- END method process_json_quotation() --#
-
-    
-    def process_person_store_json( self, request_IN, article_IN, person_store_json_string_IN, article_data_id_IN, response_dictionary_IN ):
+    def process_person_store_json( self,
+                                   article_IN,
+                                   coder_user_IN,
+                                   person_store_json_string_IN,
+                                   article_data_id_IN,
+                                   request_IN,
+                                   response_dictionary_IN ):
     
         '''
         Accepts:
-        - request_IN
-        - article_IN
-        - person_store_json_string_IN
-        - article_data_id_IN
-        - response_dictionary_IN
-        
-        
+        - article_IN - article instance for which we have coding data.
+        - coder_user_IN - user instance for coder.
+        - person_store_json_string_IN - JSON string that contains coding for article we are processing.
+        - article_data_id_IN - ID of article data for this coder's coding on this article, if we are updating, not creating new.
+        - request_IN - if manual coding via web form, request instance of form submission.
+        - response_dictionary_IN - if manual coding via web form, response dictionary that will be used to render response sent back to user.        
         '''
     
         # return reference
         article_data_OUT = None
     
         # declare variables
-        me = "article_code_process_json"
+        me = "process_person_store_json"
         
         # declare variables - coding submission.
         coder_user = None
@@ -1146,14 +318,26 @@ class ManualArticleCoder( ArticleCoder ):
         current_article = None
         current_person = None
     
-        # got an article ID?
-        if ( ( article_id_IN is not None ) and ( article_id_IN != "" ) and ( article_id_IN > 0 ) ):
+        # got an article?
+        if ( article_IN is not None ):
         
-            # yes, we have an article ID.  Got a coder user?
-            coder_user = request_IN.user
+            # yes, we have an article.  Got a coder user?
+            coder_user = coder_user_IN
+            if ( coder_user is None ):
+
+                # got a request?
+                if ( request_IN is not None ):
+
+                    coder_user = request_IN.user
+
+                #-- END check to see if we have a request. --#
+
+            #-- END check to see if we have a coder user passed in. --#
+
+            # after all that, got a coder user?
             if ( coder_user is not None ):
             
-                # Got a JSON string?
+                # yes - Got a JSON string?
                 person_store_json_string = person_store_json_string_IN
                 if ( ( person_store_json_string is not None ) and ( person_store_json_string != "" ) ):
                 
@@ -1199,7 +383,7 @@ class ManualArticleCoder( ArticleCoder ):
                             current_article_data = Article_Data()
                             
                             # get article for ID, store in Article_Data.
-                            current_article = Article.objects.get( pk = article_id_IN )
+                            current_article = article_IN
                             current_article_data.article = current_article
                             current_article_data.coder = coder_user
                         
@@ -1215,30 +399,16 @@ class ManualArticleCoder( ArticleCoder ):
                             quote_text =  current_person.get( "quote_text" )
                             person_id =  current_person.get( "person_id" )
                             
-                            # got a person ID?
-                            if ( ( person_id is not None ) and ( person_id > 0 ) ):
+                            # check person type to see what type we are processing.
+                            if ( person_type == "" ):
                             
-                                # We have a person ID.  Lookup Person.
-                                current_person = Person.objects.get( pk = person_id )
+                                # Article_Author
+                                # Article_Subject
+                                pass
+
+                            #-- END --#
                             
-                            else:
                             
-                                # no person ID.  Create person based on name.
-                                
-                                
-                                # !TODO - need ManualCoder, extension of ArticleCoder.
-                                
-                            # check person type to see what we are adding.
-                            if ( person_type =  )
-                            
-                            # Article_Source
-                            
-                            # Article_Author
-                            
-                            # either way, if already a record for person ID, move on
-                            #    for now, we can always make an update routine
-                            #    later.
-                        
                         #-- END loop over persons --#
                         
                     #-- END check to see if there are any persons. --#

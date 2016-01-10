@@ -223,7 +223,7 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             'taggit',
         )
 
-- you can also add sourcenet and django_config using the new django Config classes, rather than the app name:
+- you can also add sourcenet and django_config using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
 
         INSTALLED_APPS = (
             'django.contrib.auth',
@@ -417,7 +417,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
         from django.contrib import admin
         admin.autodiscover()
         
-        urlpatterns = patterns('',
+        urlpatterns = [
 
             # Examples:
             # url(r'^$', 'research.views.home', name='home'),
@@ -426,7 +426,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
             url( r'^admin/', include( admin.site.urls ) ),
             url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
 
-        )
+        ]
 
 ### Static file support:
 
@@ -475,6 +475,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
                 'sourcenet',
+                'django_config',
                 'taggit',
                 'ajax_select',
             )
@@ -523,7 +524,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
             from django.contrib import admin
             admin.autodiscover()
             
-            urlpatterns = patterns('',
+            urlpatterns = [
 
                 # Examples:
                 # url(r'^$', 'research.views.home', name='home'),
@@ -538,7 +539,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 # Uncomment the next line to enable the admin:
                 url( r'^admin/', include( admin.site.urls ) ),
 
-            )
+            ]
             
 ## Enable sourcenet network data output pages
 
@@ -553,7 +554,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
     - Result:
 
-            urlpatterns = patterns('',
+            urlpatterns = [
 
                 # Examples:
                 # url(r'^$', 'research.views.home', name='home'),
@@ -571,7 +572,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 # sourcenet URLs:
                 url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
 
-            )
+            ]
             
 ### Test!
 
