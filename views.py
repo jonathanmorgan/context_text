@@ -620,6 +620,8 @@ def article_code( request_IN ):
     coder_user = None
     manual_article_coder = None
     result_article_data = None
+    article_data_instance = None
+    coding_status = ""    
     
     # declare variables - interacting with article text
     article_content = ""
@@ -647,6 +649,9 @@ def article_code( request_IN ):
     response_dictionary[ 'article_instance' ] = None
     response_dictionary[ 'article_text' ] = None
     response_dictionary[ 'base_hide_navigation' ] = True
+    response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
+    response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
+    response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
 
     # set my default rendering template
     default_template = 'articles/article-code.html'
@@ -677,7 +682,21 @@ def article_code( request_IN ):
 
     # store the article ID if passed in.
     article_id = request_data.get( "article_id", -1 )
-        
+
+    # retrieve QuerySet that contains that article.
+    article_qs = Article.objects.filter( pk = article_id )
+
+    # get count of articles
+    article_count = article_qs.count()
+
+    # should only be one.
+    if ( article_count == 1 ):
+    
+        # get article instance
+        article_instance = article_qs.get()
+
+    #-- END check if single article. --#
+
     # form ready?
     if ( is_form_ready == True ):
     
@@ -695,9 +714,33 @@ def article_code( request_IN ):
             manual_article_coder = ManualArticleCoder()
             
             # need to get call set up for new parameters.
-            #manual_article_coder.process_person_store_json( request_IN, article_id, person_store_json_string, article_data_id, response_dictionary )
-            
+            article_data_instance = manual_article_coder.process_person_store_json( article_instance,
+                                                                                    current_user,
+                                                                                    person_store_json_string,
+                                                                                    article_data_id,
+                                                                                    request_IN,
+                                                                                    response_dictionary )
+
+            # got anything back?
+            coding_status = ""
+            if ( article_data_instance is not None ):
+
+                # get status from article data instance
+                coding_status = article_data_instance.status_messages
+
+            #-- END check to see if we have an Article_Data instance --#
+
             # short circuit article lookup (use empty copy of form) if success.
+            if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
+
+                # !TODO - success - short circuit article lookup - use empty
+                #    copy of form - after successful posting of data, place
+                #    empty ArticleLookupForm() in article_lookup_form so you
+                #    don't reload the same article automatically (want to keep
+                #    people from coding twice).
+                article_lookup_form = ArticleLookupForm()
+
+            #-- END check of coding status --#
             
         #-- END check to see if coding form is valid. --#
 

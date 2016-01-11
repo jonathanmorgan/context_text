@@ -2825,6 +2825,9 @@ class ArticleCoder( BasicRateLimited ):
                             # call method to process alternate matches.
                             my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Subject found for person, calling process_alternate_matches." )
                             article_subject.process_alternate_matches()
+
+                            # save?
+                            # article_subject.save()
                             
                         #-- END check to see if there were alternate matches --#
                         

@@ -88,7 +88,12 @@ class ManualArticleCoder( ArticleCoder ):
     
     # config application
     CONFIG_APPLICATION = "Manual_Coding"
-    
+
+    # person types
+    PERSON_TYPE_SUBJECT = "subject"
+    PERSON_TYPE_SOURCE = "source"
+    PERSON_TYPE_AUTHOR = "author"
+
     # kwarg parameter names
     KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN"
     KWARG_ARTICLE_DATA_ID = "article_data_id_IN"
@@ -317,6 +322,15 @@ class ManualArticleCoder( ArticleCoder ):
         current_article_data = None
         current_article = None
         current_person = None
+        person_type = ""
+        person_name = ""
+        name_and_title = ""
+        quote_text = ""
+        person_id = ""
+        current_article_subject = None
+        current_article_author = None
+        current_article_person = None
+        current_person_status = ""
     
         # got an article?
         if ( article_IN is not None ):
@@ -353,7 +367,7 @@ class ManualArticleCoder( ArticleCoder ):
                     # got one or more people?
                     if ( person_count > 0 ):
                     
-                        # yes.  Got an Article_Data ID?
+                        # yes - Got an Article_Data ID?
                         if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
                         
                             # we have an Article_Data ID.  look up.
@@ -389,26 +403,86 @@ class ManualArticleCoder( ArticleCoder ):
                         
                         #-- END check to see if Article_Data instance. --#
                     
+                        # !TODO - loop over persons
                         # loop over persons
                         for current_person in person_array:
                         
                             # retrieve person information.
                             person_type = current_person.get( "person_type" )
-                            person_name =  current_person.get( "person_name" )
-                            name_and_title =  current_person.get( "name_and_title" )
-                            quote_text =  current_person.get( "quote_text" )
-                            person_id =  current_person.get( "person_id" )
+                            person_name = current_person.get( "person_name" )
+                            name_and_title = current_person.get( "name_and_title" )
+                            quote_text = current_person.get( "quote_text" )
+                            person_id = current_person.get( "person_id" )
+
+                            # set up person details
+                            person_details = {}
+                            person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
                             
                             # check person type to see what type we are processing.
-                            if ( person_type == "" ):
+                            if ( ( person_type == self.PERSON_TYPE_SUBJECT )
+                                 or ( person_type == self.PERSON_TYPE_SOURCE ) ):
+
+                                # Article_Subject
+                                person_details = {}
+                                person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
+                                current_article_subject = self.process_subject_name( current_article_data,
+                                                                                     person_name,
+                                                                                     person_details_IN = person_details,
+                                                                                     subject_person_id_IN = person_id )
+
+                                # check to see if source
+                                if ( person_type == self.PERSON_TYPE_SOURCE ):
+
+                                    # set subject_type.
+                                    current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
+
+                                    # see if there is quote text.
+                                    if ( ( quote_text is not None ) and ( quote_text != "" ) ):
+
+                                        # !TODO - add quote to Article_Subject.
+                                        pass
+
+                                    #-- END check to see if quote text --#
+
+                                    # save source updates
+                                    current_article_subject.save()
+
+                                #-- END check to see if source --#
+
+                                # store Article_Subject instance in Article_Person reference.
+                                current_article_person = current_article_subject
+
+                            elif ( person_type == self.PERSON_TYPE_AUTHOR ):
                             
                                 # Article_Author
-                                # Article_Subject
-                                pass
+                                current_article_author = self.process_author_name( current_article_data,
+                                                                                   person_name,
+                                                                                   name_and_title,
+                                                                                   author_organization_IN = name_and_title,
+                                                                                   author_person_id_IN = person_id,
+                                                                                   person_details_IN = person_details )
+                
+                                # store Article_Author instance in Article_Person reference.
+                                current_article_person = current_article_author
 
-                            #-- END --#
+                            #-- END check to see person type --#
                             
-                            
+                            # check status
+                            current_person_status = current_article_person.match_status
+
+                            # got a status?
+                            if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
+
+                                # success?
+                                if ( current_person_status != self.STATUS_SUCCESS ):
+
+                                    # error.  What to do?
+                                    pass
+
+                                #-- END check of person status --#
+
+                            #-- END check if current person has status --#
+
                         #-- END loop over persons --#
                         
                     #-- END check to see if there are any persons. --#

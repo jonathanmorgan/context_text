@@ -92,9 +92,9 @@
                 <p class="inputContainer" id="select-person-type">
                     &nbsp;&nbsp;Person Type: <select name="person-type" id="person-type" onchange="SOURCENET.process_selected_person_type()">
                         <option value="" selected="selected" disabled="disabled">Choose Person Type</option>
-                        <option value="source">Source (quoted)</option>
-                        <option value="subject">Subject (not quoted)</option>
-                        <option value="author">Author</option>
+                        <option value="{{ person_type_source }}">Source (quoted)</option>
+                        <option value="{{ person_type_subject }}">Subject (not quoted)</option>
+                        <option value="{{ person_type_author }}">Author</option>
                     </select>
                 </p>
                 <p class="inputContainer" id="input-person-name">
