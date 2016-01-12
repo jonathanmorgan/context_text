@@ -401,11 +401,14 @@ class ManualArticleCoder( ArticleCoder ):
                             current_article_data.article = current_article
                             current_article_data.coder = coder_user
                         
+                            # Save off Aricle_Data instance - current_article_data.save()
+                            current_article_data.save()
+
                         #-- END check to see if Article_Data instance. --#
                     
                         # !TODO - loop over persons
                         # loop over persons
-                        for current_person in person_array:
+                        for current_person in person_list:
                         
                             # retrieve person information.
                             person_type = current_person.get( "person_type" )
@@ -457,7 +460,6 @@ class ManualArticleCoder( ArticleCoder ):
                                 # Article_Author
                                 current_article_author = self.process_author_name( current_article_data,
                                                                                    person_name,
-                                                                                   name_and_title,
                                                                                    author_organization_IN = name_and_title,
                                                                                    author_person_id_IN = person_id,
                                                                                    person_details_IN = person_details )
