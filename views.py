@@ -831,7 +831,10 @@ def article_code( request_IN ):
                         #    empty ArticleLookupForm() in article_lookup_form so you
                         #    don't reload the same article automatically (want to keep
                         #    people from coding twice).
-                        article_lookup_form = ArticleLookupForm()
+                        #article_lookup_form = ArticleLookupForm()
+
+                        # also empty out article_data_instance, so no JSON output.
+                        #article_data_instance = None
 
                         # Add status message that just says that Coding was saved.
                         page_status_message_list.append( "Article data successfully saved!" )
