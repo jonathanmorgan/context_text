@@ -8,23 +8,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.selection/1.0.1/jquery.selection.min.js"></script>
 <link rel="stylesheet" type="text/css" href="{% static "sourcenet/css/article-coding/article-coding.css" %}" />
 <script src="{% static "sourcenet/js/article-coding/article-coding.js" %}"></script>
-{% if person_store_json %}<script>SOURCENET.person_store_json = "{{person_store_json}}";</script>{% endif %}
+{% if existing_person_store_json %}<script>SOURCENET.person_store_json = "{{ existing_person_store_json }}";</script>{% endif %}
 {% endblock %}
 
 {% block content %}
 
 <div class="contentBox">
     <article class="contentLeft">
-        <h1>Code article</h1>
         
-        {# got an output_string? #}
-        {% if output_string %}
-        
-            <div id="article_message" name="article_message" style="background-color: yellow; border: 1px solid black;">
-                <p>{{ output_string }}</p>
+        {# got page status message(s)? #}
+        {% if page_status_message_list %}
+            <div id="page-status-message-area" class="pageStatusMessageArea">
+                <h4>Status Messages</h4>
+                <ul>
+                {% for page_status_message in page_status_message_list %}
+                    <li>{{ page_status_message }}</li>
+                {% endfor %}
+                </ul>
             </div>
-        
+            <hr />
         {% endif %}
+
+        <h1>Code article</h1>
         
         <div id="article_form" name="article_form">
             
@@ -81,7 +86,8 @@
     <aside class="sidebarBox">
         <div class="scrollingBox">
             <h2>Record Article People</h2>
-            <form name="person-coding" id="person-coding">
+            <!-- <form name="person-coding" id="person-coding"> -->
+            <div name="person-coding" id="person-coding">
                 <input type="hidden" name="matched-person-id" id="matched-person-id" />
 <!--
                 <input type="button" id="select-text" value="Get selected text" />:
@@ -101,7 +107,7 @@
                     <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="person-name" name="person-name" readonly="readonly"></textarea>
                 </p>
                 <p class="inputContainer" id="textarea-name-and-title">
-                    <input type="button" id="store-name-and-title" name="store-name-and-title" value="Name + Title ==>" />:
+                    <input type="button" id="store-name-and-title" name="store-name-and-title" value="Title ==>" />:
                     <br />
                     <textarea id="person-name-and-title" name="person-name-and-title" rows="4" cols="35"></textarea>
                 </p>
@@ -116,7 +122,8 @@
                     <br />
                     <input type="button" id="process-person" name="process-person" value="Process Person" onclick="SOURCENET.process_person_coding()" />
                 </p>
-            </form>
+            </div>
+            <!-- </form> -->
             <hr />
             <div id="status-message-area" class="statusMessageArea">
                 <h4>Status Messages</h4>

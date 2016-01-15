@@ -297,7 +297,37 @@ class ManualArticleCoder( ArticleCoder ):
         - person_store_json_string_IN - JSON string that contains coding for article we are processing.
         - article_data_id_IN - ID of article data for this coder's coding on this article, if we are updating, not creating new.
         - request_IN - if manual coding via web form, request instance of form submission.
-        - response_dictionary_IN - if manual coding via web form, response dictionary that will be used to render response sent back to user.        
+        - response_dictionary_IN - if manual coding via web form, response dictionary that will be used to render response sent back to user.
+
+        Purpose:
+           This method accepts the above parameters.  It checks to make sure
+           that there is an article, a coder user, and JSON.  It tries to find
+           an existing Article_Data record for the current article and coder.
+           If it finds 1, it updates it.  If it finds 0, it creates one.  If it
+           finds more than 1, it returns an error message.  For each person,
+           this method checks the type of person (author or subject/source).
+           Regardless, it checks to see if there is a person ID.  If yes, it
+           creates an Article_Person child appropriate to the person type
+           (Article_Subject for subjects and sources, Article_Author for
+           authors) and populates the instance from information in the person's
+           JSON.  If source, looks up quotation in article and stores quote
+           along with detailed information on where the quotation is located.
+           Returns the Article_Data for the article with all coding saved and
+           referenced from witin.
+
+        Preconditions:
+           Must already have looked up and loaded the article and coder user
+           into instance variables.  Should have person store JSON to process,
+           as well.
+
+        Postconditions:
+           Returns Article_Data instance.  If successful, it will be a
+           fully-populated Article_Data instance that contains references to
+           the people stored in the JSON passed in.  If error, will be an empty
+           Article_Data instance with no primary key, and error messages will
+           be stored in the 'status_messages' field, with multiple messages
+           separated by semi-colons.
+
         '''
     
         # return reference
@@ -307,6 +337,9 @@ class ManualArticleCoder( ArticleCoder ):
         me = "process_person_store_json"
         
         # declare variables - coding submission.
+        is_ok_to_process = True
+        status_message = ""
+        status_message_list = None
         coder_user = None
         person_store_json_string = ""
         person_store_json = None
@@ -319,6 +352,8 @@ class ManualArticleCoder( ArticleCoder ):
         name_and_title = ""
         quote_text = ""
         person_id = -1
+        article_data_qs = None
+        article_data_count = -1
         current_article_data = None
         current_article = None
         current_person = None
@@ -331,6 +366,11 @@ class ManualArticleCoder( ArticleCoder ):
         current_article_author = None
         current_article_person = None
         current_person_status = ""
+
+        # start with is_ok_to_process = True and an empty status_message_list
+        is_ok_to_process = True
+        status_message = ""
+        status_message_list = []
     
         # got an article?
         if ( article_IN is not None ):
@@ -357,39 +397,83 @@ class ManualArticleCoder( ArticleCoder ):
                 
                     # got a JSON string, convert to Python objects.
                     person_store_json = json.loads( person_store_json_string )
-                    
-                    # get list of people.
-                    person_list = person_store_json[ "person_array" ]
-                    
-                    # get count of persons
-                    person_count = len( person_list )
-                    
-                    # got one or more people?
-                    if ( person_count > 0 ):
-                    
-                        # yes - Got an Article_Data ID?
-                        if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
-                        
-                            # we have an Article_Data ID.  look up.
-                            try:
-        
-                                # use exception handling to see if record already exists.
-                                
-                                # filter on ID
-                                current_article_data = Article_Data.objects.filter( pk = article_data_id_IN )
-                                
-                                # then use get() to make sure this ID belongs to the current user.
-                                current_article_data = current_article_data.get( coder = coder_user )
-                        
-                            except Exception as e:
+
+                    # see if there is an existing Article_Data instance for this
+                    #    user and article.
+                    article_data_qs = Article_Data.objects.filter( coder = coder_user )
+                    article_data_qs = article_data_qs.filter( article = article_IN )
+
+                    # How many matches?
+                    try:
+
+                        # use .get() to retrieve single instance from QuerySet.
+                        current_article_data = article_data_qs.get()
+
+                    except Exception as e:
+
+                        # hmmm.  Either no matches, or more than one.
+                        article_data_count = article_data_qs.count()
+                        if ( article_data_count > 1 ):
+
+                            # more than one.  See if we have an ID.
+                            if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
                             
-                                # not found.  Set current_article_data tp None.
+                                # we have an Article_Data ID.  look up.
+                                try:
+            
+                                    # use exception handling to see if record already exists.
+                                    
+                                    # filter on ID
+                                    article_data_qs = Article_Data.objects.filter( pk = article_data_id_IN )
+                                    
+                                    # then use get() to make sure this ID belongs to the current user.
+                                    current_article_data = article_data_qs.get( coder = coder_user )
+                            
+                                except Exception as e:
+                                
+                                    # not found.  Set current_article_data to None...
+                                    current_article_data = None
+
+                                    # ...tell logic it isn't OK to process...
+                                    is_ok_to_process = False
+
+                                    # ...create error message...
+                                    status_message = "Article_Data record for ID passed in ( " + str( article_data_id_IN ) + " ) either does not exist or does not belong to the current user: " + str( coder_user )
+                                    status_message_list.append( status_message )
+
+                                    # ...and log it.
+                                    self.output_debug( status_message, me, indent_with_IN = "====>" )
+                            
+                                #-- END check to see if we can find existing article data. --#
+                                
+                            else:
+
+                                # Too many Article_Data instances for user, and
+                                #    no way to choose among them.
+
+                                # not OK to process.
+                                is_ok_to_process = False
+
+                                # log and store status message.
+                                status_message = "Found " + str( article_data_qs.count() ) + " Article_Data records for user ( " + str( coder_user ) + " ) and article ( " + str( article_IN ) + " )"
+                                status_message_list.append( status_message )
+                                self.output_debug( status_message, me, "====> " )
                                 current_article_data = None
-                        
-                            #-- END check to see if we can find existing article data. --#
-                            
-                        #-- END check to see if article data already exists. --#
-                        
+
+                            #-- END check to see if article data already exists. --#
+
+                        else:
+
+                            # No Article_Data found.  OK to process, set variable to None.
+                            current_article_data = None
+
+                        #-- END check to see if 0 or > 1 Article_Data found for current user. --#
+
+                    #-- END try...except around initial attempt to pull in Article_Data for current user. --#
+
+                    # is it OK to process?
+                    if ( is_ok_to_process == True ):
+
                         # got article data?
                         if ( current_article_data is None ):
                         
@@ -405,97 +489,116 @@ class ManualArticleCoder( ArticleCoder ):
                             current_article_data.save()
 
                         #-- END check to see if Article_Data instance. --#
-                    
-                        # !TODO - loop over persons
-                        # loop over persons
-                        for current_person in person_list:
+
+                        # store current_article_data in article_data_OUT.
+                        article_data_OUT = current_article_data
+
+                        # get list of people.
+                        person_list = person_store_json[ "person_array" ]
                         
-                            # retrieve person information.
-                            person_type = current_person.get( "person_type" )
-                            person_name = current_person.get( "person_name" )
-                            name_and_title = current_person.get( "name_and_title" )
-                            quote_text = current_person.get( "quote_text" )
-                            person_id = current_person.get( "person_id" )
-
-                            # set up person details
-                            person_details = {}
-                            person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
+                        # get count of persons
+                        person_count = len( person_list )
+                        
+                        # got one or more people?
+                        if ( person_count > 0 ):
+                                                
+                            # !TODO - loop over persons
+                            # loop over persons
+                            for current_person in person_list:
                             
-                            # check person type to see what type we are processing.
-                            if ( ( person_type == self.PERSON_TYPE_SUBJECT )
-                                 or ( person_type == self.PERSON_TYPE_SOURCE ) ):
+                                # retrieve person information.
+                                person_type = current_person.get( "person_type" )
+                                person_name = current_person.get( "person_name" )
+                                name_and_title = current_person.get( "name_and_title" )
+                                quote_text = current_person.get( "quote_text" )
+                                person_id = current_person.get( "person_id" )
 
-                                # Article_Subject
+                                # set up person details
                                 person_details = {}
                                 person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
-                                current_article_subject = self.process_subject_name( current_article_data,
-                                                                                     person_name,
-                                                                                     person_details_IN = person_details,
-                                                                                     subject_person_id_IN = person_id )
+                                
+                                # check person type to see what type we are processing.
+                                if ( ( person_type == self.PERSON_TYPE_SUBJECT )
+                                     or ( person_type == self.PERSON_TYPE_SOURCE ) ):
 
-                                # check to see if source
-                                if ( person_type == self.PERSON_TYPE_SOURCE ):
+                                    # Article_Subject
+                                    person_details = {}
+                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
+                                    current_article_subject = self.process_subject_name( current_article_data,
+                                                                                         person_name,
+                                                                                         person_details_IN = person_details,
+                                                                                         subject_person_id_IN = person_id )
 
-                                    # set subject_type.
-                                    current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
+                                    # check to see if source
+                                    if ( person_type == self.PERSON_TYPE_SOURCE ):
 
-                                    # see if there is quote text.
-                                    if ( ( quote_text is not None ) and ( quote_text != "" ) ):
+                                        # set subject_type.
+                                        current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
 
-                                        # !TODO - add quote to Article_Subject.
-                                        pass
+                                        # see if there is quote text.
+                                        if ( ( quote_text is not None ) and ( quote_text != "" ) ):
 
-                                    #-- END check to see if quote text --#
+                                            # !TODO - add quote to Article_Subject.
+                                            pass
 
-                                    # save source updates
-                                    current_article_subject.save()
+                                        #-- END check to see if quote text --#
 
-                                #-- END check to see if source --#
+                                        # save source updates
+                                        current_article_subject.save()
 
-                                # store Article_Subject instance in Article_Person reference.
-                                current_article_person = current_article_subject
+                                    #-- END check to see if source --#
 
-                            elif ( person_type == self.PERSON_TYPE_AUTHOR ):
-                            
-                                # Article_Author
-                                current_article_author = self.process_author_name( current_article_data,
-                                                                                   person_name,
-                                                                                   author_organization_IN = name_and_title,
-                                                                                   author_person_id_IN = person_id,
-                                                                                   person_details_IN = person_details )
-                
-                                # store Article_Author instance in Article_Person reference.
-                                current_article_person = current_article_author
+                                    # store Article_Subject instance in Article_Person reference.
+                                    current_article_person = current_article_subject
 
-                            #-- END check to see person type --#
-                            
-                            # check status
-                            current_person_status = current_article_person.match_status
-
-                            # got a status?
-                            if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
-
-                                # success?
-                                if ( current_person_status != self.STATUS_SUCCESS ):
-
-                                    # error.  What to do?
-                                    pass
-
-                                #-- END check of person status --#
-
-                            #-- END check if current person has status --#
-
-                        #-- END loop over persons --#
-                        
-                    #-- END check to see if there are any persons. --#
+                                elif ( person_type == self.PERSON_TYPE_AUTHOR ):
+                                
+                                    # Article_Author
+                                    current_article_author = self.process_author_name( current_article_data,
+                                                                                       person_name,
+                                                                                       author_organization_IN = name_and_title,
+                                                                                       author_person_id_IN = person_id,
+                                                                                       person_details_IN = person_details )
                     
-                    # store JSON string in response dictionary
-                    response_dictionary_IN[ 'person_store_json' ] = person_store_json_string    
+                                    # store Article_Author instance in Article_Person reference.
+                                    current_article_person = current_article_author
+
+                                #-- END check to see person type --#
+                                
+                                # check status
+                                current_person_status = current_article_person.match_status
+
+                                # got a status?
+                                if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
+
+                                    # success?
+                                    if ( current_person_status != self.STATUS_SUCCESS ):
+
+                                        # error.  Add message to status list.
+                                        status_message_list.append( current_person_status )
+
+                                    #-- END check of person status --#
+
+                                #-- END check if current person has status --#
+
+                            #-- END loop over persons --#
+                            
+                        #-- END check to see if there are any persons. --#
+                        
+                    else:
+
+                        # Not OK to process.  Assume messages that explain why
+                        #    have been placed in status_message_list.
+                        pass
+
+                    #-- END check to see if is_ok_to_process == True --#
     
                 else:
                 
-                    # no JSON - can't process.
-                    self.output_debug( "ERROR - No JSON passed in - must have data in JSON to process that data...", me, "====> " )
+                    # no JSON - can't process.  Add message to list, log it.
+                    status_message = "ERROR - No JSON passed in - must have data in JSON to process that data."
+                    status_message_list.append( status_message )
+                    self.output_debug( status_message, me, "====> " )
                     article_data_OUT = None
                 
                 #-- END check to see if JSON string passed in.
@@ -503,18 +606,48 @@ class ManualArticleCoder( ArticleCoder ):
             else:
             
                 # no coder user?  That is an odd error.
-                self.output_debug( "ERROR - No coder user passed in - must have a coder user...", me, "====> " )
+                status_message = "ERROR - No coder user passed in - must have a coder user."
+                status_message_list.append( status_message )
+                self.output_debug( status_message, me, "====> " )
                 article_data_OUT = None
                 
             #-- END check to see if coder passed in. --#
             
         else:
         
-            # no article ID - can't process.
-            self.output_debug( "ERROR - No article ID passed in - must have an article ID to code an article...", me, "====> " )
+            # no article - can't process.
+            status_message = "ERROR - No article passed in - must have an article to code an article."
+            status_message_list.append( status_message )
+            self.output_debug( status_message, me, "====> " )
             article_data_OUT = None
         
         #-- END check to see if article ID passed in.
+
+        # got an Article_Data instance (no likely means error)?
+        if ( article_data_OUT is None ):
+
+            # OK... create one.
+            article_data_OUT = Article_Data()
+
+        #-- END check to see if Article_Data instance. --#
+
+        # got status messages?
+        if ( ( status_message_list is not None ) and ( len( status_message_list ) > 0 ) ):
+
+            # we do.  Convert to semi-colon-delimited list, place in
+            #    Article_Data.status_messages
+            # create new empty Article_Data
+            status_message = ";".join( status_message_list )
+
+            # Overwrite existing status_messages.
+            article_data_OUT.status_messages = status_message
+
+        else:
+
+            # no status messages, so status is success!
+            article_data_OUT.status_messages = self.STATUS_SUCCESS
+
+        #-- END check to see if status messages. --#
     
         return article_data_OUT
     

@@ -29,6 +29,37 @@ body
 	text-align: justify;
 }
 
+.pageStatusMessageArea
+{
+	width: 620px; /* smaller than sidebar */
+	border: 1px solid green;
+	background-color: #c4e897;
+	padding: 5px;
+	margin: 5px;
+	font-style: italic;
+	/* font-size: 100%; */
+	font-family: monospace;
+	display: block;
+}
+
+.pageStatusMessageArea h4
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+.pageStatusMessageArea ul
+{
+    padding: 0px;
+    margin: 0px 10px 0px;
+}
+
+.pageStatusMessageArea li
+{
+    padding: 0px;
+    margin: 0px;
+}
+
 .sidebarBox
 {
 	width: 300px; /* Replace with your sidebar width */

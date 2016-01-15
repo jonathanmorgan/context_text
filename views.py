@@ -36,7 +36,7 @@ from django.contrib.auth.decorators import login_required
 # django core imports
 
 # import django code for csrf security stuff.
-from django.core.context_processors import csrf
+from django.template.context_processors import csrf
 
 #from django.core.urlresolvers import reverse
 
@@ -603,6 +603,8 @@ def article_code( request_IN ):
 
     # declare variables
     me = "article_code"
+    logger_name = ""
+    debug_message = ""
     my_context_instance = None
     response_dictionary = {}
     default_template = ''
@@ -618,10 +620,17 @@ def article_code( request_IN ):
     # declare variables - coding submission.
     person_store_json_string = ""
     coder_user = None
+    article_data_qs = None
+    article_data_count = -1
+    article_data_instance = None
+    article_data_id = -1
+    article_data_id_list = []
+    is_ok_to_process_coding = True
     manual_article_coder = None
     result_article_data = None
-    article_data_instance = None
     coding_status = ""    
+    page_status_message = ""
+    page_status_message_list = []
     
     # declare variables - interacting with article text
     article_content = ""
@@ -633,12 +642,15 @@ def article_code( request_IN ):
     paragraph_number = -1
     p_tag_bs = None
     p_tag_html = ""
-    
+
     # declare variables - article coding
     person_lookup_form = None
     
     # declare variables - submit coding back to server
     coding_submit_form = None
+
+    # set logger_name
+    logger_name = "sourcenet.views." + me
 
     # configure context instance
     my_context_instance = RequestContext( request_IN )
@@ -652,6 +664,8 @@ def article_code( request_IN ):
     response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
     response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
     response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
+    response_dictionary[ 'existing_person_store_json' ] = ""
+    response_dictionary[ 'page_status_message_list' ] = page_status_message_list
 
     # set my default rendering template
     default_template = 'articles/article-code.html'
@@ -703,44 +717,138 @@ def article_code( request_IN ):
         # !TODO - process coding submission
         if ( coding_submit_form.is_valid() == True ):
 
+            # start with it being OK to process coding.
+            is_ok_to_process_coding = True
+
             # it is valid - retrieve person_store_json and article_data_id
             person_store_json_string = request_data.get( "person_store_json", "" )
-            article_data_id = request_data.get( "article_data_id", -1 )
+
+            # got any JSON?
+            person_store_json_string = person_store_json_string.strip()
+            if ( ( person_store_json_string is None ) or ( person_store_json_string == "" ) ):
+
+                # no JSON - no need to process coding.
+                is_ok_to_process_coding = False
+
+            #-- END check to see if we have any JSON --#
+            
+            # for now, not accepting an Article_Data ID from page, looking for
+            #    Article_Data that matches current user and current article
+            #    instead.
+            #article_data_id = request_data.get( "article_data_id", -1 )
             
             # get current user.
             current_user = request_IN.user
+
+            # see if existing Article_Data for user and article
+            article_data_qs = Article_Data.objects.filter( coder = coder_user )
+            article_data_qs = article_data_qs.filter( article = article_instance )
             
-            # process JSON with instance of ManualArticleCoder
-            manual_article_coder = ManualArticleCoder()
+            # how many matches?
+            article_data_count = article_data_qs.count()
+            if ( article_data_count == 1 ):
+
+                # found one.  Get ID so we can update it.
+                article_data_instance = article_data_qs.get()
+                article_data_id = article_data_instance.id
+
+            else:
+
+                # either 0 or > 1.  See if > 1.
+                if ( article_data_count > 1 ):
+
+                    # error - don't want to allow multiple for now.
+                    is_ok_to_process_coding = False
+
+                    # output log message, output status message on screen,
+                    #    reload coding into page from JSON.
+                    page_status_message = "Multiple Article_Data instances found (IDs: "
+
+                    # loop to make list of IDs
+                    for article_data_instance in article_data_qs:
+
+                        # add ID to status message
+                        article_data_id_list.append( str( article_data_instance.id ) )
+
+                    #-- END loop over Article_Data instances --#
+                    
+                    # add Article_Data ids to message
+                    page_status_message += ", ".join( article_data_id_list )
+
+                    # and finish message
+                    page_status_message += ") for user " + str( current_user ) + " and article " + str( article_instance ) + ".  There should be only one.  Did not store coding."
+
+                    # log the message.
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                    # place in status message variable.
+                    page_status_message_list.append( page_status_message )
+
+                else:
+
+                    # not greater than 1, so 0 or negative (!).  OK to process.
+                    #is_ok_to_process_coding = True
+                    pass
+
+                #-- END check to see if greater than 1. --#
+
+            #-- END dealing with either 0 or > 1 Article_Data --#
             
-            # need to get call set up for new parameters.
-            article_data_instance = manual_article_coder.process_person_store_json( article_instance,
-                                                                                    current_user,
-                                                                                    person_store_json_string,
-                                                                                    article_data_id,
-                                                                                    request_IN,
-                                                                                    response_dictionary )
+            # OK to process coding?
+            if ( is_ok_to_process_coding == True ):
 
-            # got anything back?
-            coding_status = ""
-            if ( article_data_instance is not None ):
+                # process JSON with instance of ManualArticleCoder
+                manual_article_coder = ManualArticleCoder()
+                
+                # need to get call set up for new parameters.
+                article_data_instance = manual_article_coder.process_person_store_json( article_instance,
+                                                                                        current_user,
+                                                                                        person_store_json_string,
+                                                                                        article_data_id,
+                                                                                        request_IN,
+                                                                                        response_dictionary )
 
-                # get status from article data instance
-                coding_status = article_data_instance.status_messages
+                # got anything back?
+                coding_status = ""
+                if ( article_data_instance is not None ):
 
-            #-- END check to see if we have an Article_Data instance --#
+                    # get status from article data instance
+                    coding_status = article_data_instance.status_messages
 
-            # short circuit article lookup (use empty copy of form) if success.
-            if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
+                #-- END check to see if we have an Article_Data instance --#
 
-                # !TODO - success - short circuit article lookup - use empty
-                #    copy of form - after successful posting of data, place
-                #    empty ArticleLookupForm() in article_lookup_form so you
-                #    don't reload the same article automatically (want to keep
-                #    people from coding twice).
-                article_lookup_form = ArticleLookupForm()
+                # got a status?
+                if ( ( coding_status is not None ) and ( coding_status != "" ) ):
 
-            #-- END check of coding status --#
+                    # short circuit article lookup (use empty copy of form) if success.
+                    if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
+
+                        # !TODO - success - short circuit article lookup - use empty
+                        #    copy of form - after successful posting of data, place
+                        #    empty ArticleLookupForm() in article_lookup_form so you
+                        #    don't reload the same article automatically (want to keep
+                        #    people from coding twice).
+                        article_lookup_form = ArticleLookupForm()
+
+                        # Add status message that just says that Coding was saved.
+                        page_status_message_list.append( "Article data successfully saved!" )
+
+                    elif ( coding_status != "" ):
+
+                        # got an error status.  Log and output it.
+                        page_status_message = "There was an error processing your coding: " + coding_status
+
+                        # log it...
+                        output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                        # ...and output it.
+                        page_status_message_list.append( page_status_message )
+
+                    #-- END check to see what status message is --#
+
+                #-- END check to see if status message returned at all --#
+
+            #-- END check to see if OK to process coding. --#
             
         #-- END check to see if coding form is valid. --#
 
@@ -809,7 +917,8 @@ def article_code( request_IN ):
                             # render row
                             p_tag_html = p_tag_bs.prettify()
                             #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
-                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
+                            debug_message = "p_tag_html type = " + str( type( p_tag_html ) )
+                            output_debug( debug_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
                             # calling str() on any part of a string being
                             #    concatenated causes all parts of the string to
@@ -840,11 +949,52 @@ def article_code( request_IN ):
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
                     
+                elif ( article_count > 1 ):
+
+                    # error - multiple articles found for ID. --#
+
+                    # create error message.
+                    page_status_message = "ERROR - lookup for article ID " + str( article_id ) + " returned " + str( article_count ) + " records.  Oh my..."
+                    
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # and pass on the form.
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+                elif ( article_count == 0 ):
+
+                    # error - multiple articles found for ID. --#
+
+                    # create error message.
+                    page_status_message = "No article found for article ID " + str( article_id ) + "."
+
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # and pass on the form.
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
                 else:
                 
-                    # error - none or multiple articles found for ID. --#
-                    print( "No article returned for ID passed in." )
-                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
+                    # unknown error. --#
+
+                    # create error message.
+                    page_status_message = "Unknown error encountered looking up article ID " + str( article_id ) + "."
+
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # and pass on the form.
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     
                 #-- END check to see if there is one or other than one. --#
@@ -852,9 +1002,19 @@ def article_code( request_IN ):
             else:
             
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
-                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
-                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
+
+                    # create error message.
+                    page_status_message = "ERROR - no QuerySet returned from call to filter().  This is odd."
+
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # and pass on the form.
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
             #-- END check to see if query set is None --#
 
         else:
