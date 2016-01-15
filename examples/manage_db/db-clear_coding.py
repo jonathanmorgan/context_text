@@ -51,7 +51,7 @@ if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_cod
 
 #article_tag_in_list = [ 'prelim_network', 'prelim_reliability' ]
 #article_tag_in_list = []
-article_tag_in_list = [ 'prelim_reliability' ]
+#article_tag_in_list = [ 'prelim_reliability' ]
 if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) ):
 
     # filter on tags
@@ -77,7 +77,7 @@ if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
 # how many?
 article_data_count = article_data_qs.count()
 
-print( "Found " + str( article_data_count ) + " Article_Data for automated coder." )
+print( "Found " + str( article_data_count ) + " Article_Data for coder " + str( selected_user ) + "." )
 
 # tell me more...
 for article_data in article_data_qs:
