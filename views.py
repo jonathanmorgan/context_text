@@ -628,7 +628,9 @@ def article_code( request_IN ):
     is_ok_to_process_coding = True
     manual_article_coder = None
     result_article_data = None
-    coding_status = ""    
+    coding_status = ""
+    new_person_store_json = None
+    new_person_store_json_string = ""
     page_status_message = ""
     page_status_message_list = []
     
@@ -669,6 +671,10 @@ def article_code( request_IN ):
 
     # set my default rendering template
     default_template = 'articles/article-code.html'
+
+    # init coding status variables
+    # start with it being OK to process coding.
+    is_ok_to_process_coding = True
     
     # do we have input parameters?
     if ( request_IN.method == 'POST' ):
@@ -711,14 +717,73 @@ def article_code( request_IN ):
 
     #-- END check if single article. --#
 
+    # get current user.
+    current_user = request_IN.user
+
+    # for now, not accepting an Article_Data ID from page, looking for
+    #    Article_Data that matches current user and current article
+    #    instead.
+    #article_data_id = request_data.get( "article_data_id", -1 )
+    
+    # see if existing Article_Data for user and article
+    article_data_qs = Article_Data.objects.filter( coder = current_user )
+    article_data_qs = article_data_qs.filter( article = article_instance )
+    
+    # how many matches?
+    article_data_count = article_data_qs.count()
+    if ( article_data_count == 1 ):
+
+        # found one.  Get ID so we can update it.
+        article_data_instance = article_data_qs.get()
+        article_data_id = article_data_instance.id
+
+    else:
+
+        # either 0 or > 1.  See if > 1.
+        if ( article_data_count > 1 ):
+
+            # error - don't want to allow multiple for now.
+            is_ok_to_process_coding = False
+
+            # output log message, output status message on screen,
+            #    reload coding into page from JSON.
+            page_status_message = "Multiple Article_Data instances found (IDs: "
+
+            # loop to make list of IDs
+            for article_data_instance in article_data_qs:
+
+                # add ID to status message
+                article_data_id_list.append( str( article_data_instance.id ) )
+
+            #-- END loop over Article_Data instances --#
+            
+            # add Article_Data ids to message
+            page_status_message += ", ".join( article_data_id_list )
+
+            # and finish message
+            page_status_message += ") for user " + str( current_user ) + " and article " + str( article_instance ) + ".  There should be only one.  Did not store coding."
+
+            # log the message.
+            output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+
+            # place in status message variable.
+            page_status_message_list.append( page_status_message )
+
+        else:
+
+            # not greater than 1, so 0 or negative (!).  OK to process.
+            #is_ok_to_process_coding = True
+            pass
+
+        #-- END check to see if greater than 1. --#
+
+    #-- END dealing with either 0 or > 1 Article_Data --#
+
     # form ready?
     if ( is_form_ready == True ):
     
         # !TODO - process coding submission
         if ( coding_submit_form.is_valid() == True ):
-
-            # start with it being OK to process coding.
-            is_ok_to_process_coding = True
 
             # it is valid - retrieve person_store_json and article_data_id
             person_store_json_string = request_data.get( "person_store_json", "" )
@@ -731,69 +796,7 @@ def article_code( request_IN ):
                 is_ok_to_process_coding = False
 
             #-- END check to see if we have any JSON --#
-            
-            # for now, not accepting an Article_Data ID from page, looking for
-            #    Article_Data that matches current user and current article
-            #    instead.
-            #article_data_id = request_data.get( "article_data_id", -1 )
-            
-            # get current user.
-            current_user = request_IN.user
-
-            # see if existing Article_Data for user and article
-            article_data_qs = Article_Data.objects.filter( coder = coder_user )
-            article_data_qs = article_data_qs.filter( article = article_instance )
-            
-            # how many matches?
-            article_data_count = article_data_qs.count()
-            if ( article_data_count == 1 ):
-
-                # found one.  Get ID so we can update it.
-                article_data_instance = article_data_qs.get()
-                article_data_id = article_data_instance.id
-
-            else:
-
-                # either 0 or > 1.  See if > 1.
-                if ( article_data_count > 1 ):
-
-                    # error - don't want to allow multiple for now.
-                    is_ok_to_process_coding = False
-
-                    # output log message, output status message on screen,
-                    #    reload coding into page from JSON.
-                    page_status_message = "Multiple Article_Data instances found (IDs: "
-
-                    # loop to make list of IDs
-                    for article_data_instance in article_data_qs:
-
-                        # add ID to status message
-                        article_data_id_list.append( str( article_data_instance.id ) )
-
-                    #-- END loop over Article_Data instances --#
-                    
-                    # add Article_Data ids to message
-                    page_status_message += ", ".join( article_data_id_list )
-
-                    # and finish message
-                    page_status_message += ") for user " + str( current_user ) + " and article " + str( article_instance ) + ".  There should be only one.  Did not store coding."
-
-                    # log the message.
-                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                    # place in status message variable.
-                    page_status_message_list.append( page_status_message )
-
-                else:
-
-                    # not greater than 1, so 0 or negative (!).  OK to process.
-                    #is_ok_to_process_coding = True
-                    pass
-
-                #-- END check to see if greater than 1. --#
-
-            #-- END dealing with either 0 or > 1 Article_Data --#
-            
+                        
             # OK to process coding?
             if ( is_ok_to_process_coding == True ):
 
@@ -851,6 +854,16 @@ def article_code( request_IN ):
             #-- END check to see if OK to process coding. --#
             
         #-- END check to see if coding form is valid. --#
+
+        # got article_data?
+        if ( article_data_instance is not None ):
+
+            # convert to JSON and store in response dictionary
+            new_person_store_json = ManualArticleCoder.convert_article_data_to_person_store_json( article_data_instance )
+            new_person_store_json_string = json.dumps( new_person_store_json )
+            response_dictionary[ 'existing_person_store_json' ] = new_person_store_json_string
+
+        #-- END check to see if we have an Article_Data instance --#
 
         # process article lookup?
         if ( article_lookup_form.is_valid() == True ):

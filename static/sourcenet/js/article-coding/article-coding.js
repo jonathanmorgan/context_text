@@ -699,6 +699,107 @@ SOURCENET.PersonStore.prototype.get_person_for_person_id = function( person_id_I
 
 
 /**
+ * Checks to see if SOURCENET.person_store_json is not null and not "".  If
+ *    populated, retrieves value in variable, converts JSON string to Javascript
+ *    objects, then uses those objects to populate PersonStore.
+ *
+ * @param {int} person_id_IN - person ID of person we want to find in person
+ *    array.
+ * @returns {int} - index of person in person array, or -1 if person ID not
+ *    found.
+ */
+SOURCENET.PersonStore.prototype.load_from_json = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.PersonStore.load_from_json";
+    var my_person_store_json_string = "";
+    var my_person_store_json = null;
+    var my_next_person_index = -1;
+    var my_name_to_person_index_map = {};
+    var my_id_to_person_index_map = {};
+    var my_status_message_array = [];
+    var my_latest_person_index = -1;
+
+    // declare variables - person processing.
+    var my_person_array = [];
+    var person_count = -1;
+    var person_index = -1;
+    var current_person_type = "";
+    var current_person_name = "";
+    var current_title = "";
+    var current_quote_text = "";
+    var current_person_id = "";
+    var current_person_data = null;
+    var current_person = null;
+    
+    // got JSON?
+    if ( ( SOURCENET.person_store_json != null ) && ( SOURCENET.person_store_json != "" ) )
+    {
+        
+        // try to parse JSON string into javascript objects.
+        my_person_store_json_string = SOURCENET.person_store_json;
+
+        // decode
+        my_person_store_json_string = SOURCENET.decode_html( my_person_store_json_string )
+
+        // parse to JSON objects
+        my_person_store_json = JSON.parse( my_person_store_json_string );
+
+        // use the pieces of the JSON to populate this object.
+        my_person_array = my_person_store_json[ "person_array" ];
+        my_next_person_index = my_person_store_json[ "next_person_index" ];
+        my_name_to_person_index_map = my_person_store_json[ "name_to_person_index_map" ];
+        my_id_to_person_index_map = my_person_store_json[ "id_to_person_index_map" ];
+        my_status_message_array = my_person_store_json[ "status_message_array" ];
+        my_latest_person_index = my_person_store_json[ "latest_person_index" ];
+
+        // loop over person array to create and store SOURCENET.Person
+        //    instances.
+        // how many we got?
+        person_count = my_person_array.length;
+        for ( person_index = 0; person_index < person_count; person_index++ )
+        {
+
+            // get person at current index
+            current_person_data = my_person_array[ person_index ];
+
+            // get values
+            current_person_type = current_person_data[ "person_type" ];
+            current_person_name = current_person_data[ "person_name" ];
+            current_title = current_person_data[ "title" ];
+            current_quote_text = current_person_data[ "quote_text" ];
+            current_person_id = current_person_data[ "person_id" ];
+
+            // create and populate Person instance.
+            current_person = new SOURCENET.Person();
+            current_person.person_type = current_person_type;
+            current_person.person_name = current_person_name;
+            current_person.title = current_title;
+            current_person.quote_text = current_quote_text;
+            current_person.person_id = current_person_id;
+
+            // add person to this PersonStore.
+            this.add_person( current_person );
+
+        } //-- END loop over persons --//
+
+        /*
+        // No need to do this - add_person() builds all this stuff for you.
+        // then store off all the rest of the stuff.
+        this.next_person_index = my_next_person_index;
+        this.name_to_person_index_map = my_name_to_person_index_map;
+        this.id_to_person_index_map = my_id_to_person_index_map;
+        this.status_message_array = my_status_message_array;
+        this.latest_person_index = my_latest_person_index;
+         */
+
+    } //-- END check to see if JSON passed in. --//
+
+} //-- END SOURCENET.PersonStore method load_from_json() --//
+
+
+/**
  * Accepts an index into the person array - Retrieves person at that index.
  *    If null, nothing there, nothing to remove.  If not null, makes that index
  *    in the array refer to null.  Then, looks for the index value in the values
@@ -1017,7 +1118,7 @@ SOURCENET.Person = function()
     // instance variables
     this.person_type = "";
     this.person_name = "";
-    this.name_and_title = "";
+    this.title = "";
     this.quote_text = "";
     this.person_id = null;
     //this.location_of_name = "";
@@ -1043,7 +1144,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var temp_value = "";
     var my_person_name = "";
     var my_person_type = "";
-    var my_name_and_title = "";
+    var my_title = "";
     var my_quote_text = "";
     var my_person_id = null;
     var is_person_id_OK = false;
@@ -1063,10 +1164,10 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     my_person_name = temp_element.val();
     this.person_name = my_person_name;
     
-    // person-name-and-title
-    temp_element = $( '#person-name-and-title' );
-    my_name_and_title = temp_element.val();
-    this.name_and_title = my_name_and_title;
+    // person-title
+    temp_element = $( '#person-title' );
+    my_title = temp_element.val();
+    this.title = my_title;
     
     // source-quote-text
     temp_element = $( '#source-quote-text' );
@@ -1231,6 +1332,27 @@ SOURCENET.Person.prototype.validate = function()
 // !==> function definitions
 //----------------------------------------------------------------------------//
 
+SOURCENET.decode_html = function( html_IN )
+{
+    // from: http://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
+
+    // return reference
+    text_OUT = "";
+
+    // declare variables
+    var txt = null;
+
+    // create textarea
+    txt = document.createElement("textarea");
+
+    // store HTML inside
+    txt.innerHTML = html_IN;
+
+    // get value back out.
+    text_OUT = txt.value
+    
+    return text_OUT;
+}
 
 /**
  * Clears out coding form and status message area, and optionally displays a
@@ -1264,8 +1386,8 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     temp_element = $( '#person-name' );
     temp_element.val( "" );
     
-    // person-name-and-title
-    temp_element = $( '#person-name-and-title' );
+    // person-title
+    temp_element = $( '#person-title' );
     temp_element.val( "" );
     
     // source-quote-text
@@ -2325,18 +2447,18 @@ $( document ).ready(
     }
 );
 
-// !#store-name-and-title
+// !#store-title
 // javascript to store selected text as source name + title.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
     function()
     {
-        $( '#store-name-and-title' ).click(        
+        $( '#store-title' ).click(        
             function()
             {
                 // declare variables
                 var selected_text = "";
-                var person_name_and_title_element = null;
+                var person_title_element = null;
                 var existing_text = "";
     
                 // get selection
@@ -2345,8 +2467,8 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
-                person_name_and_title_element = $( '#person-name-and-title' )
-                existing_text = person_name_and_title_element.val()
+                person_title_element = $( '#person-title' )
+                existing_text = person_title_element.val()
                 //SOURCENET.log_message( "Existing text: " + existing_text )
                 
                 // something already there?
@@ -2354,14 +2476,14 @@ $( document ).ready(
                 {
 
                     // yes - append new to the end.
-                    person_name_and_title_element.val( existing_text + " " + selected_text );
+                    person_title_element.val( existing_text + " " + selected_text );
                     
                 }
                 else
                 {
                     
                     // no - just overwrite.
-                    person_name_and_title_element.val( selected_text );
+                    person_title_element.val( selected_text );
                     
                 }
 
@@ -2464,4 +2586,33 @@ $( document ).ready(
             }
         )
     }
+);
+
+// javascript to load existing coding data if present.
+$( document ).ready(
+
+    function()
+    {
+
+        // declare variables
+        var me = "SOURCENET.load_existing_coding_data";
+        var my_person_store = null;
+    
+        // got anything to load?
+        if ( ( SOURCENET.person_store_json != null ) && ( SOURCENET.person_store_json != "" ) )
+        {
+            
+            // yes - get person store
+            my_person_store = SOURCENET.get_person_store();
+        
+            // call load_from_json()
+            my_person_store.load_from_json();
+
+            // repaint coding area
+            SOURCENET.display_persons();
+        
+        }
+    
+    }
+
 );

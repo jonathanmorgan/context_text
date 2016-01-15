@@ -35,7 +35,7 @@ body
 	border: 1px solid green;
 	background-color: #c4e897;
 	padding: 5px;
-	margin: 5px;
+	margin: 5px 5px 15px 5px;
 	font-style: italic;
 	/* font-size: 100%; */
 	font-family: monospace;
@@ -58,6 +58,16 @@ body
 {
     padding: 0px;
     margin: 0px;
+}
+
+hr
+{
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid gray;
 }
 
 .sidebarBox
@@ -94,6 +104,7 @@ p.inputContainer#textarea-source-quote-text
     display: none;
 }
 
+/*
 hr.lookupPersonRule
 {
     display: block;
@@ -103,6 +114,7 @@ hr.lookupPersonRule
     margin-right: auto;
     border: 1px solid gray;
 }
+*/
 
 .statusMessageArea
 {

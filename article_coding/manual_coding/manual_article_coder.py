@@ -94,11 +94,30 @@ class ManualArticleCoder( ArticleCoder ):
     PERSON_TYPE_SOURCE = "source"
     PERSON_TYPE_AUTHOR = "author"
 
+    # subject_type to person type dictionary
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
+
     # kwarg parameter names
     KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN"
     KWARG_ARTICLE_DATA_ID = "article_data_id_IN"
     KWARG_REQUEST = "request_IN"
     KWARG_RESPONSE_DICTIONARY = "response_dictionary_IN"
+
+    # person store JSON property names
+    PERSON_STORE_PROP_PERSON_ARRAY = "person_array"
+    PERSON_STORE_PROP_PERSON_TYPE = "person_type"
+    PERSON_STORE_PROP_PERSON_NAME = "person_name"
+    PERSON_STORE_PROP_TITLE = "title"
+    PERSON_STORE_PROP_QUOTE_TEXT = "quote_text"
+    PERSON_STORE_PROP_PERSON_ID = "person_id"
+    PERSON_STORE_PROP_NEXT_PERSON_INDEX = "next_person_index"
+    PERSON_STORE_PROP_NAME_TO_PERSON_INDEX_MAP = "name_to_person_index_map"
+    PERSON_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
+    PERSON_STORE_PROP_STATUS_MESSAGE_ARRAY = "status_message_array"
+    PERSON_STORE_PROP_LATEST_PERSON_INDEX = "latest_person_index"
+
 
     #============================================================================
     # NOT Instance variables
@@ -139,6 +158,192 @@ class ManualArticleCoder( ArticleCoder ):
         self.latest_article_data = None
         
     #-- END method __init__() --#
+
+
+    #============================================================================
+    # Class methods
+    #============================================================================
+
+
+    @classmethod
+    def convert_article_data_to_person_store_json( cls, article_data_IN, return_string_OUT = False ):
+
+        '''
+        Accepts Article_Data instance we want to convert to person store JSON.
+           Retrieves authors and sources and uses them to create person store
+           JSON representation of Article_Data.
+
+        Returns Article_Data in JSON format, either in dictionaries and lists
+           (object format), or string JSON.
+        '''
+
+        # return reference
+        json_OUT = ""
+
+        # declare variables
+        me = "convert_article_data_to_person_store_json"
+        person_store_dict = None
+        article_author_qs = None
+        article_subject_qs = None
+        person_list = None
+        current_index = -1
+        next_index = -1
+        name_to_person_index_dict = None
+        id_to_person_index_dict = None
+
+        # declare variables - processing Article_Data's child records.
+        current_author = None
+        current_subject = None
+        current_person = None
+        current_person_type = ""
+        current_person_name = ""
+        current_title = ""
+        current_quote_text = ""
+        current_person_id = ""
+        current_person_dict = {}
+
+        # declare variables - processing Article_Subject
+        current_subject_type = ""
+        current_quote_qs = None
+        quote_count = -1
+
+        # first, make sure we have something in article_data_IN.
+        if ( ( article_data_IN is not None ) and ( article_data_IN != "" ) ):
+
+            # initialize person list variables.
+            person_list = []
+            current_index = -1
+            next_index = 0
+            name_to_person_index_dict = {}
+            id_to_person_index_dict = {}
+
+            # we do.  First get list of Article_Authors.
+            article_author_qs = article_data_IN.article_author_set.all()
+
+            # loop
+            for current_author in article_author_qs:
+
+                # get current person
+                current_person = current_author.person
+
+                # set values for person from instance.
+
+                # ==> person_type
+                current_person_type = cls.PERSON_TYPE_AUTHOR
+                
+                # ==> person_name
+                current_person_name = current_person.get_name_string()
+                
+                # ==> title
+                current_title = current_author.organization_string
+                
+                # ==> quote_text
+                current_quote_text = ""
+                
+                # ==> person_id
+                current_person_id = current_person.id
+
+                # create person dictionary
+                current_person_dict = {}
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
+                current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
+                current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
+
+                # add to lists and dicts.
+                person_list.append( current_person_dict )
+                current_index += 1
+                next_index += 1
+                name_to_person_index_dict[ current_person_name ] = current_index
+                id_to_person_index_dict[ current_person_id ] = current_index
+
+            #-- END loop over authors --#
+
+            # then get list of Article_Subjects.
+            article_subject_qs = article_data_IN.article_subject_set.all()
+
+            # loop
+            for current_subject in article_subject_qs:
+
+                # get current person
+                current_person = current_subject.person
+
+                # set values for person from instance.
+
+                # ==> person_type
+                current_subject_type = current_subject.subject_type
+                current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
+                
+                # ==> name
+                current_person_name = current_person.get_name_string()
+                
+                # ==> title
+                current_title = current_subject.title
+
+                # ==> person ID                
+                current_person_id = current_person.id
+
+                # ==> quote text
+                current_quote_text = ""
+
+                # retrieve all quotations
+                current_quote_qs = current_subject.article_subject_quotation_set.all()
+
+                # got any?
+                quote_count = current_quote_qs.count()
+                if ( quote_count > 0 ):
+
+                    # yes - get quote string from 1st.
+                    first_quote = current_quote_qs[ 0 ]
+                    current_quote_text = first_quote.value
+
+                #-- END check to see if quotes present. --#
+
+                # create person dictionary
+                current_person_dict = {}
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
+                current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
+                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
+                current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+
+                # add to lists and dicts.
+                person_list.append( current_person_dict )
+                current_index += 1
+                next_index += 1
+                name_to_person_index_dict[ current_person_name ] = current_index
+                id_to_person_index_dict[ current_person_id ] = current_index
+
+            #-- END loop over authors --#
+
+            # put it all together.
+            person_store_dict = {}
+            person_store_dict[ cls.PERSON_STORE_PROP_PERSON_ARRAY ] = person_list
+            person_store_dict[ cls.PERSON_STORE_PROP_NEXT_PERSON_INDEX ] = next_index
+            person_store_dict[ cls.PERSON_STORE_PROP_NAME_TO_PERSON_INDEX_MAP ] = name_to_person_index_dict
+            person_store_dict[ cls.PERSON_STORE_PROP_ID_TO_PERSON_INDEX_MAP ] = id_to_person_index_dict
+            person_store_dict[ cls.PERSON_STORE_PROP_STATUS_MESSAGE_ARRAY ] = []
+            person_store_dict[ cls.PERSON_STORE_PROP_LATEST_PERSON_INDEX ] = current_index
+
+        #-- END check to see if we have Article_Data instance. --#
+
+        # return string or objects?
+        if ( return_string_OUT == True ):
+
+            # string - use json.dumps()
+            json_OUT = json.dumps( person_store_dict, sort_keys = True, indent = 4, separators=(',', ': ') )
+
+        else:
+
+            # objects - just return the dictionary.
+            json_OUT = person_store_dict
+
+        #-- END check to see if return string or objects. --#
+
+        return json_OUT
+
+    #-- END class method convert_article_data_to_json() --#
 
 
     #============================================================================
@@ -349,7 +554,7 @@ class ManualArticleCoder( ArticleCoder ):
         coder_user = None
         person_type = ""
         person_name = ""
-        name_and_title = ""
+        title = ""
         quote_text = ""
         person_id = -1
         article_data_qs = None
@@ -359,7 +564,7 @@ class ManualArticleCoder( ArticleCoder ):
         current_person = None
         person_type = ""
         person_name = ""
-        name_and_title = ""
+        title = ""
         quote_text = ""
         person_id = ""
         current_article_subject = None
@@ -395,6 +600,8 @@ class ManualArticleCoder( ArticleCoder ):
                 person_store_json_string = person_store_json_string_IN
                 if ( ( person_store_json_string is not None ) and ( person_store_json_string != "" ) ):
                 
+                    self.output_debug( person_store_json_string, me, "====> Person Store JSON\n\n" )
+
                     # got a JSON string, convert to Python objects.
                     person_store_json = json.loads( person_store_json_string )
 
@@ -494,7 +701,7 @@ class ManualArticleCoder( ArticleCoder ):
                         article_data_OUT = current_article_data
 
                         # get list of people.
-                        person_list = person_store_json[ "person_array" ]
+                        person_list = person_store_json[ self.PERSON_STORE_PROP_PERSON_ARRAY ]
                         
                         # get count of persons
                         person_count = len( person_list )
@@ -507,11 +714,11 @@ class ManualArticleCoder( ArticleCoder ):
                             for current_person in person_list:
                             
                                 # retrieve person information.
-                                person_type = current_person.get( "person_type" )
-                                person_name = current_person.get( "person_name" )
-                                name_and_title = current_person.get( "name_and_title" )
-                                quote_text = current_person.get( "quote_text" )
-                                person_id = current_person.get( "person_id" )
+                                person_type = current_person.get( self.PERSON_STORE_PROP_PERSON_TYPE )
+                                person_name = current_person.get( self.PERSON_STORE_PROP_PERSON_NAME )
+                                title = current_person.get( self.PERSON_STORE_PROP_TITLE )
+                                quote_text = current_person.get( self.PERSON_STORE_PROP_QUOTE_TEXT )
+                                person_id = current_person.get( self.PERSON_STORE_PROP_PERSON_ID )
 
                                 # set up person details
                                 person_details = {}
@@ -556,7 +763,7 @@ class ManualArticleCoder( ArticleCoder ):
                                     # Article_Author
                                     current_article_author = self.process_author_name( current_article_data,
                                                                                        person_name,
-                                                                                       author_organization_IN = name_and_title,
+                                                                                       author_organization_IN = title,
                                                                                        author_person_id_IN = person_id,
                                                                                        person_details_IN = person_details )
                     
