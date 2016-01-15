@@ -3,7 +3,8 @@ from sourcenet.models import Article_Data
 from django.contrib.auth.models import User
 
 # declare variables - filter article data to clear
-automated_user = None
+selected_username = ""
+selected_user = None
 article_data_qs = None
 article_data_coder_type_in_list = []
 article_tag_in_list = []
@@ -23,13 +24,14 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
-do_delete = True
+do_delete = False
 
-# get User with name "automated"
-automated_user = User.objects.filter( username = "automated" ).get()
+# get User with desired name
+selected_username = "automated"
+selected_user = User.objects.filter( username = selected_username ).get()
 
-# find all Article_Data for automated user.
-article_data_qs = Article_Data.objects.filter( coder = automated_user )
+# find all Article_Data for selected user.
+article_data_qs = Article_Data.objects.filter( coder = selected_user )
 
 #------------------------------------------------------------------------------#
 # FILTER - filter on coder type?
