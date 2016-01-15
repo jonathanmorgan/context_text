@@ -866,6 +866,10 @@ def article_code( request_IN ):
             new_person_store_json_string = json.dumps( new_person_store_json )
             response_dictionary[ 'existing_person_store_json' ] = new_person_store_json_string
 
+            # output a message that we've done this.
+            page_status_message = "Loaded article " + str( article_instance.id ) + " coding for user " + str( current_user )
+            page_status_message_list.append( page_status_message )
+
         #-- END check to see if we have an Article_Data instance --#
 
         # process article lookup?

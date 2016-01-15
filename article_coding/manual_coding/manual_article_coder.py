@@ -557,9 +557,11 @@ class ManualArticleCoder( ArticleCoder ):
         title = ""
         quote_text = ""
         person_id = -1
+        is_existing_article_data = False
         article_data_qs = None
         article_data_count = -1
         current_article_data = None
+        json_article_data_note = None
         current_article = None
         current_person = None
         person_type = ""
@@ -568,6 +570,8 @@ class ManualArticleCoder( ArticleCoder ):
         quote_text = ""
         person_id = ""
         current_article_subject = None
+        current_article_subject_mention = None
+        current_article_subject_quotation = None
         current_article_author = None
         current_article_person = None
         current_person_status = ""
@@ -607,6 +611,7 @@ class ManualArticleCoder( ArticleCoder ):
 
                     # see if there is an existing Article_Data instance for this
                     #    user and article.
+                    is_existing_article_data = False
                     article_data_qs = Article_Data.objects.filter( coder = coder_user )
                     article_data_qs = article_data_qs.filter( article = article_IN )
 
@@ -615,6 +620,9 @@ class ManualArticleCoder( ArticleCoder ):
 
                         # use .get() to retrieve single instance from QuerySet.
                         current_article_data = article_data_qs.get()
+
+                        # set is_existing_article_data to True
+                        is_existing_article_data = True
 
                     except Exception as e:
 
@@ -635,6 +643,9 @@ class ManualArticleCoder( ArticleCoder ):
                                     
                                     # then use get() to make sure this ID belongs to the current user.
                                     current_article_data = article_data_qs.get( coder = coder_user )
+
+                                    # set is_existing_article_data to True
+                                    is_existing_article_data = True
                             
                                 except Exception as e:
                                 
@@ -674,6 +685,9 @@ class ManualArticleCoder( ArticleCoder ):
                             # No Article_Data found.  OK to process, set variable to None.
                             current_article_data = None
 
+                            # set is_existing_article_data to False.
+                            is_existing_article_data = False
+
                         #-- END check to see if 0 or > 1 Article_Data found for current user. --#
 
                     #-- END try...except around initial attempt to pull in Article_Data for current user. --#
@@ -696,6 +710,15 @@ class ManualArticleCoder( ArticleCoder ):
                             current_article_data.save()
 
                         #-- END check to see if Article_Data instance. --#
+
+                        # add Article_Data_Notes with JSON.
+                        json_article_data_note = Article_Data_Notes()
+                        json_article_data_note.article_data = current_article_data
+                        json_article_data_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
+                        json_article_data_note.content = person_store_json_string
+                        json_article_data_note.source = self.coder_type + " - user " + str( coder_user )
+                        json_article_data_note.content_description = "Person Store JSON (likely from manual coding via article-code view)."
+                        json_article_data_note.save()
 
                         # store current_article_data in article_data_OUT.
                         article_data_OUT = current_article_data
@@ -722,15 +745,13 @@ class ManualArticleCoder( ArticleCoder ):
 
                                 # set up person details
                                 person_details = {}
-                                person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
+                                person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                 
                                 # check person type to see what type we are processing.
                                 if ( ( person_type == self.PERSON_TYPE_SUBJECT )
                                      or ( person_type == self.PERSON_TYPE_SOURCE ) ):
 
                                     # Article_Subject
-                                    person_details = {}
-                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = current_article.newspaper
                                     current_article_subject = self.process_subject_name( current_article_data,
                                                                                          person_name,
                                                                                          person_details_IN = person_details,
@@ -742,16 +763,44 @@ class ManualArticleCoder( ArticleCoder ):
                                         # set subject_type.
                                         current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
 
+                                        # save source updates
+                                        current_article_subject.save()
+
+                                        # add name mention to Article_Subject.
+                                        current_article_subject_mention = self.process_mention( article_IN, current_article_subject, person_name )
+
+                                        # error?
+                                        if ( current_article_subject_mention is None ):
+
+                                            # yup - output debug message.
+                                            debug_message = "Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
+                                            status_message_list.append( debug_message )
+                                            debug_message = "ERROR: " + debug_message
+                                            self.output_debug( debug_message, me )
+
+                                        #-- END check to see if error processing quotation --#
+
                                         # see if there is quote text.
                                         if ( ( quote_text is not None ) and ( quote_text != "" ) ):
 
-                                            # !TODO - add quote to Article_Subject.
-                                            pass
+                                            # add quote to Article_Subject.
+                                            current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
+
+                                            # error?
+                                            if ( current_article_subject_quotation is None ):
+
+                                                # yup - output debug message.
+                                                debug_message = "Article_Coder.process_quotation() returned None - problem processing quote \"" + quote_text + "\".  See log for more details."
+                                                status_message_list.append( debug_message )
+                                                debug_message = "ERROR: " + debug_message
+                                                self.output_debug( debug_message, me )
+
+                                            #-- END check to see if error processing quotation --#
 
                                         #-- END check to see if quote text --#
 
-                                        # save source updates
-                                        current_article_subject.save()
+                                        # save source updates - should not need save.
+                                        #current_article_subject.save()
 
                                     #-- END check to see if source --#
 
@@ -771,7 +820,10 @@ class ManualArticleCoder( ArticleCoder ):
                                     current_article_person = current_article_author
 
                                 #-- END check to see person type --#
-                                
+
+                                # set name
+                                current_article_person.name = person_name
+
                                 # check status
                                 current_person_status = current_article_person.match_status
 

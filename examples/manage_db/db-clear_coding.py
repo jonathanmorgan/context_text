@@ -27,7 +27,7 @@ article_source_id_list = []
 do_delete = False
 
 # get User with desired name
-selected_username = "automated"
+selected_username = ""
 selected_user = User.objects.filter( username = selected_username ).get()
 
 # find all Article_Data for selected user.
@@ -149,6 +149,7 @@ for article_data in article_data_qs:
     
 #-- END loop over article data. --#
 
+print( "Found " + str( article_data_count ) + " Article_Data for coder " + str( selected_user ) + "." )
 print( "\n\nID lists:\n" )
 print( "- Article ( " + str( len( article_id_list ) ) + " ): " + str( ", ".join( article_id_list ) ) )
 print( "- Article_Data ( " + str( len( article_data_id_list ) ) + " ): " + str( ", ".join( article_data_id_list ) ) )
