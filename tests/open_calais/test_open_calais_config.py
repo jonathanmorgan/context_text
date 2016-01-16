@@ -29,7 +29,7 @@ class OpenCalaisConfigTest( django.test.TestCase ):
         """
 
         # call TestHelper.standardSetUp()
-        TestHelper.standardSetUp( self )
+        TestHelper.standardOpenCalaisSetUp( self )
         
     #-- END function setUp() --#
         

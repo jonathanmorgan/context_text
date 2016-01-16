@@ -116,14 +116,15 @@ from sourcenet.shared.sourcenet_base import SourcenetBase
 # Shared variables and functions
 #================================================================================
 
+STATUS_SUCCESS = "Success!"
+DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+BS_PARSER = "html5lib"
+
 '''
-Gross debugging code, shared across all models.
+Debugging code, shared across all models.
 '''
 
 DEBUG = True
-STATUS_SUCCESS = "Success!"
-DEFAULT_DATE_FORMAT = "%Y-%m-%d"
-
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
     
@@ -2915,7 +2916,13 @@ class Article_Text( Unique_Article_Content ):
 
 
     @classmethod
-    def convert_string_to_word_list( cls, string_IN ):
+    def convert_string_to_word_list( cls,
+                                     string_IN,
+                                     remove_html_IN = False,
+                                     remove_punctuation_IN = False,
+                                     clean_white_space_IN = True,
+                                     *args,
+                                     **kwargs ):
         
         '''
         Accepts a string, for now, just calls ".split()" on it to split it on
@@ -2926,12 +2933,40 @@ class Article_Text( Unique_Article_Content ):
         
         # return reference
         word_list_OUT = []
+
+        # declare variables
+        work_string = ""
         
         # got a string?
         if ( ( string_IN is not None ) and ( string_IN != "" ) ):
+
+            work_string = string_IN
+
+            # remove HTML?
+            if ( remove_html_IN == True ):
+
+                # get the content with no HTML.
+                work_string = HTMLHelper.remove_html( work_string, bs_parser_IN = BS_PARSER )
+            
+            #-- END check to see if remove HTML --#
+
+            # clean out punctuation, as well?
+            if ( remove_punctuation_IN == True ):
+
+                # clean out punctuation
+                work_string = StringHelper.remove_punctuation( work_string )
+
+            #-- END check to see if we remove punctuation. --#
         
+            # clean up white space?
+            if ( clean_white_space_IN == True ):
+        
+                work_string = StringHelper.replace_white_space( work_string )
+
+            #-- END check to see if we clean extra white space --#
+
             # split the string.
-            word_list_OUT = string_IN.split()
+            word_list_OUT = work_string.split()
         
         else:
         
@@ -3922,7 +3957,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method find_in_text() --#
             
                 
-    def find_in_word_list( self, string_IN ):
+    def find_in_word_list( self, string_IN, remove_punctuation_IN = False ):
         
         '''
         Accepts a string we want to locate in the word list based on this
@@ -3936,7 +3971,7 @@ class Article_Text( Unique_Article_Content ):
               of the word in this article, when converted to a word list, of the
               last word in the string passed in.  Number, not index
               (so index + 1).
-        If not found, each will contain a value of -1.  If error, returns None.
+        If not found, each will contain an empty list.  If error, returns None.
         '''
         
         # return reference.
@@ -3950,16 +3985,24 @@ class Article_Text( Unique_Article_Content ):
         match_list = []
         match_index = -1
         string_word_count = -1
+        recurse_results_dict = None
         
         # got a string?
         if ( ( string_IN is not None ) and ( string_IN != "" ) ):
         
             # get paragraph list
-            my_word_list = self.get_word_list()
+            my_word_list = self.get_word_list( remove_punctuation_IN = remove_punctuation_IN )
+
+            #output_debug( "article word list: " + str( my_word_list ) )
             
             # convert string into a word list.
-            string_word_list = self.convert_string_to_word_list( string_IN )
-            
+            string_word_list = self.convert_string_to_word_list( string_IN,
+                                                                 remove_html_IN = True,
+                                                                 remove_punctuation_IN = remove_punctuation_IN,
+                                                                 clean_white_space_IN = True )
+
+            #output_debug( "search word list: " + str( string_word_list ) )
+
             # try the KnuthMorrisPratt algorithm from Python Cookbook 2nd Ed.
             for match_index in SequenceHelper.KnuthMorrisPratt( my_word_list, string_word_list ):
             
@@ -3991,10 +4034,37 @@ class Article_Text( Unique_Article_Content ):
                 
             else:
             
-                # no match - return empty lists.
-                first_word_list_OUT = []
-                last_word_list_OUT = []
+                # no matches.  Try removing punctuation?
+
+                # If haven't already, try removing punctuation and looking.
+                if ( remove_punctuation_IN == False ):
+
+                    # we did not remove punctuation.  Try calling again, but
+                    #    removing punctuation.
+                    recurse_results_dict = self.find_in_word_list( string_IN, remove_punctuation_IN = True )
+
+                    # got anything back?
+                    if ( recurse_results_dict is not None ):
+
+                        # return the results of this call.
+                        first_word_list_OUT = recurse_results_dict[ self.FIT_FIRST_WORD_NUMBER_LIST ]
+                        last_word_list_OUT = recurse_results_dict[ self.FIT_LAST_WORD_NUMBER_LIST ]
+
+                    else:
+
+                        first_word_list_OUT = []
+                        last_word_list_OUT = []
+
+                    #-- END check to see if got anything back. --#
                 
+                else:
+
+                    # punctuation is removed.  Hope is dead.  Return empty lists.
+                    first_word_list_OUT = []
+                    last_word_list_OUT = []
+                
+                #-- END check to see if we've tried removing punctuation. --#
+
             #-- END check to see if match. --#
             
             # build return dictionary.
@@ -4034,7 +4104,7 @@ class Article_Text( Unique_Article_Content ):
         content_OUT = self.content
         
         # strip all HTML
-        content_OUT = HTMLHelper.remove_html( content_OUT )
+        content_OUT = HTMLHelper.remove_html( content_OUT, bs_parser_IN = BS_PARSER )
                 
         return content_OUT
 
@@ -4070,7 +4140,7 @@ class Article_Text( Unique_Article_Content ):
         my_content = self.content
         
         # create a BeautifulSoup instance that contains it.
-        content_bs = BeautifulSoup( my_content )
+        content_bs = BeautifulSoup( my_content, BS_PARSER )
         
         # get all the <p> tags.
         p_tag_list = content_bs.find_all( 'p' )
@@ -4109,7 +4179,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method get_paragraph_list() --#
 
 
-    def get_word_list( self, *args, **kwargs ):
+    def get_word_list( self, remove_punctuation_IN = False, *args, **kwargs ):
         
         '''
         Creates list of words contained in nested content.  Returns a list of
@@ -4137,15 +4207,12 @@ class Article_Text( Unique_Article_Content ):
         # get the content.
         my_content = self.content
         
-        # get the content with no HTML.
-        cleaned_content = HTMLHelper.remove_html( my_content )
-        
-        # and clean up white space.
-        cleaned_content = StringHelper.replace_white_space( cleaned_content )
-        
         # split the string on white space.
-        word_list = self.convert_string_to_word_list( cleaned_content )
-        
+        word_list = self.convert_string_to_word_list( my_content,
+                                                      remove_html_IN = True,
+                                                      remove_punctuation_IN = remove_punctuation_IN,
+                                                      clean_white_space_IN = True )
+
         # how many we got?
         word_count = len( word_list )
         

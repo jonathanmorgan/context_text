@@ -25,6 +25,7 @@ if __name__ == "__main__":
 # python libraries
 
 # Django imports
+from django.contrib.auth.models import User
 from django.core.management import call_command
 
 # import basic django configuration application.
@@ -62,8 +63,31 @@ class TestHelper( object ):
     
     # OpenCalais
     OPEN_CALAIS_ACCESS_TOKEN_FILE_NAME = "open_calais_access_token.txt"
-    
-    
+
+    # Test user
+    TEST_USER_NAME = "test_user"
+    TEST_USER_EMAIL = "test@email.com"
+    TEST_USER_PASSWORD = "calliope"
+
+    # test authors
+    TEST_AUTHOR_1 = "Nate Reems"
+    TEST_AUTHOR_2 = "Nardy Baeza Bickel"
+    TEST_AUTHOR_LIST = [ TEST_AUTHOR_1, TEST_AUTHOR_2 ]
+
+    # test subjects
+    TEST_SUBJECT_1 = "Alex McNamara"
+    TEST_SUBJECT_2 = "Justin VanderVelde"
+    TEST_SUBJECT_3 = "Pete Goodell"
+    TEST_SUBJECT_4 = "Bob Dukesherer"
+    TEST_SUBJECT_5 = "Steve Brown"
+    TEST_SUBJECT_6 = "Rick DeGraaf"
+    TEST_SUBJECT_LIST = [ TEST_SUBJECT_1, TEST_SUBJECT_2, TEST_SUBJECT_3, TEST_SUBJECT_4, TEST_SUBJECT_5, TEST_SUBJECT_6 ]
+
+    # test quotations
+    TEST_QUOTATION_1 = "The snow-covered runs are a beautiful sight to snowboarders Alex McNamara and Justin VanderVelde."
+    TEST_QUOTATION_2 = "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \"long\" summer and fall left them eager to bust out their boards."
+
+
     #----------------------------------------------------------------------------
     # Class variables - overriden by __init__() per instance if same names, but
     #    if not set there, shared!
@@ -76,6 +100,79 @@ class TestHelper( object ):
     #-----------------------------------------------------------------------------
     # class methods
     #-----------------------------------------------------------------------------
+
+
+    @classmethod
+    def create_test_user( cls, username_IN = "" ):
+
+        # return reference
+        user_OUT = None
+
+        # declare variables
+        test_user = None
+        test_username = ""
+
+        # do we want non-standard username?
+        if ( ( username_IN is not None ) and ( username_IN != "" ) ):
+
+            test_username = username_IN
+
+        else:
+
+            test_username = cls.TEST_USER_NAME
+
+        #-- END check to see if special user name. --#
+
+        # create new test user
+        test_user = User.objects.create_user( username = test_username,
+                                              email = cls.TEST_USER_EMAIL,
+                                              password = cls.TEST_USER_PASSWORD )
+        test_user.save()
+
+        user_OUT = test_user
+
+        return user_OUT
+
+    #-- END class method create_test_user() --#
+
+
+    @classmethod
+    def get_test_user( cls, username_IN = "" ):
+
+        # return reference
+        user_OUT = None
+
+        # declare variables
+        test_user = None
+        test_username = ""
+
+        # do we want non-standard username?
+        if ( ( username_IN is not None ) and ( username_IN != "" ) ):
+
+            test_username = username_IN
+
+        else:
+
+            test_username = cls.TEST_USER_NAME
+
+        #-- END check to see if special user name. --#
+
+        # try a lookup
+        try:
+
+            # by username
+            user_OUT = User.objects.get( username = test_username )
+        
+        except Exception as e:
+        
+            # create new test user
+            user_OUT = cls.create_test_user()
+
+        #-- END try to get existing test user. --#
+
+        return user_OUT
+
+    #-- END class method get_test_user() --#
 
 
     @classmethod
@@ -232,6 +329,54 @@ class TestHelper( object ):
     
     
     @classmethod
+    def standardOpenCalaisSetUp( cls, test_case_IN = None ):
+        
+        """
+        setup tasks.  Call function that we'll re-use.
+        """
+
+        # declare variables
+        me = "standardOpenCalaisSetUp"
+        status_instance = None
+        current_fixture = ""
+        
+        print( "In TestHelper." + me + "(): starting standardOpenCalaisSetUp." )
+        
+        # see if test case passed in.  If so, set status variables on it.
+        if ( test_case_IN is not None ):
+        
+            # not None, set status variables on it.
+            status_instance = test_case_IN
+            
+        else:
+        
+            # no test case passed in.  Just set on self.
+            status_instance = self
+        
+        #-- END check to see if test case --#
+
+        # call standardSetup.
+        cls.standardSetUp( status_instance )
+        
+        # Load OpenCalais Access Token.
+        try:
+        
+            cls.load_open_calais_access_token()
+
+        except Exception as e:
+        
+            # looks like there was a problem.
+            status_instance.setup_error_count += 1
+            status_instance.setup_error_list.append( OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
+            
+        #-- END try/except --#
+        
+        print( "In TestHelper." + me + "(): standardOpenCalaisSetUp complete." )
+
+    #-- END function standardOpenCalaisSetUp() --#
+        
+
+    @classmethod
     def standardSetUp( cls, test_case_IN = None ):
         
         """
@@ -243,7 +388,7 @@ class TestHelper( object ):
         status_instance = None
         current_fixture = ""
         
-        print( "In TestHelper." + me + "(): starting standard setup." )
+        print( "In TestHelper." + me + "(): starting standardSetUp." )
         
         # see if test case passed in.  If so, set status variables on it.
         if ( test_case_IN is not None ):
@@ -332,7 +477,9 @@ class TestHelper( object ):
             
         #-- END try/except --#
         
-    #-- END function setUp() --#
+        print( "In TestHelper." + me + "(): standardSetUp complete." )
+
+    #-- END function standardSetUp() --#
         
 
     #----------------------------------------------------------------------------

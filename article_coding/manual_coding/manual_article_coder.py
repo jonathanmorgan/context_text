@@ -232,10 +232,10 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person_type = cls.PERSON_TYPE_AUTHOR
                 
                 # ==> person_name
-                current_person_name = current_person.get_name_string()
+                current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
                 
                 # ==> title
-                current_title = current_author.organization_string
+                current_title = JSONHelper.escape_json_value( current_author.organization_string )
                 
                 # ==> quote_text
                 current_quote_text = ""
@@ -276,10 +276,10 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
                 
                 # ==> name
-                current_person_name = current_person.get_name_string()
+                current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
                 
                 # ==> title
-                current_title = current_subject.title
+                current_title = JSONHelper.escape_json_value( current_subject.title )
 
                 # ==> person ID                
                 current_person_id = current_person.id
@@ -296,7 +296,7 @@ class ManualArticleCoder( ArticleCoder ):
 
                     # yes - get quote string from 1st.
                     first_quote = current_quote_qs[ 0 ]
-                    current_quote_text = first_quote.value
+                    current_quote_text = JSONHelper.escape_json_value( first_quote.value )
 
                 #-- END check to see if quotes present. --#
 
@@ -758,6 +758,7 @@ class ManualArticleCoder( ArticleCoder ):
                                                                                          subject_person_id_IN = person_id )
 
                                     # check to see if source
+                                    current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
                                     if ( person_type == self.PERSON_TYPE_SOURCE ):
 
                                         # set subject_type.
@@ -799,10 +800,10 @@ class ManualArticleCoder( ArticleCoder ):
 
                                         #-- END check to see if quote text --#
 
-                                        # save source updates - should not need save.
-                                        #current_article_subject.save()
-
                                     #-- END check to see if source --#
+
+                                    # save source updates - should not need save.
+                                    current_article_subject.save()
 
                                     # store Article_Subject instance in Article_Person reference.
                                     current_article_person = current_article_subject

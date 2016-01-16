@@ -1,0 +1,83 @@
+{
+  "person_array": [
+    {
+      "person_type": "author",
+      "person_name": "Nardy Baeza Bickel",
+      "title": "The Grand Rapids Press",
+      "quote_text": "",
+      "person_id": 161
+    },
+    {
+      "person_type": "author",
+      "person_name": "Nate Reens",
+      "title": "The Grand Rapids Press",
+      "quote_text": "",
+      "person_id": 46
+    },
+    {
+      "person_type": "source",
+      "person_name": "Alex McNamara",
+      "title": "snowboarder",
+      "quote_text": "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \"long\" summer and fall left them eager to bust out their boards.",
+      "person_id": 186
+    },
+    {
+      "person_type": "source",
+      "person_name": "Justin VanderVelde",
+      "title": "22-year-old snowboarder",
+      "quote_text": "\"You have to wait all summer for it to start snowing, so you might as well (hit the hill) as soon as the snow falls,\" the 22-year-old VanderVelde said Sunday.",
+      "person_id": 162
+    },
+    {
+      "person_type": "source",
+      "person_name": "Pete Goodell",
+      "title": "manager at Pando Winter Sports Park",
+      "quote_text": "\"We went from green grass to a lot of snow,\" said Pete Goodell, a manager at Pando. \"We still had to make a lot with the machines, but it was a great start.",
+      "person_id": 163
+    },
+    {
+      "person_type": "source",
+      "person_name": "Bob Dukesherer",
+      "title": "National Weather Service meteorologist",
+      "quote_text": "Bob Dukesherer, a National Weather Service meteorologist, says it's a near certainty that will happen by Tuesday, when a storm will settle in and hang over the region through Saturday.",
+      "person_id": 164
+    },
+    {
+      "person_type": "source",
+      "person_name": "Steve Brown",
+      "title": "manager at Cannonsburg Ski Area",
+      "quote_text": "The forecast should make for good business at Cannonsburg, which drew several hundred customers on its first day of business Sunday, manager Steve Brown said.",
+      "person_id": 165
+    },
+    {
+      "person_type": "source",
+      "person_name": "Rick DeGraaf",
+      "title": "Skier",
+      "quote_text": "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill.",
+      "person_id": 166
+    }
+  ],
+  "next_person_index": 8,
+  "name_to_person_index_map": {
+    "Nardy Baeza Bickel": 0,
+    "Nate Reens": 1,
+    "Alex McNamara": 2,
+    "Justin VanderVelde": 3,
+    "Pete Goodell": 4,
+    "Bob Dukesherer": 5,
+    "Steve Brown": 6,
+    "Rick DeGraaf": 7
+  },
+  "id_to_person_index_map": {
+    "46": 1,
+    "161": 0,
+    "162": 3,
+    "163": 4,
+    "164": 5,
+    "165": 6,
+    "166": 7,
+    "186": 2
+  },
+  "status_message_array": [],
+  "latest_person_index": 7
+}

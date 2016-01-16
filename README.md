@@ -1047,11 +1047,17 @@ Specific sets of tests:
 
     - test OpenCalais configuration:
 
-            python manage.py test sourcenet.tests.open_calais.tests-open_calais-config
+            python manage.py test sourcenet.tests.open_calais.test_open_calais_config
 
     - test OpenCalais automated coding (assumes configuration tests passed):
 
-            python manage.py test sourcenet.tests.open_calais.tests-open_calais-api 
+            python manage.py test sourcenet.tests.open_calais.test_open_calais_api 
+
+- ArticleCoder (using ManualArticleCoder)
+
+    - test basic methods in ArticleCoder that are re-used by all coding methods:
+
+            python manage.py test sourcenet.tests.article_coder.test_article_coder
 
 ## Test data
 

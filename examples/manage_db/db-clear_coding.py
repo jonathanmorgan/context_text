@@ -24,10 +24,10 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
-do_delete = False
+do_delete = True
 
 # get User with desired name
-selected_username = ""
+selected_username = "jonathanmorgan"
 selected_user = User.objects.filter( username = selected_username ).get()
 
 # find all Article_Data for selected user.
