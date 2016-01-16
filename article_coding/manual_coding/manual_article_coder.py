@@ -268,54 +268,59 @@ class ManualArticleCoder( ArticleCoder ):
 
                 # get current person
                 current_person = current_subject.person
-
-                # set values for person from instance.
-
-                # ==> person_type
-                current_subject_type = current_subject.subject_type
-                current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
                 
-                # ==> name
-                current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
-                
-                # ==> title
-                current_title = JSONHelper.escape_json_value( current_subject.title )
+                # got a person?  Could be court records, etc.
+                if ( current_person is not None ):
 
-                # ==> person ID                
-                current_person_id = current_person.id
+                    # set values for person from instance.
+    
+                    # ==> person_type
+                    current_subject_type = current_subject.subject_type
+                    current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
+                    
+                    # ==> name
+                    current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
+                    
+                    # ==> title
+                    current_title = JSONHelper.escape_json_value( current_subject.title )
+    
+                    # ==> person ID                
+                    current_person_id = current_person.id
+    
+                    # ==> quote text
+                    current_quote_text = ""
+    
+                    # retrieve all quotations
+                    current_quote_qs = current_subject.article_subject_quotation_set.all()
+    
+                    # got any?
+                    quote_count = current_quote_qs.count()
+                    if ( quote_count > 0 ):
+    
+                        # yes - get quote string from 1st.
+                        first_quote = current_quote_qs[ 0 ]
+                        current_quote_text = JSONHelper.escape_json_value( first_quote.value )
+    
+                    #-- END check to see if quotes present. --#
+    
+                    # create person dictionary
+                    current_person_dict = {}
+                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
+                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
+                    current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
+                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
+                    current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+    
+                    # add to lists and dicts.
+                    person_list.append( current_person_dict )
+                    current_index += 1
+                    next_index += 1
+                    name_to_person_index_dict[ current_person_name ] = current_index
+                    id_to_person_index_dict[ current_person_id ] = current_index
 
-                # ==> quote text
-                current_quote_text = ""
+                #-- END check to see if person present. --#
 
-                # retrieve all quotations
-                current_quote_qs = current_subject.article_subject_quotation_set.all()
-
-                # got any?
-                quote_count = current_quote_qs.count()
-                if ( quote_count > 0 ):
-
-                    # yes - get quote string from 1st.
-                    first_quote = current_quote_qs[ 0 ]
-                    current_quote_text = JSONHelper.escape_json_value( first_quote.value )
-
-                #-- END check to see if quotes present. --#
-
-                # create person dictionary
-                current_person_dict = {}
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
-                current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
-                current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
-
-                # add to lists and dicts.
-                person_list.append( current_person_dict )
-                current_index += 1
-                next_index += 1
-                name_to_person_index_dict[ current_person_name ] = current_index
-                id_to_person_index_dict[ current_person_id ] = current_index
-
-            #-- END loop over authors --#
+            #-- END loop over subjects --#
 
             # put it all together.
             person_store_dict = {}
