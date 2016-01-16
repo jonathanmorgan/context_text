@@ -147,6 +147,23 @@ hr.lookupPersonRule
     margin: 0px;
 }
 
+table.personListTable
+{
+	border-collapse: collapse;
+	margin-bottom: 5px;
+}
+
+.personListTable th, td
+{
+	font-size: 80%;
+	border: 1px solid black;
+}
+
+.personListTable td
+{
+	padding: 5px;
+}
+
 .submitArticleCoding
 {
     /* default to not shown - show one or more person coded. */

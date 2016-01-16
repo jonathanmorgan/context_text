@@ -130,8 +130,7 @@
             </div>
             <h3>Person List</h3>
             <div id="person-list" class="personList">
-                <ul id="person-list-ul" class="personListUl">
-                </ul>
+                <table id="person-list-table" class="personListTable"></table>
                 <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding" onsubmit="do_submit = SOURCENET.render_coding_form_inputs( this ); alert( 'Submit?: ' + do_submit ); return do_submit;">
                     {# always include CSRF token #}
                     {% csrf_token %}

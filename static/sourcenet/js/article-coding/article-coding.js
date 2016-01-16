@@ -1259,6 +1259,49 @@ SOURCENET.Person.prototype.to_string = function()
 
 
 /**
+ * Converts person to a string value.
+ */
+SOURCENET.Person.prototype.to_table_cell_html = function()
+{
+    
+    // return reference
+    var value_OUT = "";
+    
+    // declare variables.
+    var my_person_id = -1;
+    var is_person_id_OK = false
+    var my_person_name = "";
+    var my_person_type = "";
+    
+    // person type
+    my_person_type = this.person_type;
+    value_OUT += "<td>" + my_person_type + "</td>";
+
+    // name.
+    my_person_name = this.person_name;
+    value_OUT += "<td>"  + my_person_name + "</td>";
+
+    // got person ID?
+    my_person_id = this.person_id;
+    is_person_id_OK = SOURCENET.is_integer_OK( my_person_id, 1 );
+    value_OUT += "<td>";
+    if ( is_person_id_OK == true )
+    {
+        value_OUT += my_person_id;
+    }
+    else
+    {
+        value_OUT += "new";
+    }
+    value_OUT += "</td>";
+    
+    
+    return value_OUT;
+    
+} //-- END SOURCENET.Person method to_table_cell_html() --//
+
+
+/**
  * validates Person object instance.
  * @returns {Array} - list of validation messages.  If empty, all is well.  If array.length > 0, then there were validation errors.
  */
@@ -1435,23 +1478,23 @@ SOURCENET.display_persons = function()
     
     // declare variables.
     var me = "SOURCENET.display_persons";
-    var li_id_prefix = "";
+    var row_id_prefix = "";
     var my_person_store = null;
-    var person_list_ul_element = null;
+    var person_list_element = null;
     var person_index = -1;
     var person_count = -1;
     var current_person = null;
-    var current_li_id = "";
-    var current_li_selector = "";
-    var current_li_element = null;
-    var current_li_element_count = -1;
+    var current_row_id = "";
+    var current_row_selector = "";
+    var current_row_element = null;
+    var current_row_element_count = -1;
     var got_person = false;
     var person_string = "";
-    var got_li = false;
-    var do_create_li = false;
-    var do_update_li = false;
-    var do_remove_li = false;
-    var li_contents = "";
+    var got_row= false;
+    var do_create_row = false;
+    var do_update_row = false;
+    var do_remove_row = false;
+    var row_contents = "";
     var button_element = null;
     
     // declare variables - make form to submit list.
@@ -1460,7 +1503,7 @@ SOURCENET.display_persons = function()
     var form_element = null;
     
     // initialize variables
-    li_id_prefix = "person-";
+    row_id_prefix = "person-";
     
     // get person store
     my_person_store = SOURCENET.get_person_store();
@@ -1468,8 +1511,8 @@ SOURCENET.display_persons = function()
     // for now, display by SOURCENET.log_message()-ing JSON string.
     //SOURCENET.log_message( "In " + me + "(): PersonStore = " + JSON.stringify( my_person_store ) );
     
-    // get <ul id="person-list-ul" class="personListUl">
-    person_list_ul_element = $( '#person-list-ul' );
+    // get <table id="person-list-table" class="personListTable">
+    person_list_element = $( '#person-list-table' );
     
     // loop over the persons in the list.
     person_count = my_person_store.person_array.length;
@@ -1486,10 +1529,10 @@ SOURCENET.display_persons = function()
             
             // initialize variables.
             got_person = false;
-            got_li = false;
-            do_create_li = false;
-            do_update_li = false;
-            do_remove_li = false;
+            got_row = false;
+            do_create_row = false;
+            do_update_row = false;
+            do_remove_row = false;
             button_element = null;
             
             // get person.
@@ -1501,7 +1544,7 @@ SOURCENET.display_persons = function()
                 // yes - set flag, update person_string.
                 got_person = true;
                 active_person_count += 1;
-                person_string = current_person.to_string();
+                person_string = current_person.to_table_cell_html();
                 
             }
             else
@@ -1514,24 +1557,24 @@ SOURCENET.display_persons = function()
             
             SOURCENET.log_message( "In " + me + "(): Person " + person_index + ": " + person_string );
             
-            // try to get <li> for that index.
-            current_li_id = li_id_prefix + person_index;
-            current_li_selector = "#" + current_li_id;
-            current_li_element = person_list_ul_element.find( current_li_selector );
-            current_li_element_count = current_li_element.length;
-            //SOURCENET.log_message( "DEBUG: li element: " + current_li_element + "; length = " + current_li_element_count );
+            // try to get <tr> for that index.
+            current_row_id = row_id_prefix + person_index;
+            current_row_selector = "#" + current_row_id;
+            current_row_element = person_list_element.find( current_row_selector );
+            current_row_element_count = current_row_element.length;
+            //SOURCENET.log_message( "DEBUG: row element: " + current_row_element + "; length = " + current_row_element_count );
             
-            // matching <li> found?
-            if ( current_li_element_count > 0 )
+            // matching row found?
+            if ( current_row_element_count > 0 )
             {
                 
                 // yes - set flag.
-                got_li = true;
+                got_row = true;
     
-            } //-- END check to see if <li> --//
+            } //-- END check to see if row --//
             
-            // based on person and li, what do we do?
-            if ( got_li == true )
+            // based on person and row, what do we do?
+            if ( got_row == true )
             {
                 
                 //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
@@ -1541,87 +1584,87 @@ SOURCENET.display_persons = function()
                     
                     // yes.  convert to string and replace value, in case there have
                     //    been changes.
-                    do_create_li = false;
-                    do_update_li = true;
-                    do_remove_li = false;
+                    do_create_row = false;
+                    do_update_row = true;
+                    do_remove_row = false;
                     
                 }
                 else
                 {
                     
-                    // no person - remove <li>
-                    do_create_li = false;
-                    do_update_li = false;
-                    do_remove_li = true;                
+                    // no person - remove row
+                    do_create_row = false;
+                    do_update_row = false;
+                    do_remove_row = true;                
                     
                 }
                 
             }
-            else //-- no <li> --//
+            else //-- no row --//
             {
                 
-                //SOURCENET.log_message( "In " + me + "(): NO <li> for " + current_li_id );
+                //SOURCENET.log_message( "In " + me + "(): NO row for " + current_row_id );
                 // got person?
                 if ( got_person == true )
                 {
                     
                     // yes.  convert to string and replace value, in case there have
                     //    been changes.
-                    do_create_li = true;
-                    do_update_li = true;
-                    do_remove_li = false;
+                    do_create_row = true;
+                    do_update_row = true;
+                    do_remove_row = false;
                     
                 }
                 else
                 {
                     
                     // no person - nothing to do.
-                    do_create_li = false;
-                    do_update_li = false;
-                    do_remove_li = false;                
+                    do_create_row = false;
+                    do_update_row = false;
+                    do_remove_row = false;                
                     
                 }
     
-            } //-- END check to see if <li> for current person. --//
+            } //-- END check to see if row for current person. --//
             
             // Do stuff!
             
-            SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_li = " + do_create_li + "; do_update_li = " + do_update_li + "; do_remove_li = " + do_remove_li );
+            SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_row = " + do_create_row + "; do_update_row = " + do_update_row + "; do_remove_row = " + do_remove_row );
             
-            // crate new <li>?
-            if ( do_create_li == true )
+            // crate new row?
+            if ( do_create_row == true )
             {
                 
-                // create li with id = li_id_prefix + person_index, store in
-                //    current_li_element.
-                current_li_element = $( '<li>Empty</li>' );
-                current_li_element.attr( "id", li_id_prefix + person_index );
+                // create row with id = row_id_prefix + person_index, store in
+                //    current_row_element.
+                current_row_element = $( '<tr></tr>' );
+                current_row_element.attr( "id", row_id_prefix + person_index );
                 
-                // prepend it to the person_list_ul_element
-                person_list_ul_element.prepend( current_li_element );
+                // prepend it to the person_list_element
+                person_list_element.prepend( current_row_element );
                 
             } //-- END check to see if do_create_li --//
             
-            // update contents of <li>?
-            if ( do_update_li == true )
+            // update contents of <tr>?
+            if ( do_update_row == true )
             {
                 
-                // for now, just place person string in <li>.
-                li_contents = person_string;
+                // for now, just place person string in a <td>.
+                row_contents = person_string;
                 
                 // (and other stuff needed for that to work.)
-                li_contents += '<input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" />';
+                row_contents += '<td><input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" /></td>';
                 
-                current_li_element.html( li_contents );
+                current_row_element.html( row_contents );
                 
             } //-- END check to see if do_update_li --//
             
-            // delete <li>?
-            if ( do_remove_li == true )
+            // delete <tr>?
+            if ( do_remove_row == true )
             {
                 
                 // delete <li>.
-                current_li_element.remove();
+                current_row_element.remove();
                 
             } //-- END check to see if do_delete_li --//
             
