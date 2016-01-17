@@ -464,19 +464,6 @@ class TestHelper( object ):
             
         #-- END try/except --#
         
-        # Load OpenCalais Access Token.
-        try:
-        
-            cls.load_open_calais_access_token()
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            status_instance.setup_error_count += 1
-            status_instance.setup_error_list.append( OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN )
-            
-        #-- END try/except --#
-        
         print( "In TestHelper." + me + "(): standardSetUp complete." )
 
     #-- END function standardSetUp() --#

@@ -3,7 +3,8 @@ from sourcenet.models import Article_Data
 from django.contrib.auth.models import User
 
 # declare variables
-automated_user = None
+selected_username = ""
+selected_user = None
 article_data_qs = None
 article_data_count = -1
 article_data = None
@@ -31,10 +32,11 @@ source_mention_count = -1
 source_mention = None
 
 # get User with name "automated"
-automated_user = User.objects.filter( username = "automated" ).get()
+selected_username = "automated"
+selected_user = User.objects.filter( username = selected_user ).get()
 
 # find all Article_Data for automated user.
-article_data_qs = Article_Data.objects.filter( coder = automated_user )
+article_data_qs = Article_Data.objects.filter( coder = selected_user )
 
 # now, filter to only include a particular tag
 article_data_qs = article_data_qs.filter( article__tags__name = "prelim_reliability" )
