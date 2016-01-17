@@ -1070,14 +1070,14 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 
 ### Using unittest data for development
 
-- create a database where the unit test data can live.  The name should be "test_", followed by the name of your main production database.  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
+- create a database where the unit test data can live.  I usually call it the name of the main production database ("`sourcenet`") followed by "`_test`".  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
 
     - postgresql example, where production database name is "`sourcenet`" and database user is "`django_user`":
 
-            CREATE DATABASE test_sourcenet;
-            GRANT ALL PRIVILEGES ON DATABASE test_sourcenet TO django_user;
+            CREATE DATABASE sourcenet_test;
+            GRANT ALL PRIVILEGES ON DATABASE sourcenet_test TO django_user;
 
-- update the DATABASES dictionary in settings.py of the application that contains sourcenet to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`test_sourcenet`" rather than "`sourcenet`".
+- update the DATABASES dictionary in settings.py of the application that contains sourcenet to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`sourcenet_test`" rather than "`sourcenet`".
 - cd into your django application's home directory, activate your virtualenv if you created one, then run "`python manage.py migrate`" to create all the tables in the database.
 
         cd <django_app_directory>
