@@ -727,6 +727,13 @@ def article_code( request_IN ):
     # store the article ID if passed in.
     article_id = request_data.get( "article_id", -1 )
 
+    # check to see if ""
+    if ( article_id == "" ):
+    
+        article_id = -1
+        
+    #-- END check to see if article_id = "" --#
+
     # retrieve QuerySet that contains that article.
     article_qs = Article.objects.filter( pk = article_id )
 

@@ -31,6 +31,7 @@
 
             <header>
                 <h3>Sourcenet</h3>
+                <p><strong>User:</strong> {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
                 <ul>
                     <li>
                         <a href="{% url 'sourcenet-output_network' %}">Go to network outputter</a>
@@ -43,9 +44,6 @@
                     </li>
                     <li>
                         <a href="{% url 'sourcenet-article_code' %}">Code an article</a>
-                    </li>
-                    <li>
-                        <a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a>
                     </li>
                 </ul>
                 <hr />
