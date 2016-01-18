@@ -1,13 +1,14 @@
+{% load staticfiles %}
 <html>
 
     <head>
         <title>{% block title %}Sourcenet{% endblock %}</title>
         {%block inside-head %}{% endblock %}
-        <link rel="stylesheet" type="text/css" href="/static/sourcenet/sourcenet.css" />
+        <link rel="stylesheet" type="text/css" href="{% static "sourcenet/sourcenet.css" %}" />
         {% if base_include_django_ajax_selects %}
-            <link href="/static/ajax_select/css/ajax_select.css" type="text/css" media="all" rel="stylesheet">
-            <script type="text/javascript" src="/static/ajax_select/js/bootstrap.js"></script>
-            <script type="text/javascript" src="/static/ajax_select/js/ajax_select.js"></script>
+            <link href="{% static "ajax_select/css/ajax_select.css" %}" type="text/css" media="all" rel="stylesheet">
+            <script type="text/javascript" src="{% static "ajax_select/js/bootstrap.js" %}"></script>
+            <script type="text/javascript" src="{% static "ajax_select/js/ajax_select.js" %}"></script>
         {% endif %}
 
     </head>
@@ -19,29 +20,38 @@
             <!-- No navigation to see here. -->
             
         {% else %}
+        
+            {% if base_simple_navigation %}
+            
+            <header>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet.views.logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+            </header>
+            
+            {% else %}
 
             <header>
                 <h3>Sourcenet</h3>
                 <ul>
                     <li>
-                        <a href="/sourcenet/sourcenet/output/network">Go to network outputter</a>
+                        <a href="{% url 'sourcenet.views.output_network' %}">Go to network outputter</a>
                     </li>
                     <li>
-                        <a href="/sourcenet/sourcenet/output/articles">Go to article outputter</a>
+                        <a href="{% url 'sourcenet.views.output_articles' %}">Go to article outputter</a>
                     </li>
                     <li>
-                        View: <a href="/sourcenet/sourcenet/article/view/">an article</a> | <a href="/sourcenet/sourcenet/article/article_data/view/">an article's Article_Data</a>
+                        View: <a href="{% url 'sourcenet.views.article_view' %}">an article</a> | <a href="{% url 'sourcenet.views.article_view_article_data' %}">an article's Article_Data</a>
                     </li>
                     <li>
-                        <a href="/sourcenet/sourcenet/article/code/">Code an article</a>
+                        <a href="{% url 'sourcenet.views.article_code' %}">Code an article</a>
                     </li>
                     <li>
-                        <a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/sourcenet/sourcenet/accounts/logout/">Logout</a>
+                        <a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet.views.logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a>
                     </li>
                 </ul>
                 <hr />
             </header>
-    
+            
+            {% endif %}    
 
         {% endif %}
 

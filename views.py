@@ -29,16 +29,11 @@ from bs4 import BeautifulSoup
 # import django authentication code.
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
-
 # include the django conf settings
 #from django.conf import settings
 
 # django core imports
-
-# import django code for csrf security stuff.
-from django.template.context_processors import csrf
-
-#from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse
 
 # Import objects from the django.http library.
 #from django.http import Http404
@@ -53,6 +48,9 @@ from django.shortcuts import render_to_response
 #from django.template import Context
 #from django.template import loader
 from django.template import RequestContext
+
+# import django code for csrf security stuff.
+from django.template.context_processors import csrf
 
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
@@ -89,6 +87,36 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 #================================================================================
 # Shared variables and functions
 #================================================================================
+
+
+def get_request_data( request_IN ):
+    
+    '''
+    Accepts django request.  Based on method, grabs the container for incoming
+        parameters and returns it:
+        - for method "POST", returns request_IN.POST
+        - for method "GET", returns request_IN.GET
+    '''
+    
+    # return reference
+    request_data_OUT = None
+
+    # do we have input parameters?
+    if ( request_IN.method == 'POST' ):
+
+        request_data_OUT = request_IN.POST
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        request_data_OUT = request_IN.GET
+        
+    #-- END check to see request type so we initialize form correctly. --#
+    
+    return request_data_OUT
+    
+#-- END function get_request_data() --#
+
+
 
 '''
 Gross debugging code, shared across all models.
@@ -234,11 +262,28 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
 
 def logout( request_IN ):
 
+    # declare variables
+    me = "sourcenet.views.logout"
+    request_data = None
+    redirect_path = ""
+    
+    # initialize redirect_path
+    redirect_path = "/"
+    
+    # do we have input parameters?
+    request_data = get_request_data( request_IN )
+    if ( request_data is not None ):
+    
+        # we do.  See if we have redirect.
+        redirect_path = request_data.get( "post_logout_redirect", "/" )
+
+    #-- END check to see if we have request data. --#
+
     # log out the user.
     auth.logout( request_IN )
 
     # Redirect to server home page for now.
-    return HttpResponseRedirect( "/" )
+    return HttpResponseRedirect( redirect_path )
     
 #-- END view method logout() --#
 
@@ -662,7 +707,8 @@ def article_code( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
     response_dictionary[ 'article_instance' ] = None
     response_dictionary[ 'article_text' ] = None
-    response_dictionary[ 'base_hide_navigation' ] = True
+    response_dictionary[ 'base_simple_navigation' ] = True
+    response_dictionary[ 'base_post_login_redirect' ] = reverse( article_code )
     response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
     response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
     response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
@@ -677,17 +723,12 @@ def article_code( request_IN ):
     is_ok_to_process_coding = True
     
     # do we have input parameters?
-    if ( request_IN.method == 'POST' ):
+    request_data = get_request_data( request_IN )
+    if ( request_data is not None ):
 
-        request_data = request_IN.POST
         is_form_ready = True
         
-    elif ( request_IN.method == 'GET' ):
-    
-        request_data = request_IN.GET
-        is_form_ready = True
-        
-    #-- END check to see request type so we initialize form correctly. --#
+    #-- END check to see if we have request data. --#
     
     # set up form objects.
 

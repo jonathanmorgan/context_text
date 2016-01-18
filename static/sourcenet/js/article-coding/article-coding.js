@@ -2483,7 +2483,7 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
-                //SOURCENET.log_message( "selected text : " + selected_text );
+                //SOURCENET.log_message( "selected text : \"" + selected_text + "\"" );
                 $( '#person-name' ).val( selected_text );
             }
         )

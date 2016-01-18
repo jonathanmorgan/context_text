@@ -44,7 +44,7 @@
                 </p>
                     
                 <p>
-                    <input type="submit" />
+                    <input type="submit" value="Load Article" />
                 </p>
                 
             </form>
@@ -95,16 +95,16 @@
                 <textarea id="selected-text" readonly="readonly" rows="4" cols="35"></textarea>
                 <br />
 -->
+                <p class="inputContainer" id="input-person-name">
+                    <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="person-name" name="person-name" readonly="readonly"></textarea>
+                </p>
                 <p class="inputContainer" id="select-person-type">
                     &nbsp;&nbsp;Person Type: <select name="person-type" id="person-type" onchange="SOURCENET.process_selected_person_type()">
                         <option value="" selected="selected" disabled="disabled">Choose Person Type</option>
-                        <option value="{{ person_type_source }}">Source (quoted)</option>
                         <option value="{{ person_type_subject }}">Subject (not quoted)</option>
+                        <option value="{{ person_type_source }}">Source (quoted)</option>
                         <option value="{{ person_type_author }}">Author</option>
                     </select>
-                </p>
-                <p class="inputContainer" id="input-person-name">
-                    <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="person-name" name="person-name" readonly="readonly"></textarea>
                 </p>
                 <p class="inputContainer" id="textarea-title">
                     <input type="button" id="store-title" name="store-title" value="Title ==>" />:
