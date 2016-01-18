@@ -24,7 +24,7 @@
             {% if base_simple_navigation %}
             
             <header>
-                <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet.views.logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
             </header>
             
             {% else %}
@@ -33,19 +33,19 @@
                 <h3>Sourcenet</h3>
                 <ul>
                     <li>
-                        <a href="{% url 'sourcenet.views.output_network' %}">Go to network outputter</a>
+                        <a href="{% url 'sourcenet-output_network' %}">Go to network outputter</a>
                     </li>
                     <li>
-                        <a href="{% url 'sourcenet.views.output_articles' %}">Go to article outputter</a>
+                        <a href="{% url 'sourcenet-output_articles' %}">Go to article outputter</a>
                     </li>
                     <li>
-                        View: <a href="{% url 'sourcenet.views.article_view' %}">an article</a> | <a href="{% url 'sourcenet.views.article_view_article_data' %}">an article's Article_Data</a>
+                        View: <a href="{% url 'sourcenet-article_view' %}">an article</a> | <a href="{% url 'sourcenet-article_view_article_data' %}">an article's Article_Data</a>
                     </li>
                     <li>
-                        <a href="{% url 'sourcenet.views.article_code' %}">Code an article</a>
+                        <a href="{% url 'sourcenet-article_code' %}">Code an article</a>
                     </li>
                     <li>
-                        <a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet.views.logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a>
+                        <a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'sourcenet-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a>
                     </li>
                 </ul>
                 <hr />

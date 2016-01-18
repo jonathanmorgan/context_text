@@ -75,21 +75,21 @@ urlpatterns = [
     # left in all the stuff above as a sample.  Making an output view, to let a
     #    user specify what they want in output, and then an output/display view
     #    to display the results of the rendering.
-    url( r'^output/network$', sourcenet.views.output_network ),
-    url( r'^output/articles$', sourcenet.views.output_articles ),
+    url( r'^output/network$', sourcenet.views.output_network, name = "sourcenet-output_network" ),
+    url( r'^output/articles$', sourcenet.views.output_articles, name = "sourcenet-output_articles" ),
     #( r'^output/display$', 'mysite.sourcenet.views.output_display'),
 
     # link the default authentication page to the admin login page.
-    url( r'^accounts/login/$', auth_views.login ),
+    url( r'^accounts/login/$', auth_views.login, name = "sourcenet-login" ),
     
     # created a view to log people out that redirects to server root.    
-    url( r'^accounts/logout/$', sourcenet.views.logout ),
+    url( r'^accounts/logout/$', sourcenet.views.logout, name = "sourcenet-logout" ),
 
     # article views
-    url( r'^article/view/$', sourcenet.views.article_view ),
-    url( r'^article/article_data/view/$', sourcenet.views.article_view_article_data ),
+    url( r'^article/view/$', sourcenet.views.article_view, name = "sourcenet-article_view" ),
+    url( r'^article/article_data/view/$', sourcenet.views.article_view_article_data, name = "sourcenet-article_view_article_data" ),
 
     # article coding page
-    url( r'^article/code/', sourcenet.views.article_code ),
+    url( r'^article/code/', sourcenet.views.article_code, name = "sourcenet-article_code" ),
 
 ]

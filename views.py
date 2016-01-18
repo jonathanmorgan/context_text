@@ -40,14 +40,13 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 
-# import the render_to_response() method from django.shortcuts
+# django.shortcuts imports - remder() method
 #from django.shortcuts import get_object_or_404
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 # import django template code
 #from django.template import Context
 #from django.template import loader
-from django.template import RequestContext
 
 # import django code for csrf security stuff.
 from django.template.context_processors import csrf
@@ -204,7 +203,7 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
     #    raise Http404
 #    poll_instance = get_object_or_404( Poll, pk = poll_id_IN )
 
-#    return render_to_response( 'polls/detail.html', { 'poll' : poll_instance }, context_instance = RequestContext( request_IN ) )
+#    return render( request_IN, 'polls/detail.html', { 'poll' : poll_instance } )
 
 #-- end method detail() --#
 
@@ -216,7 +215,6 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
 
     # declare variables
 #    param_dictionary = {}
-#    context = None
 
     #return HttpResponse( "Hello, world.  You're at the poll index." )
 #    latest_poll_list = Poll.objects.all().order_by('-pub_date')[:5]
@@ -224,17 +222,14 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
     # set up the rendering dictionary
 #    param_dictionary.update( {'latest_poll_list': latest_poll_list} )
 
-    # get the context
-#    context = RequestContext( request_IN )
-
-    # this has a django.shortcuts method, render_to_response, used below.
+    # this has a django.shortcuts method, render(), used below.
     #t = loader.get_template('polls/index.html')
     #c = Context({
     #    'latest_poll_list': latest_poll_list,
     #})
     #return HttpResponse(t.render(c))
-    #response_OUT = render_to_response('polls/index.html', {'latest_poll_list': latest_poll_list})
-#    response_OUT = render_to_response('polls/index.html', param_dictionary, context_instance = context )
+    #response_OUT = render( request_IN, 'polls/index.html', {'latest_poll_list': latest_poll_list} )
+#    response_OUT = render( request_IN, 'polls/index.html', param_dictionary )
 
 #    return response_OUT
 
@@ -253,7 +248,7 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
     # get poll instance
 #    poll_instance = get_object_or_404( Poll, pk = poll_id_IN )
 
-#    response_OUT = render_to_response( 'polls/results.html', { 'poll': poll_instance }, context_instance = RequestContext( request_IN ) )
+#    response_OUT = render( request_IN, 'polls/results.html', { 'poll': poll_instance } )
 
 #    return response_OUT
 
@@ -296,7 +291,6 @@ def article_view( request_IN ):
 
     # declare variables
     me = "article_view"
-    my_context_instance = None
     response_dictionary = {}
     default_template = ''
     article_lookup_form = None
@@ -318,9 +312,6 @@ def article_view( request_IN ):
     p_tag_bs = None
     p_tag_html = ""
 
-    # configure context instance
-    my_context_instance = RequestContext( request_IN )
-    
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -479,7 +470,7 @@ def article_view( request_IN ):
     response_dictionary[ 'current_view' ] = me        
 
     # render response
-    response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+    response_OUT = render( request_IN, default_template, response_dictionary )
 
     return response_OUT
 
@@ -494,7 +485,6 @@ def article_view_article_data( request_IN ):
 
     # declare variables
     me = "article_view_coding"
-    my_context_instance = None
     response_dictionary = {}
     default_template = ''
     request_inputs = None
@@ -510,9 +500,6 @@ def article_view_article_data( request_IN ):
     article_data_select_form = None
     article_data_id_list = []
 
-    # configure context instance
-    my_context_instance = RequestContext( request_IN )
-    
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -633,7 +620,7 @@ def article_view_article_data( request_IN ):
     response_dictionary[ 'current_view' ] = me        
 
     # render response
-    response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+    response_OUT = render( request_IN, default_template, response_dictionary )
 
     return response_OUT
 
@@ -650,7 +637,6 @@ def article_code( request_IN ):
     me = "article_code"
     logger_name = ""
     debug_message = ""
-    my_context_instance = None
     response_dictionary = {}
     default_template = ''
     article_lookup_form = None
@@ -699,9 +685,6 @@ def article_code( request_IN ):
     # set logger_name
     logger_name = "sourcenet.views." + me
 
-    # configure context instance
-    my_context_instance = RequestContext( request_IN )
-    
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -1097,7 +1080,7 @@ def article_code( request_IN ):
     response_dictionary[ 'current_view' ] = me        
 
     # render response
-    response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+    response_OUT = render( request_IN, default_template, response_dictionary )
 
     return response_OUT
 
@@ -1112,7 +1095,6 @@ def output_articles( request_IN ):
 
     # declare variables
     me = "output_articles"
-    my_context_instance = None
     response_dictionary = {}
     default_template = ''
     article_select_form = None
@@ -1123,9 +1105,6 @@ def output_articles( request_IN ):
     network_query_set = None
     article_data_count = ''
     query_counter = ''
-    
-    # configure context instance
-    my_context_instance = RequestContext( request_IN )
     
     # initialize response dictionary
     response_dictionary = {}
@@ -1191,7 +1170,7 @@ def output_articles( request_IN ):
                 response_dictionary[ 'output_string' ] = output_string
                 response_dictionary[ 'article_select_form' ] = article_select_form
                 response_dictionary[ 'output_type_form' ] = output_type_form
-                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+                response_OUT = render( request_IN, default_template, response_dictionary )
                 
             else:
             
@@ -1199,7 +1178,7 @@ def output_articles( request_IN ):
                 response_dictionary[ 'output_string' ] = "ERROR - network query set is None."
                 response_dictionary[ 'article_select_form' ] = article_select_form
                 response_dictionary[ 'output_type_form' ] = output_type_form
-                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+                response_OUT = render( request_IN, default_template, response_dictionary )
             
             #-- END check to see if query set is None --#
             '''
@@ -1207,7 +1186,7 @@ def output_articles( request_IN ):
             response_dictionary[ 'output_string' ] = "debug - " + str( type( network_query_set ) ) + " - " + str( network_query_set )
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'output_type_form' ] = output_type_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            response_OUT = render( request_IN, default_template, response_dictionary )
             '''
             
         else:
@@ -1215,7 +1194,7 @@ def output_articles( request_IN ):
             # not valid - render the form again
             response_dictionary[ 'article_select_form' ] = article_select_form
             response_dictionary[ 'output_type_form' ] = output_type_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            response_OUT = render( request_IN, default_template, response_dictionary )
 
         #-- END check to see whether or not form is valid. --#
 
@@ -1231,7 +1210,7 @@ def output_articles( request_IN ):
         response_dictionary[ 'current_view' ] = me        
 
         # render
-        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+        response_OUT = render( request_IN, default_template, response_dictionary )
 
     #-- END check to see if new request or POST --#
 
@@ -1249,7 +1228,6 @@ def output_network( request_IN ):
 
     # declare variables
     me = "output_network"
-    my_context_instance = None
     response_dictionary = {}
     default_template = ''
     
@@ -1274,9 +1252,6 @@ def output_network( request_IN ):
     my_file_extension = ""
     current_date_time = ""
 
-    # configure context instance
-    my_context_instance = RequestContext( request_IN )
-    
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -1447,7 +1422,7 @@ def output_network( request_IN ):
                 response_dictionary[ 'network_output_form' ] = network_output_form
                 response_dictionary[ 'person_select_form' ] = person_select_form
                 response_dictionary[ 'relation_select_form' ] = relation_select_form
-                response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+                response_OUT = render( request_IN, default_template, response_dictionary )
                 
             #-- END check to see if we return result as a file --#
 
@@ -1459,7 +1434,7 @@ def output_network( request_IN ):
             response_dictionary[ 'network_output_form' ] = network_output_form
             response_dictionary[ 'person_select_form' ] = person_select_form
             response_dictionary[ 'relation_select_form' ] = relation_select_form
-            response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+            response_OUT = render( request_IN, default_template, response_dictionary )
 
         #-- END check to see whether or not form is valid. --#
 
@@ -1479,7 +1454,7 @@ def output_network( request_IN ):
         response_dictionary[ 'current_view' ] = me        
 
         # declare variables
-        response_OUT = render_to_response( default_template, response_dictionary, context_instance = my_context_instance )
+        response_OUT = render( request_IN, default_template, response_dictionary )
 
     #-- END check to see if new request or POST --#
 
