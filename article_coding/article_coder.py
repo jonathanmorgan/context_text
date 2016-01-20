@@ -103,6 +103,8 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
     PARAM_CAPTURE_METHOD = "capture_method"
+    PARAM_TITLE = "title"
+    PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
 
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
@@ -686,6 +688,8 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
               - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
               - PARAM_CAPTURE_METHOD = "capture_method"
+              - PARAM_TITLE = "title" - title text - if new person created, uses up to first 255 characters of this, if present, as the sourcenet_person "title" column value.
+              - PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
            - on_multiple_match_try_exact_lookup_IN - optional boolean, defaults 
               to False.  If True, tries an exact match - exactly what is in the
               name passed in, including making sure that fields that are not
@@ -746,6 +750,9 @@ class ArticleCoder( BasicRateLimited ):
         
         # saving/updating person
         capture_method = ""
+        title_IN = ""
+        title_cleaned = ""
+        title_length = -1
         
         
         # got a return reference?
@@ -755,7 +762,7 @@ class ArticleCoder( BasicRateLimited ):
             newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
             uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
         
-            # yes.
+            # and we'll use the instance passed in as the return reference.
             instance_OUT = article_person_IN
             
             # got a person ID passed in?
@@ -1189,8 +1196,8 @@ class ArticleCoder( BasicRateLimited ):
             # got a person (sanity check)?
             if ( person_instance is not None ):
             
-                # !new person
-                # if no ID, is new.  Save to database.
+                # !new person?
+                # if no ID, is new.  Set values and save to database.
                 if ( not( person_instance.id ) ):
                 
                     # no ID.  See if there is a capture_method.
@@ -1201,6 +1208,27 @@ class ArticleCoder( BasicRateLimited ):
                         person_instance.capture_method = capture_method
                     
                     #-- END check to see if capture_method --#
+                    
+                    # see if there is a title.
+                    title_IN = person_details_IN.get( self.PARAM_TITLE, "" )
+                    if ( ( title_IN is not None ) and ( title_IN != "" ) ):
+
+                        # strip off white space.
+                        title_cleaned = title_IN.strip()
+                        
+                        # yes.  Longer than 255?
+                        title_length = len( title_cleaned )
+                        if ( title_length > 255 ):
+                            
+                            # title in Person is 255 characters - for this,
+                            #    truncate to 255 so we have something.
+                            title_cleaned = title_cleaned[ : 255 ]
+                            
+                        #-- END check to see if title is too long. --#
+                        
+                        person_instance.title = title_cleaned
+                        
+                    #-- END check to see if we have a title --#
                     
                     # Save the record.
                     person_instance.save()
@@ -2721,6 +2749,9 @@ class ArticleCoder( BasicRateLimited ):
         article_author = None
         article_author_qs = None
         my_capture_method = ""
+        title_IN = ""
+        cleaned_title = ""
+        title_length = ""
         
         # get logger
         my_logger = self.get_logger()
@@ -2830,10 +2861,17 @@ class ArticleCoder( BasicRateLimited ):
                 #-- END check to see if key not already set --#
                 
                 # capture method - only add if key not already in dictionary.
-                if self.PARAM_CAPTURE_METHOD not in person_details_dict:
+                current_key = self.PARAM_CAPTURE_METHOD
+                current_value = my_capture_method
+                if current_key not in person_details_dict:
                 
-                    # not there - add it.
-                    person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method
+                    # not there - got a value?
+                    if ( ( current_value is not None ) and ( current_value != "" ) ):
+                
+                        # got a value - add it.
+                        person_details_dict[ current_key ] = current_value
+                        
+                    #-- END check to see if we have a value --#
                     
                 #-- END check to see if capture method already in dict --#
     
@@ -2885,8 +2923,16 @@ class ArticleCoder( BasicRateLimited ):
                         #article_subject.match_confidence_level = 1.0
         
                         article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
-                        article_subject.title = ""
-                        article_subject.more_title = ""
+                        
+                        # see if there is a title in person_details_IN.
+                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+                        if ( ( title_IN is not None ) and ( title_IN != "" ) ):
+            
+                            # there is a title - set it.
+                            article_subject.set_title( title_IN, do_save_IN = False )
+
+                        #-- END check to see if we have a title --#
+                        
                         article_subject.organization = None # models.ForeignKey( Organization, blank = True, null = True )
                         #article_subject.document = None
                         article_subject.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
@@ -2910,6 +2956,17 @@ class ArticleCoder( BasicRateLimited ):
                         article_subject = article_subject_qs.get()
                         
                         # !UPDATE existing Article_Subject
+                        
+                        # see if there is a title in person_details_IN.
+                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+                        if ( ( title_IN is not None ) and ( title_IN != "" ) ):
+            
+                            # there is a title - set it, but if title already
+                            #    present, don't append it.
+                            article_subject.set_title( title_IN, do_save_IN = True, do_append_IN = False )
+
+                        #-- END check to see if we have a title --#
+
                         # !UPDATE alternate matches
 
                         # Were there alternate matches?
@@ -3062,6 +3119,10 @@ class ArticleCoder( BasicRateLimited ):
            with person.  If yes, does nothing.  If no, creates associations.
            Returns person.
            
+        Person column values supported:
+        
+        - title (in parameter PARAM_TITLE) - if no title set for person passed in, places the title passed in into the title field and saves the Person instance.
+        
         Associations supported:
            
         - Person_Newspaper - columns:        
@@ -3085,18 +3146,26 @@ class ArticleCoder( BasicRateLimited ):
         person_OUT = None
         
         # declare variables.
+        do_save = False
         newspaper_IN = None
         newspaper_notes_IN = ""
         external_uuid_name_IN = ""
         external_uuid_IN = ""
         external_uuid_source_IN = ""
         external_uuid_notes_IN = ""
+        title_IN = ""
+        existing_title = ""
+        title_cleaned = ""
+        title_length = ""
                 
         # got a person?
         if ( person_IN is not None ):
         
             # place person into output reference
             person_OUT = person_IN
+        
+            # initialize do_save flag to False.
+            do_save = False
         
             # get values from person_details_IN
             newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
@@ -3105,6 +3174,7 @@ class ArticleCoder( BasicRateLimited ):
             external_uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
             external_uuid_source_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_SOURCE, None )
             external_uuid_notes_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
+            title_IN = person_details_IN.get( self.PARAM_TITLE, "" )
             
             # got a newspaper instance?
             if ( newspaper_IN is not None ):
@@ -3123,7 +3193,42 @@ class ArticleCoder( BasicRateLimited ):
                 person_OUT.associate_external_uuid( external_uuid_IN, external_uuid_source_IN, external_uuid_name_IN, external_uuid_notes_IN )
             
             #-- END check to see if external UUID --#
+
+            # see if there is a title.
+            if ( ( title_IN is not None ) and ( title_IN != "" ) ):
             
+                # strip out white space.
+                title_cleaned = title_IN.strip()
+                
+                # yes.  Does person already have a title?
+                existing_title = person_OUT.title
+                if ( ( existing_title is None ) or ( existing_title == "" ) ):
+                    
+                    # no existing title.  Is title value longer than 255?
+                    title_length = len( title_cleaned )
+                    if ( title_length > 255 ):
+                        
+                        # title in Person is 255 characters - for this,
+                        #    truncate to 255 so we have something.
+                        title_cleaned = title_cleaned[ : 255 ]
+                        
+                    #-- END check to see if title is too long. --#
+                    
+                    person_OUT.title = title_cleaned
+                    do_save = True
+                    
+                #-- END check to see if existing title. --#
+                
+            #-- END check to see if we have a title --#
+            
+            # do we need to save the person itself?
+            if ( do_save == True ):
+                
+                # yes.  Save.
+                person_OUT.save()
+                
+            #-- END check to see if we need to save person instance --#
+
         #-- END check to see if person passed in --#
 
         return person_OUT

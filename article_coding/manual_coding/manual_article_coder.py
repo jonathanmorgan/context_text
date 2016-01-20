@@ -752,6 +752,14 @@ class ManualArticleCoder( ArticleCoder ):
                                 person_details = {}
                                 person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                 
+                                # got a title?
+                                if ( ( title is not None ) and ( title != "" ) ):
+                                    
+                                    # we do.  store it in person_details.
+                                    person_details[ self.PARAM_TITLE ] = title
+                                    
+                                #-- END check to see if title --#
+                                
                                 # check person type to see what type we are processing.
                                 if ( ( person_type == self.PERSON_TYPE_SUBJECT )
                                      or ( person_type == self.PERSON_TYPE_SOURCE ) ):
@@ -814,6 +822,11 @@ class ManualArticleCoder( ArticleCoder ):
                                     current_article_person = current_article_subject
 
                                 elif ( person_type == self.PERSON_TYPE_AUTHOR ):
+                                
+                                    # Add organization string to person_details
+                                    #    for author, this is in the "title"
+                                    #    field.
+                                    person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
                                 
                                     # Article_Author
                                     current_article_author = self.process_author_name( current_article_data,
