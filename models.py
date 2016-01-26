@@ -4980,6 +4980,10 @@ class Article_Person( models.Model ):
 
     # field to store how person was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
+
+    # moving title up from Article_Subject
+    title = models.CharField( max_length = 255, blank = True, null = True )
+    more_title = models.TextField( blank = True, null = True )
     
     # time stamps.
     create_date = models.DateTimeField( auto_now_add = True )
@@ -5069,10 +5073,11 @@ class Article_Person( models.Model ):
     get_article_info.short_description = 'Article Info.'
 
 
-    #
-    # Returns information on the article associated with this person.
-    #
     def get_person_id( self ):
+
+        '''
+        Returns ID of person associated with this record.
+        '''
 
         # return reference
         id_OUT = ''
@@ -5181,6 +5186,94 @@ class Article_Person( models.Model ):
         self.process_alternate_matches()
         
     #-- END method save() --#
+
+
+    def set_title( self, title_string_IN, do_save_IN = True, do_append_IN = False ):
+
+        '''
+        Accepts tutle string and boolean flag that indicates if we want to
+           append to more_title if there is already a title.  If no existing
+           title, places first 255 characters into title and stores the rest in
+           more_title.  If there is title, if do_append, will just append the
+           string passed in to more_title, preceded by a newline.
+           
+        Returns the title.
+        '''
+        
+        # return reference
+        title_OUT = ""
+        
+        # declare variables
+        is_updated = False
+        title_length = -1
+        title_cleaned = ""
+        more_title_cleaned = ""
+        
+        # got a title passed in?
+        if ( ( title_string_IN is not None ) and ( title_string_IN != "" ) ):
+            
+            # not updated so far...
+            is_updated = False
+    
+            # got one.  strip off white space.
+            title_cleaned = title_string_IN.strip()
+            
+            # yes.  Does person already have a title?
+            existing_title = self.title
+            if ( ( existing_title is None ) or ( existing_title == "" ) ):
+                
+                # no existing title.  Is title value longer than 255?
+                title_length = len( title_cleaned )
+                if ( title_length > 255 ):
+                    
+                    # title in Person is 255 characters - for this,
+                    #    truncate to 255 so we have something.
+                    self.title = title_cleaned[ : 255 ]
+                    self.more_title = title_cleaned[ 255 : ]
+                    is_updated = True
+                    
+                else:
+                
+                    # title is not long.  Just put it in title.
+                    self.title = title_cleaned
+                    is_updated = True
+                    
+                #-- END check to see if title is too long. --#
+
+            else:
+                
+                # there is an existing title.  Do we append?
+                if ( do_append_IN == True ):
+                    
+                    # we do.  Add the entire title string to more_title,
+                    #    preceded by a newline.
+                    self.more_title += "\n" + title_cleaned
+                    is_updated = True
+                    
+                #-- END check to see if we append. --#
+                
+            #-- END check to see if existing title. --#
+            
+            # updated?
+            if ( is_updated == True ):
+                
+                # yes.  Do we save?
+                if ( do_save_IN == True ):
+                    
+                    # yes.  Save.
+                    self.save()
+                    
+                #-- END check to see if we save or not. --#
+                
+            #-- END check to see if changes made --#
+            
+        #-- END check to see anything passed in. --#
+        
+        title_OUT = self.title
+            
+        return title_OUT
+
+    #-- END method set_title() --#
 
 
 #= END Article_Person Model ======================================================
@@ -5483,8 +5576,9 @@ class Article_Subject( Article_Person ):
 
     source_type = models.CharField( max_length = 255, choices = SOURCE_TYPE_CHOICES, blank = True, null = True )
     subject_type = models.CharField( max_length = 255, choices = SUBJECT_TYPE_CHOICES, blank = True, null = True )
-    title = models.CharField( max_length = 255, blank = True, null = True )
-    more_title = models.TextField( blank = True, null = True )
+    # moved up to Article_Person (so also over to Article_Author).
+    #title = models.CharField( max_length = 255, blank = True, null = True )
+    #more_title = models.TextField( blank = True, null = True )
     organization = models.ForeignKey( Organization, blank = True, null = True )
     document = models.ForeignKey( Document, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True )
