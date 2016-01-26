@@ -340,7 +340,7 @@ class TestHelper( object ):
         status_instance = None
         current_fixture = ""
         
-        print( "In TestHelper." + me + "(): starting standardOpenCalaisSetUp." )
+        print( "\nIn TestHelper." + me + "(): starting standardOpenCalaisSetUp." )
         
         # see if test case passed in.  If so, set status variables on it.
         if ( test_case_IN is not None ):
@@ -388,7 +388,7 @@ class TestHelper( object ):
         status_instance = None
         current_fixture = ""
         
-        print( "In TestHelper." + me + "(): starting standardSetUp." )
+        print( "\nIn TestHelper." + me + "(): starting standardSetUp." )
         
         # see if test case passed in.  If so, set status variables on it.
         if ( test_case_IN is not None ):

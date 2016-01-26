@@ -1058,6 +1058,12 @@ Specific sets of tests:
     - test basic methods in ArticleCoder that are re-used by all coding methods:
 
             python manage.py test sourcenet.tests.article_coder.test_article_coder
+            
+- sourcenet model instances:
+
+    - test Person (and AbstractPerson) model
+    
+            python manage.py test sourcenet.tests.models.test-Person_model
 
 ## Test data
 

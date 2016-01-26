@@ -63,10 +63,16 @@ body
 hr
 {
     display: block;
+    padding: 0px;
     margin-top: 0;
     margin-bottom: 0;
     margin-left: auto;
     margin-right: auto;
+    border: 2px solid black;
+}
+
+hr.fieldSeparator
+{
     border: 1px solid gray;
 }
 
@@ -85,8 +91,8 @@ hr
 	height:90%;
 	position: fixed;
 	top: 40px;
-	border: 1px solid black;
-	padding: 5px;
+	border: 2px solid black;
+	padding: 10px;
 	overflow: scroll;
 	/* overflow-y: hidden;
 	overflow-x: hidden;*/

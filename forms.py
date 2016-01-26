@@ -199,7 +199,7 @@ class ArticleCodingForm( forms.ModelForm ):
         exclude = [ 'article_data', 'original_person', 'match_confidence_level', 'match_status', 'capture_method', 'create_date', 'last_modified', 'source_type', 'subject_type', 'name', 'title', 'more_title', 'organization', 'document', 'topics', 'source_contact_type', 'source_capacity', 'localness', 'notes' ]
 
     # AJAX lookup for person.
-    person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = None )
+    person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
 
 #-- END ArticleCodingForm --#
 

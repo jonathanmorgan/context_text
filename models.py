@@ -522,6 +522,83 @@ class Abstract_Person( models.Model ):
         
         
     @classmethod
+    def find_person_from_name( cls, name_IN ):
+        
+        '''
+        More flexible way of looking for a person than look_up_person_from_name
+            (though it uses it quite extensively).  Accepts name string.  Tries
+            the following to find a matching person:
+            - looks for exact match.
+            - if no match, checks if one word.  If just one word, looks for
+                any name part that contains that one word.
+            - if not one word, or no one-word match, tries non-exact lookup.
+            - if no match, tries non-exact, partial lookup.
+        
+        Postconditions: returns QuerySet instance with what this method could
+            find.  Might be empty.  If fatal error, returns None.
+        '''
+    
+        # return reference
+        query_set_OUT = None
+        
+        # declare variables
+        me = "find_person_from_name"
+        match_count = -1
+        name_part_list = None
+        name_part_count = -1
+    
+        # first, try a strict lookup.
+        query_set_OUT = cls.look_up_person_from_name( name_IN, do_strict_match_IN = True, do_partial_match_IN = False )
+        
+        # got anything back?
+        match_count = query_set_OUT.count()
+        if ( match_count == 0 ):
+        
+            # no exact matches.  Is it just one word?
+            name_part_list = name_IN.split()
+            name_part_count = len( name_part_list )
+            if ( name_part_count == 1 ):
+            
+                # just one word.  Try the old way, so we get either first,
+                #    middle or last.
+                query_set_OUT = cls.objects.filter( Q( first_name__icontains = name_IN ) | Q( middle_name__icontains = name_IN ) | Q( last_name__icontains = name_IN ) | Q( full_name_string__icontains = name_IN ) )
+                
+            #-- END check to see if just one word. --#
+            
+            # got anything back?
+            match_count = query_set_OUT.count()
+            if ( match_count == 0 ):
+
+                # no.  Try not strict.
+                query_set_OUT = cls.look_up_person_from_name( name_IN, do_strict_match_IN = False, do_partial_match_IN = False )
+        
+                # got anything back?
+                match_count = query_set_OUT.count()
+                if ( match_count == 0 ):
+                
+                    # no exact matches.  Try not strict, allow partial match.
+                    query_set_OUT = cls.look_up_person_from_name( name_IN, do_strict_match_IN = False, do_partial_match_IN = True )
+                
+                    # got anything back?
+                    match_count = query_set_OUT.count()
+                    if ( match_count == 0 ):
+                    
+                        # no lookup matches.  Try the old way...
+                        query_set_OUT = cls.objects.filter( Q( first_name__icontains = name_IN ) | Q( middle_name__icontains = name_IN ) | Q( last_name__icontains = name_IN ) | Q( full_name_string__icontains = name_IN ) )
+                    
+                    #-- END check to see if any non-strict partial matches. --#
+                
+                #-- END check to see if any non-strict matches. --#
+
+            #-- END check to see if any matches for just one word. --#
+
+        #-- END check to see if strict matches. --#
+            
+        return query_set_OUT
+
+    #-- END class method find_person_from_name() --#
+
+    @classmethod
     def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None, do_strict_match_IN = False ):
     
         '''
@@ -644,18 +721,23 @@ class Abstract_Person( models.Model ):
 
 
     @classmethod
-    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False ):
+    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False, do_partial_match_IN = False ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
            parse name into prefix/title, first name, middle name(s), last name,
-           and suffix.  Looks first for an exact person match.  If one found,
-           returns it.  If none found, if create flag is true, returns new Person
-           instance with name stored in it.  If flag if false, returns None.
+           and suffix.  Uses the result of the parse to lookup the person in
+           the database by name part.  If do_strict_match_IN is True, looks for
+           the exact combination of the name parts (so if a record has same
+           first and last name, and a middle name, but the string passed in just
+           has a middle name, no match).  If do_strict_match_IN is False, the
+           above example would result in a match.  Returns QuerySet that results
+           from filtering Person objects based on name string passed in.  If
+           None found, returns empty QuerySet.  If error, returns None.
         preconditions: None.
-        postconditions: If new Person instance returned, it will not have been
-           saved.  If you want that person to be in the database, you have to
-           save it yourself.
+        postconditions: Returns QuerySet that results from filtering Person
+           objects based on name string passed in.  If None found, returns empty
+           QuerySet.  If error, returns None.
         '''
         
         # return reference
@@ -702,8 +784,18 @@ class Abstract_Person( models.Model ):
             # got a prefix?
             if ( prefix ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( name_prefix__iexact = prefix )
+                # yes - allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( name_prefix__icontains = prefix )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( name_prefix__iexact = prefix )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             
@@ -731,8 +823,18 @@ class Abstract_Person( models.Model ):
             # first name
             if ( first ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( first_name__iexact = first )
+                # allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( first_name__icontains = first )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( first_name__iexact = first )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             
@@ -760,8 +862,18 @@ class Abstract_Person( models.Model ):
             # middle name
             if ( middle ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( middle_name__iexact = middle )
+                # allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( middle_name__icontains = middle )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( middle_name__iexact = middle )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             
@@ -789,8 +901,18 @@ class Abstract_Person( models.Model ):
             # last name
             if ( last ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( last_name__iexact = last )
+                # allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( last_name__icontains = last )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( last_name__iexact = last )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             
@@ -818,8 +940,18 @@ class Abstract_Person( models.Model ):
             # suffix
             if ( suffix ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( name_suffix__iexact = suffix )
+                # allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( name_suffix__icontains = suffix )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( name_suffix__iexact = suffix )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             
@@ -847,8 +979,18 @@ class Abstract_Person( models.Model ):
             # nickname
             if ( nickname ):
     
-                # add value to query
-                qs_OUT = qs_OUT.filter( nickname__iexact = nickname )
+                # allow partial match?
+                if ( do_partial_match_IN == True ):
+                
+                    # yes.
+                    qs_OUT = qs_OUT.filter( nickname__icontains = nickname )
+                
+                else:
+                
+                    # no.
+                    qs_OUT = qs_OUT.filter( nickname__iexact = nickname )
+                    
+                #-- END check to see if we allow partial match. --#
                 
             else:
             

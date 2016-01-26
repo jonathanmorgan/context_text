@@ -116,10 +116,16 @@
                     <br />
                     <textarea id="source-quote-text" name="source-quote-text" readonly="readonly" rows="4" cols="35"></textarea>
                 </p>
-                <hr id="lookupPersonRule" />
+                <!--- <hr class="fieldSeparator" /> --->
                 <p class="inputContainer" id="lookup-person-id">
-                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Lookup Name ==>" /> {{ person_lookup_form }}
+                    <h4>Person lookup</h4>
+                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Fetch Name ==>" />
                     <br />
+                    <br />
+                    {{ person_lookup_form }}
+                </p>
+                <hr class="fieldSeparator" />
+                <p class="inputContainer" id="process-person-container">
                     <input type="button" id="process-person" name="process-person" value="Process Person" onclick="SOURCENET.process_person_coding()" />
                 </p>
             </div>
