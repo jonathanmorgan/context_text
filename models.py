@@ -5191,7 +5191,7 @@ class Article_Person( models.Model ):
     def set_title( self, title_string_IN, do_save_IN = True, do_append_IN = False ):
 
         '''
-        Accepts tutle string and boolean flag that indicates if we want to
+        Accepts title string and boolean flag that indicates if we want to
            append to more_title if there is already a title.  If no existing
            title, places first 255 characters into title and stores the rest in
            more_title.  If there is title, if do_append, will just append the
@@ -5201,13 +5201,14 @@ class Article_Person( models.Model ):
         '''
         
         # return reference
-        title_OUT = ""
+        value_OUT = ""
         
         # declare variables
         is_updated = False
-        title_length = -1
-        title_cleaned = ""
-        more_title_cleaned = ""
+        value_cleaned = ""
+        value_length = -1
+        existing_value = ""
+        more_value_cleaned = ""
         
         # got a title passed in?
         if ( ( title_string_IN is not None ) and ( title_string_IN != "" ) ):
@@ -5216,26 +5217,26 @@ class Article_Person( models.Model ):
             is_updated = False
     
             # got one.  strip off white space.
-            title_cleaned = title_string_IN.strip()
+            value_cleaned = title_string_IN.strip()
             
             # yes.  Does person already have a title?
-            existing_title = self.title
-            if ( ( existing_title is None ) or ( existing_title == "" ) ):
+            existing_value = self.title
+            if ( ( existing_value is None ) or ( existing_value == "" ) ):
                 
-                # no existing title.  Is title value longer than 255?
-                title_length = len( title_cleaned )
-                if ( title_length > 255 ):
+                # no existing value.  Is new value longer than 255?
+                value_length = len( value_cleaned )
+                if ( value_length > 255 ):
                     
-                    # title in Person is 255 characters - for this,
-                    #    truncate to 255 so we have something.
-                    self.title = title_cleaned[ : 255 ]
-                    self.more_title = title_cleaned[ 255 : ]
+                    # title is 255 characters - truncate to 255 for title, put
+                    #    the rest in more_title.
+                    self.title = value_cleaned[ : 255 ]
+                    self.more_title = value_cleaned[ 255 : ]
                     is_updated = True
                     
                 else:
                 
                     # title is not long.  Just put it in title.
-                    self.title = title_cleaned
+                    self.title = value_cleaned
                     is_updated = True
                     
                 #-- END check to see if title is too long. --#
@@ -5247,7 +5248,7 @@ class Article_Person( models.Model ):
                     
                     # we do.  Add the entire title string to more_title,
                     #    preceded by a newline.
-                    self.more_title += "\n" + title_cleaned
+                    self.more_title += "\n" + value_cleaned
                     is_updated = True
                     
                 #-- END check to see if we append. --#
@@ -5269,9 +5270,9 @@ class Article_Person( models.Model ):
             
         #-- END check to see anything passed in. --#
         
-        title_OUT = self.title
+        value_OUT = self.title
             
-        return title_OUT
+        return value_OUT
 
     #-- END method set_title() --#
 
@@ -5408,6 +5409,97 @@ class Article_Author( Article_Person ):
         
     #-- END function process_alternate_matches() --#
     
+
+    def set_organization_string( self, organization_string_IN, do_save_IN = True ):
+
+        '''
+        Accepts organization string and boolean flag that indicates whether to
+           save if we make changes.  If no existing organization string, places
+           first 255 characters into organization string.  If there is already a
+           value, does nothing.
+           
+        Returns the organization string.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        is_updated = False
+        value_cleaned = ""
+        value_length = -1
+        existing_value = ""
+        more_value_cleaned = ""
+        
+        # got a value passed in?
+        if ( ( organization_string_IN is not None ) and ( organization_string_IN != "" ) ):
+            
+            # not updated so far...
+            is_updated = False
+    
+            # got one.  strip off white space.
+            value_cleaned = organization_string_IN.strip()
+            
+            # yes.  Do we already have an organization_string value?
+            existing_value = self.organization_string
+            if ( ( existing_value is None ) or ( existing_value == "" ) ):
+                
+                # no existing value.  Is new value longer than 255?
+                value_length = len( value_cleaned )
+                if ( value_length > 255 ):
+                    
+                    # field is 255 characters - truncate to 255
+                    #    and store, so at least we have something.
+                    self.organization_string = value_cleaned[ : 255 ]
+                    is_updated = True
+                    
+                else:
+                
+                    # value is not long.  Just put it in field.
+                    self.organization_string = value_cleaned
+                    is_updated = True
+                    
+                #-- END check to see if value is too long. --#
+
+            else:
+                
+                # there is an existing value.  Do nothing for now.
+                pass
+                '''
+                # do we append?
+                if ( do_append_IN == True ):
+                    
+                    # we do.  Add the entire title string to more_title,
+                    #    preceded by a newline.
+                    self.more_title += "\n" + value_cleaned
+                    is_updated = True
+                    
+                #-- END check to see if we append. --#
+                '''
+                
+            #-- END check to see if existing value. --#
+            
+            # updated?
+            if ( is_updated == True ):
+                
+                # yes.  Do we save?
+                if ( do_save_IN == True ):
+                    
+                    # yes.  Save.
+                    self.save()
+                    
+                #-- END check to see if we save or not. --#
+                
+            #-- END check to see if changes made --#
+            
+        #-- END check to see anything passed in. --#
+        
+        value_OUT = self.organization_string
+            
+        return value_OUT
+
+    #-- END method set_organization_string() --#
+
 
 #= End Article_Author Model ======================================================
 

@@ -649,7 +649,7 @@ def article_code( request_IN ):
     article_paragraph_list = None
     
     # declare variables - coding submission.
-    person_store_json_string = ""
+    data_store_json_string = ""
     coder_user = None
     article_data_qs = None
     article_data_count = -1
@@ -660,8 +660,8 @@ def article_code( request_IN ):
     manual_article_coder = None
     result_article_data = None
     coding_status = ""
-    new_person_store_json = None
-    new_person_store_json_string = ""
+    new_data_store_json = None
+    new_data_store_json_string = ""
     page_status_message = ""
     page_status_message_list = []
     
@@ -695,7 +695,7 @@ def article_code( request_IN ):
     response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
     response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
     response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
-    response_dictionary[ 'existing_person_store_json' ] = ""
+    response_dictionary[ 'existing_data_store_json' ] = ""
     response_dictionary[ 'page_status_message_list' ] = page_status_message_list
 
     # set my default rendering template
@@ -816,12 +816,12 @@ def article_code( request_IN ):
         # !TODO - process coding submission
         if ( coding_submit_form.is_valid() == True ):
 
-            # it is valid - retrieve person_store_json and article_data_id
-            person_store_json_string = request_data.get( "person_store_json", "" )
+            # it is valid - retrieve data_store_json and article_data_id
+            data_store_json_string = request_data.get( "data_store_json", "" )
 
             # got any JSON?
-            person_store_json_string = person_store_json_string.strip()
-            if ( ( person_store_json_string is None ) or ( person_store_json_string == "" ) ):
+            data_store_json_string = data_store_json_string.strip()
+            if ( ( data_store_json_string is None ) or ( data_store_json_string == "" ) ):
 
                 # no JSON - no need to process coding.
                 is_ok_to_process_coding = False
@@ -835,12 +835,12 @@ def article_code( request_IN ):
                 manual_article_coder = ManualArticleCoder()
                 
                 # need to get call set up for new parameters.
-                article_data_instance = manual_article_coder.process_person_store_json( article_instance,
-                                                                                        current_user,
-                                                                                        person_store_json_string,
-                                                                                        article_data_id,
-                                                                                        request_IN,
-                                                                                        response_dictionary )
+                article_data_instance = manual_article_coder.process_data_store_json( article_instance,
+                                                                                      current_user,
+                                                                                      data_store_json_string,
+                                                                                      article_data_id,
+                                                                                      request_IN,
+                                                                                      response_dictionary )
 
                 # got anything back?
                 coding_status = ""
@@ -893,9 +893,9 @@ def article_code( request_IN ):
         if ( article_data_instance is not None ):
 
             # convert to JSON and store in response dictionary
-            new_person_store_json = ManualArticleCoder.convert_article_data_to_person_store_json( article_data_instance )
-            new_person_store_json_string = json.dumps( new_person_store_json )
-            response_dictionary[ 'existing_person_store_json' ] = new_person_store_json_string
+            new_data_store_json = ManualArticleCoder.convert_article_data_to_data_store_json( article_data_instance )
+            new_data_store_json_string = json.dumps( new_data_store_json )
+            response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
 
             # output a message that we've done this.
             page_status_message = "Loaded article " + str( article_instance.id ) + " coding for user " + str( current_user )

@@ -1059,6 +1059,10 @@ Specific sets of tests:
 
             python manage.py test sourcenet.tests.article_coder.test_article_coder
             
+    - test methods in ManualArticleCoder specific to manual coding:
+
+            python manage.py test sourcenet.tests.manual_article_coder.test_manual_article_coder
+            
 - sourcenet model instances:
 
     - test Person (and AbstractPerson) model

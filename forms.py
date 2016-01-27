@@ -211,7 +211,7 @@ class ArticleCodingSubmitForm( forms.Form ):
     '''
 
     # PersonStore JSON
-    person_store_json = forms.CharField( required = False, widget = forms.HiddenInput() )
+    data_store_json = forms.CharField( required = False, widget = forms.HiddenInput() )
     article_data_id = forms.IntegerField( required = False, widget = forms.HiddenInput() )
 
 #-- END ArticleLookupForm --#

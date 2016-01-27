@@ -81,7 +81,7 @@
                     {% for article_source in article_data.article_subject_set.all %}
 
                         <li>
-                            {{ article_source }} ( quotes: {{ article_source.article_subject_quotation_set.all.count }}; mentions: {{ article_source.article_subject_mention_set.all.count }} )
+                            {{ article_source }}{% if article_source.title %} - <em>title "{{article_source.title}}"</em> - {% endif %} ( quotes: {{ article_source.article_subject_quotation_set.all.count }}; mentions: {{ article_source.article_subject_mention_set.all.count }} )
                             <br />
                             <br />
                             <strong><em>Quotations</em></strong>

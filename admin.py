@@ -108,8 +108,8 @@ class PersonAdmin( admin.ModelAdmin ):
     #    Person_OrganizationInline,
     #]
 
-    list_display = ( 'last_name', 'first_name', 'middle_name', 'title' )
-    #list_display_links = ( 'headline', )
+    list_display = ( 'id', 'last_name', 'first_name', 'middle_name', 'title' )
+    list_display_links = ( 'id', 'last_name', 'first_name', 'middle_name', )
     list_filter = [ 'last_name', 'first_name' ]
     search_fields = [ 'last_name', 'first_name', 'middle_name', 'title', 'id' ]
     #date_hierarchy = 'pub_date'

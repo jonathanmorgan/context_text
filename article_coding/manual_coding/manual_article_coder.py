@@ -100,23 +100,23 @@ class ManualArticleCoder( ArticleCoder ):
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
 
     # kwarg parameter names
-    KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN"
+    KWARG_DATA_STORE_JSON_STRING = "data_store_json_string_IN"
     KWARG_ARTICLE_DATA_ID = "article_data_id_IN"
     KWARG_REQUEST = "request_IN"
     KWARG_RESPONSE_DICTIONARY = "response_dictionary_IN"
 
     # person store JSON property names
-    PERSON_STORE_PROP_PERSON_ARRAY = "person_array"
-    PERSON_STORE_PROP_PERSON_TYPE = "person_type"
-    PERSON_STORE_PROP_PERSON_NAME = "person_name"
-    PERSON_STORE_PROP_TITLE = "title"
-    PERSON_STORE_PROP_QUOTE_TEXT = "quote_text"
-    PERSON_STORE_PROP_PERSON_ID = "person_id"
-    PERSON_STORE_PROP_NEXT_PERSON_INDEX = "next_person_index"
-    PERSON_STORE_PROP_NAME_TO_PERSON_INDEX_MAP = "name_to_person_index_map"
-    PERSON_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
-    PERSON_STORE_PROP_STATUS_MESSAGE_ARRAY = "status_message_array"
-    PERSON_STORE_PROP_LATEST_PERSON_INDEX = "latest_person_index"
+    DATA_STORE_PROP_PERSON_ARRAY = "person_array"
+    DATA_STORE_PROP_PERSON_TYPE = "person_type"
+    DATA_STORE_PROP_PERSON_NAME = "person_name"
+    DATA_STORE_PROP_TITLE = "title"
+    DATA_STORE_PROP_QUOTE_TEXT = "quote_text"
+    DATA_STORE_PROP_PERSON_ID = "person_id"
+    DATA_STORE_PROP_NEXT_PERSON_INDEX = "next_person_index"
+    DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP = "name_to_person_index_map"
+    DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
+    DATA_STORE_PROP_STATUS_MESSAGE_ARRAY = "status_message_array"
+    DATA_STORE_PROP_LATEST_PERSON_INDEX = "latest_person_index"
 
 
     #============================================================================
@@ -166,11 +166,11 @@ class ManualArticleCoder( ArticleCoder ):
 
 
     @classmethod
-    def convert_article_data_to_person_store_json( cls, article_data_IN, return_string_OUT = False ):
+    def convert_article_data_to_data_store_json( cls, article_data_IN, return_string_IN = False ):
 
         '''
-        Accepts Article_Data instance we want to convert to person store JSON.
-           Retrieves authors and sources and uses them to create person store
+        Accepts Article_Data instance we want to convert to data store JSON.
+           Retrieves authors and sources and uses them to create data store
            JSON representation of Article_Data.
 
         Returns Article_Data in JSON format, either in dictionaries and lists
@@ -181,8 +181,8 @@ class ManualArticleCoder( ArticleCoder ):
         json_OUT = ""
 
         # declare variables
-        me = "convert_article_data_to_person_store_json"
-        person_store_dict = None
+        me = "convert_article_data_to_data_store_json"
+        data_store_dict = None
         article_author_qs = None
         article_subject_qs = None
         person_list = None
@@ -245,11 +245,11 @@ class ManualArticleCoder( ArticleCoder ):
 
                 # create person dictionary
                 current_person_dict = {}
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
-                current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
-                current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
-                current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
+                current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
+                current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
+                current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+                current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
 
                 # add to lists and dicts.
                 person_list.append( current_person_dict )
@@ -305,11 +305,11 @@ class ManualArticleCoder( ArticleCoder ):
     
                     # create person dictionary
                     current_person_dict = {}
-                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_TYPE ] = current_person_type
-                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_NAME ] = current_person_name
-                    current_person_dict[ cls.PERSON_STORE_PROP_TITLE ] = current_title
-                    current_person_dict[ cls.PERSON_STORE_PROP_PERSON_ID ] = current_person_id
-                    current_person_dict[ cls.PERSON_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                    current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
+                    current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
     
                     # add to lists and dicts.
                     person_list.append( current_person_dict )
@@ -323,26 +323,26 @@ class ManualArticleCoder( ArticleCoder ):
             #-- END loop over subjects --#
 
             # put it all together.
-            person_store_dict = {}
-            person_store_dict[ cls.PERSON_STORE_PROP_PERSON_ARRAY ] = person_list
-            person_store_dict[ cls.PERSON_STORE_PROP_NEXT_PERSON_INDEX ] = next_index
-            person_store_dict[ cls.PERSON_STORE_PROP_NAME_TO_PERSON_INDEX_MAP ] = name_to_person_index_dict
-            person_store_dict[ cls.PERSON_STORE_PROP_ID_TO_PERSON_INDEX_MAP ] = id_to_person_index_dict
-            person_store_dict[ cls.PERSON_STORE_PROP_STATUS_MESSAGE_ARRAY ] = []
-            person_store_dict[ cls.PERSON_STORE_PROP_LATEST_PERSON_INDEX ] = current_index
+            data_store_dict = {}
+            data_store_dict[ cls.DATA_STORE_PROP_PERSON_ARRAY ] = person_list
+            data_store_dict[ cls.DATA_STORE_PROP_NEXT_PERSON_INDEX ] = next_index
+            data_store_dict[ cls.DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP ] = name_to_person_index_dict
+            data_store_dict[ cls.DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP ] = id_to_person_index_dict
+            data_store_dict[ cls.DATA_STORE_PROP_STATUS_MESSAGE_ARRAY ] = []
+            data_store_dict[ cls.DATA_STORE_PROP_LATEST_PERSON_INDEX ] = current_index
 
         #-- END check to see if we have Article_Data instance. --#
 
         # return string or objects?
-        if ( return_string_OUT == True ):
+        if ( return_string_IN == True ):
 
             # string - use json.dumps()
-            json_OUT = json.dumps( person_store_dict, sort_keys = True, indent = 4, separators=(',', ': ') )
+            json_OUT = JSONHelper.pretty_print_json( data_store_dict )
 
         else:
 
             # objects - just return the dictionary.
-            json_OUT = person_store_dict
+            json_OUT = data_store_dict
 
         #-- END check to see if return string or objects. --#
 
@@ -415,7 +415,7 @@ class ManualArticleCoder( ArticleCoder ):
         Accepts:
         - article_IN - article instance we will be coding.
         - coding_user_IN - user instance for coder who coded this article.
-        - KWARG_PERSON_STORE_JSON_STRING = "person_store_json_string_IN" - JSON string that contains coding for article we are processing.
+        - KWARG_DATA_STORE_JSON_STRING = "data_store_json_string_IN" - JSON string that contains coding for article we are processing.
         - KWARG_ARTICLE_DATA_ID = "article_data_id_IN" - ID of article data for this coder's coding on this article, if we are updating, not creating new.
         - KWARG_REQUEST = "request_IN" - if manual coding via web form, request instance of form submission.
         - KWARG_RESPONSE_DICTIONARY = "response_dictionary_IN" - if manual coding via web form, response dictionary that will be used to render response sent back to user.
@@ -438,7 +438,7 @@ class ManualArticleCoder( ArticleCoder ):
         me = "process_article"
         my_logger = None
         my_exception_helper = None
-        person_store_json_string = ""
+        data_store_json_string = ""
         article_data_id = -1
         request = None
         response_dictionary = ""
@@ -451,19 +451,19 @@ class ManualArticleCoder( ArticleCoder ):
         # get exception_helper
         my_exception_helper = self.get_exception_helper()
         
-        # get parameters for calling process_person_store_json()
-        person_store_json_string = kwargs[ self.KWARG_PERSON_STORE_JSON_STRING ]
+        # get parameters for calling process_data_store_json()
+        data_store_json_string = kwargs[ self.KWARG_DATA_STORE_JSON_STRING ]
         article_data_id = kwargs[ self.KWARG_ARTICLE_DATA_ID ]
         request = kwargs[ self.KWARG_REQUEST ]
         response_dictionary = kwargs[ KWARG_RESPONSE_DICTIONARY ]
         
-        # call process_person_store_json()
-        article_data = self.process_person_store_json( article_IN,
-                                                       coding_user_IN,
-                                                       person_store_json_string,
-                                                       article_data_id,
-                                                       request,
-                                                       response_dictionary )
+        # call process_data_store_json()
+        article_data = self.process_data_store_json( article_IN,
+                                                     coding_user_IN,
+                                                     data_store_json_string,
+                                                     article_data_id,
+                                                     request,
+                                                     response_dictionary )
 
         # got article data?
         if ( article_data is not None ):
@@ -483,7 +483,7 @@ class ManualArticleCoder( ArticleCoder ):
         else:
 
             # ERROR - should have gotten Article_Data instance back.
-            status_OUT = self.STATUS_ERROR_PREFIX + "In " + me + "(): ERROR - call to process_person_store_json() did not return Article_Data."
+            status_OUT = self.STATUS_ERROR_PREFIX + "In " + me + "(): ERROR - call to process_data_store_json() did not return Article_Data."
 
         #-- END check to see if we got anything back. --#
         
@@ -492,22 +492,22 @@ class ManualArticleCoder( ArticleCoder ):
     #-- END method process_article() --#
     
 
-    def process_person_store_json( self,
-                                   article_IN,
-                                   coder_user_IN,
-                                   person_store_json_string_IN,
-                                   article_data_id_IN,
-                                   request_IN,
-                                   response_dictionary_IN ):
+    def process_data_store_json( self,
+                                 article_IN,
+                                 coder_user_IN,
+                                 data_store_json_string_IN,
+                                 article_data_id_IN = None,
+                                 request_IN = None,
+                                 response_dictionary_IN = None ):
     
         '''
         Accepts:
         - article_IN - article instance for which we have coding data.
         - coder_user_IN - user instance for coder.
-        - person_store_json_string_IN - JSON string that contains coding for article we are processing.
-        - article_data_id_IN - ID of article data for this coder's coding on this article, if we are updating, not creating new.
-        - request_IN - if manual coding via web form, request instance of form submission.
-        - response_dictionary_IN - if manual coding via web form, response dictionary that will be used to render response sent back to user.
+        - data_store_json_string_IN - JSON string that contains coding for article we are processing.
+        - article_data_id_IN - optional - ID of article data for this coder's coding on this article, if we are updating, not creating new.
+        - request_IN - optional - if manual coding via web form, request instance of form submission.
+        - response_dictionary_IN - optional - if manual coding via web form, response dictionary that will be used to render response sent back to user.
 
         Purpose:
            This method accepts the above parameters.  It checks to make sure
@@ -544,15 +544,15 @@ class ManualArticleCoder( ArticleCoder ):
         article_data_OUT = None
     
         # declare variables
-        me = "process_person_store_json"
+        me = "process_data_store_json"
         
         # declare variables - coding submission.
         is_ok_to_process = True
         status_message = ""
         status_message_list = None
         coder_user = None
-        person_store_json_string = ""
-        person_store_json = None
+        data_store_json_string = ""
+        data_store_json = None
         article_data_id = -1
         person_list = []
         person_count = -1
@@ -606,13 +606,13 @@ class ManualArticleCoder( ArticleCoder ):
             if ( coder_user is not None ):
             
                 # yes - Got a JSON string?
-                person_store_json_string = person_store_json_string_IN
-                if ( ( person_store_json_string is not None ) and ( person_store_json_string != "" ) ):
+                data_store_json_string = data_store_json_string_IN
+                if ( ( data_store_json_string is not None ) and ( data_store_json_string != "" ) ):
                 
-                    self.output_debug( person_store_json_string, me, "====> Person Store JSON\n\n" )
+                    self.output_debug( data_store_json_string, me, "====> Person Store JSON\n\n" )
 
                     # got a JSON string, convert to Python objects.
-                    person_store_json = json.loads( person_store_json_string )
+                    data_store_json = json.loads( data_store_json_string )
 
                     # see if there is an existing Article_Data instance for this
                     #    user and article.
@@ -720,7 +720,7 @@ class ManualArticleCoder( ArticleCoder ):
                         json_article_data_note = Article_Data_Notes()
                         json_article_data_note.article_data = current_article_data
                         json_article_data_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                        json_article_data_note.content = person_store_json_string
+                        json_article_data_note.content = data_store_json_string
                         json_article_data_note.source = self.coder_type + " - user " + str( coder_user )
                         json_article_data_note.content_description = "Person Store JSON (likely from manual coding via article-code view)."
                         json_article_data_note.save()
@@ -729,7 +729,7 @@ class ManualArticleCoder( ArticleCoder ):
                         article_data_OUT = current_article_data
 
                         # get list of people.
-                        person_list = person_store_json[ self.PERSON_STORE_PROP_PERSON_ARRAY ]
+                        person_list = data_store_json[ self.DATA_STORE_PROP_PERSON_ARRAY ]
                         
                         # get count of persons
                         person_count = len( person_list )
@@ -742,11 +742,11 @@ class ManualArticleCoder( ArticleCoder ):
                             for current_person in person_list:
                             
                                 # retrieve person information.
-                                person_type = current_person.get( self.PERSON_STORE_PROP_PERSON_TYPE )
-                                person_name = current_person.get( self.PERSON_STORE_PROP_PERSON_NAME )
-                                title = current_person.get( self.PERSON_STORE_PROP_TITLE )
-                                quote_text = current_person.get( self.PERSON_STORE_PROP_QUOTE_TEXT )
-                                person_id = current_person.get( self.PERSON_STORE_PROP_PERSON_ID )
+                                person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
+                                person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                title = current_person.get( self.DATA_STORE_PROP_TITLE )
+                                quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
+                                person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
 
                                 # set up person details
                                 person_details = {}
@@ -929,7 +929,7 @@ class ManualArticleCoder( ArticleCoder ):
     
         return article_data_OUT
     
-    #-- END function process_person_store_json() --#
+    #-- END function process_data_store_json() --#
 
 
     def validate_FIT_results( self, FIT_values_IN ):

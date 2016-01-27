@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.selection/1.0.1/jquery.selection.min.js"></script>
 <link rel="stylesheet" type="text/css" href="{% static "sourcenet/css/article-coding/article-coding.css" %}" />
 <script src="{% static "sourcenet/js/article-coding/article-coding.js" %}"></script>
-{% if existing_person_store_json %}<script>SOURCENET.person_store_json = '{{ existing_person_store_json }}';</script>{% endif %}
+{% if existing_data_store_json %}<script>SOURCENET.data_store_json = '{{ existing_data_store_json }}';</script>{% endif %}
 {% endblock %}
 
 {% block content %}

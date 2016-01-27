@@ -1453,6 +1453,23 @@ class ArticleCoder( BasicRateLimited ):
                     person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method
                     
                 #-- END check to see if capture method already in dict --#
+                
+                #--------------------------------------------------------------#
+                #-- Set author_organization. --#
+                #--------------------------------------------------------------#
+
+                # got one passed in?
+                if ( ( author_organization_IN is not None ) and ( author_organization_IN != "" ) ):
+                
+                    # got one passed in.  Use it.
+                    author_organization = author_organization_IN
+                    
+                else:
+                
+                    # got one in the person_details_dict?
+                    author_organization = person_details_dict.get( self.PARAM_AUTHOR_ORGANIZATION_STRING, "" )
+                    
+                #-- END setting author_organization --#
     
                 #--------------------------------------------------------------#
                 #-- do lookup --#
@@ -1473,7 +1490,7 @@ class ArticleCoder( BasicRateLimited ):
 
                 # got a person?
                 if ( author_person ):
-
+                
                     # Now, we need to deal with Article_Author instance.
                     #    First, see if there already is one for this
                     #    name.  If so, do nothing.  If not, make one.
@@ -1505,6 +1522,16 @@ class ArticleCoder( BasicRateLimited ):
                         article_author = article_author_qs.get()
                         
                         # !UPDATE existing Article_Author
+                        
+                        # organization string
+                        if ( ( author_organization is not None ) and ( author_organization != "" ) ):
+            
+                            # there is an organization - if organization_string
+                            #    already present, don't append it.
+                            article_author.set_organization_string( author_organization, do_save_IN = True )
+
+                        #-- END check to see if we have an organization string --#
+
                         # !UPDATE alternate matches
 
                         # Were there alternate matches?

@@ -16,11 +16,11 @@ var SOURCENET = SOURCENET || {};
 
 
 // JSON to prepopulate page if we are editing.
-SOURCENET.person_store_json = null;
+SOURCENET.data_store_json = null;
 SOURCENET.article_data_id = -1;
 
 // person store used to keep track of authors and persons while coding.
-SOURCENET.person_store = null;
+SOURCENET.data_store = null;
 
 // DEBUG!
 SOURCENET.debug_flag = true;
@@ -37,16 +37,16 @@ SOURCENET.PERSON_TYPE_ARRAY = [ SOURCENET.PERSON_TYPE_SOURCE, SOURCENET.PERSON_T
 
 
 //=====================//
-// !----> PersonStore
+// !----> DataStore
 //=====================//
 
-// PersonStore constructor
+// DataStore constructor
 
 /**
  * Stores and indexes persons in an article.
  * @constructor
  */
-SOURCENET.PersonStore = function()
+SOURCENET.DataStore = function()
 {
     // instance variables
     this.person_array = [];
@@ -59,7 +59,7 @@ SOURCENET.PersonStore = function()
     this.latest_person_index = -1;
 }
 
-// SOURCENET.PersonStore methods
+// SOURCENET.DataStore methods
 
 /**
  * Accepts a Person instance.  First, checks to see if the person is valid.
@@ -74,7 +74,7 @@ SOURCENET.PersonStore = function()
  *    - if person ID, this.id_to_person_index_map with person ID as key, index
  *       of person in the person_array as the value.
  */
-SOURCENET.PersonStore.prototype.add_person = function( person_IN )
+SOURCENET.DataStore.prototype.add_person = function( person_IN )
 {
     
     // return reference
@@ -121,7 +121,7 @@ SOURCENET.PersonStore.prototype.add_person = function( person_IN )
                     
                     // already in map...  Error.
                     is_ok_to_add = false;
-                    status_array_OUT.push( "Person ID " + my_person_id + " already present in PersonStore." );
+                    status_array_OUT.push( "Person ID " + my_person_id + " already present in DataStore." );
                     
                 }
                 
@@ -134,14 +134,14 @@ SOURCENET.PersonStore.prototype.add_person = function( person_IN )
             {
                 
                 // person name present (as it should be at this point).  See if
-                //    this name is already in the PersonStore.
+                //    this name is already in the DataStore.
                 person_name_index = this.get_index_for_person_name( my_person_name );
                 if ( person_name_index >= 0 )
                 {
                     
                     // already in map...  Error.
                     is_ok_to_add = false;
-                    status_array_OUT.push( "Person name " + my_person_name + " already present in PersonStore." );
+                    status_array_OUT.push( "Person name " + my_person_name + " already present in DataStore." );
                     
                 } //-- END check to see if person's name already mapped to a person --//
                 
@@ -235,7 +235,7 @@ SOURCENET.PersonStore.prototype.add_person = function( person_IN )
     
     return status_array_OUT;
     
-} //-- END SOURCENET.PersonStore method add_person() --//
+} //-- END SOURCENET.DataStore method add_person() --//
 
 
 /**
@@ -250,14 +250,14 @@ SOURCENET.PersonStore.prototype.add_person = function( person_IN )
  * @param {Person} person_IN - person we want to add to the person array.
  * @returns {int} - index of person in person array.
  */
-SOURCENET.PersonStore.prototype.add_person_to_array = function( person_IN )
+SOURCENET.DataStore.prototype.add_person_to_array = function( person_IN )
 {
     
     // return reference
     var index_OUT = -1;
     
     // declare variables
-    var me = "SOURCENET.PersonStore.prototype.add_person_to_array";
+    var me = "SOURCENET.DataStore.prototype.add_person_to_array";
     var my_person_array = []
     var my_next_index = -1;
     var my_latest_index = -1;
@@ -306,7 +306,7 @@ SOURCENET.PersonStore.prototype.add_person_to_array = function( person_IN )
     
     return index_OUT;
     
-} //-- END SOURCENET.PersonStore method add_person_to_array() --//
+} //-- END SOURCENET.DataStore method add_person_to_array() --//
 
 
 /**
@@ -319,7 +319,7 @@ SOURCENET.PersonStore.prototype.add_person_to_array = function( person_IN )
  * @returns {int} - index of person in person array, or -1 if person ID not
  *    found.
  */
-SOURCENET.PersonStore.prototype.get_index_for_person_id = function( person_id_IN )
+SOURCENET.DataStore.prototype.get_index_for_person_id = function( person_id_IN )
 {
     
     // return reference.
@@ -366,7 +366,7 @@ SOURCENET.PersonStore.prototype.get_index_for_person_id = function( person_id_IN
 
     return index_OUT;
 
-} //-- END SOURCENET.PersonStore method get_index_for_person_id() --//
+} //-- END SOURCENET.DataStore method get_index_for_person_id() --//
 
 
 /**
@@ -379,7 +379,7 @@ SOURCENET.PersonStore.prototype.get_index_for_person_id = function( person_id_IN
  * @returns {int} - index of person in person array, or -1 if person name not
  *    found.
  */
-SOURCENET.PersonStore.prototype.get_index_for_person_name = function( person_name_IN )
+SOURCENET.DataStore.prototype.get_index_for_person_name = function( person_name_IN )
 {
     
     // return reference.
@@ -426,7 +426,7 @@ SOURCENET.PersonStore.prototype.get_index_for_person_name = function( person_nam
 
     return index_OUT;
 
-} //-- END SOURCENET.PersonStore method get_index_for_person_name() --//
+} //-- END SOURCENET.DataStore method get_index_for_person_name() --//
 
 
 /**
@@ -437,7 +437,7 @@ SOURCENET.PersonStore.prototype.get_index_for_person_name = function( person_nam
  * @param {int} index_IN - index in person array whose contents we want.
  * @returns {SOURCENET.Person} - instance of person at the index passed in.
  */
-SOURCENET.PersonStore.prototype.get_person_at_index = function( index_IN )
+SOURCENET.DataStore.prototype.get_person_at_index = function( index_IN )
 {
     
     // return reference.
@@ -478,7 +478,7 @@ SOURCENET.PersonStore.prototype.get_person_at_index = function( index_IN )
     
     return person_OUT;
 
-} //-- END SOURCENET.PersonStore method get_person_at_index() --//
+} //-- END SOURCENET.DataStore method get_person_at_index() --//
 
 
 /**
@@ -490,14 +490,14 @@ SOURCENET.PersonStore.prototype.get_person_at_index = function( index_IN )
  *    person array.
  * @returns {SOURCENET.Person} - instance of person related to the person ID passed in.
  */
-SOURCENET.PersonStore.prototype.get_person_count = function( person_type_IN )
+SOURCENET.DataStore.prototype.get_person_count = function( person_type_IN )
 {
     
     // return reference.
     var count_OUT = 0;
     
     // declare variables
-    var me = "SOURCENET.PersonStore.prototype.get_person_count";
+    var me = "SOURCENET.DataStore.prototype.get_person_count";
     var is_person_type_OK = false;
     var person_type = null;
     var my_person_array = null;
@@ -577,7 +577,7 @@ SOURCENET.PersonStore.prototype.get_person_count = function( person_type_IN )
     
     return count_OUT;
 
-} //-- END SOURCENET.PersonStore method get_person_count() --//
+} //-- END SOURCENET.DataStore method get_person_count() --//
 
 
 /**
@@ -589,7 +589,7 @@ SOURCENET.PersonStore.prototype.get_person_count = function( person_type_IN )
  *    person array.
  * @returns {SOURCENET.Person} - instance of person related to the person ID passed in.
  */
-SOURCENET.PersonStore.prototype.get_person_for_name = function( person_name_IN )
+SOURCENET.DataStore.prototype.get_person_for_name = function( person_name_IN )
 {
     
     // return reference.
@@ -636,7 +636,7 @@ SOURCENET.PersonStore.prototype.get_person_for_name = function( person_name_IN )
     
     return person_OUT;
 
-} //-- END SOURCENET.PersonStore method get_person_for_name() --//
+} //-- END SOURCENET.DataStore method get_person_for_name() --//
 
 
 /**
@@ -648,7 +648,7 @@ SOURCENET.PersonStore.prototype.get_person_for_name = function( person_name_IN )
  *    array.
  * @returns {SOURCENET.Person} - instance of person related to the person ID passed in.
  */
-SOURCENET.PersonStore.prototype.get_person_for_person_id = function( person_id_IN )
+SOURCENET.DataStore.prototype.get_person_for_person_id = function( person_id_IN )
 {
     
     // return reference.
@@ -695,26 +695,26 @@ SOURCENET.PersonStore.prototype.get_person_for_person_id = function( person_id_I
     
     return person_OUT;
 
-} //-- END SOURCENET.PersonStore method get_person_for_person_id() --//
+} //-- END SOURCENET.DataStore method get_person_for_person_id() --//
 
 
 /**
- * Checks to see if SOURCENET.person_store_json is not null and not "".  If
+ * Checks to see if SOURCENET.data_store_json is not null and not "".  If
  *    populated, retrieves value in variable, converts JSON string to Javascript
- *    objects, then uses those objects to populate PersonStore.
+ *    objects, then uses those objects to populate DataStore.
  *
  * @param {int} person_id_IN - person ID of person we want to find in person
  *    array.
  * @returns {int} - index of person in person array, or -1 if person ID not
  *    found.
  */
-SOURCENET.PersonStore.prototype.load_from_json = function()
+SOURCENET.DataStore.prototype.load_from_json = function()
 {
     
     // declare variables
-    var me = "SOURCENET.PersonStore.load_from_json";
-    var my_person_store_json_string = "";
-    var my_person_store_json = null;
+    var me = "SOURCENET.DataStore.load_from_json";
+    var my_data_store_json_string = "";
+    var my_data_store_json = null;
     var my_next_person_index = -1;
     var my_name_to_person_index_map = {};
     var my_id_to_person_index_map = {};
@@ -734,25 +734,25 @@ SOURCENET.PersonStore.prototype.load_from_json = function()
     var current_person = null;
     
     // got JSON?
-    if ( ( SOURCENET.person_store_json != null ) && ( SOURCENET.person_store_json != "" ) )
+    if ( ( SOURCENET.data_store_json != null ) && ( SOURCENET.data_store_json != "" ) )
     {
         
         // try to parse JSON string into javascript objects.
-        my_person_store_json_string = SOURCENET.person_store_json;
+        my_data_store_json_string = SOURCENET.data_store_json;
 
         // decode
-        my_person_store_json_string = SOURCENET.decode_html( my_person_store_json_string )
+        my_data_store_json_string = SOURCENET.decode_html( my_data_store_json_string )
 
         // parse to JSON objects
-        my_person_store_json = JSON.parse( my_person_store_json_string );
+        my_data_store_json = JSON.parse( my_data_store_json_string );
 
         // use the pieces of the JSON to populate this object.
-        my_person_array = my_person_store_json[ "person_array" ];
-        my_next_person_index = my_person_store_json[ "next_person_index" ];
-        my_name_to_person_index_map = my_person_store_json[ "name_to_person_index_map" ];
-        my_id_to_person_index_map = my_person_store_json[ "id_to_person_index_map" ];
-        my_status_message_array = my_person_store_json[ "status_message_array" ];
-        my_latest_person_index = my_person_store_json[ "latest_person_index" ];
+        my_person_array = my_data_store_json[ "person_array" ];
+        my_next_person_index = my_data_store_json[ "next_person_index" ];
+        my_name_to_person_index_map = my_data_store_json[ "name_to_person_index_map" ];
+        my_id_to_person_index_map = my_data_store_json[ "id_to_person_index_map" ];
+        my_status_message_array = my_data_store_json[ "status_message_array" ];
+        my_latest_person_index = my_data_store_json[ "latest_person_index" ];
 
         // loop over person array to create and store SOURCENET.Person
         //    instances.
@@ -779,7 +779,7 @@ SOURCENET.PersonStore.prototype.load_from_json = function()
             current_person.quote_text = current_quote_text;
             current_person.person_id = current_person_id;
 
-            // add person to this PersonStore.
+            // add person to this DataStore.
             this.add_person( current_person );
 
         } //-- END loop over persons --//
@@ -796,7 +796,7 @@ SOURCENET.PersonStore.prototype.load_from_json = function()
 
     } //-- END check to see if JSON passed in. --//
 
-} //-- END SOURCENET.PersonStore method load_from_json() --//
+} //-- END SOURCENET.DataStore method load_from_json() --//
 
 
 /**
@@ -818,14 +818,14 @@ SOURCENET.PersonStore.prototype.load_from_json = function()
  * @param {int} index_IN - index in person array that contains person we want to remove.
  * @returns {Array:string} - array of status messages that result from processing.
  */
-SOURCENET.PersonStore.prototype.remove_person_at_index = function( index_IN )
+SOURCENET.DataStore.prototype.remove_person_at_index = function( index_IN )
 {
     
     // return reference.
     var status_array_OUT = [];
     
     // declare variables
-    var me = "SOURCENET.PersonStore.remove_person_at_index";
+    var me = "SOURCENET.DataStore.remove_person_at_index";
     var selected_index = -1;
     var is_index_OK = false;
     var my_person_array = -1;
@@ -969,26 +969,26 @@ SOURCENET.PersonStore.prototype.remove_person_at_index = function( index_IN )
     
     return status_array_OUT;
 
-} //-- END SOURCENET.PersonStore method remove_person_at_index() --//
+} //-- END SOURCENET.DataStore method remove_person_at_index() --//
 
 
 /**
  * Accepts a Person instance and that person's index in the person array.
  *    If both passed in, updates mapping of name to index in name_to_index_map
- *    in PersonStore.  If not, does nothing.
+ *    in DataStore.  If not, does nothing.
  *
  * @param {Person} person_IN - person we want to add to update in the map of person name strings to indexes in person array.
  * @param {int} index_IN - index in person array we want name associated with.  If -1 passed in, effectively removes person from map.
  * @returns {Array} - Array of status messages - empty array = success.
  */
-SOURCENET.PersonStore.prototype.update_person_in_name_map = function( person_IN, index_IN )
+SOURCENET.DataStore.prototype.update_person_in_name_map = function( person_IN, index_IN )
 {
     
     // return reference
     var status_array_OUT = [];
     
     // declare variables.
-    var me = "SOURCENET.PersonStore.prototype.update_person_in_name_map";
+    var me = "SOURCENET.DataStore.prototype.update_person_in_name_map";
     var my_person_name = "";
     var is_person_name_OK = false;
     var my_name_to_index_map = {};
@@ -1031,28 +1031,28 @@ SOURCENET.PersonStore.prototype.update_person_in_name_map = function( person_IN,
     
     return status_array_OUT;
     
-} //-- END SOURCENET.PersonStore method update_person_in_name_map() --//
+} //-- END SOURCENET.DataStore method update_person_in_name_map() --//
 
 
 /**
  * Accepts a Person instance and that person's index in the person array.
  *    If both passed in, checks to make sure that the person record has a
  *    person ID.  If so, updates mapping of person ID to index in
- *    id_to_person_index_map in PersonStore.  If either no person or no
+ *    id_to_person_index_map in DataStore.  If either no person or no
  *    person ID, does nothing.
  *
  * @param {Person} person_IN - person we want to update in the map of person IDs to person array indexes.
  * @param {int} index_IN - index in person array we want name associated with.  If -1 passed in, effectively removes person from map.
  * @returns {Array} - Array of status messages - empty array = success.
  */
-SOURCENET.PersonStore.prototype.update_person_in_person_id_map = function( person_IN, index_IN )
+SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_IN, index_IN )
 {
     
     // return reference
     var status_array_OUT = [];
     
     // declare variables.
-    var me = "SOURCENET.PersonStore.prototype.update_person_in_person_id_map";
+    var me = "SOURCENET.DataStore.prototype.update_person_in_person_id_map";
     var person_id = -1;
     var is_person_id_OK = false;
     var my_person_id_to_index_map = {};
@@ -1095,11 +1095,11 @@ SOURCENET.PersonStore.prototype.update_person_in_person_id_map = function( perso
     
     return status_array_OUT;
 
-} //-- END SOURCENET.PersonStore method update_person_in_person_id_map() --//
+} //-- END SOURCENET.DataStore method update_person_in_person_id_map() --//
 
 
 //=====================//
-// END PersonStore
+// END DataStore
 //=====================//
 
 
@@ -1401,7 +1401,7 @@ SOURCENET.decode_html = function( html_IN )
  * Clears out coding form and status message area, and optionally displays a
  *    status message if one passed in.
  *
- * Preconditions: for anything to appear, SOURCENET.person_store must have been
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
  *    initialized and at least one person added to it.
  *
  * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
@@ -1470,7 +1470,7 @@ SOURCENET.clear_coding_form = function( status_message_IN )
 /**
  * Repaints the area where coded persons are displayed.
  *
- * Preconditions: for anything to appear, SOURCENET.person_store must have been
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
  *    initialized and at least one person added to it.
  */
 SOURCENET.display_persons = function()
@@ -1479,7 +1479,7 @@ SOURCENET.display_persons = function()
     // declare variables.
     var me = "SOURCENET.display_persons";
     var row_id_prefix = "";
-    var my_person_store = null;
+    var my_data_store = null;
     var person_list_element = null;
     var person_index = -1;
     var person_count = -1;
@@ -1506,16 +1506,16 @@ SOURCENET.display_persons = function()
     row_id_prefix = "person-";
     
     // get person store
-    my_person_store = SOURCENET.get_person_store();
+    my_data_store = SOURCENET.get_data_store();
     
     // for now, display by SOURCENET.log_message()-ing JSON string.
-    //SOURCENET.log_message( "In " + me + "(): PersonStore = " + JSON.stringify( my_person_store ) );
+    //SOURCENET.log_message( "In " + me + "(): DataStore = " + JSON.stringify( my_data_store ) );
     
     // get <table id="person-list-table" class="personListTable">
     person_list_element = $( '#person-list-table' );
     
     // loop over the persons in the list.
-    person_count = my_person_store.person_array.length;
+    person_count = my_data_store.person_array.length;
     SOURCENET.log_message( "In " + me + "(): Person Count = " + person_count );
     
     // check to see if one or more persons.
@@ -1536,7 +1536,7 @@ SOURCENET.display_persons = function()
             button_element = null;
             
             // get person.
-            current_person = my_person_store.get_person_at_index( person_index );
+            current_person = my_data_store.get_person_at_index( person_index );
     
             // got person?
             if ( current_person != null )
@@ -1705,46 +1705,46 @@ SOURCENET.display_persons = function()
 
 
 /**
- * checks to see if PersonStore instance already around.  If so, returns it.
+ * checks to see if DataStore instance already around.  If so, returns it.
  *    If not, creates one, stores it, then returns it.
  *
  * Preconditions: None.
  *
- * Postconditions: If PersonStore instance not already present in
- *    SOURCENET.person_store, one is created and stored there before it is
+ * Postconditions: If DataStore instance not already present in
+ *    SOURCENET.data_store, one is created and stored there before it is
  *    returned.
  */
-SOURCENET.get_person_store = function()
+SOURCENET.get_data_store = function()
 {
     
     // return reference
     var instance_OUT = null;
     
     // declare variables
-    var me = "SOURCENET.get_person_store";
-    var my_person_store = null;
+    var me = "SOURCENET.get_data_store";
+    var my_data_store = null;
     
     // see if there is already a person store.
-    my_person_store = SOURCENET.person_store;
-    if ( my_person_store == null )
+    my_data_store = SOURCENET.data_store;
+    if ( my_data_store == null )
     {
         
         // nope.  Make one, store it, then recurse.
-        my_person_store = new SOURCENET.PersonStore();
-        SOURCENET.person_store = my_person_store;
-        instance_OUT = SOURCENET.get_person_store();
+        my_data_store = new SOURCENET.DataStore();
+        SOURCENET.data_store = my_data_store;
+        instance_OUT = SOURCENET.get_data_store();
         
     }
     else
     {
         
-        instance_OUT = my_person_store;
+        instance_OUT = my_data_store;
         
     }
     
     return instance_OUT;
     
-} //-- END function SOURCENET.get_person_store() --//
+} //-- END function SOURCENET.get_data_store() --//
 
 
 /**
@@ -2086,7 +2086,7 @@ SOURCENET.process_person_coding = function()
     var status_message_array = [];
     var status_message_count = -1;
     var status_string = "";
-    var person_store = null;
+    var data_store = null;
     var person_add_message_array = [];
     var person_add_error_count = -1;
 
@@ -2107,13 +2107,13 @@ SOURCENET.process_person_coding = function()
     {
         
         // valid.
-        SOURCENET.log_message( "In " + me + "(): Valid person.  Adding to PersonStore." );
+        SOURCENET.log_message( "In " + me + "(): Valid person.  Adding to DataStore." );
         
         // get person store
-        person_store = SOURCENET.get_person_store();
+        data_store = SOURCENET.get_data_store();
         
         // add person
-        person_add_message_array = person_store.add_person( person_instance );
+        person_add_message_array = data_store.add_person( person_instance );
         
         // errors?
         person_add_error_count = person_add_message_array.length;
@@ -2135,7 +2135,7 @@ SOURCENET.process_person_coding = function()
             // errors - output messages.
             SOURCENET.output_status_messages( person_add_message_array );
             
-        } //-- END check for errors adding person to PersonStore. --//
+        } //-- END check for errors adding person to DataStore. --//
         
     }
     else
@@ -2160,8 +2160,8 @@ SOURCENET.process_person_coding = function()
 
 
 /**
- * Accepts the index of a person in the PersonStore's person_array that one
- *    wants removed.  Gets the PersonStore and calls the
+ * Accepts the index of a person in the DataStore's person_array that one
+ *    wants removed.  Gets the DataStore and calls the
  *    remove_person_at_index() method on it to remove the person, then calls
  *    SOURCENET.display_persons() to repaint the list of persons.  If any
  *    status messages, outputs them at the end using
@@ -2176,7 +2176,7 @@ SOURCENET.remove_person = function( person_index_IN )
     var is_index_OK = false;
     var status_message_array = [];
     var status_message_count = -1;
-    var person_store = null;
+    var data_store = null;
     var person_remove_message_array = [];
     var person_remove_error_count = -1;
 
@@ -2189,12 +2189,12 @@ SOURCENET.remove_person = function( person_index_IN )
     {
         
         // get person store
-        person_store = SOURCENET.get_person_store();
+        data_store = SOURCENET.get_data_store();
         
         // remove person
-        person_remove_message_array = person_store.remove_person_at_index( selected_index );
+        person_remove_message_array = data_store.remove_person_at_index( selected_index );
         
-        SOURCENET.log_message( "In " + me + "(): Person Store: " + JSON.stringify( person_store ) );
+        SOURCENET.log_message( "In " + me + "(): Person Store: " + JSON.stringify( data_store ) );
         
         // errors?
         person_remove_error_count = person_remove_message_array.length;
@@ -2216,7 +2216,7 @@ SOURCENET.remove_person = function( person_index_IN )
             // errors - append to status_message_array.
             status_message_array = status_message_array.concat( person_remove_message_array );
             
-        } //-- END check for errors removing person from PersonStore. --//
+        } //-- END check for errors removing person from DataStore. --//
         
     }
     else
@@ -2273,7 +2273,7 @@ SOURCENET.render_coding_form = function()
 
 /**
  * Accepts <form> jquery instance.  Adds inputs to the form to hold serialized
- *    JSON object of the PersonStore, the results of the coding.  Designed to
+ *    JSON object of the DataStore, the results of the coding.  Designed to
  *    be used as a <form>'s onsubmit event handler.
  *
  * Postconditions: Will return false, causing submit to abort, if errors or
@@ -2295,27 +2295,27 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     // declare variables
     me = "SOURCENET.render_coding_form_inputs";
     form_element = null;
-    my_person_store = null;
+    my_data_store = null;
     author_count = -1;
     is_author_count_valid = false;
     source_count = -1;
     is_source_count_valid = false;
-    person_store_json = "";
-    person_store_json_input_element = null;
+    data_store_json = "";
+    data_store_json_input_element = null;
     submit_button_element = null;
         
     // convert form DOM element to JQuery object.
     //form_element = $( form_IN )
     
     // get person store
-    my_person_store = SOURCENET.get_person_store();
+    my_data_store = SOURCENET.get_data_store();
     
     //------------------------------------------------------------------------//
     // validation
     //------------------------------------------------------------------------//
 
     // Is there at least one author?
-    author_count = my_person_store.get_person_count( SOURCENET.PERSON_TYPE_AUTHOR );
+    author_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_AUTHOR );
     if ( author_count <= 0 )
     {
         
@@ -2333,7 +2333,7 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     } //-- END check to see if author count is 0 --//
     
     // Is there at least one source?
-    source_count = my_person_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
+    source_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
     if ( source_count <= 0 )
     {
         
@@ -2356,22 +2356,22 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     if ( do_submit_OUT == true )
     {
         
-        // need JSON of PersonStore.
-        person_store_json = JSON.stringify( my_person_store );
+        // need JSON of DataStore.
+        data_store_json = JSON.stringify( my_data_store );
         
         // add it to the hidden input:
-        // <input id="id_person_store_json" name="person_store_json" type="hidden">
+        // <input id="id_data_store_json" name="data_store_json" type="hidden">
         
         // get <input> element
-        input_id_string = "#id_person_store_json";
-        person_store_json_input_element = $( input_id_string );
+        input_id_string = "#id_data_store_json";
+        data_store_json_input_element = $( input_id_string );
 
         // make sure we found the element.
-        if ( person_store_json_input_element.length > 0 )
+        if ( data_store_json_input_element.length > 0 )
         {
             
             // got it.  Place JSON in it.
-            person_store_json_input_element.val( person_store_json );
+            data_store_json_input_element.val( data_store_json );
             
             // explicitly set to true.
             do_submit_OUT = true;
@@ -2381,7 +2381,7 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
             {
                 
                 SOURCENET.log_message( "In " + me + "(): Placed the following JSON in \"" + input_id_string + "\"" );
-                SOURCENET.log_message( "In " + me + "(): " + person_store_json );            
+                SOURCENET.log_message( "In " + me + "(): " + data_store_json );            
 
             } //-- END check to see if we output debug.
             
@@ -2639,17 +2639,17 @@ $( document ).ready(
 
         // declare variables
         var me = "SOURCENET.load_existing_coding_data";
-        var my_person_store = null;
+        var my_data_store = null;
     
         // got anything to load?
-        if ( ( SOURCENET.person_store_json != null ) && ( SOURCENET.person_store_json != "" ) )
+        if ( ( SOURCENET.data_store_json != null ) && ( SOURCENET.data_store_json != "" ) )
         {
             
             // yes - get person store
-            my_person_store = SOURCENET.get_person_store();
+            my_data_store = SOURCENET.get_data_store();
         
             // call load_from_json()
-            my_person_store.load_from_json();
+            my_data_store.load_from_json();
 
             // repaint coding area
             SOURCENET.display_persons();
