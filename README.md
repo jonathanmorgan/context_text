@@ -8,7 +8,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 ## OS packages
 
-If you want to make use of a tastypie XML API for sourcenet information, you'll need to install the "lxml" python package, and to do that, you might need some operating system libraries installed so it will compile.
+If you want to make use of the "lxml" python package, you might need some operating system libraries installed so it will compile.
 
 On Ubuntu, for example, you'll need:
 
@@ -22,7 +22,7 @@ to install:
 
 If you want to use a YAML API, you'll also need to install libyaml and libyaml-dev:
 
-    sudo apt-get install libyaml-dev
+    sudo apt-get install libyaml libyaml-dev
 
 ## virtualenv and virtualenvwrapper
 
@@ -87,41 +87,29 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
     - ipython - `(sudo) pip install ipython`
 
-- requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt:
+- inside the sourcenet project, requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
 
+    - install django now using pip: `(sudo) pip install django`
+    - continue on in this guide until you 
     - `(sudo) pip install -r sourcenet/requirements.txt`
+    - you could also just 
     
-- Natural Language Processing (NLP):
+- Natural Language Processing (NLP) APIs:
 
     - To use Alchemy API, clone the `Alchemy_API` python client into your django project's root folder:
     
         - `git clone https://github.com/alchemyapi/alchemyapi_python`
         
-    - To use OpenCalais's REST API, clone the pycalais git repository into your django project directory, then copy the calais folder into your django project directory:
+    - To use the pycalais package for OpenCalais's REST API, clone the pycalais git repository into your django project directory, then copy the calais folder into your django project directory:
     
         - `git clone https://github.com/ubergrape/pycalais`
         - `cp ./calais ../`
         
         - You can also use python_utilities.network.http_helper.Http_Helper to connect directly (or requests package) see the sample code in /examples/NLP/OpenCalais_API.py for more details.
 
-- Tastypie, REST APIs, and user-friendly coding pages
-
-    Some pages that make it easy for users to code up sourcing in articles use angular JS for presentation, and reference a REST-ful API implemented using TastyPie - [http://tastypieapi.org/](http://tastypieapi.org/).  TastyPie requires the following python packages:
-
-    - python-mimeparse
-    - python-dateutil
-    - lxml
-    - defusedxml
-    - pyyaml
-    - django-tastypie
-    
-    requirements-tastypie.txt contains all of these packages, can be used to install them all at once:
-    
-    - `(sudo) pip install -r sourcenet/requirements-tastypie.txt`
-
 ## Install "research" django project
 
-- install a django project named "research".
+- install a django project named "research" (or whatever you want, but I use "research" throughout as an example).
 
     - In the folder where you want your project, run:
 
@@ -137,6 +125,13 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
     - move sourcenet into your django application directory using the git program to clone it from github:
 
             git clone https://github.com/jonathanmorgan/sourcenet.git
+            
+        - at this point, if you only installed django and want to install the rest of the required Python packages using requirements.txt, do the following:
+        
+            - cd into the "sourcenet" folder you just checked out: `cd sourcenet`
+            - run the following `pip` command to install all packages listed in requirements.txt:
+            
+                    (sudo) pip install -r requirements.txt
 
     - You'll also need python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
 
@@ -480,7 +475,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 'ajax_select',
             )
         
-    - add the following to the bottom of the `settings.py` file:
+    - if you are using django 1.6 or earlier (you shouldn't be, but...) add the following to the bottom of the `settings.py` file (if you are using django 1.7 or greater, it automatically finds the channels defined in sourcenet/lookups.py):
     
             AJAX_LOOKUP_CHANNELS = {
 
@@ -496,6 +491,8 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 # this specifies to look for the class `PersonLookup` in the `sourcenet.ajax-select-lookups` module
 
             }
+            
+    - regardless of django version, add the following to the bottom of your settings.py file.
             
             # magically include jqueryUI/js/css
             AJAX_SELECT_BOOTSTRAP = True
