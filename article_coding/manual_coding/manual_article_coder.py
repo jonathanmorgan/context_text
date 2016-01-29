@@ -556,6 +556,7 @@ class ManualArticleCoder( ArticleCoder ):
         article_data_id = -1
         person_list = []
         person_count = -1
+        person_counter = -1
         coder_user = None
         person_type = ""
         person_name = ""
@@ -737,127 +738,145 @@ class ManualArticleCoder( ArticleCoder ):
                         # got one or more people?
                         if ( person_count > 0 ):
                                                 
-                            # !TODO - loop over persons
-                            # loop over persons
+                            # !loop over persons
+                            person_counter = 0
                             for current_person in person_list:
+
+                                # increment counter
+                                person_counter += 1
                             
-                                # retrieve person information.
-                                person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
-                                person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
-                                title = current_person.get( self.DATA_STORE_PROP_TITLE )
-                                quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
-                                person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
-
-                                # set up person details
-                                person_details = {}
-                                person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
-                                
-                                # got a title?
-                                if ( ( title is not None ) and ( title != "" ) ):
+                                # check to see if it is an empty entry (happens
+                                #    when a person is removed during coding).
+                                if ( current_person is not None ):
+                            
+                                    # retrieve person information.
+                                    person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
+                                    person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                    title = current_person.get( self.DATA_STORE_PROP_TITLE )
+                                    quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
+                                    person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
+    
+                                    # set up person details
+                                    person_details = {}
+                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                     
-                                    # we do.  store it in person_details.
-                                    person_details[ self.PARAM_TITLE ] = title
+                                    # got a title?
+                                    if ( ( title is not None ) and ( title != "" ) ):
+                                        
+                                        # we do.  store it in person_details.
+                                        person_details[ self.PARAM_TITLE ] = title
+                                        
+                                    #-- END check to see if title --#
                                     
-                                #-- END check to see if title --#
-                                
-                                # check person type to see what type we are processing.
-                                if ( ( person_type == self.PERSON_TYPE_SUBJECT )
-                                     or ( person_type == self.PERSON_TYPE_SOURCE ) ):
-
-                                    # Article_Subject
-                                    current_article_subject = self.process_subject_name( current_article_data,
-                                                                                         person_name,
-                                                                                         person_details_IN = person_details,
-                                                                                         subject_person_id_IN = person_id )
-
-                                    # check to see if source
-                                    current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
-                                    if ( person_type == self.PERSON_TYPE_SOURCE ):
-
-                                        # set subject_type.
-                                        current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
-
-                                        # save source updates
-                                        current_article_subject.save()
-
-                                        # add name mention to Article_Subject.
-                                        current_article_subject_mention = self.process_mention( article_IN, current_article_subject, person_name )
-
-                                        # error?
-                                        if ( current_article_subject_mention is None ):
-
-                                            # yup - output debug message.
-                                            debug_message = "Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
-                                            status_message_list.append( debug_message )
-                                            debug_message = "ERROR: " + debug_message
-                                            self.output_debug( debug_message, me )
-
-                                        #-- END check to see if error processing quotation --#
-
-                                        # see if there is quote text.
-                                        if ( ( quote_text is not None ) and ( quote_text != "" ) ):
-
-                                            # add quote to Article_Subject.
-                                            current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
-
+                                    # check person type to see what type we are processing.
+                                    if ( ( person_type == self.PERSON_TYPE_SUBJECT )
+                                         or ( person_type == self.PERSON_TYPE_SOURCE ) ):
+    
+                                        # Article_Subject
+                                        current_article_subject = self.process_subject_name( current_article_data,
+                                                                                             person_name,
+                                                                                             person_details_IN = person_details,
+                                                                                             subject_person_id_IN = person_id )
+    
+                                        # check to see if source
+                                        current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
+                                        if ( person_type == self.PERSON_TYPE_SOURCE ):
+    
+                                            # set subject_type.
+                                            current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
+    
+                                            # save source updates
+                                            current_article_subject.save()
+    
+                                            # add name mention to Article_Subject.
+                                            current_article_subject_mention = self.process_mention( article_IN, current_article_subject, person_name )
+    
                                             # error?
-                                            if ( current_article_subject_quotation is None ):
-
+                                            if ( current_article_subject_mention is None ):
+    
                                                 # yup - output debug message.
-                                                debug_message = "Article_Coder.process_quotation() returned None - problem processing quote \"" + quote_text + "\".  See log for more details."
+                                                debug_message = "Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
                                                 status_message_list.append( debug_message )
                                                 debug_message = "ERROR: " + debug_message
                                                 self.output_debug( debug_message, me )
-
+    
                                             #-- END check to see if error processing quotation --#
-
-                                        #-- END check to see if quote text --#
-
-                                    #-- END check to see if source --#
-
-                                    # save source updates - should not need save.
-                                    current_article_subject.save()
-
-                                    # store Article_Subject instance in Article_Person reference.
-                                    current_article_person = current_article_subject
-
-                                elif ( person_type == self.PERSON_TYPE_AUTHOR ):
+    
+                                            # see if there is quote text.
+                                            if ( ( quote_text is not None ) and ( quote_text != "" ) ):
+    
+                                                # add quote to Article_Subject.
+                                                current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
+    
+                                                # error?
+                                                if ( current_article_subject_quotation is None ):
+    
+                                                    # yup - output debug message.
+                                                    debug_message = "Article_Coder.process_quotation() returned None - problem processing quote \"" + quote_text + "\".  See log for more details."
+                                                    status_message_list.append( debug_message )
+                                                    debug_message = "ERROR: " + debug_message
+                                                    self.output_debug( debug_message, me )
+    
+                                                #-- END check to see if error processing quotation --#
+    
+                                            #-- END check to see if quote text --#
+    
+                                        #-- END check to see if source --#
+    
+                                        # save source updates - should not need save.
+                                        current_article_subject.save()
+    
+                                        # store Article_Subject instance in Article_Person reference.
+                                        current_article_person = current_article_subject
+    
+                                    elif ( person_type == self.PERSON_TYPE_AUTHOR ):
+                                    
+                                        # Add organization string to person_details
+                                        #    for author, this is in the "title"
+                                        #    field.
+                                        person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+                                    
+                                        # Article_Author
+                                        current_article_author = self.process_author_name( current_article_data,
+                                                                                           person_name,
+                                                                                           author_organization_IN = title,
+                                                                                           author_person_id_IN = person_id,
+                                                                                           person_details_IN = person_details )
+                        
+                                        # store Article_Author instance in Article_Person reference.
+                                        current_article_person = current_article_author
+    
+                                    #-- END check to see person type --#
+    
+                                    # set name
+                                    current_article_person.name = person_name
+    
+                                    # check status
+                                    current_person_status = current_article_person.match_status
+    
+                                    # got a status?
+                                    if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
+    
+                                        # success?
+                                        if ( current_person_status != self.STATUS_SUCCESS ):
+    
+                                            # error.  Add message to status list.
+                                            status_message_list.append( current_person_status )
+    
+                                        #-- END check of person status --#
+    
+                                    #-- END check if current person has status --#
+                                    
+                                else:
                                 
-                                    # Add organization string to person_details
-                                    #    for author, this is in the "title"
-                                    #    field.
-                                    person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+                                    # empty person list entry.  Make a note and
+                                    #    move on.
+                                    debug_message = "person_list item " + str( person_counter ) + " is None.  Moving on."
+                                    # status_message_list.append( debug_message )
+                                    debug_message = "WARNING: " + debug_message
+                                    self.output_debug( debug_message, me )
                                 
-                                    # Article_Author
-                                    current_article_author = self.process_author_name( current_article_data,
-                                                                                       person_name,
-                                                                                       author_organization_IN = title,
-                                                                                       author_person_id_IN = person_id,
-                                                                                       person_details_IN = person_details )
-                    
-                                    # store Article_Author instance in Article_Person reference.
-                                    current_article_person = current_article_author
-
-                                #-- END check to see person type --#
-
-                                # set name
-                                current_article_person.name = person_name
-
-                                # check status
-                                current_person_status = current_article_person.match_status
-
-                                # got a status?
-                                if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
-
-                                    # success?
-                                    if ( current_person_status != self.STATUS_SUCCESS ):
-
-                                        # error.  Add message to status list.
-                                        status_message_list.append( current_person_status )
-
-                                    #-- END check of person status --#
-
-                                #-- END check if current person has status --#
+                                #-- END check to see if empty entry in person list --#
 
                             #-- END loop over persons --#
                             
