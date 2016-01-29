@@ -347,7 +347,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_type
             should_be = ManualArticleCoder.PERSON_TYPE_AUTHOR
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> person_name
             test_name = ManualArticleCoder.DATA_STORE_PROP_PERSON_NAME
@@ -355,7 +355,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_name
             should_be = test_lookup_name
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> title
             test_name = ManualArticleCoder.DATA_STORE_PROP_TITLE
@@ -363,7 +363,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_title
             should_be = "The Grand Rapids Press"
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> quote_text
             test_name = ManualArticleCoder.DATA_STORE_PROP_QUOTE_TEXT
@@ -371,7 +371,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_quote_text
             should_be = ""
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> person_id
             test_name = ManualArticleCoder.DATA_STORE_PROP_PERSON_ID
@@ -379,14 +379,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_id
             should_be = 46
             error_string = "In " + me + "(): " + test_name + " = \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
 
             # try to use ID to get index.
             test_index_from_id = person_id_to_index_dict.get( test_person_id, -1 )
             test_value = test_index_from_id
             should_be = test_index
             error_string = "In " + me + "(): index for id " + str( test_person_id ) + " = \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-            self.assertEquals( test_value, should_be, error_string )            
+            self.assertEqual( test_value, should_be, error_string )            
 
         #-- END check to see if author's person dict is None. --#
         
@@ -422,7 +422,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_type
             should_be = ManualArticleCoder.PERSON_TYPE_SOURCE
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> person_name
             test_name = ManualArticleCoder.DATA_STORE_PROP_PERSON_NAME
@@ -430,7 +430,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_name
             should_be = test_lookup_name
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> title
             test_name = ManualArticleCoder.DATA_STORE_PROP_TITLE
@@ -438,7 +438,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_title
             should_be = "skier"
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> quote_text
             test_name = ManualArticleCoder.DATA_STORE_PROP_QUOTE_TEXT
@@ -446,7 +446,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_quote_text
             should_be = ""
             error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
             
             # ==> person_id
             test_name = ManualArticleCoder.DATA_STORE_PROP_PERSON_ID
@@ -454,14 +454,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_value = test_person_id
             should_be = 166
             error_string = "In " + me + "(): " + test_name + " = \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-            self.assertEquals( test_value, should_be, error_string )
+            self.assertEqual( test_value, should_be, error_string )
 
             # try to use ID to get index.
             test_index_from_id = person_id_to_index_dict.get( test_person_id, -1 )
             test_value = test_index_from_id
             should_be = test_index
             error_string = "In " + me + "(): index for id " + str( test_person_id ) + " = \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-            self.assertEquals( test_value, should_be, error_string )            
+            self.assertEqual( test_value, should_be, error_string )            
 
         #-- END check to see if source's person dict is None. --#
 
@@ -542,7 +542,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_author_count
         should_be = 2
         error_string = "In " + me + "(): author count is " + str( test_author_count ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
 
         # subject count
         test_subject_qs = test_article_data.article_subject_set.all()
@@ -552,7 +552,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_subject_count
         should_be = 7
         error_string = "In " + me + "(): subject count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
 
         # source count
         test_source_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
@@ -562,7 +562,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_source_count
         should_be = 7
         error_string = "In " + me + "(): source count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
 
         # spot check one author name, an existing source, and a new source.
         
@@ -582,13 +582,13 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_person.id
         should_be = 46
         error_string = "In " + me + "(): test person ID is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
         
         # check title
         test_value = test_person.title
         should_be = "Grand Rapids Press"
         error_string = "In " + me + "(): test title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
         
         # get Article_Author
         test_article_author = test_article_data.article_author_set.get( person = test_person )
@@ -597,7 +597,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_article_author.organization_string
         should_be = "The Grand Rapids Press"
         error_string = "In " + me + "(): test organization_string is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # test Article_Author title
         test_value = test_article_author.title
@@ -620,13 +620,13 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_person.id
         should_be = 166
         error_string = "In " + me + "(): test person ID is " + str( test_value ) + ", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
         
         # check title
         test_value = test_person.title
         should_be = "Skier"
         error_string = "In " + me + "(): test title is " + str( test_value ) + ", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
         
         # get Article_Subject
         test_article_subject_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
@@ -636,7 +636,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_article_subject.title
         should_be = "Skier"
         error_string = "In " + me + "(): test Article_Subject title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # check for quote and mention.
         
@@ -647,14 +647,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_quote_qs.count()
         should_be = 1
         error_string = "In " + me + "(): quotation count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # make sure quote text is right.
         test_quote = test_quote_qs.get()
         test_value = test_quote.value
         should_be = "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill."
         error_string = "In " + me + "(): quotation value is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # !TODO - test position of quotation.
 
@@ -665,14 +665,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_mention_qs.count()
         should_be = 1
         error_string = "In " + me + "(): mention count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # make sure quote text is right.
         test_mention = test_mention_qs.get()
         test_value = test_mention.value
         should_be = test_lookup_name
         error_string = "In " + me + "(): mention value is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # !TODO - test position of mention.
        
@@ -692,7 +692,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_person.title
         should_be = "nice day on the hill"
         error_string = "In " + me + "(): test title is " + str( test_value ) + ", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )            
         
         # get Article_Subject
         test_article_subject_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
@@ -702,7 +702,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_article_subject.title
         should_be = "nice day on the hill"
         error_string = "In " + me + "(): test Article_Subject title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # check for quote and mention.
         
@@ -713,14 +713,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_quote_qs.count()
         should_be = 1
         error_string = "In " + me + "(): quotation count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # make sure quote text is right.
         test_quote = test_quote_qs.get()
         test_value = test_quote.value
         should_be = "Barren hills that were visible only four days ago at Cannonsburg Ski Area and neighboring Pando Winter Sports Park are unlikely to reappear, with between 6 and 12 inches expected to hit the ground this week."
         error_string = "In " + me + "(): quotation value is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # !TODO - test position of quotation.
 
@@ -731,14 +731,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_mention_qs.count()
         should_be = 1
         error_string = "In " + me + "(): mention count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # make sure quote text is right.
         test_mention = test_mention_qs.get()
         test_value = test_mention.value
         should_be = test_lookup_name
         error_string = "In " + me + "(): mention value is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEquals( test_value, should_be, error_string )
+        self.assertEqual( test_value, should_be, error_string )
         
         # !TODO - test position of mention.
 

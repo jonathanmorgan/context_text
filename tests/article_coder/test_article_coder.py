@@ -75,10 +75,343 @@ class ArticleCoderTest( django.test.TestCase ):
     #-- END test method test_django_config_installed() --#
 
 
+    def test_process_author_name( self ):
+        
+        # declare variables
+        me = "test_process_author_name"
+        my_logger_name = ""
+        debug_string = ""
+        error_message = ""
+        test_manual_article_coder = None
+        test_article = None
+        test_user = None
+        test_article_data = None
+        person_name = ""
+        title = ""
+        person_id = -1
+        person_details = {}
+        test_article_author = None
+        test_person = None
+        test_person_id = -1
+        test_person_title = ""
+        test_article_author_id = -1
+        test_article_author_org_string = ""
+        test_1_article_author_id = -1
+        test_article_author_count = -1
+        test_1_article_author_count = -1
+        
+        print( "\n\n==> Top of " + me + "\n" )
+        my_logger_name = "TestArticleCoder." + me
+
+        # create ManualArticleCoder instance.
+        test_manual_article_coder = ManualArticleCoder()
+
+        # get an article.
+        test_article = Article.objects.get( pk = 21409 )
+
+        # get test user
+        test_user = TestHelper.get_test_user()
+
+        # create bare-bones Article_Data
+        test_article_data = Article_Data()
+        test_article_data.coder = test_user
+        test_article_data.article = test_article
+        test_article_data.save()
+
+        #----------------------------------------------------------------------#
+        # !test 1 - with person ID.       
+        #----------------------------------------------------------------------#
+
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details, both in title and in author
+            #    organization string.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+            
+        #-- END check to see if title --#
+
+        # create an Article_Author.
+        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details, author_person_id_IN = person_id )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Author for person ID " + str( person_id ) + " failed - got None back."
+        self.assertIsNotNone( test_article_author, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_author.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # ==> Article_Author fields
+
+        # check to see if author organization_string updated.
+        test_article_author_org_string = test_article_author.organization_string
+        test_value = test_article_author_org_string
+        should_be = title
+        error_message = "In " + me + ": Article_Author " + str( test_article_author.id ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # capture test Article_Author ID, count of Article_Authors for next
+        #    test.
+        test_1_article_author_id = test_article_author.id
+        test_1_article_author_count = test_article_data.article_author_set.count()
+        
+
+        #----------------------------------------------------------------------#
+        # !test 2 - change title, use name to lookup, don't pass ID.
+        #----------------------------------------------------------------------#
+
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title-2"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details, both in title and in author
+            #    organization string.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_author.
+        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Author for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_author, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_author.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_not_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # ==> Article_Author fields
+        
+        # same Article_Author ID as before?
+        test_article_author_id = test_article_author.id
+        test_value = test_article_author_id
+        should_be = test_1_article_author_id
+        error_message = "In " + me + ": Article_Author has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # same count of Article_Author as before?
+        test_article_author_count = test_article_data.article_author_set.count()
+        test_value = test_article_author_count
+        should_be = test_1_article_author_count
+        error_message = "In " + me + ": Article_Data.article_author_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should not be, since should be
+        #    same Article_Author, so no need to update).
+        test_article_author_org_string = test_article_author.organization_string
+        test_value = test_article_author_org_string
+        should_not_be = title
+        error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org string " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+
+        #----------------------------------------------------------------------#
+        # !test 3 - delete Article_Author, try again.
+        #----------------------------------------------------------------------#
+
+        # delete Article_Author.
+        test_article_author.delete()
+
+        # try again.  Should be new Article_Author, new title in
+        #    Article_Author, but old title in person.
+        
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title-3"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details, both in title and in author
+            #    organization string.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_author.
+        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Author for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_author, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_author.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_not_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # ==> Article_Author fields
+        
+        # same Article_Author ID as before?  Should not be...
+        test_article_author_id = test_article_author.id
+        test_value = test_article_author_id
+        should_not_be = test_1_article_author_id
+        error_message = "In " + me + ": Article_Author has ID " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # same count of Article_Author as before?
+        test_article_author_count = test_article_data.article_author_set.count()
+        test_value = test_article_author_count
+        should_be = test_1_article_author_count
+        error_message = "In " + me + ": Article_Data.article_author_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should be - new record).
+        test_article_author_org_string = test_article_author.organization_string
+        test_value = test_article_author_org_string
+        should_be = title
+        error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+
+        #----------------------------------------------------------------------#
+        # !test 4 - try a name of a person not in the database, with title.
+        #----------------------------------------------------------------------#
+
+        # - new Person
+        # - new Aricle_Subject
+        # - check title on both Person and Article_Author.
+        
+        # retrieve person information.
+        person_name = "Jonas Pierpont Morgan"
+        title = "test_title-4"
+        person_id = -1
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details, both in title and in author
+            #    organization string.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_author.
+        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Author for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_author, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_author.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to see if person title updated (it should be).
+        test_value = test_person_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # ==> Article_Author fields
+        
+        # same count of Article_Author as before?
+        test_article_author_count = test_article_data.article_author_set.count()
+        test_value = test_article_author_count
+        should_not_be = test_1_article_author_count
+        error_message = "In " + me + ": Article_Data.article_author_set.count() is " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )        
+        
+        # should be 2 Article_Authors.
+        test_value = test_article_author_count
+        should_be = 2
+        error_message = "In " + me + ": Article_Data.article_author_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should be - new record).
+        test_article_author_org_string = test_article_author.organization_string
+        test_value = test_article_author_org_string
+        should_be = title
+        error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+
+    #-- END test method test_process_author_name() --#
+
+
     def test_process_mention( self ):
         
         # declare variables
         me = "test_process_mention"
+        my_logger_name = ""
         debug_string = ""
         subject_name = ""
         mention_name = ""
@@ -95,6 +428,9 @@ class ArticleCoderTest( django.test.TestCase ):
         test_value_word_number_end = -1
         test_paragraph_number = -1
         test_mention_count = -1
+
+        print( "\n\n==> Top of " + me + "\n" )
+        my_logger_name = "TestArticleCoder." + me
 
         # set subject_name, mention_name
         subject_name = TestHelper.TEST_SUBJECT_1
@@ -130,7 +466,7 @@ class ArticleCoderTest( django.test.TestCase ):
         test_paragraph_number = test_article_subject_mention.paragraph_number
 
         debug_string = "\nMention for \"" + mention_name + "\":\nid = " + str( test_mention_id ) + ";\nvalue_index = " + str( test_value_index ) + ";\ncanonical_index = " + str( test_canonical_index ) + ";\nword_number_start = " + str( test_value_word_number_start ) + ";\nword_number_end = " + str( test_value_word_number_end ) + ";\ngraf number = " + str( test_paragraph_number )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
 
         # test values
         self.assertEqual( test_value_index, 451 )
@@ -144,7 +480,7 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_mention_count, 1 )
 
         debug_string = "\nMention count: " + str( test_mention_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
         # try adding the same mention again.
         test_article_subject_mention = test_manual_article_coder.process_mention( test_article, test_article_subject, mention_name )
@@ -157,7 +493,7 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_mention_count, 1 )
 
         debug_string = "\nMention count: " + str( test_mention_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
         # add 2nd mention.
         mention_name = "The Rockford friends"
@@ -172,7 +508,7 @@ class ArticleCoderTest( django.test.TestCase ):
         test_paragraph_number = test_article_subject_mention.paragraph_number
 
         debug_string = "\nMention for \"" + mention_name + "\":\nid = " + str( test_mention_id ) + ";\nvalue_index = " + str( test_value_index ) + ";\ncanonical_index = " + str( test_canonical_index ) + ";\nword_number_start = " + str( test_value_word_number_start ) + ";\nword_number_end = " + str( test_value_word_number_end ) + ";\ngraf number = " + str( test_paragraph_number )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
 
         # test values
         self.assertEqual( test_value_index, 489 )
@@ -186,7 +522,7 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_mention_count, 2 )
 
         debug_string = "\nMention count: " + str( test_mention_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
     #-- END test method test_process_mention() --#
 
@@ -195,6 +531,7 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # declare variables
         me = "test_process_quotation"
+        my_logger_name = ""
         debug_string = ""
         subject_name = ""
         quotation_string = ""
@@ -211,6 +548,9 @@ class ArticleCoderTest( django.test.TestCase ):
         test_value_word_number_end = -1
         test_paragraph_number = -1
         test_quotation_count = -1
+
+        print( "\n\n==> Top of " + me + "\n" )
+        my_logger_name = "TestArticleCoder." + me
 
         # set subject_name and quotation_string
         subject_name = TestHelper.TEST_SUBJECT_1
@@ -246,7 +586,7 @@ class ArticleCoderTest( django.test.TestCase ):
         test_paragraph_number = test_article_subject_quotation.paragraph_number
 
         debug_string = "\nQuotation for \"" + quotation_string + "\":\nid = " + str( test_quotation_id ) + ";\nvalue_index = " + str( test_value_index ) + ";\ncanonical_index = " + str( test_canonical_index ) + ";\nword_number_start = " + str( test_value_word_number_start ) + ";\nword_number_end = " + str( test_value_word_number_end ) + ";\ngraf number = " + str( test_paragraph_number )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
 
         # test values
         self.assertEqual( test_value_index, 391 )
@@ -260,7 +600,7 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_quotation_count, 1 )
 
         debug_string = "\nRecord count: " + str( test_quotation_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
         # try adding the same quote again.
         test_article_subject_quotation = test_manual_article_coder.process_quotation( test_article, test_article_subject, quotation_string )
@@ -273,7 +613,7 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_quotation_count, 1 )
 
         debug_string = "\nRecord count: " + str( test_quotation_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
         # add 2nd quote.
         quotation_string = TestHelper.TEST_QUOTATION_2
@@ -288,7 +628,7 @@ class ArticleCoderTest( django.test.TestCase ):
         test_paragraph_number = test_article_subject_quotation.paragraph_number
 
         debug_string = "\nQuotation for \"" + quotation_string + "\":\nid = " + str( test_quotation_id ) + ";\nvalue_index = " + str( test_value_index ) + ";\ncanonical_index = " + str( test_canonical_index ) + ";\nword_number_start = " + str( test_value_word_number_start ) + ";\nword_number_end = " + str( test_value_word_number_end ) + ";\ngraf number = " + str( test_paragraph_number )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
 
         # test values
         self.assertEqual( test_value_index, 489 )
@@ -302,9 +642,333 @@ class ArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_quotation_count, 2 )
 
         debug_string = "\nRecord count: " + str( test_quotation_count )
-        print( debug_string )
+        TestHelper.output_debug( debug_string, me, logger_name_IN = my_logger_name )
         
     #-- END test method test_process_quotation() --#
+
+
+    def test_process_subject_name( self ):
+        
+        # declare variables
+        me = "test_process_subject_name"
+        my_logger_name = ""
+        debug_string = ""
+        error_message = ""
+        test_manual_article_coder = None
+        test_article = None
+        test_user = None
+        test_article_data = None
+        person_name = ""
+        title = ""
+        person_id = -1
+        person_details = {}
+        test_article_subject = None
+        test_person = None
+        test_person_id = -1
+        test_person_title = ""
+        test_article_subject_id = -1
+        test_article_subject_title = ""
+        test_1_article_subject_id = -1
+        test_article_subject_count = -1
+        test_1_article_subject_count = -1
+
+        print( "\n\n==> Top of " + me + "\n" )
+        my_logger_name = "TestArticleCoder." + me
+
+        # create ManualArticleCoder instance.
+        test_manual_article_coder = ManualArticleCoder()
+
+        # get an article.
+        test_article = Article.objects.get( pk = 21409 )
+
+        # get test user
+        test_user = TestHelper.get_test_user()
+
+        # create bare-bones Article_Data
+        test_article_data = Article_Data()
+        test_article_data.coder = test_user
+        test_article_data.article = test_article
+        test_article_data.save()
+
+        #----------------------------------------------------------------------#
+        # !test 1 - with person ID.       
+        #----------------------------------------------------------------------#
+
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_subject.
+        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details, subject_person_id_IN = person_id )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Subject for person ID " + str( person_id ) + " failed - got None back."
+        self.assertIsNotNone( test_article_subject, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_subject.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # ==> Article_Subject fields
+
+        # check to see if subject title updated.
+        test_article_subject_title = test_article_subject.title
+        test_value = test_article_subject_title
+        should_be = title
+        error_message = "In " + me + ": Article_Subject " + str( test_article_subject.id ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # capture test Article_Subject ID, count of Article_Subjects for next
+        #    test.
+        test_1_article_subject_id = test_article_subject.id
+        test_1_article_subject_count = test_article_data.article_subject_set.count()
+        
+
+        #----------------------------------------------------------------------#
+        # !test 2 - change title, use name to lookup, don't pass ID.
+        #----------------------------------------------------------------------#
+
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title-2"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_subject.
+        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Subject for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_subject, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_subject.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_not_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # ==> Article_Subject fields
+        
+        # same Article_Subject ID as before?
+        test_article_subject_id = test_article_subject.id
+        test_value = test_article_subject_id
+        should_be = test_1_article_subject_id
+        error_message = "In " + me + ": Article_Subject has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # same count of Article_Subject as before?
+        test_article_subject_count = test_article_data.article_subject_set.count()
+        test_value = test_article_subject_count
+        should_be = test_1_article_subject_count
+        error_message = "In " + me + ": Article_Data.article_subject_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should not be, since should be
+        #    same Article_Subject, so no need to update).
+        test_article_subject_title = test_article_subject.title
+        test_value = test_article_subject_title
+        should_not_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+
+        #----------------------------------------------------------------------#
+        # !test 3 - delete Article_Subject, try again.
+        #----------------------------------------------------------------------#
+
+        # delete Article_Subject.
+        test_article_subject.delete()
+
+        # try again.  Should be new Article_Subject, new title in
+        #    Article_Subject, but old title in person.
+        
+        # retrieve person information.
+        person_name = "Karen Irene Schwarck"
+        title = "test_title-3"
+        person_id = 1031
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_subject.
+        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Subject for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_subject, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_subject.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_not_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # ==> Article_Subject fields
+        
+        # same Article_Subject ID as before?  Should not be...
+        test_article_subject_id = test_article_subject.id
+        test_value = test_article_subject_id
+        should_not_be = test_1_article_subject_id
+        error_message = "In " + me + ": Article_Subject has ID " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # same count of Article_Subject as before?
+        test_article_subject_count = test_article_data.article_subject_set.count()
+        test_value = test_article_subject_count
+        should_be = test_1_article_subject_count
+        error_message = "In " + me + ": Article_Data.article_subject_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should be - new record).
+        test_article_subject_title = test_article_subject.title
+        test_value = test_article_subject_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+
+        #----------------------------------------------------------------------#
+        # !test 4 - try a name of a person not in the database, with title.
+        #----------------------------------------------------------------------#
+
+        # - new Person
+        # - new Aricle_Subject
+        # - check title on both Person and Article_Subject.
+        
+        # retrieve person information.
+        person_name = "Jonas Pierpont Morgan"
+        title = "test_title-4"
+        person_id = -1
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
+        
+        # got a title?
+        if ( ( title is not None ) and ( title != "" ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+            
+        #-- END check to see if title --#
+
+        # create an article_subject.
+        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details )
+        
+        # check to make sure not None
+        error_message = "In " + me + ": attempt to get Article_Subject for name " + person_name + " failed - got None back."
+        self.assertIsNotNone( test_article_subject, msg = error_message )
+        
+        # ==> Person fields
+
+        # retrieve the person and person ID
+        test_person = test_article_subject.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to see if person title updated (it should be).
+        test_value = test_person_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # ==> Article_Subject fields
+        
+        # same count of Article_Subject as before?
+        test_article_subject_count = test_article_data.article_subject_set.count()
+        test_value = test_article_subject_count
+        should_not_be = test_1_article_subject_count
+        error_message = "In " + me + ": Article_Data.article_subject_set.count() is " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )        
+        
+        # should be 2 Article_Subjects.
+        test_value = test_article_subject_count
+        should_be = 2
+        error_message = "In " + me + ": Article_Data.article_subject_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )        
+        
+        # check to see if subject title updated (should be - new record).
+        test_article_subject_title = test_article_subject.title
+        test_value = test_article_subject_title
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+
+    #-- END test method test_process_subject_name() --#
 
 
 #-- END test class ArticleCoderTest --#

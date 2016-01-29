@@ -137,7 +137,7 @@ class OpenCalaisTest( django.test.TestCase ):
         article_count = article_qs.count()
         
         # should be 46
-        self.assertEquals( article_count, 46 )
+        self.assertEqual( article_count, 46 )
         
         # Do coding?
         if ( do_coding == True ):
@@ -161,14 +161,14 @@ class OpenCalaisTest( django.test.TestCase ):
             
             # make sure username is correct
             automated_username = automated_user.username
-            self.assertEquals( automated_username, "automated" )
+            self.assertEqual( automated_username, "automated" )
             
             # count number of articles coded by automated user
             automated_article_data_qs = Article_Data.objects.filter( coder = automated_user )
             article_data_count = automated_article_data_qs.count()
             
             # should also be 46
-            self.assertEquals( article_data_count, 46 )
+            self.assertEqual( article_data_count, 46 )
             
         else:
             
