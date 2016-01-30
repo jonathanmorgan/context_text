@@ -31,6 +31,11 @@ SOURCENET.PERSON_TYPE_SUBJECT = "subject";
 SOURCENET.PERSON_TYPE_AUTHOR = "author";
 SOURCENET.PERSON_TYPE_ARRAY = [ SOURCENET.PERSON_TYPE_SOURCE, SOURCENET.PERSON_TYPE_SUBJECT, SOURCENET.PERSON_TYPE_AUTHOR ]
 
+// Article coding submit button values
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT = "Please wait..."
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding"
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!"
+
 //----------------------------------------------------------------------------//
 // !==> object definitions
 //----------------------------------------------------------------------------//
@@ -2300,6 +2305,8 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     is_author_count_valid = false;
     source_count = -1;
     is_source_count_valid = false;
+    do_confirm_submit = true;
+    ok_to_submit = false;
     data_store_json = "";
     data_store_json_input_element = null;
     submit_button_element = null;
@@ -2351,6 +2358,23 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     } //-- END check to see if author count is 0 --//
     
     // !TODO - check for sources that don't have quote selected?
+    
+    // confirm submit?
+    if ( do_confirm_submit == true )
+    {
+        
+        // no sources - see if that is correct.
+        ok_to_submit = confirm( "OK to submit coding?" );
+        if ( ok_to_submit == false )
+        {
+            
+            // Not ready to submit just yet.  Back to form.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): User not ready to submit.  Back to the form!" );
+            
+        } //-- END check to see if no authors --//
+        
+    } //-- END check to see if author count is 0 --//
     
     // no sense doing anything more if we aren't submitting.
     if ( do_submit_OUT == true )
@@ -2405,7 +2429,7 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
         //    to say "Please wait...".
         submit_button_element = $( "#input-submit-article-coding" );
         submit_button_element.prop( 'disabled', true );
-        submit_button_element.val( "Please wait..." );
+        submit_button_element.val( SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT );
         
     } //-- END check to see if we are submitting. --//
     
@@ -2441,7 +2465,7 @@ $( function(){
     });
 });
 
-// !#select-text
+// !document.ready( #select-text )
 // javascript to pull text selection into a text input.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2468,7 +2492,7 @@ $( document ).ready(
     }
 );
 
-// !#store-name
+// !document.ready( #store-name )
 // javascript to store selected text as source name.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2490,7 +2514,7 @@ $( document ).ready(
     }
 );
 
-// !#store-title
+// !document.ready( #store-title )
 // javascript to store selected text as source name + title.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2535,7 +2559,7 @@ $( document ).ready(
     }
 );
 
-// !#store-quote-text
+// !document.ready( #store-quote-text )
 // javascript to store selected text as source's quotation text.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -2584,7 +2608,7 @@ $( document ).ready(
     } //-- END ready() nested anonymous function --//
 ); //-- END document.ready() call --//
 
-// !#lookup-person-name
+// !document.ready( #lookup-person-name )
 // javascript to copy name from #source-name to the Lookup text field.
 $( document ).ready(
     function()
@@ -2631,6 +2655,7 @@ $( document ).ready(
     }
 );
 
+// !document.ready( load existing coding data )
 // javascript to load existing coding data if present.
 $( document ).ready(
 
@@ -2654,6 +2679,48 @@ $( document ).ready(
             // repaint coding area
             SOURCENET.display_persons();
         
+        }
+    
+    }
+
+);
+
+
+// !document.ready( activate coding submit button )
+// javascript to load existing coding data if present.
+$( document ).ready(
+
+    function()
+    {
+
+        // declare variables
+        var me = "SOURCENET.activate_coding_submit_button";
+        var submit_button_element = null;
+        var submit_button_disabled = false;
+        var submit_button_value = "";
+    
+        // Retrieve submit button, enable it, and then change text
+        //    to say "Submit Article Coding!".
+        submit_button_element = $( "#input-submit-article-coding" );
+        
+        // if disabled, enable.
+        submit_button_disabled = submit_button_element.prop( 'disabled' );
+        if ( submit_button_disabled == true )
+        {
+            
+            // disabled.  Enable.
+            submit_button_element.prop( 'disabled', false );
+            
+        }
+
+        // Make sure value isn't "Please wait..."
+        submit_button_value = submit_button_element.val()
+        if ( submit_button_value == SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT )
+        {
+            
+            // it says wait.  Change it to reset value.
+            submit_button_element.val( SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET );
+            
         }
     
     }

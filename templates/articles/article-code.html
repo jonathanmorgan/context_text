@@ -57,10 +57,16 @@
             
             <div id="article_view" name="article_view">
                 <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
-                <li><em>Publication Date:</em> {{ article_instance.pub_date }}</li>
-                <li><em>Byline:</em> {{ article_instance.author_string }}</li>
+                <ul>
+                    <li><em>Section:</em> {{ article_instance.section }}</li>
+                    <li><em>Publication Date:</em> {{ article_instance.pub_date }}</li>
+                    <li><em><strong>Byline:</strong></em> {{ article_instance.author_string }}</li>
+                </ul>
                 {{ article_text.get_content|safe }}
+                <p id="article_end" name="article_end" class="articleEnd">-- 30 --</p>
             </div>
+            
+            <hr />
             
             <!--
             <hr />
@@ -137,7 +143,7 @@
             <h3>Person List</h3>
             <div id="person-list" class="personList">
                 <table id="person-list-table" class="personListTable"></table>
-                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding" onsubmit="do_submit = SOURCENET.render_coding_form_inputs( this ); alert( 'Submit?: ' + do_submit ); return do_submit;">
+                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding" onsubmit="do_submit = SOURCENET.render_coding_form_inputs( this ); return do_submit;">
                     {# always include CSRF token #}
                     {% csrf_token %}
                     {# output coding_submit_form if present #}

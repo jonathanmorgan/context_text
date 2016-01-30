@@ -583,9 +583,20 @@ There is an example application in sourcenet/collectors/newsbank that you can us
 
 # Coding articles:
 
-To code articles by hand, use the django admin pages (access to which should have been enabled once you configured your web server so it knows of the wsgi.py file above).  The article model's admin page has been implemented so it is relatively easy to use to code articles, and if you want to refine or alter what is collected, you can alter it in sourcenet/admins.py.
+Sourcenet includes a set of pages that can be used to code articles by hand, and then view article coding:
 
-A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in `sourcenet/protocol/sourcenet_CA_protocol.pdf`.
+- to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/sourcenet/sourcenet/article/code/`
+
+    - Setup:
+    
+        - make sure that any user you want to be able to code articles is configured in django as "staff" (and so able to access admins).  They don't need to actually have any access privileges, they just need to be "staff".
+    
+    - See directions for coding in `sourcenet/protocol/protocol-capturing_people_in_articles.pdf`.
+
+- to view an article's meta-data and text: `http://<your_server>/sourcenet/sourcenet/article/view/`
+- to view an article's coding: `http://<your_server>/sourcenet/sourcenet/article/article_data/view/`
+
+You can also use the django admin pages, but the process is much more cumbersome - there are a lot of interrelated tables that are populated during the process of coding, and so it is better to use the coding form above and let the software deal with making all the correct underlying data.  It is helpful to use the admins for managing Article_Data, however, if you need to clear out coding for a coder, either because of an error or as part of testing.
 
 ## Automated Coding
 

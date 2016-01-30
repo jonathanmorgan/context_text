@@ -175,3 +175,10 @@ table.personListTable
     /* default to not shown - show one or more person coded. */
     display: none;    
 }
+
+.articleEnd
+{
+    text-align: center;
+    font-weight: bold;
+    font-style: italic;
+}
