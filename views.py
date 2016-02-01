@@ -651,6 +651,7 @@ def article_code( request_IN ):
     # declare variables - exception handling
     exception_message = ""
     is_exception = False
+    do_cleanup_post_exception = False
     
     # declare variables - processing request
     response_dictionary = {}
@@ -667,6 +668,7 @@ def article_code( request_IN ):
     # declare variables - coding submission.
     data_store_json_string = ""
     coder_user = None
+    has_existing_article_data = False
     article_data_qs = None
     article_data_count = -1
     article_data_instance = None
@@ -783,6 +785,7 @@ def article_code( request_IN ):
         # found one.  Get ID so we can update it.
         article_data_instance = article_data_qs.get()
         article_data_id = article_data_instance.id
+        has_existing_article_data = True
 
     else:
 
@@ -815,12 +818,14 @@ def article_code( request_IN ):
 
             # place in status message variable.
             page_status_message_list.append( page_status_message )
+            
+            has_existing_article_data = True
 
         else:
 
             # not greater than 1, so 0 or negative (!).  OK to process.
             #is_ok_to_process_coding = True
-            pass
+            has_existing_article_data = False
 
         #-- END check to see if greater than 1. --#
 
@@ -965,6 +970,20 @@ def article_code( request_IN ):
                 response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
 
             #-- END check to see if existing JSON. --#
+
+            # got Article_Data that we created new?
+            if ( ( has_existing_article_data == False ) and ( article_data_instance is not None ) ):
+            
+                # we created an Article_Data, then had an exception.  Delete?
+                if ( do_cleanup_post_exception == True ):
+                
+                    # delete Article_Data and all child records.
+                    article_data_instance.delete()
+                    article_data_instance = None
+                    
+                #-- END check to see if we are to clean up after an exception. --#
+                
+            #-- END check to see if we have a new Article_Data instance --#
 
         else:
         
