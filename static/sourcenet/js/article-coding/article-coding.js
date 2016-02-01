@@ -23,7 +23,7 @@ SOURCENET.article_data_id = -1;
 SOURCENET.data_store = null;
 
 // DEBUG!
-SOURCENET.debug_flag = true;
+SOURCENET.debug_flag = false;
 
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
@@ -742,11 +742,18 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     if ( ( SOURCENET.data_store_json != null ) && ( SOURCENET.data_store_json != "" ) )
     {
         
+        // it is null.  Person already removed at this index.
+        SOURCENET.log_message( "In " + me + "(): Making sure this is running." );
+
         // try to parse JSON string into javascript objects.
         my_data_store_json_string = SOURCENET.data_store_json;
 
+        SOURCENET.log_message( "In " + me + "(): JSON before decode: " + my_data_store_json_string );
+
         // decode
         my_data_store_json_string = SOURCENET.decode_html( my_data_store_json_string )
+
+        SOURCENET.log_message( "In " + me + "(): JSON after decode: " + my_data_store_json_string );
 
         // parse to JSON objects
         my_data_store_json = JSON.parse( my_data_store_json_string );
@@ -763,6 +770,10 @@ SOURCENET.DataStore.prototype.load_from_json = function()
         //    instances.
         // how many we got?
         person_count = my_person_array.length;
+
+        // it is null.  Person already removed at this index.
+        SOURCENET.log_message( "In " + me + "(): person_count = " + person_count );
+
         for ( person_index = 0; person_index < person_count; person_index++ )
         {
 

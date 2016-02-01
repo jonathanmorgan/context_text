@@ -91,7 +91,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
       "person_type": "source",
       "person_name": "West Michigan",
       "title": "nice day on the hill",
-      "quote_text": "Barren hills that were visible only four days ago at Cannonsburg Ski Area and neighboring Pando Winter Sports Park are unlikely to reappear, with between 6 and 12 inches expected to hit the ground this week.",
+      "quote_text": "this week",
       "person_id": null
     }
   ],
@@ -183,7 +183,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
       "person_type": "source",
       "person_name": "West Michigan",
       "title": "nice day on the hill",
-      "quote_text": "Barren hills that were visible only four days ago at Cannonsburg Ski Area and neighboring Pando Winter Sports Park are unlikely to reappear, with between 6 and 12 inches expected to hit the ground this week.",
+      "quote_text": "this week",
       "person_id": null
     },
     null
@@ -816,7 +816,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             # make sure quote text is right.
             test_quote = test_quote_qs.get()
             test_value = test_quote.value
-            should_be = "Barren hills that were visible only four days ago at Cannonsburg Ski Area and neighboring Pando Winter Sports Park are unlikely to reappear, with between 6 and 12 inches expected to hit the ground this week."
+            should_be = "this week"
             error_string = "In " + me + "(): quotation value is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             

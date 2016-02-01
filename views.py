@@ -22,6 +22,10 @@ import datetime
 import json
 #from StringIO import StringIO
 #import pickle
+import sys
+
+# six
+import six
 
 # HTML parsing
 from bs4 import BeautifulSoup
@@ -50,6 +54,12 @@ from django.shortcuts import render
 
 # import django code for csrf security stuff.
 from django.template.context_processors import csrf
+
+# python_utilities - exceptions
+from python_utilities.exceptions.exception_helper import ExceptionHelper
+
+# python_utilities - JSON
+from python_utilities.json.json_helper import JSONHelper
 
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
@@ -637,6 +647,12 @@ def article_code( request_IN ):
     me = "article_code"
     logger_name = ""
     debug_message = ""
+    
+    # declare variables - exception handling
+    exception_message = ""
+    is_exception = False
+    
+    # declare variables - processing request
     response_dictionary = {}
     default_template = ''
     article_lookup_form = None
@@ -831,77 +847,144 @@ def article_code( request_IN ):
             # OK to process coding?
             if ( is_ok_to_process_coding == True ):
 
-                # process JSON with instance of ManualArticleCoder
-                manual_article_coder = ManualArticleCoder()
+                # Wrap this all in a try-except, so we can return decent error
+                #    messages.
+                try:
+
+                    # process JSON with instance of ManualArticleCoder
+                    manual_article_coder = ManualArticleCoder()
+                    
+                    # need to get call set up for new parameters.
+                    article_data_instance = manual_article_coder.process_data_store_json( article_instance,
+                                                                                          current_user,
+                                                                                          data_store_json_string,
+                                                                                          article_data_id,
+                                                                                          request_IN,
+                                                                                          response_dictionary )
+    
+                    # got anything back?
+                    coding_status = ""
+                    if ( article_data_instance is not None ):
+    
+                        # get status from article data instance
+                        coding_status = article_data_instance.status_messages
+    
+                    #-- END check to see if we have an Article_Data instance --#
+    
+                    # got a status?
+                    if ( ( coding_status is not None ) and ( coding_status != "" ) ):
+    
+                        # short circuit article lookup (use empty copy of form) if success.
+                        if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
+    
+                            # !TODO - success - short circuit article lookup - use empty
+                            #    copy of form - after successful posting of data, place
+                            #    empty ArticleLookupForm() in article_lookup_form so you
+                            #    don't reload the same article automatically (want to keep
+                            #    people from coding twice).
+                            #article_lookup_form = ArticleLookupForm()
+    
+                            # also empty out article_data_instance, so no JSON output.
+                            #article_data_instance = None
+    
+                            # Add status message that just says that Coding was saved.
+                            page_status_message_list.append( "Article data successfully saved!" )
+    
+                        elif ( coding_status != "" ):
+    
+                            # got an error status.  Log and output it.
+                            page_status_message = "There was an error processing your coding: " + coding_status
+    
+                            # log it...
+                            output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
+    
+                            # ...and output it.
+                            page_status_message_list.append( page_status_message )
+    
+                        #-- END check to see what status message is --#
+    
+                    #-- END check to see if status message returned at all --#
+                    
+                except Exception as e:
                 
-                # need to get call set up for new parameters.
-                article_data_instance = manual_article_coder.process_data_store_json( article_instance,
-                                                                                      current_user,
-                                                                                      data_store_json_string,
-                                                                                      article_data_id,
-                                                                                      request_IN,
-                                                                                      response_dictionary )
+                    # set exception flag
+                    is_exception = True
+                
+                    # Capture exception message.
+                    my_exception_helper = ExceptionHelper()
 
-                # got anything back?
-                coding_status = ""
-                if ( article_data_instance is not None ):
+                    # log exception, no email or anything.
+                    exception_message = "Exception caught for user " + str( current_user.username ) + ", article " + str( article_id )
+                    my_exception_helper.process_exception( e, exception_message )
+                    
+                    output_debug( exception_message, me, indent_with_IN = "======> ", logger_name_IN = logger_name )
+                    
+                    # and, create status message from Exception message.
+                    page_status_message = "There was an unexpected exception caught while processing your coding: " + str( e )
 
-                    # get status from article data instance
-                    coding_status = article_data_instance.status_messages
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
-                #-- END check to see if we have an Article_Data instance --#
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )    
 
-                # got a status?
-                if ( ( coding_status is not None ) and ( coding_status != "" ) ):
-
-                    # short circuit article lookup (use empty copy of form) if success.
-                    if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
-
-                        # !TODO - success - short circuit article lookup - use empty
-                        #    copy of form - after successful posting of data, place
-                        #    empty ArticleLookupForm() in article_lookup_form so you
-                        #    don't reload the same article automatically (want to keep
-                        #    people from coding twice).
-                        #article_lookup_form = ArticleLookupForm()
-
-                        # also empty out article_data_instance, so no JSON output.
-                        #article_data_instance = None
-
-                        # Add status message that just says that Coding was saved.
-                        page_status_message_list.append( "Article data successfully saved!" )
-
-                    elif ( coding_status != "" ):
-
-                        # got an error status.  Log and output it.
-                        page_status_message = "There was an error processing your coding: " + coding_status
-
-                        # log it...
-                        output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                        # ...and output it.
-                        page_status_message_list.append( page_status_message )
-
-                    #-- END check to see what status message is --#
-
-                #-- END check to see if status message returned at all --#
+                #-- END try/except around article data processing. --#
 
             #-- END check to see if OK to process coding. --#
             
         #-- END check to see if coding form is valid. --#
 
-        # got article_data?
-        if ( article_data_instance is not None ):
+        # !figure out if and which data store JSON we return
 
-            # convert to JSON and store in response dictionary
-            new_data_store_json = ManualArticleCoder.convert_article_data_to_data_store_json( article_data_instance )
-            new_data_store_json_string = json.dumps( new_data_store_json )
-            response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
+        # check to see if exception.
+        if ( is_exception == True ):
+        
+            # yes, exception.  In "existing_data_store_json", override to pass
+            #    back what was passed in.
+            if ( ( data_store_json_string is not None ) and ( data_store_json_string != "" ) ):
+            
+                #output_debug( "\n\ndata_store_json_string : \n\n" + data_store_json_string, me )
+                
+                '''
+                # got JSON that was passed in.  After escaping nested quotes,
+                #    return it.
+                new_data_store_json = json.loads( data_store_json_string )
+                
+                # escape string values
+                new_data_store_json = JSONHelper.escape_all_string_json_values( new_data_store_json, do_double_escape_quotes_IN = True )
+                
+                # convert to string
+                new_data_store_json_string = json.dumps( new_data_store_json )
+                '''
+                
+                new_data_store_json_string = data_store_json_string.replace( "\\\"", "\\\\\\\"" )
+                
+                # output_debug( "\n\nnew_data_store_json_string : \n\n" + new_data_store_json_string, me )
 
-            # output a message that we've done this.
-            page_status_message = "Loaded article " + str( article_instance.id ) + " coding for user " + str( current_user )
-            page_status_message_list.append( page_status_message )
+                # store in response dictionary.
+                response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
 
-        #-- END check to see if we have an Article_Data instance --#
+            #-- END check to see if existing JSON. --#
+
+        else:
+        
+            # got article_data?
+            if ( article_data_instance is not None ):
+    
+                # convert to JSON and store in response dictionary
+                new_data_store_json = ManualArticleCoder.convert_article_data_to_data_store_json( article_data_instance )
+                new_data_store_json_string = json.dumps( new_data_store_json )
+                #output_debug( "\n\nnew_data_store_json_string : \n\n" + new_data_store_json_string, me )
+                response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
+    
+                # output a message that we've done this.
+                page_status_message = "Loaded article " + str( article_instance.id ) + " coding for user " + str( current_user )
+                page_status_message_list.append( page_status_message )
+    
+            #-- END check to see if we have an Article_Data instance --#
+                
+        #-- END check to see if exception --#
+        
 
         # process article lookup?
         if ( article_lookup_form.is_valid() == True ):
