@@ -296,7 +296,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
         #LocationInline
     ]
 
-    list_display = ( 'id', 'coder', 'create_date', 'article_type', 'status' )
+    list_display = ( 'id', 'my_article_id', 'coder', 'create_date', 'article_type', 'status' )
     list_display_links = ( 'id', )
     list_filter = [ 'coder' ]
     search_fields = [ 'id' ]

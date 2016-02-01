@@ -4835,6 +4835,26 @@ class Article_Data( models.Model ):
     #-- END method get_source_counts_by_type() --#
     
     
+    def my_article_id( self ):
+        
+        # return reference
+        value_OUT = ""
+        
+        if ( ( self.article is not None ) and ( self.article ) ):
+        
+            value_OUT = self.article.id
+        
+        else:
+        
+            value_OUT = None
+        
+        #-- END check to see if we have an article. --#
+        
+        return value_OUT
+    
+    #-- END method my_article_id() --#
+    
+        
     def set_status( self, status_IN, status_message_IN = None ):
         
         '''

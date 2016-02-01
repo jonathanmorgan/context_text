@@ -258,7 +258,7 @@ class ArticleCoder( BasicRateLimited ):
         requests_response = None
         requests_raw_text = ""
         requests_response_json = None
-        debug_string = ""
+        debug_message = ""
         
         # get logger
         my_logger = self.get_logger()
@@ -1385,7 +1385,7 @@ class ArticleCoder( BasicRateLimited ):
         # declare variables.
         me = "process_author_name"
         my_logger = None
-        debug_string = ""
+        debug_message = ""
         author_name = ""
         author_organization = ""
         person_details_dict = {}
@@ -1416,8 +1416,8 @@ class ArticleCoder( BasicRateLimited ):
                 # get capture method
                 my_capture_method = article_data_IN.coder_type
         
-                debug_string = "--- In " + me + ": Processing author name: \"" + author_name + "\" ( id: " + str( author_person_id_IN ) + " )"
-                my_logger.debug( debug_string )
+                debug_message = "--- In " + me + ": Processing author name: \"" + author_name + "\" ( id: " + str( author_person_id_IN ) + " )"
+                my_logger.debug( debug_message )
                 
                 #--------------------------------------------------------------#
                 #-- person details --#
@@ -1845,8 +1845,8 @@ class ArticleCoder( BasicRateLimited ):
 
                                     debug_message = "Found " + str( found_list_count ) + " matches for mention_string \"" + mention_string + "\" at indices: " + str( found_list )
                                     notes_list.append( debug_message )
-                                    debug_message = "WARNING: " + debug_string
-                                    self.output_debug( debug_string, me )
+                                    debug_message = "WARNING: " + debug_message
+                                    self.output_debug( debug_message, me )
 
                                 #-- END check to see if multiple matches found. --#
 
@@ -2467,8 +2467,8 @@ class ArticleCoder( BasicRateLimited ):
                         
                             # None - success!
                             
-                            debug_string = "FIT status was good - single match for each element we are looking for (string: " + quotation_string + ")."
-                            self.output_debug( debug_string, me )
+                            debug_message = "FIT status was good - single match for each element we are looking for (string: " + quotation_string + ")."
+                            self.output_debug( debug_message, me )
 
                             # get result lists.
                             canonical_index_list = quotation_FIT_values.get( Article_Text.FIT_CANONICAL_INDEX_LIST, [] )
@@ -2763,7 +2763,7 @@ class ArticleCoder( BasicRateLimited ):
         # declare variables.
         me = "process_subject_name"
         my_logger = None
-        debug_string = ""
+        debug_message = ""
         person_name = ""
         article_subject = None
         person_details_dict = {}
@@ -2812,8 +2812,8 @@ class ArticleCoder( BasicRateLimited ):
                     
                 #-- END check for coder_type_IN --#
         
-                debug_string = "--- In " + me + ": Processing subject name: \"" + person_name + "\" ( id: " + str( subject_person_id_IN ) + " )"
-                my_logger.debug( debug_string )
+                debug_message = "--- In " + me + ": Processing subject name: \"" + person_name + "\" ( id: " + str( subject_person_id_IN ) + " )"
+                my_logger.debug( debug_message )
                 
                 #--------------------------------------------------------------#
                 #-- person details --#
