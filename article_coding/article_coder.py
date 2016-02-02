@@ -96,6 +96,12 @@ class ArticleCoder( BasicRateLimited ):
     REGEX_BEGINS_WITH_BY = re.compile( r'^BY ', re.IGNORECASE )
     
     # PARAMS for update_person()
+    PARAM_PERSON_ID = "person_id"
+    PARAM_PERSON_NAME = "person_name"
+    PARAM_PERSON_TYPE = "person_type"
+    PARAM_TITLE = "title"
+    PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
+    PARAM_QUOTE_TEXT = "quote_text"
     PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
     PARAM_NEWSPAPER_NOTES = "newspaper_notes"
     PARAM_EXTERNAL_UUID_NAME = "external_uuid_name"
@@ -103,8 +109,6 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
     PARAM_CAPTURE_METHOD = "capture_method"
-    PARAM_TITLE = "title"
-    PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
 
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
@@ -1247,6 +1251,7 @@ class ArticleCoder( BasicRateLimited ):
                 # place person inside Article_Person instance.
                 instance_OUT.person = person_instance
                 instance_OUT.match_confidence_level = confidence_level
+                instance_OUT.name = full_name_IN
                 
             #-- END check to see if person found or created --#
 
@@ -1392,11 +1397,15 @@ class ArticleCoder( BasicRateLimited ):
         author_person = None
         author_person_match_list = []
         article_author_count = -1
-        alternate_author_list = []
         article_author = None
         article_author_qs = None
         my_capture_method = ""
         
+        # declare variables - update processing.
+        do_save_updates = False
+        existing_org_string = ""
+        existing_author_name = ""
+
         # get logger
         my_logger = self.get_logger()
         
@@ -1420,7 +1429,7 @@ class ArticleCoder( BasicRateLimited ):
                 my_logger.debug( debug_message )
                 
                 #--------------------------------------------------------------#
-                #-- person details --#
+                # ! person details
                 #--------------------------------------------------------------#
                 
                 # prepare person details.  Got a dictionary passed in?
@@ -1472,7 +1481,7 @@ class ArticleCoder( BasicRateLimited ):
                 #-- END setting author_organization --#
     
                 #--------------------------------------------------------------#
-                #-- do lookup --#
+                # ! do lookup
                 #--------------------------------------------------------------#
 
                 # lookup person - returns person and confidence score inside
@@ -1508,6 +1517,7 @@ class ArticleCoder( BasicRateLimited ):
                         article_author.person = author_person
                         article_author.organization_string = author_organization
                         article_author.capture_method = my_capture_method
+                        article_author.name = author_name
                         
                         # save, and as part of save, record alternate matches.
                         article_author.save()
@@ -1521,18 +1531,42 @@ class ArticleCoder( BasicRateLimited ):
                         # retrieve article author from query set.
                         article_author = article_author_qs.get()
                         
-                        # !UPDATE existing Article_Author
+                        # ! UPDATE existing Article_Author
                         
-                        # organization string
-                        if ( ( author_organization is not None ) and ( author_organization != "" ) ):
-            
-                            # there is an organization - if organization_string
-                            #    already present, don't append it.
-                            article_author.set_organization_string( author_organization, do_save_IN = True )
+                        #------------------------------------------------------#
+                        # ==> organization string
 
-                        #-- END check to see if we have an organization string --#
+                        existing_org_string = article_author.organization_string
 
-                        # !UPDATE alternate matches
+                        # has organization changed?
+                        if ( existing_org_string != author_organization ):
+                        
+                            # yes.  Replace.
+                            article_author.organization_string = author_organization
+
+                            # we need to save.
+                            do_save_updates = True
+                            
+                        #-- END check to see if new value. --#
+                        
+                        #------------------------------------------------------#
+                        # ==> name
+
+                        existing_author_name = article_author.name
+                        
+                        # has name string changed?
+                        if ( author_name != existing_author_name ):
+                        
+                            # they are different.  Replace.
+                            article_author.name = author_name
+                        
+                            # we need to save.
+                            do_save_updates = True
+                            
+                        #-- END check to see if updated author name. --#
+
+                        #------------------------------------------------------#
+                        # ! UPDATE alternate matches
 
                         # Were there alternate matches?
                         if ( len( author_person_match_list ) > 0 ):
@@ -1542,11 +1576,24 @@ class ArticleCoder( BasicRateLimited ):
                             #    "person_match_list".
                             article_author.person_match_list = author_person_match_list
                             
+                            # save calls process_alternate_matches().
+                            do_save_updates = True
+                            
                             # call method to process alternate matches.
                             my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Author found for person, calling process_alternate_matches." )
-                            article_author.process_alternate_matches()
+                            # article_author.process_alternate_matches()
                             
                         #-- END check to see if there were alternate matches --#
+                        
+                        #------------------------------------------------------#
+                        # do we need to save?
+
+                        if ( do_save_updates == True ):
+                        
+                            # we do.
+                            article_author.save()
+                        
+                        #-- END check to see if we need to save --#
                         
                     else:
                     
@@ -1584,6 +1631,7 @@ class ArticleCoder( BasicRateLimited ):
         
         article_author_OUT = article_author
         article_author_OUT.match_status = status_OUT
+        article_author_OUT.save()
         
         return article_author_OUT
     
@@ -2724,7 +2772,8 @@ class ArticleCoder( BasicRateLimited ):
                               subject_UUID_name_IN = "",
                               subject_UUID_source_IN = "",
                               coder_type_IN = "",
-                              subject_person_id_IN = None ):
+                              subject_person_id_IN = None,
+                              do_create_name_mention_IN = True ):
     
         '''
         Accepts:
@@ -2764,21 +2813,30 @@ class ArticleCoder( BasicRateLimited ):
         me = "process_subject_name"
         my_logger = None
         debug_message = ""
-        person_name = ""
         article_subject = None
+        person_name = ""
+        my_capture_method = ""
+
+        # declare variable - set up person details
         person_details_dict = {}
-        person_UUID = ""
+        current_key = ""
+        current_value = ""
+
+        # declare variables - lookup person for name
         subject_person = None        
         subject_person_match_list = []
+        
+        # see if existing record for person.
         article_subject_qs = None
         article_subject_count = -1
-        alternate_author_list = []
-        article_author = None
-        article_author_qs = None
-        my_capture_method = ""
         title_IN = ""
-        cleaned_title = ""
-        title_length = ""
+        
+        # declare variables - update existing Article_Subject
+        do_save_updates = False
+        existing_subject_name = ""
+        existing_title = ""
+        current_article_subject_mention = None
+        my_article = None
         
         # get logger
         my_logger = self.get_logger()
@@ -2790,6 +2848,9 @@ class ArticleCoder( BasicRateLimited ):
         # got Article_Data instance?
         if ( article_data_IN is not None ):
         
+            # get article
+            my_article = article_data_IN.article
+            
             # get author_name
             person_name = subject_name_IN
 
@@ -2834,6 +2895,7 @@ class ArticleCoder( BasicRateLimited ):
                     
                 #-- END check to see if dictionary passed in. --#
                 
+                # ! set person_details_dict
                 # newspaper instance - only add if key not already in dictionary.
                 if self.PARAM_NEWSPAPER_INSTANCE not in person_details_dict:
                 
@@ -2903,7 +2965,7 @@ class ArticleCoder( BasicRateLimited ):
                 #-- END check to see if capture method already in dict --#
     
                 #--------------------------------------------------------------#
-                #-- do lookup --#
+                # ! do lookup
                 #--------------------------------------------------------------#
 
                 # lookup person - returns person and confidence score inside
@@ -2945,6 +3007,7 @@ class ArticleCoder( BasicRateLimited ):
                     
                         article_subject.article_data = article_data_IN
                         article_subject.person = subject_person
+                        article_subject.name = person_name
                         
                         # confidence level set in lookup_person() method.
                         #article_subject.match_confidence_level = 1.0
@@ -2973,6 +3036,23 @@ class ArticleCoder( BasicRateLimited ):
                         # save, and as part of save, record alternate matches.
                         article_subject.save()
                         
+                        # create mention for name?
+                        if ( do_create_name_mention_IN == True ):
+                            
+                            # add name mention to Article_Subject.
+                            current_article_subject_mention = self.process_mention( my_article, article_subject, person_name )
+                            
+                            # error?
+                            if ( current_article_subject_mention is None ):
+
+                                # yup - output debug message.
+                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
+                                self.output_debug( debug_message, me )
+
+                            #-- END check to see if error processing quotation --#
+
+                        #-- END check to see if we create name mention. --#
+                        
                         my_logger.debug( "In " + me + ": adding Article_Subject instance for " + str( subject_person ) + "." )
         
                     elif ( article_subject_count == 1 ):
@@ -2984,19 +3064,41 @@ class ArticleCoder( BasicRateLimited ):
                         
                         # !UPDATE existing Article_Subject
                         
-                        # see if there is a title in person_details_IN.
-                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
-                        if ( ( title_IN is not None ) and ( title_IN != "" ) ):
-            
-                            # there is a title - set it, but if title already
-                            #    present, don't append it.
-                            article_subject.set_title( title_IN, do_save_IN = True, do_append_IN = False )
+                        #------------------------------------------------------#
+                        # ==> title
 
-                        #-- END check to see if we have a title --#
+                        # has title changed?
+                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+                        existing_title = article_subject.title
+                        if ( title_IN != existing_title ):
+
+                            # yes.  Update title.
+                            article_subject.title = ""
+                            article_subject.set_title( title_IN, do_save_IN = False, do_append_IN = True )
+
+                            # we need to save.
+                            do_save_updates = True
+
+                        #-- END check to see if title changed --#
+
+                        #------------------------------------------------------#
+                        # ==> name
+                        
+                        # has name string changed?
+                        existing_subject_name = article_subject.name
+                        if ( person_name != existing_subject_name ):
+                        
+                            # replace, and save.
+                            article_subject.name = person_name
+
+                            # we need to save.
+                            do_save_updates = True
 
                         # !UPDATE alternate matches
 
+                        #------------------------------------------------------#
                         # Were there alternate matches?
+
                         if ( len( subject_person_match_list ) > 0 ):
                         
                             # yes - store the list of alternate matches in the
@@ -3004,14 +3106,41 @@ class ArticleCoder( BasicRateLimited ):
                             #    "person_match_list".
                             article_subject.person_match_list = subject_person_match_list
                             
+                            # save calls process_alternate_matches().
+                            do_save_updates = True
+                            
                             # call method to process alternate matches.
                             my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Subject found for person, calling process_alternate_matches." )
-                            article_subject.process_alternate_matches()
+                            #article_subject.process_alternate_matches()
 
-                            # save?
-                            # article_subject.save()
-                            
                         #-- END check to see if there were alternate matches --#
+                        
+                        #------------------------------------------------------#
+                        # save?
+
+                        if ( do_save_updates == True ):
+                        
+                            # yes.
+                            article_subject.save()
+                            
+                        #-- END check to see if we save updates --#
+
+                        # create mention for name?
+                        if ( do_create_name_mention_IN == True ):
+                            
+                            # add name mention to Article_Subject.
+                            current_article_subject_mention = self.process_mention( my_article, article_subject, person_name )
+                            
+                            # error?
+                            if ( current_article_subject_mention is None ):
+
+                                # yup - output debug message.
+                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
+                                self.output_debug( debug_message, me )
+
+                            #-- END check to see if error processing quotation --#
+
+                        #-- END check to see if we create name mention. --#
                         
                     else:
                     
@@ -3049,6 +3178,7 @@ class ArticleCoder( BasicRateLimited ):
         
         article_subject_OUT = article_subject
         article_subject_OUT.match_status = status_OUT
+        article_subject_OUT.save()
         
         return article_subject_OUT
     

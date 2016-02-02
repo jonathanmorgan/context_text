@@ -107,11 +107,11 @@ class ManualArticleCoder( ArticleCoder ):
 
     # person store JSON property names
     DATA_STORE_PROP_PERSON_ARRAY = "person_array"
-    DATA_STORE_PROP_PERSON_TYPE = "person_type"
-    DATA_STORE_PROP_PERSON_NAME = "person_name"
-    DATA_STORE_PROP_TITLE = "title"
-    DATA_STORE_PROP_QUOTE_TEXT = "quote_text"
-    DATA_STORE_PROP_PERSON_ID = "person_id"
+    DATA_STORE_PROP_PERSON_TYPE = ArticleCoder.PARAM_PERSON_TYPE # "person_type"
+    DATA_STORE_PROP_PERSON_NAME = ArticleCoder.PARAM_PERSON_NAME # "person_name"
+    DATA_STORE_PROP_TITLE = ArticleCoder.PARAM_TITLE             # "title"
+    DATA_STORE_PROP_QUOTE_TEXT = ArticleCoder.PARAM_QUOTE_TEXT   # "quote_text"
+    DATA_STORE_PROP_PERSON_ID = ArticleCoder.PARAM_PERSON_ID     # "person_id"
     DATA_STORE_PROP_NEXT_PERSON_INDEX = "next_person_index"
     DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP = "name_to_person_index_map"
     DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
@@ -553,35 +553,49 @@ class ManualArticleCoder( ArticleCoder ):
         coder_user = None
         data_store_json_string = ""
         data_store_json = None
-        article_data_id = -1
+
+        # declare variables - look for existing Article_Data
+        is_existing_article_data = False
+        article_data_qs = None
+        current_article_data = None
+        article_data_count = -1
+
+        # declare variables - make new Article_Data if needed.
+        current_article = None
+        current_person = None
+
+        # declare variables - store off JSON in a note.
+        json_article_data_note = None
+        
+        # declare variables - loop over person list in JSON.
         person_list = []
         person_count = -1
         person_counter = -1
-        coder_user = None
+        
+        # declare variables - structures to help check for removal.
+        person_id_to_article_author_map = {}
+        person_name_to_article_author_map = {}
+        person_id_to_article_subject_map = {}
+        person_name_to_article_subject_map = {}
+        current_person_instance = None
+        current_person_id = -1
+        
+        # declare variables - get current person's information.
         person_type = ""
         person_name = ""
         title = ""
         quote_text = ""
         person_id = -1
-        is_existing_article_data = False
-        article_data_qs = None
-        article_data_count = -1
-        current_article_data = None
-        json_article_data_note = None
-        current_article = None
-        current_person = None
-        person_type = ""
-        person_name = ""
-        title = ""
-        quote_text = ""
-        person_id = ""
+        
+        # declare variables - for processing person.
         current_article_subject = None
         current_article_subject_mention = None
         current_article_subject_quotation = None
         current_article_author = None
         current_article_person = None
         current_person_status = ""
-
+        current_full_name = ""
+        
         # start with is_ok_to_process = True and an empty status_message_list
         is_ok_to_process = True
         status_message = ""
@@ -615,6 +629,7 @@ class ManualArticleCoder( ArticleCoder ):
                     # got a JSON string, convert to Python objects.
                     data_store_json = json.loads( data_store_json_string )
 
+                    # !check for existing Article_Data
                     # see if there is an existing Article_Data instance for this
                     #    user and article.
                     is_existing_article_data = False
@@ -657,6 +672,7 @@ class ManualArticleCoder( ArticleCoder ):
                                 
                                     # not found.  Set current_article_data to None...
                                     current_article_data = None
+                                    is_existing_article_data = False
 
                                     # ...tell logic it isn't OK to process...
                                     is_ok_to_process = False
@@ -677,6 +693,7 @@ class ManualArticleCoder( ArticleCoder ):
 
                                 # not OK to process.
                                 is_ok_to_process = False
+                                is_existing_article_data = True
 
                                 # log and store status message.
                                 status_message = "Found " + str( article_data_qs.count() ) + " Article_Data records for user ( " + str( coder_user ) + " ) and article ( " + str( article_IN ) + " )"
@@ -698,7 +715,7 @@ class ManualArticleCoder( ArticleCoder ):
 
                     #-- END try...except around initial attempt to pull in Article_Data for current user. --#
 
-                    # is it OK to process?
+                    # !is it OK to process JSON?
                     if ( is_ok_to_process == True ):
 
                         # got article data?
@@ -758,21 +775,19 @@ class ManualArticleCoder( ArticleCoder ):
     
                                     # set up person details
                                     person_details = {}
-                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                     
-                                    # got a title?
-                                    if ( ( title is not None ) and ( title != "" ) ):
-                                        
-                                        # we do.  store it in person_details.
-                                        person_details[ self.PARAM_TITLE ] = title
-                                        
-                                    #-- END check to see if title --#
+                                    # store all fields from current_person.
+                                    person_details.update( current_person )
+                                    
+                                    # also add in the article's newspaper.
+                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                     
                                     # check person type to see what type we are processing.
                                     if ( ( person_type == self.PERSON_TYPE_SUBJECT )
                                          or ( person_type == self.PERSON_TYPE_SOURCE ) ):
     
-                                        # Article_Subject
+                                        # ! Article_Subject
+                                        # - includes creating mention for name.
                                         current_article_subject = self.process_subject_name( current_article_data,
                                                                                              person_name,
                                                                                              person_details_IN = person_details,
@@ -787,20 +802,6 @@ class ManualArticleCoder( ArticleCoder ):
     
                                             # save source updates
                                             current_article_subject.save()
-    
-                                            # add name mention to Article_Subject.
-                                            current_article_subject_mention = self.process_mention( article_IN, current_article_subject, person_name )
-    
-                                            # error?
-                                            if ( current_article_subject_mention is None ):
-    
-                                                # yup - output debug message.
-                                                debug_message = "Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
-                                                status_message_list.append( debug_message )
-                                                debug_message = "ERROR: " + debug_message
-                                                self.output_debug( debug_message, me )
-    
-                                            #-- END check to see if error processing quotation --#
     
                                             # see if there is quote text.
                                             if ( ( quote_text is not None ) and ( quote_text != "" ) ):
@@ -825,6 +826,12 @@ class ManualArticleCoder( ArticleCoder ):
     
                                         # save source updates - should not need save.
                                         current_article_subject.save()
+                                        
+                                        # ! update subject dicts for removal processing.
+                                        current_person_instance = current_article_subject.person
+                                        current_person_id = current_person_instance.id
+                                        person_id_to_article_subject_map[ current_person_id ] = current_article_subject
+                                        person_name_to_article_subject_map[ person_name ] = current_article_subject
     
                                         # store Article_Subject instance in Article_Person reference.
                                         current_article_person = current_article_subject
@@ -836,7 +843,7 @@ class ManualArticleCoder( ArticleCoder ):
                                         #    field.
                                         person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
                                     
-                                        # Article_Author
+                                        # ! Article_Author
                                         current_article_author = self.process_author_name( current_article_data,
                                                                                            person_name,
                                                                                            author_organization_IN = title,
@@ -846,6 +853,12 @@ class ManualArticleCoder( ArticleCoder ):
                                         # store Article_Author instance in Article_Person reference.
                                         current_article_person = current_article_author
     
+                                        # ! update author dicts for removal processing.
+                                        current_person_instance = current_article_author.person
+                                        current_person_id = current_person_instance.id
+                                        person_id_to_article_author_map[ current_person_id ] = current_article_author
+                                        person_name_to_article_author_map[ person_name ] = current_article_author
+
                                     #-- END check to see person type --#
     
                                     # set name
@@ -880,8 +893,52 @@ class ManualArticleCoder( ArticleCoder ):
 
                             #-- END loop over persons --#
                             
+                            # ! removal check
+                            # Always loop over all the authors, then subjects in
+                            #    current Article_Data, if any are present in
+                            #    databse, but not in map dictionaires, remove
+                            #    them from database.
+
+                            # authors
+                            for current_article_author in current_article_data.article_author_set.all():
+                            
+                                # get person ID and full name.
+                                current_person_id = current_article_author.person.id
+                                current_full_name = current_article_author.name
+                                
+                                # look for either ID or name to be in one of our
+                                #    dictionaries.
+                                if ( ( current_full_name not in person_name_to_article_author_map )
+                                    and ( current_person_id not in person_id_to_article_author_map ) ):
+                                    
+                                    # not in either map.  Delete.
+                                    current_article_author.delete()
+                                    
+                                #-- END look for author in processed dictionaries --#
+                            
+                            #-- END loop over related Article_Author instances --#
+                            
+                            # authors
+                            for current_article_subject in current_article_data.article_subject_set.all():
+                            
+                                # get person ID and full name.
+                                current_person_id = current_article_subject.person.id
+                                current_full_name = current_article_subject.name
+                                
+                                # look for either ID or name to be in one of our
+                                #    dictionaries.
+                                if ( ( current_full_name not in person_name_to_article_subject_map )
+                                    and ( current_person_id not in person_id_to_article_subject_map ) ):
+                                    
+                                    # not in either map.  Delete.
+                                    current_article_subject.delete()
+                                    
+                                #-- END look for subject in processed dictionaries --#
+                            
+                            #-- END loop over related Article_Subject instances --#
+                            
                         #-- END check to see if there are any persons. --#
-                        
+                                                
                     else:
 
                         # Not OK to process.  Assume messages that explain why

@@ -5430,7 +5430,7 @@ class Article_Author( Article_Person ):
     #-- END function process_alternate_matches() --#
     
 
-    def set_organization_string( self, organization_string_IN, do_save_IN = True ):
+    def set_organization_string( self, organization_string_IN, do_save_IN = True, do_append_IN = False ):
 
         '''
         Accepts organization string and boolean flag that indicates whether to
@@ -5468,9 +5468,10 @@ class Article_Author( Article_Person ):
                 value_length = len( value_cleaned )
                 if ( value_length > 255 ):
                     
-                    # field is 255 characters - truncate to 255
-                    #    and store, so at least we have something.
+                    # field is 255 characters - truncate to 255, put that in
+                    #    org string, store rest in more_title.
                     self.organization_string = value_cleaned[ : 255 ]
+                    self.more_title = value_cleaned[ 255 : ]
                     is_updated = True
                     
                 else:
@@ -5483,19 +5484,15 @@ class Article_Author( Article_Person ):
 
             else:
                 
-                # there is an existing value.  Do nothing for now.
-                pass
-                '''
-                # do we append?
+                # there is an existing value. Do we append?
                 if ( do_append_IN == True ):
                     
-                    # we do.  Add the entire title string to more_title,
+                    # we do.  Add the entire org. string string to more_title,
                     #    preceded by a newline.
                     self.more_title += "\n" + value_cleaned
                     is_updated = True
                     
                 #-- END check to see if we append. --#
-                '''
                 
             #-- END check to see if existing value. --#
             

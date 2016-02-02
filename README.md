@@ -1066,6 +1066,8 @@ Specific sets of tests:
     - test basic methods in ArticleCoder that are re-used by all coding methods:
 
             python manage.py test sourcenet.tests.article_coder.test_article_coder
+
+- ManualArticleCoder
             
     - test methods in ManualArticleCoder specific to manual coding:
 

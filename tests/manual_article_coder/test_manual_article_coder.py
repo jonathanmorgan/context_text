@@ -211,6 +211,87 @@ class ManualArticleCoderTest( django.test.TestCase ):
 }'''
 
 
+    data_store_json_update = '''{
+  "person_array": [
+    {
+      "person_type": "author",
+      "person_name": "Hardy Baeza Bickel",
+      "title": "Grand Rapids Press",
+      "quote_text": "",
+      "person_id": 161
+    },
+    {
+      "person_type": "author",
+      "person_name": "James Cabalum",
+      "title": "Special to The Grand Rapids Press",
+      "quote_text": "",
+      "person_id": null
+    },
+    {
+      "person_type": "source",
+      "person_name": "Alex McNamara",
+      "title": "snowboarder",
+      "quote_text": "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \\\"long\\\" summer and fall left them eager to bust out their boards.",
+      "person_id": null
+    },
+    {
+      "person_type": "source",
+      "person_name": "Barren hills",
+      "title": "visible only four days",
+      "quote_text": "The snow-covered runs are a beautiful sight to snowboarders Alex McNamara and Justin VanderVelde.",
+      "person_id": null
+    },
+    {
+      "person_type": "source",
+      "person_name": "Pete Goodell",
+      "title": "manager at Pando Winter Sports Park",
+      "quote_text": "\\\"We went from green grass to a lot of snow,\\\" said Pete Goodell, a manager at Pando. \\\"We still had to make a lot with the machines, but it was a great start.",
+      "person_id": 163
+    },
+    {
+      "person_type": "source",
+      "person_name": "Bob Dukesherer",
+      "title": "meteorologist",
+      "quote_text": "Bob Dukesherer, a National Weather Service meteorologist, says it's a near certainty that will happen by Tuesday, when a storm will settle in and hang over the region through Saturday.",
+      "person_id": null
+    },
+    {
+      "person_type": "source",
+      "person_name": "Steven Brown",
+      "title": "manager at Cannonsburg Ski Area",
+      "quote_text": "The forecast should make for good business at Cannonsburg, which drew several hundred customers on its first day of business Sunday, manager Steve Brown said.",
+      "person_id": 165
+    },
+    {
+      "person_type": "subject",
+      "person_name": "Richard DeGraaf",
+      "title": "good business",
+      "quote_text": "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill.",
+      "person_id": 166
+    }
+  ],
+  "next_person_index": 8,
+  "name_to_person_index_map": {
+    "Nardy Baeza Bickel": 0,
+    "James Cabalum": 1,
+    "Alex McNamara": 2,
+    "Barren hills": 3,
+    "Pete Goodell": 4,
+    "Bob Dukesherer": 5,
+    "Steve Brown": 6,
+    "Rick DeGraaf": 7
+  },
+  "id_to_person_index_map": {
+    "161": 0,
+    "163": 4,
+    "165": 6,
+    "166": 7
+  },
+  "status_message_array": [],
+  "latest_person_index": 7
+}'''
+
+
     #----------------------------------------------------------------------------
     # instance methods
     #----------------------------------------------------------------------------
@@ -842,6 +923,195 @@ class ManualArticleCoderTest( django.test.TestCase ):
             
         #-- END loop over list of JSON documents. --#
 
+        #----------------------------------------------------------------------#
+        # ! update test
+        
+        # get JSON string
+        test_json_string = self.data_store_json_update
+        
+        # setup - wipe the title from Rick DeGraaf.
+        test_person_qs = Person.look_up_person_from_name( "Rick DeGraaf" )
+        test_person = test_person_qs.get()
+        test_person.title = ""
+        test_person.save()
+        
+        # create ManualArticleCoder instance.
+        test_manual_article_coder = ManualArticleCoder()
+
+        # get article whose data this is.                
+        test_article = Article.objects.get( pk = 21409 )
+
+        # get test user.
+        test_user = TestHelper.get_test_user()
+
+        # create bare-bones Article_Data, get ID
+        #test_article_data = Article_Data()
+        #test_article_data.coder = test_user
+        #test_article_data.article = test_article
+        #test_article_data.save()
+        #test_article_data_id = test_article_data.id
+        
+        # initialize empty response dictionary
+        test_response_dict = {}
+
+        # call process_data_store_json method.
+        test_article_data = test_manual_article_coder.process_data_store_json( test_article, test_user, test_json_string )
+
+        #----------------------------------------------------------------------#
+        # test resulting article data.
+        #----------------------------------------------------------------------#
+
+        # author count
+        test_author_qs = test_article_data.article_author_set.all()
+        test_author_count = test_author_qs.count()
+        
+        # should be 2
+        test_value = test_author_count
+        should_be = 2
+        error_string = "In " + me + "(): author count is " + str( test_author_count ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )            
+
+        # subject count
+        test_subject_qs = test_article_data.article_subject_set.all()
+        test_subject_count = test_subject_qs.count()
+
+        # should be 6
+        test_value = test_subject_count
+        should_be = 6
+        error_string = "In " + me + "(): subject count is " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )            
+
+        # source count
+        test_source_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
+        test_source_count = test_source_qs.count()
+
+        # should be 5
+        test_value = test_source_count
+        should_be = 5
+        error_string = "In " + me + "(): source count is " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )            
+
+        # spot check one author name, an existing source, and a new source.
+        
+        #----------------------------------------------------------------------#
+        # Author "Nate Reens"
+        #----------------------------------------------------------------------#
+        
+        # set author name
+        author_name = "Nate Reens"
+        test_lookup_name = author_name
+        
+        # retrieve person
+        test_person_qs = Person.look_up_person_from_name( test_lookup_name )
+        test_person = test_person_qs.get()
+        
+        # should be ID 46
+        test_value = test_person.id
+        should_be = 46
+        error_string = "In " + me + "(): test person ID is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )            
+        
+        # check title
+        test_value = test_person.title
+        should_be = "Grand Rapids Press"
+        error_string = "In " + me + "(): test title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )            
+        
+        # get Article_Author
+        test_article_author_qs = test_article_data.article_author_set.filter( person = test_person )
+        
+        # should not be one
+        test_value = test_article_author_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): Article_Author count for \"Nate Reens\" is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )
+        
+        #----------------------------------------------------------------------#
+        # Source "Rick DeGraaf"
+        #----------------------------------------------------------------------#
+        
+        # set source name
+        source_name = "Rick DeGraaf"
+        test_lookup_name = source_name
+        
+        # retrieve person
+        test_person_qs = Person.look_up_person_from_name( test_lookup_name )
+        test_person = test_person_qs.get()
+        
+        # check title
+        test_value = test_person.title
+        should_be = "good business"
+        error_string = "In " + me + "(): test title is " + str( test_value ) + ", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )            
+        
+        # get Article_Subject
+        test_article_subject_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED )
+        test_article_subject = test_article_subject_qs.get( person = test_person )
+        
+        # test Article_Subject title
+        test_value = test_article_subject.name
+        should_be = "Richard DeGraaf"
+        error_string = "In " + me + "(): test Article_Subject title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # test Article_Subject title
+        test_value = test_article_subject.title
+        should_be = "good business"
+        error_string = "In " + me + "(): test Article_Subject title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # check for quote and mention.
+        
+        # ==> mention
+        test_mention_qs = test_article_subject.article_subject_mention_set.all()
+
+        # ! should be 1, but is 2...
+        test_value = test_mention_qs.count()
+        should_be = 2
+        error_string = "In " + me + "(): mention count is " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # make sure mention text is right.
+        for test_mention in test_mention_qs:
+
+            test_value = test_mention.value
+            should_be_in = [ test_lookup_name, "Richard DeGraaf" ]
+            error_string = "In " + me + "(): mention value is " + str( test_value ) +", should be in " + str( should_be_in )
+            self.assertIn( test_value, should_be_in, error_string )
+            
+            # !TODO - test position of mention.
+
+        #-- END loop over mentions --#
+        
+       
+        #----------------------------------------------------------------------#
+        # Source "Western Michigan"
+        #----------------------------------------------------------------------#
+        
+        # set source name
+        source_name = "West Michigan"
+        test_lookup_name = source_name
+        
+        # retrieve person
+        test_person_qs = Person.look_up_person_from_name( test_lookup_name )
+        test_person = test_person_qs.get()
+        
+        # check title
+        test_value = test_person.title
+        should_be = "nice day on the hill"
+        error_string = "In " + me + "(): test title is " + str( test_value ) + ", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )            
+        
+        # get Article_Subject
+        test_article_subject_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
+        test_article_subject_qs = test_article_subject_qs.filter( person = test_person )
+        
+        # test Article_Subject title
+        test_value = test_article_subject_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): should be no Article_Subject for \"West Michigan\" - count is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )
+                    
     #-- END test method test_process_quotation() --#
 
 
