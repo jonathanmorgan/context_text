@@ -4507,6 +4507,10 @@ class Article_Data( models.Model ):
     STATUS_UNKNOWN_ERROR = "unknown_error"
     STATUS_DEFAULT = STATUS_NEW
 
+    #----------------------------------------------------------------------
+    # model fields
+    #----------------------------------------------------------------------
+
     article = models.ForeignKey( Article )
     coder = models.ForeignKey( User )
     coder_type = models.CharField( max_length = 255, blank = True, null = True )

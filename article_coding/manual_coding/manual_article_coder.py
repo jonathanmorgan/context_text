@@ -555,10 +555,11 @@ class ManualArticleCoder( ArticleCoder ):
         data_store_json = None
 
         # declare variables - look for existing Article_Data
+        lookup_result = None
+        lookup_status = ""
+        lookup_status_message = ""
         is_existing_article_data = False
-        article_data_qs = None
         current_article_data = None
-        article_data_count = -1
 
         # declare variables - make new Article_Data if needed.
         current_article = None
@@ -629,316 +630,324 @@ class ManualArticleCoder( ArticleCoder ):
                     # got a JSON string, convert to Python objects.
                     data_store_json = json.loads( data_store_json_string )
 
-                    # !check for existing Article_Data
-                    # see if there is an existing Article_Data instance for this
-                    #    user and article.
-                    is_existing_article_data = False
-                    article_data_qs = Article_Data.objects.filter( coder = coder_user )
-                    article_data_qs = article_data_qs.filter( article = article_IN )
-
-                    # How many matches?
-                    try:
-
-                        # use .get() to retrieve single instance from QuerySet.
-                        current_article_data = article_data_qs.get()
-
-                        # set is_existing_article_data to True
-                        is_existing_article_data = True
-
-                    except Exception as e:
-
-                        # hmmm.  Either no matches, or more than one.
-                        article_data_count = article_data_qs.count()
-                        if ( article_data_count > 1 ):
-
-                            # more than one.  See if we have an ID.
-                            if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
+                    # !lookup Article_Data
+                    lookup_result = self.lookup_article_data( article_IN, coder_user, article_data_id_IN )
+                    
+                    # what have we got?
+                    if ( lookup_result is not None ):
+                    
+                        # get Article_Data, status, status message.
+                        current_article_data = lookup_result.get( self.PROP_LOOKUP_ARTICLE_DATA, None )
+                        lookup_status = lookup_result.get( self.PROP_LOOKUP_STATUS, self.PROP_LOOKUP_STATUS_VALUE_ERROR )
+                        lookup_status_message = lookup_result.get( self.PROP_STATUS_MESSAGE, None )
+                        
+                        # set processing flags.
+                        if ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_ERROR ):
+                        
+                            # error.  Not OK to process...
+                            is_ok_to_process = False
                             
-                                # we have an Article_Data ID.  look up.
-                                try:
-            
-                                    # use exception handling to see if record already exists.
-                                    
-                                    # filter on ID
-                                    article_data_qs = Article_Data.objects.filter( pk = article_data_id_IN )
-                                    
-                                    # then use get() to make sure this ID belongs to the current user.
-                                    current_article_data = article_data_qs.get( coder = coder_user )
+                            # ...create error message...
+                            status_message_list.append( lookup_status_message )
 
-                                    # set is_existing_article_data to True
-                                    is_existing_article_data = True
+                            # ...and log it.
+                            self.output_debug( lookup_status_message, me, indent_with_IN = "====>" )
+                        
+                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_MULTIPLE ):
+                        
+                            # also error.  Not OK to process...
+                            is_ok_to_process = False
                             
-                                except Exception as e:
-                                
-                                    # not found.  Set current_article_data to None...
-                                    current_article_data = None
-                                    is_existing_article_data = False
+                            # ...create error message...
+                            status_message_list.append( lookup_status_message )
 
-                                    # ...tell logic it isn't OK to process...
-                                    is_ok_to_process = False
+                            # ...and log it.
+                            self.output_debug( lookup_status_message, me, indent_with_IN = "====>" )                            
+                        
+                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_NEW )
 
-                                    # ...create error message...
-                                    status_message = "Article_Data record for ID passed in ( " + str( article_data_id_IN ) + " ) either does not exist or does not belong to the current user: " + str( coder_user )
-                                    status_message_list.append( status_message )
-
-                                    # ...and log it.
-                                    self.output_debug( status_message, me, indent_with_IN = "====>" )
+                            # OK to process...
+                            is_ok_to_process = True
                             
-                                #-- END check to see if we can find existing article data. --#
-                                
-                            else:
-
-                                # Too many Article_Data instances for user, and
-                                #    no way to choose among them.
-
-                                # not OK to process.
-                                is_ok_to_process = False
-                                is_existing_article_data = True
-
-                                # log and store status message.
-                                status_message = "Found " + str( article_data_qs.count() ) + " Article_Data records for user ( " + str( coder_user ) + " ) and article ( " + str( article_IN ) + " )"
-                                status_message_list.append( status_message )
-                                self.output_debug( status_message, me, "====> " )
-                                current_article_data = None
-
-                            #-- END check to see if article data already exists. --#
-
-                        else:
-
-                            # No Article_Data found.  OK to process, set variable to None.
-                            current_article_data = None
-
-                            # set is_existing_article_data to False.
+                            # ...and not an existing Article_Data instance
                             is_existing_article_data = False
+                            
+                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_EXISTING )
 
-                        #-- END check to see if 0 or > 1 Article_Data found for current user. --#
+                            # OK to process...
+                            is_ok_to_process = True
+                            
+                            # ...and is an existing Article_Data instance
+                            is_existing_article_data = True
+                            
+                        else:
+                        
+                            # error.  Not OK to process...
+                            is_ok_to_process = False
+                            
+                            # ...create error message...
+                            status_message = "ERROR - Unknown lookup_article_data() status " + lookup_status + ", message: " + lookup_status_message
+                            status_message_list.append( status_message )
 
-                    #-- END try...except around initial attempt to pull in Article_Data for current user. --#
+                            # ...and log it.
+                            self.output_debug( status_message, me, indent_with_IN = "====>" )
+                        
+                            # unknown status.  Error.
+                            
+                        #-- END conditional over statuses. --#
+                            
+                    else:
+                    
+                        # no result - error.  Not OK to process...
+                        is_ok_to_process = False
+                        
+                        # ...create error message...
+                        status_message = "ERROR - Nothing came back from lookup_article_data() status."
+                        status_message_list.append( status_message )
 
-                    # !is it OK to process JSON?
+                        # ...and log it.
+                        self.output_debug( status_message, me, indent_with_IN = "====>" )
+                    
+                        # unknown status.  Error.
+                        
+                    #-- END check to make sure we have a response. --#
+                    
+                    # ! is it OK to process JSON?
                     if ( is_ok_to_process == True ):
 
                         # got article data?
-                        if ( current_article_data is None ):
+                        if ( current_article_data is not None ):
                         
-                            # no Article_Data.  Create a new record.
-                            current_article_data = Article_Data()
+                            # yes - store JSON in an Article_Data_Note.
+                            json_article_data_note = Article_Data_Notes()
+                            json_article_data_note.article_data = current_article_data
+                            json_article_data_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
+                            json_article_data_note.content = data_store_json_string
+                            json_article_data_note.source = self.coder_type + " - user " + str( coder_user )
+                            json_article_data_note.content_description = "Person Store JSON (likely from manual coding via article-code view)."
+                            json_article_data_note.save()
+    
+                            # store current_article_data in article_data_OUT.
+                            article_data_OUT = current_article_data
+    
+                            # get list of people.
+                            person_list = data_store_json[ self.DATA_STORE_PROP_PERSON_ARRAY ]
                             
-                            # get article for ID, store in Article_Data.
-                            current_article = article_IN
-                            current_article_data.article = current_article
-                            current_article_data.coder = coder_user
-                        
-                            # Save off Aricle_Data instance - current_article_data.save()
-                            current_article_data.save()
-
-                        #-- END check to see if Article_Data instance. --#
-
-                        # add Article_Data_Notes with JSON.
-                        json_article_data_note = Article_Data_Notes()
-                        json_article_data_note.article_data = current_article_data
-                        json_article_data_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                        json_article_data_note.content = data_store_json_string
-                        json_article_data_note.source = self.coder_type + " - user " + str( coder_user )
-                        json_article_data_note.content_description = "Person Store JSON (likely from manual coding via article-code view)."
-                        json_article_data_note.save()
-
-                        # store current_article_data in article_data_OUT.
-                        article_data_OUT = current_article_data
-
-                        # get list of people.
-                        person_list = data_store_json[ self.DATA_STORE_PROP_PERSON_ARRAY ]
-                        
-                        # get count of persons
-                        person_count = len( person_list )
-                        
-                        # got one or more people?
-                        if ( person_count > 0 ):
-                                                
-                            # !loop over persons
-                            person_counter = 0
-                            for current_person in person_list:
-
-                                # increment counter
-                                person_counter += 1
+                            # get count of persons
+                            person_count = len( person_list )
                             
-                                # check to see if it is an empty entry (happens
-                                #    when a person is removed during coding).
-                                if ( current_person is not None ):
-                            
-                                    # retrieve person information.
-                                    person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
-                                    person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
-                                    title = current_person.get( self.DATA_STORE_PROP_TITLE )
-                                    quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
-                                    person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
+                            # got one or more people?
+                            if ( person_count > 0 ):
+                                                    
+                                # !loop over persons
+                                person_counter = 0
+                                for current_person in person_list:
     
-                                    # set up person details
-                                    person_details = {}
-                                    
-                                    # store all fields from current_person.
-                                    person_details.update( current_person )
-                                    
-                                    # also add in the article's newspaper.
-                                    person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
-                                    
-                                    # check person type to see what type we are processing.
-                                    if ( ( person_type == self.PERSON_TYPE_SUBJECT )
-                                         or ( person_type == self.PERSON_TYPE_SOURCE ) ):
-    
-                                        # ! Article_Subject
-                                        # - includes creating mention for name.
-                                        current_article_subject = self.process_subject_name( current_article_data,
-                                                                                             person_name,
-                                                                                             person_details_IN = person_details,
-                                                                                             subject_person_id_IN = person_id )
-    
-                                        # check to see if source
-                                        current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
-                                        if ( person_type == self.PERSON_TYPE_SOURCE ):
-    
-                                            # set subject_type.
-                                            current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
-    
-                                            # save source updates
-                                            current_article_subject.save()
-    
-                                            # see if there is quote text.
-                                            if ( ( quote_text is not None ) and ( quote_text != "" ) ):
-    
-                                                # add quote to Article_Subject.
-                                                current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
-    
-                                                # error?
-                                                if ( current_article_subject_quotation is None ):
-    
-                                                    # yup - output debug message.
-                                                    debug_message = "Article_Coder.process_quotation() returned None - problem processing quote \"" + quote_text + "\".  See log for more details."
-                                                    status_message_list.append( debug_message )
-                                                    debug_message = "ERROR: " + debug_message
-                                                    self.output_debug( debug_message, me )
-    
-                                                #-- END check to see if error processing quotation --#
-    
-                                            #-- END check to see if quote text --#
-    
-                                        #-- END check to see if source --#
-    
-                                        # save source updates - should not need save.
-                                        current_article_subject.save()
+                                    # increment counter
+                                    person_counter += 1
+                                
+                                    # check to see if it is an empty entry (happens
+                                    #    when a person is removed during coding).
+                                    if ( current_person is not None ):
+                                
+                                        # retrieve person information.
+                                        person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
+                                        person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                        title = current_person.get( self.DATA_STORE_PROP_TITLE )
+                                        quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
+                                        person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
+        
+                                        # set up person details
+                                        person_details = {}
                                         
-                                        # ! update subject dicts for removal processing.
-                                        current_person_instance = current_article_subject.person
-                                        current_person_id = current_person_instance.id
-                                        person_id_to_article_subject_map[ current_person_id ] = current_article_subject
-                                        person_name_to_article_subject_map[ person_name ] = current_article_subject
-    
-                                        # store Article_Subject instance in Article_Person reference.
-                                        current_article_person = current_article_subject
-    
-                                    elif ( person_type == self.PERSON_TYPE_AUTHOR ):
-                                    
-                                        # Add organization string to person_details
-                                        #    for author, this is in the "title"
-                                        #    field.
-                                        person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
-                                    
-                                        # ! Article_Author
-                                        current_article_author = self.process_author_name( current_article_data,
-                                                                                           person_name,
-                                                                                           author_organization_IN = title,
-                                                                                           author_person_id_IN = person_id,
-                                                                                           person_details_IN = person_details )
-                        
-                                        # store Article_Author instance in Article_Person reference.
-                                        current_article_person = current_article_author
-    
-                                        # ! update author dicts for removal processing.
-                                        current_person_instance = current_article_author.person
-                                        current_person_id = current_person_instance.id
-                                        person_id_to_article_author_map[ current_person_id ] = current_article_author
-                                        person_name_to_article_author_map[ person_name ] = current_article_author
-
-                                    #-- END check to see person type --#
-    
-                                    # set name
-                                    current_article_person.name = person_name
-    
-                                    # check status
-                                    current_person_status = current_article_person.match_status
-    
-                                    # got a status?
-                                    if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
-    
-                                        # success?
-                                        if ( current_person_status != self.STATUS_SUCCESS ):
-    
-                                            # error.  Add message to status list.
-                                            status_message_list.append( current_person_status )
-    
-                                        #-- END check of person status --#
-    
-                                    #-- END check if current person has status --#
-                                    
-                                else:
-                                
-                                    # empty person list entry.  Make a note and
-                                    #    move on.
-                                    debug_message = "person_list item " + str( person_counter ) + " is None.  Moving on."
-                                    # status_message_list.append( debug_message )
-                                    debug_message = "WARNING: " + debug_message
-                                    self.output_debug( debug_message, me )
-                                
-                                #-- END check to see if empty entry in person list --#
-
-                            #-- END loop over persons --#
-                            
-                            # ! removal check
-                            # Always loop over all the authors, then subjects in
-                            #    current Article_Data, if any are present in
-                            #    databse, but not in map dictionaires, remove
-                            #    them from database.
-
-                            # authors
-                            for current_article_author in current_article_data.article_author_set.all():
-                            
-                                # get person ID and full name.
-                                current_person_id = current_article_author.person.id
-                                current_full_name = current_article_author.name
-                                
-                                # look for either ID or name to be in one of our
-                                #    dictionaries.
-                                if ( ( current_full_name not in person_name_to_article_author_map )
-                                    and ( current_person_id not in person_id_to_article_author_map ) ):
-                                    
-                                    # not in either map.  Delete.
-                                    current_article_author.delete()
-                                    
-                                #-- END look for author in processed dictionaries --#
-                            
-                            #-- END loop over related Article_Author instances --#
-                            
-                            # authors
-                            for current_article_subject in current_article_data.article_subject_set.all():
-                            
-                                # get person ID and full name.
-                                current_person_id = current_article_subject.person.id
-                                current_full_name = current_article_subject.name
-                                
-                                # look for either ID or name to be in one of our
-                                #    dictionaries.
-                                if ( ( current_full_name not in person_name_to_article_subject_map )
-                                    and ( current_person_id not in person_id_to_article_subject_map ) ):
-                                    
-                                    # not in either map.  Delete.
-                                    current_article_subject.delete()
-                                    
-                                #-- END look for subject in processed dictionaries --#
-                            
-                            #-- END loop over related Article_Subject instances --#
-                            
-                        #-- END check to see if there are any persons. --#
+                                        # store all fields from current_person.
+                                        person_details.update( current_person )
+                                        
+                                        # also add in the article's newspaper.
+                                        person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+                                        
+                                        # check person type to see what type we are processing.
+                                        if ( ( person_type == self.PERSON_TYPE_SUBJECT )
+                                             or ( person_type == self.PERSON_TYPE_SOURCE ) ):
+        
+                                            # translate the person_type value into 
+                                            #    subject_type, store in details.
+                                            if ( person_type == self.PERSON_TYPE_SUBJECT ):
+                                            
+                                                # subject, so not quoted - "mentioned".
+                                                person_details[ self.PARAM_SUBJECT_TYPE ] = Article_Subject.SUBJECT_TYPE_MENTIONED
                                                 
+                                            elif ( person_type == self.PERSON_TYPE_SOURCE ):
+                                            
+                                                # source - so "quoted".
+                                                person_details[ self.PARAM_SUBJECT_TYPE ] = Article_Subject.SUBJECT_TYPE_QUOTED
+                                                
+                                            #-- END check of person_type, for translation to subject_type. --#
+                                        
+                                            # ! Article_Subject
+                                            # - includes creating mention for name.
+                                            current_article_subject = self.process_subject_name( current_article_data,
+                                                                                                 person_name,
+                                                                                                 person_details_IN = person_details,
+                                                                                                 subject_person_id_IN = person_id )
+        
+                                            # check to see if source
+                                            current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
+                                            if ( person_type == self.PERSON_TYPE_SOURCE ):
+        
+                                                # set subject_type.
+                                                current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
+        
+                                                # save source updates
+                                                current_article_subject.save()
+        
+                                                # see if there is quote text.
+                                                if ( ( quote_text is not None ) and ( quote_text != "" ) ):
+        
+                                                    # add quote to Article_Subject.
+                                                    current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
+        
+                                                    # error?
+                                                    if ( current_article_subject_quotation is None ):
+        
+                                                        # yup - output debug message.
+                                                        debug_message = "Article_Coder.process_quotation() returned None - problem processing quote \"" + quote_text + "\".  See log for more details."
+                                                        status_message_list.append( debug_message )
+                                                        debug_message = "ERROR: " + debug_message
+                                                        self.output_debug( debug_message, me )
+        
+                                                    #-- END check to see if error processing quotation --#
+        
+                                                #-- END check to see if quote text --#
+        
+                                            #-- END check to see if source --#
+        
+                                            # save source updates - should not need save.
+                                            current_article_subject.save()
+                                            
+                                            # ! update subject dicts for removal processing.
+                                            current_person_instance = current_article_subject.person
+                                            current_person_id = current_person_instance.id
+                                            person_id_to_article_subject_map[ current_person_id ] = current_article_subject
+                                            person_name_to_article_subject_map[ person_name ] = current_article_subject
+        
+                                            # store Article_Subject instance in Article_Person reference.
+                                            current_article_person = current_article_subject
+        
+                                        elif ( person_type == self.PERSON_TYPE_AUTHOR ):
+                                        
+                                            # Add organization string to person_details
+                                            #    for author, this is in the "title"
+                                            #    field.
+                                            person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
+                                        
+                                            # ! Article_Author
+                                            current_article_author = self.process_author_name( current_article_data,
+                                                                                               person_name,
+                                                                                               author_organization_IN = title,
+                                                                                               author_person_id_IN = person_id,
+                                                                                               person_details_IN = person_details )
+                            
+                                            # store Article_Author instance in Article_Person reference.
+                                            current_article_person = current_article_author
+        
+                                            # ! update author dicts for removal processing.
+                                            current_person_instance = current_article_author.person
+                                            current_person_id = current_person_instance.id
+                                            person_id_to_article_author_map[ current_person_id ] = current_article_author
+                                            person_name_to_article_author_map[ person_name ] = current_article_author
+    
+                                        #-- END check to see person type --#
+        
+                                        # set name
+                                        current_article_person.name = person_name
+        
+                                        # check status
+                                        current_person_status = current_article_person.match_status
+        
+                                        # got a status?
+                                        if ( ( current_person_status is not None ) and ( current_person_status != "" ) ):
+        
+                                            # success?
+                                            if ( current_person_status != self.STATUS_SUCCESS ):
+        
+                                                # error.  Add message to status list.
+                                                status_message_list.append( current_person_status )
+        
+                                            #-- END check of person status --#
+        
+                                        #-- END check if current person has status --#
+                                        
+                                    else:
+                                    
+                                        # empty person list entry.  Make a note and
+                                        #    move on.
+                                        debug_message = "person_list item " + str( person_counter ) + " is None.  Moving on."
+                                        # status_message_list.append( debug_message )
+                                        debug_message = "WARNING: " + debug_message
+                                        self.output_debug( debug_message, me )
+                                    
+                                    #-- END check to see if empty entry in person list --#
+    
+                                #-- END loop over persons --#
+                                
+                                # ! removal check
+                                # Always loop over all the authors, then subjects in
+                                #    current Article_Data, if any are present in
+                                #    databse, but not in map dictionaires, remove
+                                #    them from database.
+    
+                                # authors
+                                for current_article_author in current_article_data.article_author_set.all():
+                                
+                                    # get person ID and full name.
+                                    current_person_id = current_article_author.person.id
+                                    current_full_name = current_article_author.name
+                                    
+                                    # look for either ID or name to be in one of our
+                                    #    dictionaries.
+                                    if ( ( current_full_name not in person_name_to_article_author_map )
+                                        and ( current_person_id not in person_id_to_article_author_map ) ):
+                                        
+                                        # not in either map.  Delete.
+                                        current_article_author.delete()
+                                        
+                                    #-- END look for author in processed dictionaries --#
+                                
+                                #-- END loop over related Article_Author instances --#
+                                
+                                # authors
+                                for current_article_subject in current_article_data.article_subject_set.all():
+                                
+                                    # get person ID and full name.
+                                    current_person_id = current_article_subject.person.id
+                                    current_full_name = current_article_subject.name
+                                    
+                                    # look for either ID or name to be in one of our
+                                    #    dictionaries.
+                                    if ( ( current_full_name not in person_name_to_article_subject_map )
+                                        and ( current_person_id not in person_id_to_article_subject_map ) ):
+                                        
+                                        # not in either map.  Delete.
+                                        current_article_subject.delete()
+                                        
+                                    #-- END look for subject in processed dictionaries --#
+                                
+                                #-- END loop over related Article_Subject instances --#
+                                
+                            #-- END check to see if there are any persons. --#
+                            
+                        else:
+                        
+                            # No article data instance.  Can't process.  Add
+                            #    message to list, log it.
+                            status_message = "ERROR - Even though Article_Data lookup indicated success, no Article_Data.  Don't know what to tell you."
+                            status_message_list.append( status_message )
+                            self.output_debug( status_message, me, "====> " )
+                            article_data_OUT = None
+                        
+                        #-- END check to make sure we have article data --#
+                                                    
                     else:
 
                         # Not OK to process.  Assume messages that explain why

@@ -38,6 +38,9 @@ from django.contrib.auth.models import User
 # import basic django configuration application.
 from django_config.models import Config_Property
 
+# django exception classes
+from django.core.exceptions import MultipleObjectsReturned
+
 # python_utilities
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
@@ -109,11 +112,23 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
     PARAM_CAPTURE_METHOD = "capture_method"
+    PARAM_SUBJECT_TYPE = "subject_type"
 
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
     MATCH_STATUS_MULTIPLE = "multiple"
     MATCH_STATUS_NONE = "none"
+    
+    # props for dictionary returned when getting Article_Data for article/user
+    #    pair
+    PROP_ARTICLE_DATA = "article_data"
+    PROP_STATUS_MESSAGE = "status_message"
+    PROP_LOOKUP_STATUS = "lookup_status"
+    PROP_LOOKUP_STATUS_VALUE_NEW = "new"
+    PROP_LOOKUP_STATUS_VALUE_EXISTING = "existing"
+    PROP_LOOKUP_STATUS_VALUE_MULTIPLE = "multiple"
+    PROP_LOOKUP_STATUS_VALUE_ERROR = "error"
+    PROP_EXCEPTION = "exception"
 
 
     #----------------------------------------------------------------------------
@@ -519,7 +534,203 @@ class ArticleCoder( BasicRateLimited ):
 
     #-- END abstract method load_config_properties() --#
     
+
+    def lookup_article_data( self, article_IN, user_IN, article_data_id_IN = None ):
+        
+        '''
+        Accepts article and user optional Article_Data ID.  Tries to retrieve
+            Article_Data for article-user pair.  If multiple found and ID passed
+            in, then tried to filter on that ID to get a single match.
+           
+        Returns a dictionary that contains:
+        - PROP_ARTICLE_DATA = "article_data" - either matching Article_Data
+            instance or None.
+        - PROP_LOOKUP_STATUS = "lookup_status" - status code with one of the 
+            following statuses:
+            - PROP_LOOKUP_STATUS_VALUE_NEW = "new"
+            - PROP_LOOKUP_STATUS_VALUE_EXISTING = "existing"
+            - PROP_LOOKUP_STATUS_VALUE_MULTIPLE = "multiple"
+            - PROP_LOOKUP_STATUS_VALUE_ERROR = "error"
+        - PROP_STATUS_MESSAGE = "status_message" - if "multiple" or "error",
+            explains what happened.  If "new" or "existing", empty.
+        - PROP_EXCEPTION = "exception"
+           
+        Postconditions - Returns:
+        - if single match found, returns it with status of "existing"
+            (self.PROP_LOOKUP_STATUS_PROP_EXISTING) and no status message or
+            exception.
+        - if no match found, creates new instance, returns it with status of
+            "new" (self.PROP_LOOKUP_STATUS_PROP_NEW) and no status message
+            or exception.
+        - if multiple matches found, returns None with status of "multiple"
+            (self.PROP_LOOKUP_STATUS_PROP_MULTIPLE), status_message explaining,
+            and no exception.
+        - if other error, returns None, status of "error"
+            (self.PROP_LOOKUP_STATUS_PROP_ERROR), status message that contains
+            the exception cast as a string, and the exception itself.
+        '''
+        
+        # return references
+        result_OUT = {}
+        article_data_OUT = None
+        status_OUT = ""
+        status_message_OUT = ""
+        exception_OUT = None
+        
+        # declare variables.
+        me = "lookup_article_data"
+        article_data_id_list = None
+        article_data_qs = None
+        mor_exception = None
+        dne_exception = None
+        article_data_count = -1
+        article_data_instance = None
+        
+        # make sure we have an article...
+        if ( article_IN is not None ):
+        
+            # ...and a user.
+            if ( user_IN is not None ):
+            
+                # got article and user.  By default, get for article and user,
+                #    even if we have an ID specified.
+                
+                # !check for existing Article_Data
+                # see if there is an existing Article_Data instance for this
+                #    user and article.
+                article_data_qs = Article_Data.objects.filter( coder = user_IN )
+                article_data_qs = article_data_qs.filter( article = article_IN )
+
+                # How many matches?
+                try:
+
+                    # use .get() to retrieve single instance from QuerySet.
+                    article_data_OUT = article_data_qs.get()
+
+                    # set status to "existing"
+                    status_OUT = self.PROP_STATUS_VALUE_EXISTING
+
+                except MultipleObjectsReturned as mor_exception:
+
+                    # more than one - get count and ID list.
+                    article_data_count = article_data_qs.count()
+                    
+                    # build string Article_Data ID list.
+                    article_data_id_list = []
+                    for article_data_instance in article_data_qs:
+                    
+                        # convert ID to string, add to list.
+                        article_data_id_list.append( str( article_data_instance.id ) )
+                        
+                    #-- END loop to get article IDs. --#
+
+                    # See if we have an Article_Data ID.
+                    if ( ( article_data_id_IN is not None ) and ( article_data_id_IN != "" ) and ( article_data_id_IN > 0 ) ):
+                    
+                        # we have an Article_Data ID.  filter.
+                        try:
     
+                            # use exception handling to see if record already exists.
+                            
+                            # filter on ID
+                            article_data_qs = article_data_qs.filter( pk = article_data_id_IN )
+                            
+                            # use get() to see if there is a single match.
+                            article_data_OUT = article_data_qs.get()
+
+                            # yes - set status to "existing"
+                            status_OUT = self.PROP_LOOKUP_STATUS_VALUE_EXISTING
+        
+                        except Exception as e:
+                        
+                            # no single match.  article data to None...
+                            article_data_OUT = None
+
+                            # set status to "multiple"
+                            status_OUT = self.PROP_LOOKUP_STATUS_VALUE_MULTIPLE
+        
+                            # ...create status message...
+                            status_message_OUT = "Multiple Article_Data found ( ids = " + ", ".join( article_data_id_list ) + " ) for user: " + str( user_IN ) + " and article ID: " + str( article_IN.id ) + ", none of which has Article_Data ID passed in ( " + str( article_data_id_IN ) + " )."
+
+                            # ...and log it.
+                            self.output_debug( status_message, me, indent_with_IN = "====>" )
+                    
+                        #-- END check to see if we can find existing article data. --#
+                        
+                    else:
+
+                        # Too many Article_Data instances for user, and
+                        #    no way to choose among them.
+
+                        # no single match.  article data to None...
+                        article_data_OUT = None
+
+                        # ...set status to "multiple"...
+                        status_OUT = self.PROP_LOOKUP_STATUS_VALUE_MULTIPLE
+    
+                        # ...create status message...
+                        status_message_OUT = "Multiple Article_Data found ( ids = " + ", ".join( article_data_id_list ) + " ) for user: " + str( user_IN ) + " and article ID: " + str( article_IN.id ) + "."
+
+                        # ...and log it.
+                        self.output_debug( status_message, me, indent_with_IN = "====>" )
+                    
+                    #-- END check to see if article data already exists. --#
+
+                except Article_Data.DoesNotExist as dne_exception:
+                
+                    # no Article_Data.  Create a new record.
+                    article_data_OUT = Article_Data()
+                    
+                    # get article for ID, store in Article_Data.
+                    article_data_OUT.article = article_IN
+                    article_data_OUT.coder = user_IN
+                
+                    # Save off Aricle_Data instance - current_article_data.save()
+                    article_data_OUT.save()
+
+                    # set status to "new"
+                    status_OUT = self.PROP_LOOKUP_STATUS_VALUE_NEW
+
+                except Exception as e:
+
+                    # hmmm.  Not sure what is going on here.  set status to
+                    #    "error", put str( e ) in message, and store exception.
+                    article_data_OUT = None
+                    status_OUT = self.PROP_LOOKUP_STATUS_VALUE_ERROR
+                    status_message_OUT = "Article_Data lookup for user: " + str( user_IN ) + " and article ID: " + str( article_IN.id ) + " resulted in unexpected Exception: " + str( e )
+                    exception_OUT = e
+
+                #-- END try...except around initial attempt to pull in Article_Data for current user. --#
+
+            else:
+            
+                # No user - error.
+                article_data_OUT = None
+                status_OUT = self.PROP_LOOKUP_STATUS_VALUE_ERROR
+                status_message_OUT = "No user passed in.  Can't lookup Article_Data for article ID: " + str( article_IN.id ) + "."
+                        
+            #-- END check to see if user.
+            
+        else:
+        
+            # No article - error.
+            article_data_OUT = None
+            status_OUT = self.PROP_LOOKUP_STATUS_VALUE_ERROR
+            status_message_OUT = "No article passed in.  Can't lookup Article_Data if no article specified."
+                    
+        #-- END check to see if article.
+
+        # pack up result dictionary.
+        result_OUT[ self.PROP_ARTICLE_DATA ] = article_data_OUT
+        result_OUT[ self.PROP_LOOKUP_STATUS ] = status_OUT
+        result_OUT[ self.PROP_STATUS_MESSAGE ] = status_message_OUT
+        result_OUT[ self.PROP_EXCEPTION ] = exception_OUT
+        
+        return result_OUT
+        
+    #-- END method lookup_article_data() --#
+    
+
     def lookup_calc_confidence( self, person_IN, person_details_IN = {}, *args, **kwargs ):
 
         '''
