@@ -637,7 +637,7 @@ class ManualArticleCoder( ArticleCoder ):
                     if ( lookup_result is not None ):
                     
                         # get Article_Data, status, status message.
-                        current_article_data = lookup_result.get( self.PROP_LOOKUP_ARTICLE_DATA, None )
+                        current_article_data = lookup_result.get( self.PROP_ARTICLE_DATA, None )
                         lookup_status = lookup_result.get( self.PROP_LOOKUP_STATUS, self.PROP_LOOKUP_STATUS_VALUE_ERROR )
                         lookup_status_message = lookup_result.get( self.PROP_STATUS_MESSAGE, None )
                         
@@ -664,7 +664,7 @@ class ManualArticleCoder( ArticleCoder ):
                             # ...and log it.
                             self.output_debug( lookup_status_message, me, indent_with_IN = "====>" )                            
                         
-                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_NEW )
+                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_NEW ):
 
                             # OK to process...
                             is_ok_to_process = True
@@ -672,7 +672,7 @@ class ManualArticleCoder( ArticleCoder ):
                             # ...and not an existing Article_Data instance
                             is_existing_article_data = False
                             
-                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_EXISTING )
+                        elif ( lookup_status == self.PROP_LOOKUP_STATUS_VALUE_EXISTING ):
 
                             # OK to process...
                             is_ok_to_process = True
@@ -788,8 +788,7 @@ class ManualArticleCoder( ArticleCoder ):
                                             # - includes creating mention for name.
                                             current_article_subject = self.process_subject_name( current_article_data,
                                                                                                  person_name,
-                                                                                                 person_details_IN = person_details,
-                                                                                                 subject_person_id_IN = person_id )
+                                                                                                 person_details_IN = person_details )
         
                                             # check to see if source
                                             current_article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
@@ -844,8 +843,6 @@ class ManualArticleCoder( ArticleCoder ):
                                             # ! Article_Author
                                             current_article_author = self.process_author_name( current_article_data,
                                                                                                person_name,
-                                                                                               author_organization_IN = title,
-                                                                                               author_person_id_IN = person_id,
                                                                                                person_details_IN = person_details )
                             
                                             # store Article_Author instance in Article_Person reference.

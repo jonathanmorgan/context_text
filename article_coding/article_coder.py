@@ -47,6 +47,7 @@ from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article_Author
+from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
 from sourcenet.models import Article_Subject_Mention
 from sourcenet.models import Article_Subject_Quotation
@@ -113,6 +114,7 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
     PARAM_CAPTURE_METHOD = "capture_method"
     PARAM_SUBJECT_TYPE = "subject_type"
+    PARAM_CODER_TYPE = "coder_type"
 
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
@@ -608,7 +610,7 @@ class ArticleCoder( BasicRateLimited ):
                     article_data_OUT = article_data_qs.get()
 
                     # set status to "existing"
-                    status_OUT = self.PROP_STATUS_VALUE_EXISTING
+                    status_OUT = self.PROP_LOOKUP_STATUS_VALUE_EXISTING
 
                 except MultipleObjectsReturned as mor_exception:
 
@@ -885,7 +887,6 @@ class ArticleCoder( BasicRateLimited ):
                        person_details_IN = {},
                        on_multiple_match_try_exact_lookup_IN = False,
                        on_multiple_create_new_person_IN = True,
-                       article_person_id_IN = None,
                        *args,
                        **kwargs ):
     
@@ -905,6 +906,7 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_CAPTURE_METHOD = "capture_method"
               - PARAM_TITLE = "title" - title text - if new person created, uses up to first 255 characters of this, if present, as the sourcenet_person "title" column value.
               - PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
+              - PARAM_PERSON_ID = "person_id"
            - on_multiple_match_try_exact_lookup_IN - optional boolean, defaults 
               to False.  If True, tries an exact match - exactly what is in the
               name passed in, including making sure that fields that are not
@@ -914,8 +916,6 @@ class ArticleCoder( BasicRateLimited ):
            - on_multiple_create_new_person_IN - optional boolean, defaults to
               True.  If True, when multiples are detected and disambiguation
               fails, creates a new person, stores the potential matches as well.
-           - article_person_id_IN - optional ID of Person when the person is
-              already known, and so does not need to be looked up by name.
            
         Starting with the methods on Person object:
 
@@ -939,6 +939,7 @@ class ArticleCoder( BasicRateLimited ):
         me = "lookup_person"
         newspaper_IN = None
         uuid_IN = ""
+        person_id = -1
         person_instance = None
         lookup_status = ""
         standardized_full_name = ""
@@ -976,34 +977,34 @@ class ArticleCoder( BasicRateLimited ):
             # load up incoming things we care about here.
             newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
             uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
+            person_id = person_details_IN.get( self.PARAM_PERSON_ID, -1 )
         
             # and we'll use the instance passed in as the return reference.
             instance_OUT = article_person_IN
             
-            # got a person ID passed in?
-            if ( ( article_person_id_IN is not None ) and ( article_person_id_IN != "" ) and ( article_person_id_IN > 0 ) ):
+            if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
             
                 # yes.  Try to just get that person.
                 try:
                 
-                    person_instance = Person.objects.get( pk = article_person_id_IN )
+                    person_instance = Person.objects.get( pk = person_id )
                 
                 except DoesNotExist as dne:
                 
                     # Not found.
-                    self.output_debug( "ERROR - In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), but DoesNotExist." )
+                    self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but DoesNotExist." )
                     person_instance = None
                     
                 except MultipleObjectsReturned as more:
                 
                     # multiple found.  Big error.
-                    self.output_debug( "ERROR - In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), but MultipleObjectsReturned." )
+                    self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but MultipleObjectsReturned." )
                     person_instance = None
                     
                 except Exception as e:
                 
                     # Unexpected exception.
-                    self.output_debug( "In " + me + ": article_person_id_IN passed in ( " + str( article_person_id_IN ) + " ), unexpected Exception caught trying to look up in database: " + str( e ) )
+                    self.output_debug( "In " + me + ": person_id passed in ( " + str( person_id ) + " ), unexpected Exception caught trying to look up in database: " + str( e ) )
                     person_instance = None
                     
                 #-- END try-except to look up person based on ID. --#
@@ -1569,8 +1570,6 @@ class ArticleCoder( BasicRateLimited ):
     def process_author_name( self,
                              article_data_IN,
                              author_name_IN,
-                             author_organization_IN = "",
-                             author_person_id_IN = None,
                              person_details_IN = None ):
     
         '''
@@ -1598,6 +1597,10 @@ class ArticleCoder( BasicRateLimited ):
         article_author_OUT = None
         status_OUT = self.STATUS_SUCCESS
         
+        # declare variables - input parameters, from person_details
+        author_organization_IN = "",
+        author_person_id_IN = None,
+        
         # declare variables.
         me = "process_author_name"
         my_logger = None
@@ -1617,6 +1620,25 @@ class ArticleCoder( BasicRateLimited ):
         existing_org_string = ""
         existing_author_name = ""
 
+        # prepare person details.  Got a dictionary passed in?
+        if ( ( person_details_IN is not None )
+             and ( isinstance( person_details_IN, dict ) == True )
+             and ( len( person_details_IN ) > 0 ) ):
+             
+            # details passed in - use them.
+            person_details_dict = person_details_IN
+            
+            # got person details.  Retrieve input values.
+            author_organization_IN = person_details_dict.get( self.PARAM_AUTHOR_ORGANIZATION_STRING, "" )
+            author_person_id_IN = person_details_dict.get( self.PARAM_PERSON_ID, None )
+            
+        else:
+        
+            # nothing passed in - create new dictionary.
+            person_details_dict = {}
+            
+        #-- END check to see if dictionary passed in. --#
+        
         # get logger
         my_logger = self.get_logger()
         
@@ -1643,20 +1665,7 @@ class ArticleCoder( BasicRateLimited ):
                 # ! person details
                 #--------------------------------------------------------------#
                 
-                # prepare person details.  Got a dictionary passed in?
-                if ( ( person_details_IN is not None )
-                     and ( isinstance( person_details_IN, dict ) == True )
-                     and ( len( person_details_IN ) > 0 ) ):
-                     
-                    # details passed in - use them.
-                    person_details_dict = person_details_IN
-                    
-                else:
-                
-                    # nothing passed in - create new dictionary.
-                    person_details_dict = {}
-                    
-                #-- END check to see if dictionary passed in. --#
+                # prepare person details.
                 
                 # newspaper instance - only add if key not already in dictionary.
                 if self.PARAM_NEWSPAPER_INSTANCE not in person_details_dict:
@@ -1684,11 +1693,6 @@ class ArticleCoder( BasicRateLimited ):
                     # got one passed in.  Use it.
                     author_organization = author_organization_IN
                     
-                else:
-                
-                    # got one in the person_details_dict?
-                    author_organization = person_details_dict.get( self.PARAM_AUTHOR_ORGANIZATION_STRING, "" )
-                    
                 #-- END setting author_organization --#
     
                 #--------------------------------------------------------------#
@@ -1701,8 +1705,7 @@ class ArticleCoder( BasicRateLimited ):
                                                      author_name,
                                                      create_if_no_match_IN = True,
                                                      update_person_IN = True,
-                                                     person_details_IN = person_details_dict,
-                                                     article_person_id_IN = author_person_id_IN )
+                                                     person_details_IN = person_details_dict )
 
                 # retrieve information from Article_Author
                 author_person = article_author.person
@@ -1745,22 +1748,6 @@ class ArticleCoder( BasicRateLimited ):
                         # ! UPDATE existing Article_Author
                         
                         #------------------------------------------------------#
-                        # ==> organization string
-
-                        existing_org_string = article_author.organization_string
-
-                        # has organization changed?
-                        if ( existing_org_string != author_organization ):
-                        
-                            # yes.  Replace.
-                            article_author.organization_string = author_organization
-
-                            # we need to save.
-                            do_save_updates = True
-                            
-                        #-- END check to see if new value. --#
-                        
-                        #------------------------------------------------------#
                         # ==> name
 
                         existing_author_name = article_author.name
@@ -1776,6 +1763,22 @@ class ArticleCoder( BasicRateLimited ):
                             
                         #-- END check to see if updated author name. --#
 
+                        #------------------------------------------------------#
+                        # ==> organization string
+
+                        existing_org_string = article_author.organization_string
+
+                        # has organization changed?
+                        if ( existing_org_string != author_organization ):
+                        
+                            # yes.  Replace.
+                            article_author.organization_string = author_organization
+
+                            # we need to save.
+                            do_save_updates = True
+                            
+                        #-- END check to see if new value. --#
+                        
                         #------------------------------------------------------#
                         # ! UPDATE alternate matches
 
@@ -2476,6 +2479,7 @@ class ArticleCoder( BasicRateLimited ):
         article_author_instance = None
         process_author_name_status = ""
         my_capture_method = ""
+        person_details = {}
         
         # get logger
         my_logger = self.get_logger()
@@ -2559,7 +2563,10 @@ class ArticleCoder( BasicRateLimited ):
                     for author_name in author_name_list:
                     
                         # call process_author_name() to deal with author.
-                        article_author_instance = self.process_author_name( article_data_IN, author_name, author_organization, None )
+                        person_details = {}
+                        person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = author_organization
+                        person_details[ self.PARAM_TITLE ] = author_organization
+                        article_author_instance = self.process_author_name( article_data_IN, author_name, person_details_IN = person_details )
                         process_author_name_status = article_author_instance.match_status
                         
                         # do anything with status?
@@ -2979,47 +2986,54 @@ class ArticleCoder( BasicRateLimited ):
                               article_data_IN,
                               subject_name_IN,
                               person_details_IN = None,
-                              subject_UUID_IN = "",
-                              subject_UUID_name_IN = "",
-                              subject_UUID_source_IN = "",
-                              coder_type_IN = "",
-                              subject_person_id_IN = None,
                               do_create_name_mention_IN = True ):
     
         '''
         Accepts:
-           - article_data_IN - Article_Data container for this set of coding.
-           - subject_name_IN - name of subject we are processing.
-           - person_details_IN - optional dictionary of pre-populated person information.  Defaults to None.  If None, just uses an empty one.
-           - subject_UUID_IN - optional external Universal Unique IDentifier for subject.
-           - subject_UUID_name_IN - optional name of the type of UUID passed in.
-           - subject_UUID_source_IN - optional description of source of UUID.
-           - coder_type_IN - optional coder type of coder who detected this subject.  If empty, uses coder type of article_data_IN.
-           - subject_person_id_IN - optional ID of person to use for this subject, rather than looking up based on name.
+            - article_data_IN - Article_Data container for this set of coding.
+            - subject_name_IN - name of subject we are processing.
+            - person_details_IN - optional dictionary of pre-populated person information.  Defaults to None.  If None, just uses an empty one.
+            - subject_person_id_IN - optional ID of person to use for this subject, rather than looking up based on name.
+        
+        From person_details_IN, retrieves:
+            - subject_UUID_IN - optional external Universal Unique IDentifier for subject.
+            - subject_UUID_name_IN - optional name of the type of UUID passed in.
+            - subject_UUID_source_IN - optional description of source of UUID.
+            - coder_type_IN - optional coder type of coder who detected this subject.  If empty, uses coder type of article_data_IN.
+
         
         If ID is present, tries to look up person based on ID.  If not, looks up
-           person based name.  If person found, only adds to Article_Data if
-           that person does not already have an Article_Subject row.  If person
-           not found, and if person details present, uses details passed in when
-           populating person (see ArticleCoder.lookup_person() doc for values
-           that can be passed in person details).
+            person based name.  If person found, only adds to Article_Data if
+            that person does not already have an Article_Subject row.  If person
+            not found, and if person details present, uses details passed in when
+            populating person (see ArticleCoder.lookup_person() doc for values
+            that can be passed in person details).
            
         preconditions: Assumes that there is an associated article in
-           article_data_IN.  If not, there will be an exception.
+            article_data_IN.  If not, there will be an exception.
            
         postconditions: If all goes well, results in Article_Subject for subject
-           passed in associated with Article_Data passed in, and returns the
-           Article_Subject instance with status stored in
-           Article_Subject.match_status.  If error, empty Article_Subject is
-           created and returned with no ID, and match_status message describing
-           the problem.  If person lookup works, but person already has an
-           Article_Subject row, does nothing.
+            passed in associated with Article_Data passed in, and returns the
+            Article_Subject instance with status stored in
+            Article_Subject.match_status.  If error, empty Article_Subject is
+            created and returned with no ID, and match_status message describing
+            the problem.  If person lookup works, but person already has an
+            Article_Subject row, does nothing.
         '''
         
         # return reference
         article_subject_OUT = None
         status_OUT = self.STATUS_SUCCESS
         
+        # input variables from person_dict
+        title_IN = ""
+        subject_UUID_IN = ""
+        subject_UUID_name_IN = ""
+        subject_UUID_source_IN = ""
+        coder_type_IN = ""
+        subject_person_id_IN = None
+        subject_type_IN = ""
+
         # declare variables.
         me = "process_subject_name"
         my_logger = None
@@ -3037,18 +3051,42 @@ class ArticleCoder( BasicRateLimited ):
         subject_person = None        
         subject_person_match_list = []
         
-        # see if existing record for person.
+        # declare variables - see if existing record for person.
         article_subject_qs = None
         article_subject_count = -1
-        title_IN = ""
         
         # declare variables - update existing Article_Subject
         do_save_updates = False
         existing_subject_name = ""
         existing_title = ""
+        existing_subject_type = ""
         current_article_subject_mention = None
         my_article = None
         
+        # person details - Got a dictionary passed in?
+        if ( ( person_details_IN is not None )
+             and ( isinstance( person_details_IN, dict ) == True )
+             and ( len( person_details_IN ) > 0 ) ):
+             
+            # details passed in - use them.
+            person_details_dict = person_details_IN
+            
+            # got person details.  Retrieve input values.
+            title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+            subject_UUID_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID, "" )
+            subject_UUID_name_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
+            subject_UUID_source_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
+            coder_type_IN = person_details_dict.get( self.PARAM_CAPTURE_METHOD, "" )
+            subject_person_id_IN = person_details_dict.get( self.PARAM_PERSON_ID, None )
+            subject_type_IN = person_details_dict.get( self.PARAM_SUBJECT_TYPE, None )
+            
+        else:
+        
+            # nothing passed in - create new dictionary.
+            person_details_dict = {}
+            
+        #-- END check to see if dictionary passed in. --#
+                
         # get logger
         my_logger = self.get_logger()
         
@@ -3062,7 +3100,7 @@ class ArticleCoder( BasicRateLimited ):
             # get article
             my_article = article_data_IN.article
             
-            # get author_name
+            # get subject name
             person_name = subject_name_IN
 
             # got a subject name or subject person ID?
@@ -3088,25 +3126,11 @@ class ArticleCoder( BasicRateLimited ):
                 my_logger.debug( debug_message )
                 
                 #--------------------------------------------------------------#
-                #-- person details --#
+                # ! person details
                 #--------------------------------------------------------------#
                 
-                # prepare person details.  Got a dictionary passed in?
-                if ( ( person_details_IN is not None )
-                     and ( isinstance( person_details_IN, dict ) == True )
-                     and ( len( person_details_IN ) > 0 ) ):
-                     
-                    # details passed in - use them.
-                    person_details_dict = person_details_IN
-                    
-                else:
-                
-                    # nothing passed in - create new dictionary.
-                    person_details_dict = {}
-                    
-                #-- END check to see if dictionary passed in. --#
-                
-                # ! set person_details_dict
+                # prepare person_details_dict
+
                 # newspaper instance - only add if key not already in dictionary.
                 if self.PARAM_NEWSPAPER_INSTANCE not in person_details_dict:
                 
@@ -3114,51 +3138,6 @@ class ArticleCoder( BasicRateLimited ):
                     person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
                     
                 #-- END check to see if newspaper instance already in dict --#
-
-                # UUID - only add if key not already in dictionary.
-                current_key = self.PARAM_EXTERNAL_UUID
-                current_value = subject_UUID_IN
-                if current_key not in person_details_dict:
-                
-                    # not there - got a value?
-                    if ( ( current_value is not None ) and ( current_value != "" ) ):
-                
-                        # got a value - add it.
-                        person_details_dict[ current_key ] = current_value
-                        
-                    #-- END check to see if we have a value --#
-                    
-                #-- END check to see if key not already set --#
-                
-                # UUID Name - only add if key not already in dictionary.
-                current_key = self.PARAM_EXTERNAL_UUID_NAME
-                current_value = subject_UUID_name_IN
-                if current_key not in person_details_dict:
-                
-                    # not there - got a value?
-                    if ( ( current_value is not None ) and ( current_value != "" ) ):
-                
-                        # got a value - add it.
-                        person_details_dict[ current_key ] = current_value
-                        
-                    #-- END check to see if we have a value --#
-                    
-                #-- END check to see if key not already set --#
-                
-                # UUID Source - only add if key not already in dictionary.
-                current_key = self.PARAM_EXTERNAL_UUID_SOURCE
-                current_value = subject_UUID_source_IN
-                if current_key not in person_details_dict:
-                
-                    # not there - got a value?
-                    if ( ( current_value is not None ) and ( current_value != "" ) ):
-                
-                        # got a value - add it.
-                        person_details_dict[ current_key ] = current_value
-                        
-                    #-- END check to see if we have a value --#
-                    
-                #-- END check to see if key not already set --#
                 
                 # capture method - only add if key not already in dictionary.
                 current_key = self.PARAM_CAPTURE_METHOD
@@ -3185,8 +3164,7 @@ class ArticleCoder( BasicRateLimited ):
                                                       person_name,
                                                       create_if_no_match_IN = True,
                                                       update_person_IN = True,
-                                                      person_details_IN = person_details_dict,
-                                                      article_person_id_IN = subject_person_id_IN )
+                                                      person_details_IN = person_details_dict )
 
                 # get results from Article_Subject
                 subject_person = article_subject.person
@@ -3276,6 +3254,21 @@ class ArticleCoder( BasicRateLimited ):
                         # !UPDATE existing Article_Subject
                         
                         #------------------------------------------------------#
+                        # ==> name
+                        
+                        # has name string changed?
+                        existing_subject_name = article_subject.name
+                        if ( person_name != existing_subject_name ):
+                        
+                            # replace, and save.
+                            article_subject.name = person_name
+
+                            # we need to save.
+                            do_save_updates = True
+
+                        #-- END check to see if name string changed --#
+
+                        #------------------------------------------------------#
                         # ==> title
 
                         # has title changed?
@@ -3293,21 +3286,23 @@ class ArticleCoder( BasicRateLimited ):
                         #-- END check to see if title changed --#
 
                         #------------------------------------------------------#
-                        # ==> name
+                        # ==> subject_type
                         
-                        # has name string changed?
-                        existing_subject_name = article_subject.name
-                        if ( person_name != existing_subject_name ):
+                        # has subject type changed?
+                        existing_subject_type = article_subject.subject_type
+                        if ( subject_type_IN != existing_subject_type ):
                         
                             # replace, and save.
-                            article_subject.name = person_name
+                            article_subject.subject_type = subject_type_IN
 
                             # we need to save.
                             do_save_updates = True
 
+                        #-- END check to see if subject_type string changed --#
+                        
+                        #------------------------------------------------------#
                         # !UPDATE alternate matches
 
-                        #------------------------------------------------------#
                         # Were there alternate matches?
 
                         if ( len( subject_person_match_list ) > 0 ):

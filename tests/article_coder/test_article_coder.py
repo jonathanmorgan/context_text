@@ -3,10 +3,20 @@ This file contains tests of shared code implemented in abstract class
 ArticleCoder, using child ManualArticleCoder.
 
 Functions tested:
+- lookup_person
 - process_mention
 - process_quotation
 - process_subject_name
 - process_author_name
+
+More info:
+- https://docs.djangoproject.com/en/stable/topics/testing/
+- https://docs.djangoproject.com/en/stable/topics/testing/overview/
+- https://docs.djangoproject.com/en/stable/topics/testing/tools/
+- https://docs.djangoproject.com/en/stable/topics/testing/advanced/
+- https://docs.python.org/2.7/library/unittest.html
+- https://docs.python.org/3.3/library/unittest.html
+- https://docs.djangoproject.com/en/stable/intro/tutorial05/
 """
 
 # django imports
@@ -23,6 +33,7 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
 from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 from sourcenet.models import Article
+from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
 from sourcenet.tests.test_helper import TestHelper
@@ -55,16 +66,19 @@ class ArticleCoderTest( django.test.TestCase ):
     #-- END function setUp() --#
         
 
-    def test_setup( self ):
+    def test_all_setup( self ):
 
         """
         Tests whether there were errors in setup.
         """
         
         # declare variables
+        me = "test_all_setup"
         error_count = -1
         error_message = ""
         
+        print( "\n\n==> Top of " + me + "\n" )
+
         # get setup error count
         setup_error_count = self.setup_error_count
         
@@ -75,6 +89,80 @@ class ArticleCoderTest( django.test.TestCase ):
     #-- END test method test_django_config_installed() --#
 
 
+    def test_lookup_person( self ):
+        
+        # declare variables
+        me = "test_lookup_person"
+        test_manual_article_coder = None
+        error_message = ""
+        lookup_person_id = -1
+        lookup_person_name = ""
+        lookup_title = ""
+        test_person_details = {}
+        test_article_author = None
+        test_article_subject = None
+        test_person = None
+        test_person_id = -1
+        test_person_title = ""
+
+        print( "\n\n==> Top of " + me + "\n" )
+        
+        # create ManualArticleCoder instance.
+        test_manual_article_coder = ManualArticleCoder()
+
+        #----------------------------------------------------------------------#
+        # !test 1 - 149 - Coy Lynn Robinson - with person ID.       
+        #----------------------------------------------------------------------#
+
+        # test 1 person values
+        lookup_person_id = 149
+        lookup_person_name = "Coy Lynn Robinson"
+        lookup_title = "Hancock Preparatory School principal, DPS"
+        
+        # set up person details
+        test_person_details = {}
+        test_person_details[ ArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        test_person_details[ ArticleCoder.PARAM_TITLE ] = lookup_title
+                
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = True,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = test_person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): No person returned for name \"" + lookup_person_name + "\", id = " + str( lookup_person_id )
+        self.assertIsNotNone( test_person, msg = error_message )
+        
+        # retrieve the person and person ID
+        test_person = test_article_author.person
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = lookup_person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_not_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+    #-- END test method test_lookup_person() --#
+
+    
     def test_process_author_name( self ):
         
         # declare variables
@@ -141,8 +229,16 @@ class ArticleCoderTest( django.test.TestCase ):
             
         #-- END check to see if title --#
 
+        # got a person ID?
+        if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = person_id
+            
+        #-- END check to see if title --#
+
         # create an Article_Author.
-        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details, author_person_id_IN = person_id )
+        test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
         
         # check to make sure not None
         error_message = "In " + me + ": attempt to get Article_Author for person ID " + str( person_id ) + " failed - got None back."
@@ -247,13 +343,13 @@ class ArticleCoderTest( django.test.TestCase ):
         error_message = "In " + me + ": Article_Data.article_author_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )        
         
-        # check to see if subject title updated (should not be, since should be
-        #    same Article_Author, so no need to update).
+        # check to see if subject title updated (should be, since we implemented
+        #    updates for existing Article_Author).
         test_article_author_org_string = test_article_author.organization_string
         test_value = test_article_author_org_string
-        should_not_be = title
-        error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org string " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org string " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
 
         #----------------------------------------------------------------------#
         # !test 3 - delete Article_Author, try again.
@@ -711,8 +807,16 @@ class ArticleCoderTest( django.test.TestCase ):
             
         #-- END check to see if title --#
 
+        # got a person ID?
+        if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
+            
+            # we do.  store it in person_details.
+            person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = person_id
+            
+        #-- END check to see if title --#
+
         # create an article_subject.
-        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details, subject_person_id_IN = person_id )
+        test_article_subject = test_manual_article_coder.process_subject_name( test_article_data, person_name, person_details_IN = person_details )
         
         # check to make sure not None
         error_message = "In " + me + ": attempt to get Article_Subject for person ID " + str( person_id ) + " failed - got None back."
@@ -815,13 +919,13 @@ class ArticleCoderTest( django.test.TestCase ):
         error_message = "In " + me + ": Article_Data.article_subject_set.count() is " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )        
         
-        # check to see if subject title updated (should not be, since should be
-        #    same Article_Subject, so no need to update).
+        # check to see if subject title updated (should be, since we enabled
+        #    updates for existing Article_Subject).
         test_article_subject_title = test_article_subject.title
         test_value = test_article_subject_title
-        should_not_be = title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
 
         #----------------------------------------------------------------------#
         # !test 3 - delete Article_Subject, try again.
