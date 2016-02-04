@@ -906,6 +906,9 @@ class ManualArticleCoder( ArticleCoder ):
                                     if ( ( current_full_name not in person_name_to_article_author_map )
                                         and ( current_person_id not in person_id_to_article_author_map ) ):
                                         
+                                        debug_message = "in " + me + "(): removal check - deleting article_author: " + str( current_article_author )
+                                        self.output_debug( debug_message, me, "========> " )
+                                        
                                         # not in either map.  Delete.
                                         current_article_author.delete()
                                         
@@ -924,6 +927,9 @@ class ManualArticleCoder( ArticleCoder ):
                                     #    dictionaries.
                                     if ( ( current_full_name not in person_name_to_article_subject_map )
                                         and ( current_person_id not in person_id_to_article_subject_map ) ):
+                                        
+                                        debug_message = "in " + me + "(): removal check - deleting Article_Subject: " + str( current_article_subject )
+                                        self.output_debug( debug_message, me, "========> " )
                                         
                                         # not in either map.  Delete.
                                         current_article_subject.delete()

@@ -222,7 +222,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     },
     {
       "person_type": "author",
-      "person_name": "fv",
+      "person_name": "James Cabalum",
       "title": "Special to The Grand Rapids Press",
       "quote_text": "",
       "person_id": null
@@ -988,7 +988,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         
         for test_author in test_author_qs:
             
-            print( "post-update - author: " + str( test_author ) )
+            print( "post-update - author: " + str( test_author ) + "; Article_Author name = " + test_author.name )
             
         #-- END loop over authors. --#
         
@@ -1021,6 +1021,12 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # subject count
         test_subject_qs = test_article_data.article_subject_set.all()
         test_subject_count = test_subject_qs.count()
+
+        for test_subject in test_subject_qs:
+            
+            print( "post-update - subject: " + str( test_subject ) + "; Article_Subject name = " + test_subject.name )
+            
+        #-- END loop over authors. --#
 
         # should be 6
         test_value = test_subject_count
@@ -1195,7 +1201,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         error_string = "In " + me + "(): should be no Article_Subject for \"West Michigan\" - count is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
         self.assertEqual( test_value, should_be, error_string )
                     
-    #-- END test method test_process_quotation() --#
+    #-- END test method test_process_data_store_json() --#
 
 
 #-- END test class ArticleCoderTest --#
