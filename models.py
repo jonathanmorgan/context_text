@@ -5350,7 +5350,7 @@ class Article_Author( Article_Person ):
         
         if ( self.person is not None ):
         
-            string_OUT += self.person.last_name + ", " + self.person.first_name + " ( id = " + str( self.person.id ) + "; type = " + self.author_type + "; capture_method = " + str( self.person.capture_method ) + " )"
+            string_OUT += str( self.person.last_name ) + ", " + str( self.person.first_name ) + " ( id = " + str( self.person.id ) + "; type = " + str( self.author_type ) + "; capture_method = " + str( self.person.capture_method ) + " )"
         
         else:
         

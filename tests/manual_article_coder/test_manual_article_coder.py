@@ -222,7 +222,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     },
     {
       "person_type": "author",
-      "person_name": "James Cabalum",
+      "person_name": "fv",
       "title": "Special to The Grand Rapids Press",
       "quote_text": "",
       "person_id": null
@@ -679,6 +679,10 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_article_subject = None
         test_quote_qs = None
         test_mention_qs = None
+        
+        # declare variables - test update
+        work_qs = None
+        test_name = ""
 
         print( "\n\n==> Top of " + me + "\n" )
 
@@ -938,6 +942,8 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #----------------------------------------------------------------------#
         # ! update test
         
+        print( "\n\nUpdate test\n\n" )
+        
         # get JSON string
         test_json_string = self.data_store_json_update
         
@@ -973,16 +979,45 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # test resulting article data.
         #----------------------------------------------------------------------#
 
+        #----------------------------------------------------------------------#
+        # authors
+        
         # author count
         test_author_qs = test_article_data.article_author_set.all()
         test_author_count = test_author_qs.count()
         
+        for test_author in test_author_qs:
+            
+            print( "post-update - author: " + str( test_author ) )
+            
+        #-- END loop over authors. --#
+        
         # should be 2
         test_value = test_author_count
         should_be = 2
-        error_string = "In " + me + "(): author count is " + str( test_author_count ) +", should be " + str( should_be )
-        self.assertEqual( test_value, should_be, error_string )            
+        error_string = "In " + me + "(): author count is " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # make sure that Nate Reens (person ID 46) is not an author.
+        work_qs = test_author_qs.filter( person__id = 46 )
+        test_value = work_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): checking if Nate Reens (46) has been removed - authors who are Nate Reens = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # and that James Cabalum was added as an author.
+        test_name = "James Cabalum"
+        test_person_qs = Person.look_up_person_from_name( test_name )
+        test_person = test_person_qs.get()
+        work_qs = test_author_qs.filter( person = test_person )
+        test_value = work_qs.count()
+        should_be = 1
+        error_string = "In " + me + "(): checking if " + test_name + " has been added as author - authors who match = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
 
+        #----------------------------------------------------------------------#
+        # subjects
+        
         # subject count
         test_subject_qs = test_article_data.article_subject_set.all()
         test_subject_count = test_subject_qs.count()
@@ -991,7 +1026,43 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_value = test_subject_count
         should_be = 6
         error_string = "In " + me + "(): subject count is " + str( test_value ) +", should be " + str( should_be )
-        self.assertEqual( test_value, should_be, error_string )            
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # make sure that West Michigan is not a subject.
+        test_name = "West Michigan"
+        test_person_qs = Person.look_up_person_from_name( test_name )
+        test_person = test_person_qs.get()
+        work_qs = test_subject_qs.filter( person = test_person )
+        test_value = work_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): checking if " + test_name + " has been removed as subject - subjects who match = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # make sure that Justin VanderVelde (person id 162) is not a subject.
+        work_qs = test_subject_qs.filter( person__id = 162 )
+        test_value = work_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): checking if Justin VanderVelde (162) has been removed - subject matches = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        test_name = "West Michigan"
+        test_person_qs = Person.look_up_person_from_name( test_name )
+        test_person = test_person_qs.get()
+        work_qs = test_subject_qs.filter( person = test_person )
+        test_value = work_qs.count()
+        should_be = 0
+        error_string = "In " + me + "(): checking if " + test_name + " has been removed as subject - subjects who match = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
+        
+        # and that James Cabalum was added as an author.
+        test_name = "James Cabalum"
+        test_person_qs = Person.look_up_person_from_name( test_name )
+        test_person = test_person_qs.get()
+        work_qs = test_author_qs.filter( person = test_person )
+        test_value = work_qs.count()
+        should_be = 1
+        error_string = "In " + me + "(): checking if " + test_name + " has been added as author - authors who match = " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
 
         # source count
         test_source_qs = test_article_data.article_subject_set.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
