@@ -153,6 +153,12 @@ hr.lookupPersonRule
     margin: 0px;
 }
 
+div.lookupPersonExistingId
+{
+    font-style: italic;
+	font-size: 90%;
+}
+
 table.personListTable
 {
 	border-collapse: collapse;

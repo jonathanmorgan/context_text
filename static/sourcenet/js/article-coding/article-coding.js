@@ -1131,9 +1131,20 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
  */
 SOURCENET.Person = function()
 {
+    // constants-ish
+    this.INPUT_ID_PERSON_INDEX = "data-store-person-index";
+    this.INPUT_ID_PERSON_NAME = "person-name";
+    this.INPUT_ID_PERSON_TYPE = "person-type";
+    this.INPUT_ID_TITLE = "person-title";
+    this.INPUT_ID_QUOTE_TEXT = "source-quote-text";
+    this.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
+    this.INPUT_ID_PERSON_ID = "id_person";
+    this.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
+    
     // instance variables
-    this.person_type = "";
+    this.person_index = -1;
     this.person_name = "";
+    this.person_type = "";
     this.title = "";
     this.quote_text = "";
     this.person_id = null;
@@ -1141,6 +1152,162 @@ SOURCENET.Person = function()
 } //-- END SOURCENET.Person constructor --//
 
 // Person methods
+
+/**
+ * populates Person entry form inputs from values in this object instance.
+ */
+SOURCENET.Person.prototype.populate_form = function()
+{
+    
+    // return reference
+    var validate_status_array_OUT = [];
+
+    // declare variables
+    var me = "SOURCENET.Person.populate_form"
+    var temp_element = null;
+    var temp_value = "";
+    var my_person_index = -1;
+    var my_person_name = "";
+    var my_person_type = "";
+    var my_title = "";
+    var my_quote_text = "";
+    var my_person_id = null;
+    var is_person_id_OK = false;
+    
+    // retrieve values from instance.
+    my_person_index = this.person_index;
+    my_person_name = this.person_name;
+    my_person_type = this.person_type;
+    my_title = this.title;
+    my_quote_text = this.quote_text;
+    my_person_id = this.person_id;
+    
+    // start by clearing coding form
+    SOURCENET.clear_coding_form( "Loaded data for " + my_person_name )
+
+    //------------------------------------------------------------------------//
+    // data-store-person-index
+    temp_value = my_person_index;
+
+    // get <input> element
+    temp_element = $( '#' + this.INPUT_ID_PERSON_INDEX );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
+    {
+        // store value in element
+        temp_elemenet.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to -1.
+        temp_elemenet.val( -1 );
+    } //-- END check to see if we have value --//
+    
+    //------------------------------------------------------------------------//
+    // person-name
+    temp_value = my_person_name;
+
+    // get <input> element
+    temp_element = $( '#' + this.INPUT_ID_PERSON_NAME );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) )
+    {
+        // store value in element
+        temp_elemenet.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to empty string.
+        temp_elemenet.val( "" );
+    } //-- END check to see if we have value --//
+    
+    //------------------------------------------------------------------------//
+    // person-type
+    temp_value = SOURCENET.set_selected_value_for_id( self.INPUT_ID_PERSON_TYPE, my_person_type );
+    
+    // sanity check
+    if ( temp_value != my_person_type )
+    {
+        
+        // the value of the select is not what we passed to it.
+        SOURCENET.log_message( "In " + me + "(): value for select with ID = " + self.INPUT_ID_PERSON_TYPE + " is \"" + temp_value + "\"; should be = \"" + my_person_type + "\"" );
+        
+    }
+    
+    //------------------------------------------------------------------------//
+    // person-title
+    temp_value = my_title;
+
+    // get <input> element
+    temp_element = $( '#' + this.INPUT_ID_TITLE );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) )
+    {
+        // store value in element
+        temp_elemenet.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to empty string.
+        temp_elemenet.val( "" );
+    } //-- END check to see if we have value --//
+    
+    //------------------------------------------------------------------------//
+    // source-quote-text
+    temp_value = my_quote_text;
+
+    // get <input> element
+    temp_element = $( '#' + this.INPUT_ID_QUOTE_TEXT );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) )
+    {
+        // store value in element
+        temp_elemenet.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to empty string.
+        temp_elemenet.val( "" );
+    } //-- END check to see if we have value --//
+        
+    //------------------------------------------------------------------------//
+    // person_id
+    temp_value = my_person_id;
+
+    // get <input> element
+    temp_element = $( '#' + this.INPUT_ID_MATCHED_PERSON_ID );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
+    {
+        // store value in element
+        temp_elemenet.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to -1.
+        temp_elemenet.val( -1 );
+    } //-- END check to see if we have value --//
+
+    // get <div> inside person lookup area where we display that there is an ID.
+    temp_element = $( '#' + this.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+    
+    // empty it.
+    temp_element.empty();
+    
+    // place text in it.
+    temp_element.text( "Selected Person ID is " + temp_value );
+
+    SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
+    
+    // validate
+    validate_status_array_OUT = this.validate()
+    
+    // SOURCENET.log_message( "validate_status = " + validate_status )
+    
+    return validate_status_array_OUT;
+    
+} //-- END SOURCENET.Person method populate_from_form() --//
+
 
 /**
  * populates Person object instance from form inputs.
@@ -1158,6 +1325,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var form_element = null;
     var temp_element = null;
     var temp_value = "";
+    var my_person_index = -1;
     var my_person_name = "";
     var my_person_type = "";
     var my_title = "";
@@ -1170,23 +1338,28 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     
     // retrieve values from form inputs and store in instance.
     
-    // person-type
-    temp_value = SOURCENET.get_selected_value_for_id( 'person-type' );
-    my_person_type = temp_value;    
-    this.person_type = my_person_type;
+    // data-store-person-index
+    temp_element = $( '#' + this.INPUT_ID_PERSON_INDEX );
+    my_person_index = temp_element.val();
+    this.person_index = my_person_index;
 
     // person-name
-    temp_element = $( '#person-name' );
+    temp_element = $( '#' + this.INPUT_ID_PERSON_NAME );
     my_person_name = temp_element.val();
     this.person_name = my_person_name;
     
+    // person-type
+    temp_value = SOURCENET.get_selected_value_for_id( this.INPUT_ID_PERSON_TYPE );
+    my_person_type = temp_value;    
+    this.person_type = my_person_type;
+
     // person-title
-    temp_element = $( '#person-title' );
+    temp_element = $( '#' + this.INPUT_ID_TITLE );
     my_title = temp_element.val();
     this.title = my_title;
     
     // source-quote-text
-    temp_element = $( '#source-quote-text' );
+    temp_element = $( '#' + this.INPUT_ID_QUOTE_TEXT );
     my_quote_text = temp_element.val();
     
     // only store quote text if person type us "source".
@@ -1199,7 +1372,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     } //-- END check to see if person is "source". --//
     
     // id_person
-    temp_element = $( '#id_person' );
+    temp_element = $( '#' + this.INPUT_ID_PERSON_ID );
     
     // element found?
     if ( temp_element.length > 0 )
@@ -1288,6 +1461,7 @@ SOURCENET.Person.prototype.to_table_cell_html = function()
     var is_person_id_OK = false
     var my_person_name = "";
     var my_person_type = "";
+    var my_person_index = -1;
     
     // person type
     my_person_type = this.person_type;
@@ -1295,7 +1469,8 @@ SOURCENET.Person.prototype.to_table_cell_html = function()
 
     // name.
     my_person_name = this.person_name;
-    value_OUT += "<td>"  + my_person_name + "</td>";
+    my_person_index = this.person_index;
+    value_OUT += "<td><a href=\"#\" onclick=\"SOURCENET.load_person_into_form( " + my_person_index + " ); return false;\">" + my_person_name + "</a></td>";
 
     // got person ID?
     my_person_id = this.person_id;
@@ -1783,7 +1958,7 @@ SOURCENET.get_selected_value_for_id = function( select_id_IN )
     var value_OUT = null;
     
     // declare variables
-    var me = "SOURCENET.get_selected_value";
+    var me = "SOURCENET.get_selected_value_for_id";
     var is_select_id_OK = false;
     var select_element = null;
     var selected_index = -1;
@@ -1797,15 +1972,6 @@ SOURCENET.get_selected_value_for_id = function( select_id_IN )
         // get select element.
         select_element = $( '#' + select_id_IN );
         
-        // get selected index.
-        //selected_index = select_element.selectedIndex;
-        
-        // retrieve option at that index.
-        //selected_option_element = selected_element.item( selected_index );
-        
-        // get selected value
-        //selected_value = selected_option_element.value;
-
         // get selected value
         selected_value = select_element.val();
         
@@ -1915,6 +2081,42 @@ SOURCENET.is_string_OK = function( string_IN )
 
 
 /**
+ * Accepts index to person in DataStore.person_array.  Retrieves person instance
+ *     at the index passed in.  If not null, calls Person.populate_form() to
+ *     put its values into the form.
+ */
+SOURCENET.load_person_into_form = function( person_index_IN )
+{
+    
+    // declare variables
+    var is_index_OK = false;
+    var my_data_store = null;
+    var my_person_instance = null;
+    
+    // see if index is OK.
+    is_index_OK = SOURCENET.is_integer_OK( person_index_IN );
+    if ( is_index_OK == true )
+    {
+        
+        // retrieve data store.
+        my_data_store = SOURCENET.get_data_store();
+        
+        // get person at index passed in.
+        my_person_instance = my_data_store.get_person_at_index( person_index_IN );
+        
+        // call populate_form()
+        my_person_instance.populate_form()
+        
+    }
+    else
+    {
+        
+    }
+    
+} //-- END function SOURCENET.load_person_into_form() --//
+ 
+ 
+/**
  * Accepts a message.  If console.log() is available, calls that.  If not, does
  *    nothing.
  */
@@ -1922,7 +2124,7 @@ SOURCENET.log_message = function( message_IN )
 {
     
     // declare variables
-    output_flag = true;
+    var output_flag = true;
     
     // set to SOURCENET.debug_flag
     output_flag = SOURCENET.debug_flag;
@@ -2447,6 +2649,60 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
     return do_submit_OUT;
    
 } //-- END function to render form to submit coding.
+
+
+/**
+ * Accepts id of select whose selected value we want to set, and value we want
+ *    to be selected.  After making sure we have an OK ID, looks for select with
+ *    that ID.  If one found, sets to the value passed in.  Returns the selected
+ *    value.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} select_id_IN - HTML id attribute value for select whose selected value we want to retrieve.
+ * @returns {string} - selected value of select matching ID passed in, else null if error.
+ */
+SOURCENET.set_selected_value_for_id = function( select_id_IN, select_value_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.set_selected_value_for_id";
+    var is_select_id_OK = false;
+    var select_element = null;
+    
+    // select ID passed in OK?
+    is_select_id_OK = SOURCENET.is_string_OK( select_id_IN );
+    if ( is_select_id_OK == true )
+    {
+        
+        // get select element.
+        select_element = $( '#' + select_id_IN );
+        
+        // set selected value
+        select_element.val( select_value_IN );
+        
+        // get value.
+        value_OUT = SOURCENET.get_selected_value_for_id( select_id_IN );
+    
+    }
+    else
+    {
+    
+        // select ID is empty.  Return null.
+        value_OUT = null;
+        
+    }
+    
+    SOURCENET.log_message( "In " + me + "(): <select> ID = " + select_id_IN + "; value = " + value_OUT );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.set_selected_value_for_id() --//
 
 
 //----------------------------------------------------------------------------//
