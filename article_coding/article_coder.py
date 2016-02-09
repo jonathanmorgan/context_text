@@ -3185,7 +3185,7 @@ class ArticleCoder( BasicRateLimited ):
                     article_subject_qs = article_subject_qs.filter( person = subject_person )
                     article_subject_count = article_subject_qs.count()
                     
-                    # got anything?
+                    # got existing Article_Subject?
                     if ( article_subject_count == 0 ):
                                                  
                         # no - add - more stuff to set.  Need to see what we can get.

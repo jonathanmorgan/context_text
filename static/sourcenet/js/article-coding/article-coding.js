@@ -1669,6 +1669,10 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     temp_element = $( '<div></div>' );
     on_deck_person_element.append( temp_element );
     
+    // if populated, clear out the "lookup-person-existing-id" <div>
+    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID )
+    temp_element.text( "" )
+    
     // make status message array (empty message will clear status area).
     status_message_array = [];
     status_message_array.push( status_message_IN );

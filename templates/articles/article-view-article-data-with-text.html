@@ -58,11 +58,20 @@
                 <li><em>Author:</em> {{ article_instance.author_string }}</li>
             </ul>
 
+            {% if author_info %}
             <h4>Authors</h4>
             {{ author_info | safe }}
+            {% endif %}
 
+            {% if subject_info %}
+            <h4>Unassociated Subjects</h4>
+            {{ subject_info | safe }}
+            {% endif %}
+
+            {% if article_content %}
             <h4>Article Text and Subjects</h4>
             {{ article_content | safe }}
+            {% endif %}
 
             <!-- 
             <hr />

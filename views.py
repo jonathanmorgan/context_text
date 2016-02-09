@@ -97,6 +97,7 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 # Shared variables and functions
 #================================================================================
 
+NO_GRAF = "no_graf"
 
 def create_graf_to_subject_map( article_data_qs_IN ):
     
@@ -121,6 +122,9 @@ def create_graf_to_subject_map( article_data_qs_IN ):
     subject_mention = None
     graf_number = -1
     graf_subject_list = None
+    
+    # create place in map for people who are missing paragraph.
+    map_OUT[ NO_GRAF ] = []
     
     # got a QuerySet?
     article_data_qs = article_data_qs_IN
@@ -175,8 +179,20 @@ def create_graf_to_subject_map( article_data_qs_IN ):
                         # store article_subjet in list.
                         graf_subject_list.append( article_subject )
                     
-                    #-- check to see if valid paragraph number --#
+                    else:
                     
+                        # invalid paragraph number.  Add to "no_graf".
+                        graf_subject_list = map_OUT.get( NO_GRAF, [] )
+                        graf_subject_list.append( article_subject )
+                    
+                    #-- check to see if valid paragraph number --#
+                
+                else:
+                
+                    # no mentions recorded.  Add to "no_graf".
+                    graf_subject_list = map_OUT.get( NO_GRAF, [] )
+                    graf_subject_list.append( article_subject )
+                
                 #-- END check to see if any mentions of name. --#
             
             #-- END loop over Article_Subject instances --#
@@ -188,6 +204,133 @@ def create_graf_to_subject_map( article_data_qs_IN ):
     return map_OUT
     
 #-- END function create_graf_to_subject_map() --#
+
+
+def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
+
+    '''
+    Accepts list of Article_Subject instances and optional flag that tells
+       whether we also want a header row.  Generates an HTML table with one row
+       per subject with cells for coder info., subject info., and quote info.
+       if quotation present.  Returns HTML string.
+    '''
+
+    # return reference
+    html_OUT = ""
+    
+    # declare variables
+    me = "create_subject_table_html"
+    article_subject_instance = None
+    article_data_instance = None
+    article_data_coder = None
+    article_data_coder_id = -1
+    article_data_coder_username = ""
+    article_data_coder_type = ""
+    subject_title = ""
+    subject_name = ""
+    quote_qs = None
+    quote = None
+    quote_value = ""
+    quote_paragraph_number = -1
+    
+    # got a list?
+    if ( ( subject_list_IN is not None ) and ( len( subject_list_IN ) > 0 ) ):
+
+        # open <table>    
+        html_OUT += "<table class=\"gridtable\">"
+
+        # do we want a header?
+        if ( include_header_row_IN == True ):
+        
+            # yes
+            html_OUT += "<tr><th>coder</th><th>subject</th><th>quotation</th></tr>"
+        
+        #-- END check to see if we want a header. --#
+    
+        # got at least one - loop.
+        for article_subject_instance in subject_list_IN:
+    
+            # render subject
+            html_OUT += "<tr>"
+    
+            #------------------------------------------#
+            # get coder information...
+            html_OUT += "<td>"
+            article_data_instance = article_subject_instance.article_data
+            article_data_coder = article_data_instance.coder
+            article_data_coder_id = article_data_coder.id
+            article_data_coder_username = article_data_coder.username
+            html_OUT += unicode( article_data_coder_id ) + " - " + article_data_coder_username
+
+            # got a coder type?
+            article_data_coder_type = article_data_instance.coder_type
+            if ( ( article_data_coder_type is not None ) and ( article_data_coder_type != "" ) ):
+            
+                # yes.  Output.
+                html_OUT += " (<em>" + article_data_coder_type + "</em>)"
+            
+            #-- END check to see if coder type. --#
+            
+            html_OUT += "</td>"
+    
+            #------------------------------------------#
+            # and subject information
+            html_OUT += "<td>"
+            html_OUT += unicode( article_subject_instance )
+    
+            # got a name?
+            subject_name = article_subject_instance.name
+            if ( ( subject_name is not None ) and ( subject_name != "" ) ):
+                html_OUT += "<br />==> name: " + subject_name
+            #-- END check to see if name captured. --#
+            
+            # got a title?
+            subject_title = article_subject_instance.title
+            if ( ( subject_title is not None ) and ( subject_title != "" ) ):
+                html_OUT += "<br />==> title: " + subject_title
+            #-- END check to see if name captured. --#
+            
+            html_OUT += "</td>"                                    
+        
+            #------------------------------------------#
+            # and quote information
+            html_OUT += "<td>"
+            
+            # get first quote.
+            quote_qs = article_subject_instance.article_subject_quotation_set.all()
+            quote_qs = quote_qs.order_by( "paragraph_number" )
+            
+            # got one?
+            if ( quote_qs.count() > 0 ):
+                
+                # yes - get value and output.
+                quote = quote_qs[ 0 ]
+                quote_value = quote.value
+                quote_paragraph_number = quote.paragraph_number
+                
+                html_OUT += quote_value + " ( graf: " + unicode( quote_paragraph_number ) + " )"
+    
+            else:
+                
+                # no - output "None".
+                html_OUT += "None."
+                
+            #-- END check to see if quote --#
+    
+            html_OUT += "</td>"
+
+            html_OUT += "</tr>"
+    
+        #-- END loop over subjects. --#
+
+        # close table.
+        html_OUT += "</table>"
+        
+    #-- END check to see if we have a list --#
+
+    return html_OUT
+
+#-- END function create_subject_table() --#
 
 
 def get_request_data( request_IN ):
@@ -764,14 +907,14 @@ def article_view_article_data_with_text( request_IN ):
     rendered_author_html = ""
     author_qs = None
     
-    # declare variables - retrieving subject's quote
-    quote_qs = None
-    quote = None
-    quote_value = None
-
+    # declare variables - for unassociated subjects
+    subject_list = None
+    rendered_subject_html = ""
+    
     # declare variables - interacting with article text
     p_tag_id_to_subject_map = {}
     current_graf_subjects_list = []
+    subject = None
     article_content = ""
     article_content_bs = None
     p_tag_list = []
@@ -910,6 +1053,20 @@ def article_view_article_data_with_text( request_IN ):
 
                     #-- END check to see if we have any Article_Data --#
                     
+                    # get map of subjects to <p> tags.
+                    p_tag_id_to_subject_map = create_graf_to_subject_map( article_data_qs )
+                
+                    # ! subjects with no mentions (so no associated graf)
+                    
+                    # got any unassociated subjects?
+                    subject_list = p_tag_id_to_subject_map.get( NO_GRAF, [] )
+                    if ( len ( subject_list ) > 0 ):
+                    
+                        # we do.  Make a table for them.
+                        rendered_subject_html = create_subject_table_html( subject_list, include_header_row_IN = True )
+
+                    #-- END check to see if unassociated subjects --#
+                    
                     # ! text and subjects
                     
                     # get article instance
@@ -930,9 +1087,6 @@ def article_view_article_data_with_text( request_IN ):
                     
                     # got p-tags?
                     if ( p_tag_count > 0 ):
-                    
-                        # get map of subjects to <p> tags.
-                        p_tag_id_to_subject_map = create_graf_to_subject_map( article_data_qs )
                     
                         # yes.  create a table with three columns per row:
                         # - paragraph number
@@ -972,57 +1126,14 @@ def article_view_article_data_with_text( request_IN ):
                             current_graf_subjects_list = p_tag_id_to_subject_map.get( paragraph_number, [] )
                             if ( len( current_graf_subjects_list ) > 0 ):
                             
-                                rendered_article_html += "<td><table>"
-                            
-                                # got at least one.
-                                for subject in current_graf_subjects_list:
+                                # open cell for subject table.
+                                rendered_article_html += "<td>"
                                 
-                                    # render subject
-                                    rendered_article_html += "<tr>"
-                                    
-                                    # get coder information
-                                    rendered_article_html += "<td>"
-                                    article_data_instance = subject.article_data
-                                    article_data_coder = article_data_instance.coder
-                                    article_data_coder_id = article_data_coder.id
-                                    article_data_coder_username = article_data_coder.username
-                                    rendered_article_html += unicode( article_data_coder_id ) + " - " + article_data_coder_username
-                                    rendered_article_html += "</td>"
+                                # generate HTML for subject table.
+                                rendered_article_html += create_subject_table_html( current_graf_subjects_list, include_header_row_IN = True )
 
-                                    # and subject information
-                                    rendered_article_html += "<td>"
-                                    rendered_article_html += unicode( subject )
-                                    rendered_article_html += "</td>"                                    
-                                
-                                    # and quote information
-                                    rendered_article_html += "<td>"
-                                    
-                                    # get first quote.
-                                    quote_qs = subject.article_subject_quotation_set.all()
-                                    quote_qs = quote_qs.order_by( "paragraph_number" )
-                                    
-                                    # got one?
-                                    if ( quote_qs.count() > 0 ):
-                                        
-                                        # yes - get value and output.
-                                        quote = quote_qs[ 0 ]
-                                        quote_value = quote.value
-                                        rendered_article_html += quote_value
-
-                                    else:
-                                        
-                                        # no - output "None".
-                                        rendered_article_html += "None."
-                                        
-                                    #-- END check to see if quote --#
-
-                                    rendered_article_html += "</td>"
-
-                                    rendered_article_html += "</tr>"
-
-                                #-- loop over subjects. --#
-                            
-                                rendered_article_html += "</table></td>"
+                                # close table cell
+                                rendered_article_html += "</td>"
 
                             else:
                             
@@ -1049,6 +1160,7 @@ def article_view_article_data_with_text( request_IN ):
                     response_dictionary[ 'article_instance' ] = article_instance
                     response_dictionary[ 'article_text' ] = article_text
                     response_dictionary[ 'author_info' ] = rendered_author_html
+                    response_dictionary[ 'subject_info' ] = rendered_subject_html
                     response_dictionary[ 'article_content' ] = rendered_article_html
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
                     response_dictionary[ 'article_data_select_form' ] = article_data_select_form
