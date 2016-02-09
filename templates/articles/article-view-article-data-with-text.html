@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}View Article{% endblock %}
+{% block title %}View Article + Coding{% endblock %}
 
 {% block content %}
 
@@ -27,6 +27,13 @@
                 {{ article_lookup_form }}
             </p>
                 
+            {% if article_data_select_form %}
+            <p>
+                {# if there is an article selected, include form to select certain Article_Data instances #}
+                {{ article_data_select_form }}
+            </p>
+            {% endif %}
+
             <p>
                 <input type="submit" />
             </p>
@@ -50,16 +57,19 @@
                 <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
                 <li><em>Author:</em> {{ article_instance.author_string }}</li>
             </ul>
-            <h4>Article Text</h4>
-            {{ article_content|safe }}
+
+            <h4>Authors</h4>
+            {{ author_info | safe }}
+
+            <h4>Article Text and Subjects</h4>
+            {{ article_content | safe }}
+
             <!-- 
             <hr />
             {{ article_text.get_content|safe }}
             -->
             <hr />
             <h4>Article_Data Record(s)</h4>
-
-            <p><a href="../article_data/view_with_text?article_id={{ article_instance.id }}">View coding alongside article text</a></p>
 
             <ul>
                 {# loop over article_data #}
