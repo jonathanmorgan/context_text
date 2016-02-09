@@ -23,7 +23,7 @@ SOURCENET.article_data_id = -1;
 SOURCENET.data_store = null;
 
 // DEBUG!
-SOURCENET.debug_flag = false;
+SOURCENET.debug_flag = true;
 
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
@@ -35,6 +35,21 @@ SOURCENET.PERSON_TYPE_ARRAY = [ SOURCENET.PERSON_TYPE_SOURCE, SOURCENET.PERSON_T
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT = "Please wait..."
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding"
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!"
+
+// HTML element IDs
+SOURCENET.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
+SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
+SOURCENET.INPUT_ID_PERSON_NAME = "person-name";
+SOURCENET.INPUT_ID_PERSON_TYPE = "person-type";
+SOURCENET.INPUT_ID_TITLE = "person-title";
+SOURCENET.INPUT_ID_QUOTE_TEXT = "source-quote-text";
+SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
+
+// django-ajax-select HTML
+SOURCENET.INPUT_ID_AJAX_ID_PERSON = "id_person";
+SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT = "id_person_text";
+SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK = "id_person_on_deck";
+
 
 //----------------------------------------------------------------------------//
 // !==> object definitions
@@ -299,6 +314,9 @@ SOURCENET.DataStore.prototype.add_person_to_array = function( person_IN )
         // return index of length of array minus 1.
         index_OUT = person_array_length -1
         this.latest_person_index = index_OUT;
+        
+        // and store index in person instance.
+        person_IN.person_index = index_OUT;
 
     }
     else
@@ -735,6 +753,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     var current_title = "";
     var current_quote_text = "";
     var current_person_id = "";
+    var current_person_index = -1;
     var current_person_data = null;
     var current_person = null;
     
@@ -786,6 +805,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             current_title = current_person_data[ "title" ];
             current_quote_text = current_person_data[ "quote_text" ];
             current_person_id = current_person_data[ "person_id" ];
+            current_person_index = current_person_data[ "person_index" ];
 
             // create and populate Person instance.
             current_person = new SOURCENET.Person();
@@ -794,6 +814,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             current_person.title = current_title;
             current_person.quote_text = current_quote_text;
             current_person.person_id = current_person_id;
+            current_person.person_index = person_index;
 
             // add person to this DataStore.
             this.add_person( current_person );
@@ -1130,17 +1151,7 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
  * @constructor
  */
 SOURCENET.Person = function()
-{
-    // constants-ish
-    this.INPUT_ID_PERSON_INDEX = "data-store-person-index";
-    this.INPUT_ID_PERSON_NAME = "person-name";
-    this.INPUT_ID_PERSON_TYPE = "person-type";
-    this.INPUT_ID_TITLE = "person-title";
-    this.INPUT_ID_QUOTE_TEXT = "source-quote-text";
-    this.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
-    this.INPUT_ID_PERSON_ID = "id_person";
-    this.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
-    
+{    
     // instance variables
     this.person_index = -1;
     this.person_name = "";
@@ -1188,19 +1199,20 @@ SOURCENET.Person.prototype.populate_form = function()
     //------------------------------------------------------------------------//
     // data-store-person-index
     temp_value = my_person_index;
+    
 
     // get <input> element
-    temp_element = $( '#' + this.INPUT_ID_PERSON_INDEX );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
     {
         // store value in element
-        temp_elemenet.val( temp_value );
+        temp_element.val( temp_value );
     }
     else
     {
         // no value in instance, so set to -1.
-        temp_elemenet.val( -1 );
+        temp_element.val( -1 );
     } //-- END check to see if we have value --//
     
     //------------------------------------------------------------------------//
@@ -1208,29 +1220,30 @@ SOURCENET.Person.prototype.populate_form = function()
     temp_value = my_person_name;
 
     // get <input> element
-    temp_element = $( '#' + this.INPUT_ID_PERSON_NAME );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) )
     {
         // store value in element
-        temp_elemenet.val( temp_value );
+        temp_element.val( temp_value );
     }
     else
     {
         // no value in instance, so set to empty string.
-        temp_elemenet.val( "" );
+        temp_element.val( "" );
     } //-- END check to see if we have value --//
     
     //------------------------------------------------------------------------//
     // person-type
-    temp_value = SOURCENET.set_selected_value_for_id( self.INPUT_ID_PERSON_TYPE, my_person_type );
+    temp_value = SOURCENET.set_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE, my_person_type );
+    SOURCENET.process_selected_person_type()
     
     // sanity check
     if ( temp_value != my_person_type )
     {
         
         // the value of the select is not what we passed to it.
-        SOURCENET.log_message( "In " + me + "(): value for select with ID = " + self.INPUT_ID_PERSON_TYPE + " is \"" + temp_value + "\"; should be = \"" + my_person_type + "\"" );
+        SOURCENET.log_message( "In " + me + "(): value for select with ID = " + SOURCENET.INPUT_ID_PERSON_TYPE + " is \"" + temp_value + "\"; should be = \"" + my_person_type + "\"" );
         
     }
     
@@ -1239,17 +1252,17 @@ SOURCENET.Person.prototype.populate_form = function()
     temp_value = my_title;
 
     // get <input> element
-    temp_element = $( '#' + this.INPUT_ID_TITLE );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) )
     {
         // store value in element
-        temp_elemenet.val( temp_value );
+        temp_element.val( temp_value );
     }
     else
     {
         // no value in instance, so set to empty string.
-        temp_elemenet.val( "" );
+        temp_element.val( "" );
     } //-- END check to see if we have value --//
     
     //------------------------------------------------------------------------//
@@ -1257,17 +1270,17 @@ SOURCENET.Person.prototype.populate_form = function()
     temp_value = my_quote_text;
 
     // get <input> element
-    temp_element = $( '#' + this.INPUT_ID_QUOTE_TEXT );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) )
     {
         // store value in element
-        temp_elemenet.val( temp_value );
+        temp_element.val( temp_value );
     }
     else
     {
         // no value in instance, so set to empty string.
-        temp_elemenet.val( "" );
+        temp_element.val( "" );
     } //-- END check to see if we have value --//
         
     //------------------------------------------------------------------------//
@@ -1275,21 +1288,21 @@ SOURCENET.Person.prototype.populate_form = function()
     temp_value = my_person_id;
 
     // get <input> element
-    temp_element = $( '#' + this.INPUT_ID_MATCHED_PERSON_ID );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
     {
         // store value in element
-        temp_elemenet.val( temp_value );
+        temp_element.val( temp_value );
     }
     else
     {
         // no value in instance, so set to -1.
-        temp_elemenet.val( -1 );
+        temp_element.val( -1 );
     } //-- END check to see if we have value --//
 
     // get <div> inside person lookup area where we display that there is an ID.
-    temp_element = $( '#' + this.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
     
     // empty it.
     temp_element.empty();
@@ -1339,27 +1352,27 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     // retrieve values from form inputs and store in instance.
     
     // data-store-person-index
-    temp_element = $( '#' + this.INPUT_ID_PERSON_INDEX );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
     my_person_index = temp_element.val();
     this.person_index = my_person_index;
 
     // person-name
-    temp_element = $( '#' + this.INPUT_ID_PERSON_NAME );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
     my_person_name = temp_element.val();
     this.person_name = my_person_name;
     
     // person-type
-    temp_value = SOURCENET.get_selected_value_for_id( this.INPUT_ID_PERSON_TYPE );
+    temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE );
     my_person_type = temp_value;    
     this.person_type = my_person_type;
 
     // person-title
-    temp_element = $( '#' + this.INPUT_ID_TITLE );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
     my_title = temp_element.val();
     this.title = my_title;
     
     // source-quote-text
-    temp_element = $( '#' + this.INPUT_ID_QUOTE_TEXT );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
     my_quote_text = temp_element.val();
     
     // only store quote text if person type us "source".
@@ -1372,7 +1385,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     } //-- END check to see if person is "source". --//
     
     // id_person
-    temp_element = $( '#' + this.INPUT_ID_PERSON_ID );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
     
     // element found?
     if ( temp_element.length > 0 )
@@ -1609,37 +1622,45 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     
     // clear the coding form.
     
+    // matched-person-id
+    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+    temp_element.val( -1 );
+    
+    // data-store-person-index
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
+    temp_element.val( -1 );
+    
+    // person-name
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
+    temp_element.val( "" );
+    
     // person-type
-    temp_element = $( '#person-type' );
-    temp_element.val( '' );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_TYPE );
+    temp_element.val( "" );
     
     // call SOURCENET.process_selected_person_type();
     SOURCENET.process_selected_person_type();
 
-    // person-name
-    temp_element = $( '#person-name' );
-    temp_element.val( "" );
-    
     // person-title
-    temp_element = $( '#person-title' );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
     temp_element.val( "" );
     
     // source-quote-text
-    temp_element = $( '#source-quote-text' );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
     temp_element.val( "" );
     
     // id_person
-    temp_element = $( '#id_person' );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
     temp_element.val( "" );
     
     // id_person_text
-    temp_element = $( '#id_person_text' );
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
     temp_element.val( "" );
     
     // clear out <div> inside <div id="id_person_on_deck">.
     
     // get on-deck <div>.
-    on_deck_person_element = $( '#id_person_on_deck' );
+    on_deck_person_element = $( '#' + SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK );
     
     // remove anonymous <div> inside.
     on_deck_person_element.find( 'div' ).remove();
@@ -2089,9 +2110,12 @@ SOURCENET.load_person_into_form = function( person_index_IN )
 {
     
     // declare variables
+    var me = "SOURCENET.load_person_into_form";
     var is_index_OK = false;
     var my_data_store = null;
     var my_person_instance = null;
+    
+    SOURCENET.log_message( "In " + me + "(): person_index_IN = " + person_index_IN );
     
     // see if index is OK.
     is_index_OK = SOURCENET.is_integer_OK( person_index_IN );

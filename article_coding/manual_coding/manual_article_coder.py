@@ -112,6 +112,7 @@ class ManualArticleCoder( ArticleCoder ):
     DATA_STORE_PROP_TITLE = ArticleCoder.PARAM_TITLE             # "title"
     DATA_STORE_PROP_QUOTE_TEXT = ArticleCoder.PARAM_QUOTE_TEXT   # "quote_text"
     DATA_STORE_PROP_PERSON_ID = ArticleCoder.PARAM_PERSON_ID     # "person_id"
+    DATA_STORE_PROP_PERSON_INDEX = "person_index"
     DATA_STORE_PROP_NEXT_PERSON_INDEX = "next_person_index"
     DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP = "name_to_person_index_map"
     DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
@@ -223,6 +224,10 @@ class ManualArticleCoder( ArticleCoder ):
             # loop
             for current_author in article_author_qs:
 
+                # increment index values
+                current_index += 1
+                next_index += 1
+
                 # get current person
                 current_person = current_author.person
 
@@ -250,11 +255,10 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                 current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
+                current_person_dict[ cls.DATA_STORE_PROP_PERSON_INDEX ] = current_index                
 
                 # add to lists and dicts.
                 person_list.append( current_person_dict )
-                current_index += 1
-                next_index += 1
                 name_to_person_index_dict[ current_person_name ] = current_index
                 id_to_person_index_dict[ current_person_id ] = current_index
 
@@ -272,6 +276,10 @@ class ManualArticleCoder( ArticleCoder ):
                 # got a person?  Could be court records, etc.
                 if ( current_person is not None ):
 
+                    # increment index values
+                    current_index += 1
+                    next_index += 1
+    
                     # set values for person from instance.
     
                     # ==> person_type
@@ -310,11 +318,10 @@ class ManualArticleCoder( ArticleCoder ):
                     current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
                     current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_INDEX ] = current_index                
     
                     # add to lists and dicts.
                     person_list.append( current_person_dict )
-                    current_index += 1
-                    next_index += 1
                     name_to_person_index_dict[ current_person_name ] = current_index
                     id_to_person_index_dict[ current_person_id ] = current_index
 
