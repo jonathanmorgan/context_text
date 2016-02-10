@@ -55,7 +55,11 @@
                     <li>
                         <strong><em>Article:</em></strong> {{ article_data.article }}
                         <br />
-                        <ul><li><strong><em>tags:</em></strong> {% for current_tag in article_data.article.tags.all %} {{ current_tag }} {% endfor %}</li></ul>
+                        <ul>
+                            <li><strong><em>tags:</em></strong> {% for current_tag in article_data.article.tags.all %} {{ current_tag }} {% endfor %}</li>
+                            <li><a href="{% url 'sourcenet-article_view' %}?article_id={{ article_data.article.id }}">View article</a> | <a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ article_data.article.id }}">View article + coding</a></li>
+                        </ul>
+                        
                     </li>
                     <li><strong><em>status:</em></strong> {{ article_data.status }}</li>
                     <li><strong><em>authors:</em></strong> {{ article_data.article_author_set.count }}</li>

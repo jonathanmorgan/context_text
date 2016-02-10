@@ -56,6 +56,7 @@
                 <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
                 <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
                 <li><em>Author:</em> {{ article_instance.author_string }}</li>
+                <li><a href="{% url 'sourcenet-article_view' %}?article_id={{ article_instance.id }}">View article</a></li>
             </ul>
 
             {% if author_info %}
@@ -78,16 +79,17 @@
             {{ article_text.get_content|safe }}
             -->
             <hr />
-            <h4>Article_Data Record(s)</h4>
+            <h3>Article_Data Record(s)</h3>
 
+            <p><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}">View all related Article_Data</a></p>
+            
+            <p><strong>View user coding:</strong></p>
             <ul>
                 {# loop over article_data #}
                 {% for article_data in article_instance.article_data_set.all %}
-                    <li><a href="../article_data/view?article_id={{ article_instance.id }}&article_data_id_select={{article_data.id}}">{{ article_data }}</a></li>
+                    <li><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}&article_data_id_select={{article_data.id}}">{{ article_data }}</a></li>
                 {% endfor %}
             </ul>
-            
-            <p><a href="../article_data/view?article_id={{ article_instance.id }}">View all related Article_Data</a></p>
         </div>
 
     {% endif %}

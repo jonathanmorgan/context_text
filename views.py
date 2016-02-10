@@ -226,8 +226,9 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
     article_data_coder_id = -1
     article_data_coder_username = ""
     article_data_coder_type = ""
-    subject_title = ""
     subject_name = ""
+    subject_title = ""
+    subject_organization = ""
     quote_qs = None
     quote = None
     quote_value = ""
@@ -288,6 +289,12 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
             subject_title = article_subject_instance.title
             if ( ( subject_title is not None ) and ( subject_title != "" ) ):
                 html_OUT += "<br />==> title: " + subject_title
+            #-- END check to see if name captured. --#
+            
+            # got an organization string?
+            subject_organization = article_subject_instance.organization_string
+            if ( ( subject_organization is not None ) and ( subject_organization != "" ) ):
+                html_OUT += "<br />==> organization: " + subject_organization
             #-- END check to see if name captured. --#
             
             html_OUT += "</td>"                                    
@@ -906,6 +913,7 @@ def article_view_article_data_with_text( request_IN ):
     article_data_coder_username = ""
     rendered_author_html = ""
     author_qs = None
+    author_organization = ""
     
     # declare variables - for unassociated subjects
     subject_list = None
@@ -1043,7 +1051,15 @@ def article_view_article_data_with_text( request_IN ):
                                 #    concatenated causes all parts of the string to
                                 #    try to encode to default encoding ('ascii').
                                 #    This breaks if there are non-ascii characters.
-                                rendered_author_html += "\n        <tr><td>" + unicode( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + unicode( author ) + "</td></tr>"
+                                rendered_author_html += "\n        <tr><td>" + unicode( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + unicode( author )
+                                
+                                # got an organization string?
+                                author_organization = author.organization_string
+                                if ( ( author_organization is not None ) and ( author_organization != "" ) ):
+                                    rendered_author_html += "<br />==> organization: " + author_organization
+                                #-- END check to see if name captured. --#
+
+                                rendered_author_html += "</td></tr>"
                             
                             #-- END loop over authors. --#
                         
@@ -1672,6 +1688,7 @@ def article_code( request_IN ):
                     response_dictionary[ 'person_lookup_form' ] = person_lookup_form
                     response_dictionary[ 'coding_submit_form' ] = coding_submit_form
                     response_dictionary[ 'base_include_django_ajax_selects' ] = True
+                    response_dictionary[ 'do_output_table_html' ] = False
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()

@@ -4726,10 +4726,21 @@ class Article_Data( models.Model ):
             
         #-- END check to see if there is an ID. --#
         
+        # got a coder?
+        if ( self.coder ):
+        
+            string_OUT += " - " + str( self.coder )
+            
+        else:
+        
+            string_OUT += " - no coder"
+            
+        #-- END - got coder type? --#
+        
         # got a coder_type?
         if ( self.coder_type ):
         
-            string_OUT += " - " + str( self.coder_type )
+            string_OUT += " ( " + str( self.coder_type ) + " ) "
             
         else:
         
@@ -4737,7 +4748,7 @@ class Article_Data( models.Model ):
             
         #-- END - got coder type? --#
         
-        string_OUT += " - " + str( self.article )
+        string_OUT += " -- Article: " + str( self.article )
         
         return string_OUT
 
@@ -5008,6 +5019,8 @@ class Article_Person( models.Model ):
     # moving title up from Article_Subject
     title = models.CharField( max_length = 255, blank = True, null = True )
     more_title = models.TextField( blank = True, null = True )
+    organization_string = models.CharField( max_length = 255, blank = True, null = True )
+    more_organization = models.TextField( blank = True, null = True )
     
     # time stamps.
     create_date = models.DateTimeField( auto_now_add = True )
@@ -5329,7 +5342,6 @@ class Article_Author( Article_Person ):
     )
 
     author_type = models.CharField( max_length = 255, choices = AUTHOR_TYPE_CHOICES, default = "staff", blank = True, null = True )
-    organization_string = models.CharField( max_length = 255, blank = True, null = True )
 
 
     #----------------------------------------------------------------------
