@@ -23,7 +23,7 @@ SOURCENET.article_data_id = -1;
 SOURCENET.data_store = null;
 
 // DEBUG!
-SOURCENET.debug_flag = true;
+SOURCENET.debug_flag = false;
 
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
