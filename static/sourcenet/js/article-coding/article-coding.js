@@ -37,6 +37,7 @@ SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding"
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!"
 
 // HTML element IDs
+SOURCENET.DIV_ID_PERSON_CODING = "person-coding";
 SOURCENET.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
 SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
 SOURCENET.INPUT_ID_PERSON_NAME = "person-name";
@@ -101,12 +102,13 @@ SOURCENET.DataStore.prototype.add_person = function( person_IN )
     var status_array_OUT = [];
     
     // declare variables.
+    var me = "SOURCENET.DataStore.prototype.add_person"
     var is_ok_to_add = true;
     var validation_status_array = [];
     var validation_status_count = -1;
     var has_person_id = false
     var my_person_id = -1;
-    var is_person_id_OK = false;
+    var is_person_id_ok = false;
     var person_id_index = -1;
     var my_person_name = "";
     var is_person_name_OK = false;
@@ -114,6 +116,8 @@ SOURCENET.DataStore.prototype.add_person = function( person_IN )
     var person_index = -1;
     var name_map_status_array = [];
     var id_map_status_array = [];
+    
+    SOURCENET.log_message( "Top of " + me )
     
     // make sure we have a person.
     if ( ( person_IN !== undefined ) && ( person_IN != null ) )
@@ -127,8 +131,8 @@ SOURCENET.DataStore.prototype.add_person = function( person_IN )
             
             // valid.  Got a person ID?
             my_person_id = person_IN.person_id;
-            is_person_id_OK = SOURCENET.is_integer_OK( my_person_id, 1 );
-            if ( is_person_id_OK == true )
+            is_person_id_ok = SOURCENET.is_integer_OK( my_person_id, 1 );
+            if ( is_person_id_ok == true )
             {
                 
                 // got a person ID.
@@ -349,13 +353,13 @@ SOURCENET.DataStore.prototype.get_index_for_person_id = function( person_id_IN )
     var index_OUT = -1;
     
     // declare variables
-    var is_person_id_OK = false;
+    var is_person_id_ok = false;
     var id_to_index_map = null
     var is_in_map = false;
     
     // got an ID?
-    is_person_id_OK = SOURCENET.is_integer_OK( person_id_IN, 1 )
-    if ( is_person_id_OK == true )
+    is_person_id_ok = SOURCENET.is_integer_OK( person_id_IN, 1 )
+    if ( is_person_id_ok == true )
     {
         
         // get id_to_index_map.
@@ -678,13 +682,13 @@ SOURCENET.DataStore.prototype.get_person_for_person_id = function( person_id_IN 
     var person_OUT = null;
     
     // declare variables
-    var is_person_id_OK = false;
+    var is_person_id_ok = false;
     var person_index = -1;
     var is_person_index_OK = false;
     
     // got an ID?
-    is_person_id_OK = SOURCENET.is_integer_OK( person_id_IN, 1 );
-    if ( is_person_id_OK == true )
+    is_person_id_ok = SOURCENET.is_integer_OK( person_id_IN, 1 );
+    if ( is_person_id_ok == true )
     {
         
         // I think so...  See if there is an entry in ID map for this ID.
@@ -834,6 +838,47 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     } //-- END check to see if JSON passed in. --//
 
 } //-- END SOURCENET.DataStore method load_from_json() --//
+
+
+/**
+ * Accepts a Person instance.  Checks if there is a person index in instance.
+ *     If so, calls update_person().  If not, calls add_person().
+ *     Returns the status array that results from either invocation.
+ */
+SOURCENET.DataStore.prototype.process_person = function( person_IN )
+{
+    
+    // return reference
+    var status_array_OUT = [];
+    
+    // declare variables.
+    var me = "SOURCENET.DataStore.prototype.process_person"
+    var my_person_index = -1
+    var is_index_ok = true;
+    
+    SOURCENET.log_message( "Top of " + me )
+    
+    // got a valid index?
+    my_person_index = person_IN.person_index
+    is_index_ok = SOURCENET.is_integer_OK( my_person_index, 0 );
+    if ( is_index_ok == true )
+    {
+        
+        // We do.  Call update_person().
+        status_array_OUT = this.update_person( person_IN );
+        
+    }
+    else
+    {
+        
+        // We do not.  Call add_person().
+        status_array_OUT = this.add_person( person_IN )
+        
+    }
+    
+    return status_array_OUT;
+    
+} //-- END DataStore method process_person() --//
 
 
 /**
@@ -1010,9 +1055,150 @@ SOURCENET.DataStore.prototype.remove_person_at_index = function( index_IN )
 
 
 /**
+ * Accepts a Person instance that contains an index in person array.  First, 
+ *     checks to see if the person is valid.  If no, returns validation messages
+ *     as error.  If valid, checks to make sure that there is an index in the
+ *     person.  If not, returns an error.  If no errors, updates information on
+ *     the person in all the appropriate places:
+ *     - this.person_array
+ *     - this.name_to_person_index_map with person_name as key, index of person
+ *         in the person_array as the value.
+ *     - if person ID, this.id_to_person_index_map with person ID as key, index
+ *         of person in the person_array as the value.
+ */
+SOURCENET.DataStore.prototype.update_person = function( person_IN )
+{
+    
+    // return reference
+    var status_array_OUT = [];
+    
+    // declare variables.
+    var me = "SOURCENET.DataStore.prototype.update_person_at_index"
+    var is_index_ok = true;
+    var is_ok_to_update = true;
+    var validation_status_array = [];
+    var validation_status_count = -1;
+    var person_index = -1;
+    var my_person_id = -1;
+    var has_person_id = false;
+    var name_map_status_array = [];
+    var id_map_status_array = [];
+    
+    SOURCENET.log_message( "Top of " + me )
+    
+    // make sure we have a person.
+    if ( ( person_IN !== undefined ) && ( person_IN != null ) )
+    {
+        
+        // and make sure we have an index.
+        index_IN = person_IN.person_index
+        is_index_ok = SOURCENET.is_integer_OK( index_IN, 0 );
+        if ( is_index_ok == true )
+        {
+        
+            // got an index and a person.  Is person valid?
+            validation_status_array = person_IN.validate();
+            validation_status_count = validation_status_array.length;
+            if ( validation_status_count == 0 )
+            {
+                
+                // do update-specific validation here - none for now...
+                is_ok_to_update = true
+                
+                // make sure that index passed in matches index in person.
+                person_index = person_IN.person_index
+                if ( person_index != index_IN )
+                {
+                    
+                    // they do not match.  This is an error.
+                    is_ok_to_update = false;
+                    status_array_OUT.push( "Index mismatch: index_IN = " + index_IN + "; person_IN.person_index = " + person_index );
+                
+                } //-- END check to see if index passed in matches person_IN --#
+            
+                // OK to update?
+                if ( is_ok_to_update == true )
+                {
+                    
+                    // no errors so far...  Update in person array.
+                    this.person_array[ index_IN ] = person_IN;
+                    
+                    // update in name map.
+                    name_map_status_array = this.update_person_in_name_map( person_IN, index_IN );
+                    
+                    // any errors?
+                    if ( name_map_status_array.length > 0 )
+                    {
+                        
+                        // yes.  Add to status array, fall out.
+                        status_array_OUT = status_array_OUT.concat( name_map_status_array );
+                    
+                    }
+                    else //-- added to name map just fine. --//
+                    {
+                        
+                        // got a person ID?
+                        my_person_id = person_IN.person_id
+                        has_person_id = SOURCENET.is_integer_OK( my_person_id, 1 );
+                        if ( has_person_id == true )
+                        {
+                            
+                            // yes. Update mapping of person ID to person array
+                            //    index.
+                            id_map_status_array = this.update_person_in_person_id_map( person_IN, index_IN );
+                            
+                            // any errors?
+                            if ( id_map_status_array.length > 0 )
+                            {
+                                
+                                // yes.  Add to status array, fall out.
+                                status_array_OUT = status_array_OUT.concat( id_map_status_array );
+                            
+                            } //-- END check to see if errors from updating in id map --//
+                            
+                        } //-- END check to see if has person ID --//
+                        
+                    } //-- END check to see if errors updating person in name map. --//
+                        
+                } //-- END check to see if OK to update? --//
+                
+            }
+            else
+            {
+    
+                // not valid.  Error.  Concat validation errors with any other
+                //    errors.
+                status_array_OUT = status_array_OUT.concat( validation_status_array );
+    
+            } //-- END check to see if person is valid. --//
+            
+        }
+        else
+        {
+            
+            // no index passed in.  Error.
+            status_array_OUT.push( "No index passed in." );
+            
+        } //-- END check to see if index passed in --//
+        
+    }
+    else
+    {
+        
+        // no person passed in.  Error.
+        status_array_OUT.push( "No person instance passed in." );
+        
+    } //-- END check to see if person passed in. --//
+    
+    return status_array_OUT;
+    
+} //-- END SOURCENET.DataStore method update_person_at_index() --//
+
+
+/**
  * Accepts a Person instance and that person's index in the person array.
- *    If both passed in, updates mapping of name to index in name_to_index_map
- *    in DataStore.  If not, does nothing.
+ *     If both passed in, updates mapping of name to index in name_to_index_map
+ *     in DataStore.  If not, does nothing.
  *
  * @param {Person} person_IN - person we want to add to update in the map of person name strings to indexes in person array.
  * @param {int} index_IN - index in person array we want name associated with.  If -1 passed in, effectively removes person from map.
@@ -1091,7 +1277,7 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
     // declare variables.
     var me = "SOURCENET.DataStore.prototype.update_person_in_person_id_map";
     var person_id = -1;
-    var is_person_id_OK = false;
+    var is_person_id_ok = false;
     var my_person_id_to_index_map = {};
     
     // got a person?
@@ -1105,8 +1291,8 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
         person_id = person_IN.person_id;
         
         // got a person id?
-        is_person_id_OK = SOURCENET.is_integer_OK( person_id, 1 )
-        if ( is_person_id_OK == true )
+        is_person_id_ok = SOURCENET.is_integer_OK( person_id, 1 )
+        if ( is_person_id_ok == true )
         {
             
             // yes.  Set value for that name in map.
@@ -1183,7 +1369,7 @@ SOURCENET.Person.prototype.populate_form = function()
     var my_title = "";
     var my_quote_text = "";
     var my_person_id = null;
-    var is_person_id_OK = false;
+    var is_value_OK = false;
     
     // retrieve values from instance.
     my_person_index = this.person_index;
@@ -1199,12 +1385,11 @@ SOURCENET.Person.prototype.populate_form = function()
     //------------------------------------------------------------------------//
     // data-store-person-index
     temp_value = my_person_index;
-    
 
     // get <input> element
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
+    is_value_OK = SOURCENET.is_integer_OK( temp_value, 0 )
+    if ( is_value_OK == true )
     {
         // store value in element
         temp_element.val( temp_value );
@@ -1289,26 +1474,26 @@ SOURCENET.Person.prototype.populate_form = function()
 
     // get <input> element
     temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) && ( temp_value > 0 ) )
+    is_value_OK = SOURCENET.is_integer_OK( temp_value, 1 )
+    if ( is_value_OK == true )
     {
         // store value in element
         temp_element.val( temp_value );
+
+        // get <div> inside person lookup area where we display that there is an ID.
+        temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+        
+        // empty it.
+        temp_element.empty();
+        
+        // place text in it.
+        temp_element.text( "Selected Person ID is " + temp_value );
     }
     else
     {
         // no value in instance, so set to -1.
         temp_element.val( -1 );
     } //-- END check to see if we have value --//
-
-    // get <div> inside person lookup area where we display that there is an ID.
-    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
-    
-    // empty it.
-    temp_element.empty();
-    
-    // place text in it.
-    temp_element.text( "Selected Person ID is " + temp_value );
 
     SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
     
@@ -1344,33 +1529,41 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var my_title = "";
     var my_quote_text = "";
     var my_person_id = null;
-    var is_person_id_OK = false;
+    var is_person_id_ok = false;
 
     // get form element
     form_element = form_element_IN
     
     // retrieve values from form inputs and store in instance.
     
+    //------------------------------------------------------------------------//
     // data-store-person-index
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
     my_person_index = temp_element.val();
+    
+    // Convert to int and store it.
+    my_person_index = parseInt( my_person_index, 10 );
     this.person_index = my_person_index;
 
+    //------------------------------------------------------------------------//
     // person-name
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
     my_person_name = temp_element.val();
     this.person_name = my_person_name;
     
+    //------------------------------------------------------------------------//
     // person-type
     temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE );
     my_person_type = temp_value;    
     this.person_type = my_person_type;
 
+    //------------------------------------------------------------------------//
     // person-title
     temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
     my_title = temp_element.val();
     this.title = my_title;
     
+    //------------------------------------------------------------------------//
     // source-quote-text
     temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
     my_quote_text = temp_element.val();
@@ -1384,6 +1577,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
 
     } //-- END check to see if person is "source". --//
     
+    //------------------------------------------------------------------------//
     // id_person
     temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
     
@@ -1395,8 +1589,8 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
         my_person_id = temp_element.val();
         
         // is it an OK string?
-        is_person_id_OK = SOURCENET.is_string_OK( my_person_id )
-        if ( is_person_id_OK == true )
+        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
+        if ( is_person_id_ok == true )
         {
 
             // looks OK (non-empty).  Convert to int and store it.
@@ -1406,6 +1600,29 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
         } //-- END check to see if person_id value present. --//
     
     } //-- END check to see if id_person element present in HTML. --//
+    
+    //------------------------------------------------------------------------//
+    // got a person ID?
+    is_person_id_ok = SOURCENET.is_integer_OK( this.person_id, 1 )
+    if ( is_person_id_ok == false )
+    {
+        
+        // no ID.  Try to retrieve from hidden "matched-person-id" input.
+        temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+        temp_value = temp_element.val()
+        
+        // is it an OK string?
+        is_person_id_ok = SOURCENET.is_string_OK( temp_value )
+        if ( is_person_id_ok == true )
+        {
+            
+            // there is a value from a previous match.  Convert to int, store.
+            my_person_id = parseInt( temp_value, 10 );
+            this.person_id = my_person_id;
+
+        } //-- END check to see if previous match person ID present. --//
+        
+    } //-- END check to see if person ID set from ajax lookup form --//
 
     SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
     
@@ -1430,14 +1647,14 @@ SOURCENET.Person.prototype.to_string = function()
     
     // declare variables.
     var my_person_id = -1;
-    var is_person_id_OK = false
+    var is_person_id_ok = false
     var my_person_name = "";
     var my_person_type = "";
     
     // got person ID?
     my_person_id = this.person_id;
-    is_person_id_OK = SOURCENET.is_integer_OK( my_person_id, 1 );
-    if ( is_person_id_OK == true )
+    is_person_id_ok = SOURCENET.is_integer_OK( my_person_id, 1 );
+    if ( is_person_id_ok == true )
     {
         value_OUT += my_person_id;
     }
@@ -1471,7 +1688,7 @@ SOURCENET.Person.prototype.to_table_cell_html = function()
     
     // declare variables.
     var my_person_id = -1;
-    var is_person_id_OK = false
+    var is_person_id_ok = false
     var my_person_name = "";
     var my_person_type = "";
     var my_person_index = -1;
@@ -1487,9 +1704,9 @@ SOURCENET.Person.prototype.to_table_cell_html = function()
 
     // got person ID?
     my_person_id = this.person_id;
-    is_person_id_OK = SOURCENET.is_integer_OK( my_person_id, 1 );
+    is_person_id_ok = SOURCENET.is_integer_OK( my_person_id, 1 );
     value_OUT += "<td>";
-    if ( is_person_id_OK == true )
+    if ( is_person_id_ok == true )
     {
         value_OUT += my_person_id;
     }
@@ -1621,7 +1838,8 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     var on_deck_person_element = null;
     
     // clear the coding form.
-    
+    SOURCENET.log_message( "Top of " + me )
+        
     // matched-person-id
     temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
     temp_element.val( -1 );
@@ -2331,15 +2549,17 @@ SOURCENET.process_person_coding = function()
     var person_instance = null;
     var status_message_array = [];
     var status_message_count = -1;
+    var work_element = null;
+    var existing_person_index = -1;
     var status_string = "";
     var data_store = null;
-    var person_add_message_array = [];
-    var person_add_error_count = -1;
+    var person_message_array = [];
+    var person_error_count = -1;
 
     SOURCENET.log_message( "In " + me + "(): PROCESS PERSON CODING!!!" );
     
     // get form element.
-    form_element = $( '#person-coding' );
+    form_element = $( '#' + SOURCENET.DIV_ID_PERSON_CODING );
     
     // create Person instance.
     person_instance = new SOURCENET.Person();
@@ -2359,11 +2579,11 @@ SOURCENET.process_person_coding = function()
         data_store = SOURCENET.get_data_store();
         
         // add person
-        person_add_message_array = data_store.add_person( person_instance );
+        person_message_array = data_store.process_person( person_instance );
         
         // errors?
-        person_add_error_count = person_add_message_array.length;
-        if ( person_add_error_count == 0 )
+        person_error_count = person_message_array.length;
+        if ( person_error_count == 0 )
         {
             
             // no errors.
@@ -2372,14 +2592,14 @@ SOURCENET.process_person_coding = function()
             SOURCENET.display_persons();
                     
             // clear the coding form.
-            SOURCENET.clear_coding_form( "Added: " + person_instance.to_string() );
+            SOURCENET.clear_coding_form( "Processed: " + person_instance.to_string() );
 
         }
         else
         {
             
             // errors - output messages.
-            SOURCENET.output_status_messages( person_add_message_array );
+            SOURCENET.output_status_messages( person_message_array );
             
         } //-- END check for errors adding person to DataStore. --//
         
@@ -2387,7 +2607,7 @@ SOURCENET.process_person_coding = function()
     else
     {
         
-        // not valid - for now, add message overall status message.
+        // not valid - for now, add message to overall status message.
         status_message_array.push( "Person not valid." );
         
     }
