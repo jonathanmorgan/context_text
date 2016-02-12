@@ -40,6 +40,7 @@ import six
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.json.json_helper import JSONHelper
+from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.network.http_helper import Http_Helper
 from python_utilities.sequences.sequence_helper import SequenceHelper
 
@@ -85,6 +86,9 @@ class ManualArticleCoder( ArticleCoder ):
     # status constants - in parent (ArticleCoder) now:
     # STATUS_SUCCESS = "Success!"
     # STATUS_ERROR_PREFIX = "Error: "
+    
+    # logging
+    LOGGER_NAME = "sourcenet.article_coding.manual_coding.manual_article_coder"
     
     # config application
     CONFIG_APPLICATION = "Manual_Coding"
@@ -148,7 +152,7 @@ class ManualArticleCoder( ArticleCoder ):
         
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
         #    BasicRateLimited --> ArticleCoder --> OpenCalaisArticleCoder).
-        self.set_logger_name( "sourcenet.article_coding.manual_coding.manual_article_coder" )
+        self.set_logger_name( self.LOGGER_NAME )
         
         # items for processing a given JSON response - should be updated with
         #    every new article coded.
@@ -184,6 +188,7 @@ class ManualArticleCoder( ArticleCoder ):
 
         # declare variables
         me = "convert_article_data_to_data_store_json"
+        debug_message = ""
         data_store_dict = None
         article_author_qs = None
         article_subject_qs = None
@@ -226,7 +231,8 @@ class ManualArticleCoder( ArticleCoder ):
             # loop
             for current_author in article_author_qs:
             
-                print( "====> author: " + str( current_author ) )
+                debug_message = "author: " + str( current_author )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME )
 
                 # increment index values
                 current_index += 1
@@ -235,7 +241,8 @@ class ManualArticleCoder( ArticleCoder ):
                 # get current person
                 current_person = current_author.person
 
-                print( "========> author person: " + str( current_person ) )
+                debug_message = "author person: " + str( current_person )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME )
 
                 # set values for person from instance.
 
@@ -280,7 +287,8 @@ class ManualArticleCoder( ArticleCoder ):
             # loop
             for current_subject in article_subject_qs:
 
-                print( "====> subject: " + str( current_subject ) )
+                debug_message = "subject: " + str( current_subject )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME )
 
                 # get current person
                 current_person = current_subject.person
@@ -288,7 +296,8 @@ class ManualArticleCoder( ArticleCoder ):
                 # got a person?  Could be court records, etc.
                 if ( current_person is not None ):
 
-                    print( "========> subject person: " + str( current_person ) )
+                    debug_message = "subject person: " + str( current_person )
+                    LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME )
 
                     # increment index values
                     current_index += 1

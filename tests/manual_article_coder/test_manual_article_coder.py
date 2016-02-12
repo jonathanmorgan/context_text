@@ -475,7 +475,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP
         name_to_index_dict = test_json_generated_dict.get( test_name, None )
-        print( "JSON dict:\n" + str( test_json_generated_dict ) )
+        #print( "JSON dict:\n" + str( test_json_generated_dict ) )
 
         error_string = "In " + me + "(): " + test_name + " in generated JSON is None."
         self.assertIsNotNone( name_to_index_dict, msg = error_string )        
