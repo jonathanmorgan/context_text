@@ -1438,7 +1438,7 @@ class ArticleCoder( BasicRateLimited ):
 
                         # call update_person() to set title, organization,
                         #     related records.
-                        person_instance = self.update_person( person_instance, person_details_IN )
+                        person_instance = self.update_person( person_instance, person_details_IN, allow_empty_IN = True )
                                                 
                         self.output_debug( "saved new person - " + str( person_instance ), me, "========>" )
                         
@@ -3512,7 +3512,7 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method update_config_properties() --#
     
 
-    def update_person( self, person_IN, person_details_IN = {}, *args, **kwargs ):
+    def update_person( self, person_IN, person_details_IN = {}, allow_empty_IN = False, *args, **kwargs ):
         
         '''
         Accepts person instance, and then accepts dictionary of all the stuff you
@@ -3613,14 +3613,24 @@ class ArticleCoder( BasicRateLimited ):
             # has title changed?
             existing_title = person_OUT.title
             if ( title_IN != existing_title ):
+                
+                # got a value, OR is empty OK?
+                if ( ( ( title_IN is not None ) and ( title_IN != "" ) )
+                    or ( allow_empty_IN == True ) ):
 
-                # yes.  Update title.
-                self.output_debug( "Updating title from: \"" + str( existing_title ) + "\" to: \"" + str( title_IN ) + "\"", me, "========>" )
-                person_OUT.set_title( title_IN, do_save_IN = False, do_append_IN = True )
-                self.output_debug( "Updated title: " + str( person_OUT.title ), me, "========>" )
-
-                # we need to save.
-                do_save = True
+                    # yes.  Update title.
+                    self.output_debug( "Updating title from: \"" + str( existing_title ) + "\" to: \"" + str( title_IN ) + "\"", me, "========>" )
+                    person_OUT.set_title( title_IN, do_save_IN = False, do_append_IN = True )
+                    self.output_debug( "Updated title: " + str( person_OUT.title ), me, "========>" )
+    
+                    # we need to save.
+                    do_save = True
+                    
+                else:
+                
+                    self.output_debug( "NOT updating title from: \"" + str( existing_title ) + "\" to: \"" + str( title_IN ) + "\"", me, "========>" )
+                
+                #-- END check to see if we are OK to update --#
 
             else:
             
@@ -3636,13 +3646,23 @@ class ArticleCoder( BasicRateLimited ):
             existing_organization_string = person_OUT.organization_string
             if ( organization_string_IN != existing_organization_string ):
 
-                # yes.  Update organization string.
-                self.output_debug( "Updating organization string from: \"" + str( existing_organization_string ) + "\" to: \"" + str( organization_string_IN ) + "\"", me, "========>" )
-                person_OUT.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
-                self.output_debug( "Updated organization string: " + str( person_OUT.organization_string ), me, "========>" )
+                # got a value, OR is empty OK?
+                if ( ( ( organization_string_IN is not None ) and ( organization_string_IN != "" ) )
+                    or ( allow_empty_IN == True ) ):
 
-                # we need to save.
-                do_save = True
+                    # yes.  Update organization string.
+                    self.output_debug( "Updating organization string from: \"" + str( existing_organization_string ) + "\" to: \"" + str( organization_string_IN ) + "\"", me, "========>" )
+                    person_OUT.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
+                    self.output_debug( "Updated organization string: " + str( person_OUT.organization_string ), me, "========>" )
+    
+                    # we need to save.
+                    do_save = True
+
+                else:
+                
+                    self.output_debug( "NOT updating organization string from: \"" + str( existing_organization_string ) + "\" to: \"" + str( organization_string_IN ) + "\"", me, "========>" )
+                
+                #-- END check to see if we are OK to update --#
 
             else:
             

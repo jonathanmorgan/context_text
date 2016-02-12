@@ -199,6 +199,7 @@ class ManualArticleCoder( ArticleCoder ):
         current_person = None
         current_person_type = ""
         current_person_name = ""
+        current_organization_string = ""
         current_title = ""
         current_quote_text = ""
         current_person_id = ""
@@ -224,6 +225,8 @@ class ManualArticleCoder( ArticleCoder ):
 
             # loop
             for current_author in article_author_qs:
+            
+                print( "====> author: " + str( current_author ) )
 
                 # increment index values
                 current_index += 1
@@ -232,16 +235,21 @@ class ManualArticleCoder( ArticleCoder ):
                 # get current person
                 current_person = current_author.person
 
+                print( "========> author person: " + str( current_person ) )
+
                 # set values for person from instance.
 
                 # ==> person_type
                 current_person_type = cls.PERSON_TYPE_AUTHOR
                 
                 # ==> person_name
-                current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
+                current_person_name = JSONHelper.escape_json_value( current_author.name )
+                
+                # ==> organization_string
+                current_organization_string = JSONHelper.escape_json_value( current_author.organization_string )
                 
                 # ==> title
-                current_title = JSONHelper.escape_json_value( current_author.organization_string )
+                current_title = JSONHelper.escape_json_value( current_author.title )
                 
                 # ==> quote_text
                 current_quote_text = ""
@@ -253,6 +261,7 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person_dict = {}
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                current_person_dict[ cls.DATA_STORE_PROP_PERSON_ORGANIZATION ] = current_organization_string
                 current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                 current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
@@ -271,11 +280,15 @@ class ManualArticleCoder( ArticleCoder ):
             # loop
             for current_subject in article_subject_qs:
 
+                print( "====> subject: " + str( current_subject ) )
+
                 # get current person
                 current_person = current_subject.person
                 
                 # got a person?  Could be court records, etc.
                 if ( current_person is not None ):
+
+                    print( "========> subject person: " + str( current_person ) )
 
                     # increment index values
                     current_index += 1
@@ -288,7 +301,10 @@ class ManualArticleCoder( ArticleCoder ):
                     current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
                     
                     # ==> name
-                    current_person_name = JSONHelper.escape_json_value( current_person.get_name_string() )
+                    current_person_name = JSONHelper.escape_json_value( current_subject.name )
+                    
+                    # ==> organization_string
+                    current_organization_string = JSONHelper.escape_json_value( current_subject.organization_string )
                     
                     # ==> title
                     current_title = JSONHelper.escape_json_value( current_subject.title )
@@ -316,6 +332,7 @@ class ManualArticleCoder( ArticleCoder ):
                     current_person_dict = {}
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_ORGANIZATION ] = current_organization_string
                     current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
                     current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text

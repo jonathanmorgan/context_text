@@ -475,6 +475,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP
         name_to_index_dict = test_json_generated_dict.get( test_name, None )
+        print( "JSON dict:\n" + str( test_json_generated_dict ) )
 
         error_string = "In " + me + "(): " + test_name + " in generated JSON is None."
         self.assertIsNotNone( name_to_index_dict, msg = error_string )        
@@ -565,6 +566,14 @@ class ManualArticleCoderTest( django.test.TestCase ):
             
             # ==> title
             test_name = ManualArticleCoder.DATA_STORE_PROP_TITLE
+            test_title = test_person_dict.get( test_name, None )
+            test_value = test_title
+            should_be = ""
+            error_string = "In " + me + "(): " + test_name + " = \"" + test_value + "\", should be \"" + should_be + "\""
+            self.assertEqual( test_value, should_be, error_string )
+            
+            # ==> organization_string
+            test_name = ManualArticleCoder.DATA_STORE_PROP_PERSON_ORGANIZATION
             test_title = test_person_dict.get( test_name, None )
             test_value = test_title
             should_be = "The Grand Rapids Press"
@@ -969,7 +978,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #----------------------------------------------------------------------#
         # ! ==> update test
         
-        print( "\n\nUpdate test\n\n" )
+        #print( "\n\nUpdate test\n\n" )
         
         # get JSON string
         test_json_string = self.data_store_json_update
@@ -1015,7 +1024,8 @@ class ManualArticleCoderTest( django.test.TestCase ):
         
         for test_author in test_author_qs:
             
-            print( "post-update - author: " + str( test_author ) + "; Article_Author name = " + test_author.name )
+            #print( "post-update - author: " + str( test_author ) + "; Article_Author name = " + test_author.name )
+            pass
             
         #-- END loop over authors. --#
         
@@ -1051,7 +1061,8 @@ class ManualArticleCoderTest( django.test.TestCase ):
 
         for test_subject in test_subject_qs:
             
-            print( "post-update - subject: " + str( test_subject ) + "; Article_Subject name = " + test_subject.name )
+            #print( "post-update - subject: " + str( test_subject ) + "; Article_Subject name = " + test_subject.name )
+            pass
             
         #-- END loop over authors. --#
 
