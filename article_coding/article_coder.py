@@ -104,7 +104,7 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_PERSON_NAME = "person_name"
     PARAM_PERSON_TYPE = "person_type"
     PARAM_TITLE = "title"
-    PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
+    PARAM_PERSON_ORGANIZATION = "person_organization"
     PARAM_QUOTE_TEXT = "quote_text"
     PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
     PARAM_NEWSPAPER_NOTES = "newspaper_notes"
@@ -905,7 +905,7 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
               - PARAM_CAPTURE_METHOD = "capture_method"
               - PARAM_TITLE = "title" - title text - if new person created, uses up to first 255 characters of this, if present, as the sourcenet_person "title" column value.
-              - PARAM_AUTHOR_ORGANIZATION_STRING = "author_organization_string"
+              - PARAM_PERSON_ORGANIZATION = "person_organization"
               - PARAM_PERSON_ID = "person_id"
            - on_multiple_match_try_exact_lookup_IN - optional boolean, defaults 
               to False.  If True, tries an exact match - exactly what is in the
@@ -969,7 +969,9 @@ class ArticleCoder( BasicRateLimited ):
         title_IN = ""
         title_cleaned = ""
         title_length = -1
-        
+        organization_string_IN = ""
+        organization_cleaned = ""
+        organization_length = -1
         
         # got a return reference?
         if ( article_person_IN is not None ):
@@ -1066,7 +1068,7 @@ class ArticleCoder( BasicRateLimited ):
                         # no matches.
                         match_status = self.MATCH_STATUS_NONE
                         
-                        # make new person instance for name.
+                        # make new person instance for name (not saved)
                         person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
                     
                     elif ( multiple_count == 1 ):
@@ -1119,6 +1121,7 @@ class ArticleCoder( BasicRateLimited ):
                     #    make one.
                     if ( person_instance is None ):
                     
+                        # make instance, but it isn't saved to database.
                         person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
                         
                     #-- END check to see if person_instance --#
@@ -1412,53 +1415,53 @@ class ArticleCoder( BasicRateLimited ):
             # got a person (sanity check)?
             if ( person_instance is not None ):
             
-                # !new person?
-                # if no ID, is new.  Set values and save to database.
+                # if no ID, is new.
                 if ( not( person_instance.id ) ):
                 
-                    # no ID.  See if there is a capture_method.
-                    capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
-                    if ( ( capture_method is not None ) and ( capture_method != "" ) ):
-                    
-                        # got a capture method.  Add it to person instance.
-                        person_instance.capture_method = capture_method
-                    
-                    #-- END check to see if capture_method --#
-                    
-                    # see if there is a title.
-                    title_IN = person_details_IN.get( self.PARAM_TITLE, "" )
-                    if ( ( title_IN is not None ) and ( title_IN != "" ) ):
-
-                        # strip off white space.
-                        title_cleaned = title_IN.strip()
-                        
-                        # yes.  Longer than 255?
-                        title_length = len( title_cleaned )
-                        if ( title_length > 255 ):
-                            
-                            # title in Person is 255 characters - for this,
-                            #    truncate to 255 so we have something.
-                            title_cleaned = title_cleaned[ : 255 ]
-                            
-                        #-- END check to see if title is too long. --#
-                        
-                        person_instance.title = title_cleaned
-                        
-                    #-- END check to see if we have a title --#
-                    
-                    # Save the record.
-                    person_instance.save()
-                    self.output_debug( "In " + me + ": saved new person - " + str( person_instance ) )
-                    
-                #-- END check to see if new Person. --#
+                    # Set values and save to database?
+                    if ( create_if_no_match_IN == True ):
+                
+                        # ! INSERT new person
+                        self.output_debug( "INSERT PERSON - person_details_IN: " + str( person_details_IN ), me, "========>" )
     
-                # update person, too?
-                if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                        # no ID.  See if there is a capture_method.
+                        capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
+                        if ( ( capture_method is not None ) and ( capture_method != "" ) ):
+                        
+                            # got a capture method.  Add it to person instance.
+                            person_instance.capture_method = capture_method
+                        
+                        #-- END check to see if capture_method --#
+                        
+                        # Save the record.
+                        person_instance.save()
+
+                        # call update_person() to set title, organization,
+                        #     related records.
+                        person_instance = self.update_person( person_instance, person_details_IN )
+                                                
+                        self.output_debug( "saved new person - " + str( person_instance ), me, "========>" )
+                        
+                    else:
+                    
+                        person_instance = None
+                    
+                    #-- END check to see if we set values and save to database. --#
+                    
+                else:
                 
-                    # yes.
-                    person_instance = self.update_person( person_instance, person_details_IN )
-                
-                #-- END check to see if we update person --#
+                    # not new - are we to update?
+                    if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
+                    
+                        # ! UPDATE existing person
+                        self.output_debug( "UPDATE PERSON - person_details_IN: " + str( person_details_IN ), me, "========>" )
+    
+                        # yes.
+                        person_instance = self.update_person( person_instance, person_details_IN )
+    
+                    #-- END check to see if we update person --#
+                    
+                #-- END check to see if INSERT or UPDATE --#
                 
                 # place person inside Article_Person instance.
                 instance_OUT.person = person_instance
@@ -1598,7 +1601,7 @@ class ArticleCoder( BasicRateLimited ):
         status_OUT = self.STATUS_SUCCESS
         
         # declare variables - input parameters, from person_details
-        author_organization_IN = "",
+        author_organization_string_IN = "",
         author_person_id_IN = None,
         
         # declare variables.
@@ -1620,6 +1623,9 @@ class ArticleCoder( BasicRateLimited ):
         existing_org_string = ""
         existing_author_name = ""
 
+        # get logger
+        my_logger = self.get_logger()
+        
         # prepare person details.  Got a dictionary passed in?
         if ( ( person_details_IN is not None )
              and ( isinstance( person_details_IN, dict ) == True )
@@ -1629,18 +1635,21 @@ class ArticleCoder( BasicRateLimited ):
             person_details_dict = person_details_IN
             
             # got person details.  Retrieve input values.
-            author_organization_IN = person_details_dict.get( self.PARAM_AUTHOR_ORGANIZATION_STRING, "" )
+            author_organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
             author_person_id_IN = person_details_dict.get( self.PARAM_PERSON_ID, None )
-            
+        
+            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", FOUND person_details_IN: " + str( person_details_dict )
+            my_logger.debug( debug_message )
+
         else:
         
             # nothing passed in - create new dictionary.
             person_details_dict = {}
-            
-        #-- END check to see if dictionary passed in. --#
         
-        # get logger
-        my_logger = self.get_logger()
+            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", NO person_details_IN."
+            my_logger.debug( debug_message )
+
+        #-- END check to see if dictionary passed in. --#
         
         # make empty Article_Author to work with.
         article_author = Article_Author()
@@ -1688,10 +1697,10 @@ class ArticleCoder( BasicRateLimited ):
                 #--------------------------------------------------------------#
 
                 # got one passed in?
-                if ( ( author_organization_IN is not None ) and ( author_organization_IN != "" ) ):
+                if ( ( author_organization_string_IN is not None ) and ( author_organization_string_IN != "" ) ):
                 
                     # got one passed in.  Use it.
-                    author_organization = author_organization_IN
+                    author_organization = author_organization_string_IN
                     
                 #-- END setting author_organization --#
     
@@ -1723,13 +1732,14 @@ class ArticleCoder( BasicRateLimited ):
                     article_author_count = article_author_qs.count()
                     if ( article_author_count == 0 ):
                                                  
+                        # ! INSERT new Article_Author
                         # no - add - including organization string.
 
                         # use article_author already created above.
                         #article_author = Article_Author()
                         article_author.article_data = article_data_IN
                         article_author.person = author_person
-                        article_author.organization_string = author_organization
+                        article_author.set_organization_string( author_organization, do_save_IN = False )
                         article_author.capture_method = my_capture_method
                         article_author.name = author_name
                         
@@ -1772,7 +1782,8 @@ class ArticleCoder( BasicRateLimited ):
                         if ( existing_org_string != author_organization ):
                         
                             # yes.  Replace.
-                            article_author.organization_string = author_organization
+                            article_author.organization_string = ""
+                            article_author.set_organization_string( author_organization, do_save_IN = False, do_append_IN = True )
 
                             # we need to save.
                             do_save_updates = True
@@ -2564,7 +2575,7 @@ class ArticleCoder( BasicRateLimited ):
                     
                         # call process_author_name() to deal with author.
                         person_details = {}
-                        person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = author_organization
+                        person_details[ self.PARAM_PERSON_ORGANIZATION ] = author_organization
                         person_details[ self.PARAM_TITLE ] = author_organization
                         article_author_instance = self.process_author_name( article_data_IN, author_name, person_details_IN = person_details )
                         process_author_name_status = article_author_instance.match_status
@@ -3027,6 +3038,7 @@ class ArticleCoder( BasicRateLimited ):
         
         # input variables from person_dict
         title_IN = ""
+        organization_string_IN = ""
         subject_UUID_IN = ""
         subject_UUID_name_IN = ""
         subject_UUID_source_IN = ""
@@ -3059,6 +3071,7 @@ class ArticleCoder( BasicRateLimited ):
         do_save_updates = False
         existing_subject_name = ""
         existing_title = ""
+        existing_organization_string = ""
         existing_subject_type = ""
         current_article_subject_mention = None
         my_article = None
@@ -3073,6 +3086,7 @@ class ArticleCoder( BasicRateLimited ):
             
             # got person details.  Retrieve input values.
             title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+            organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
             subject_UUID_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID, "" )
             subject_UUID_name_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
             subject_UUID_source_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
@@ -3188,6 +3202,7 @@ class ArticleCoder( BasicRateLimited ):
                     # got existing Article_Subject?
                     if ( article_subject_count == 0 ):
                                                  
+                        # ! INSERT new Article_Subject
                         # no - add - more stuff to set.  Need to see what we can get.
                         
                         # use the source Article_Subject created for call to
@@ -3203,7 +3218,7 @@ class ArticleCoder( BasicRateLimited ):
         
                         article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
                         
-                        # see if there is a title in person_details_IN.
+                        # see if there is a title.
                         title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
                         if ( ( title_IN is not None ) and ( title_IN != "" ) ):
             
@@ -3212,6 +3227,15 @@ class ArticleCoder( BasicRateLimited ):
 
                         #-- END check to see if we have a title --#
                         
+                        # organization string?
+                        organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
+                        if ( ( organization_string_IN is not None ) and ( organization_string_IN != "" ) ):
+            
+                            # there is a title - set it.
+                            article_subject.set_organization_string( organization_string_IN, do_save_IN = False )
+
+                        #-- END check to see if we have an organization --#
+                       
                         article_subject.organization = None # models.ForeignKey( Organization, blank = True, null = True )
                         #article_subject.document = None
                         article_subject.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
@@ -3277,13 +3301,28 @@ class ArticleCoder( BasicRateLimited ):
                         if ( title_IN != existing_title ):
 
                             # yes.  Update title.
-                            article_subject.title = ""
                             article_subject.set_title( title_IN, do_save_IN = False, do_append_IN = True )
 
                             # we need to save.
                             do_save_updates = True
 
                         #-- END check to see if title changed --#
+
+                        #------------------------------------------------------#
+                        # ==> organization_string
+
+                        # has organization string changed?
+                        organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
+                        existing_organization_string = article_subject.organization_string
+                        if ( organization_string_IN != existing_organization_string ):
+
+                            # yes.  Update organization string.
+                            article_subject.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
+
+                            # we need to save.
+                            do_save_updates = True
+
+                        #-- END check to see if organization_string changed --#
 
                         #------------------------------------------------------#
                         # ==> subject_type
@@ -3485,6 +3524,7 @@ class ArticleCoder( BasicRateLimited ):
         Person column values supported:
         
         - title (in parameter PARAM_TITLE) - if no title set for person passed in, places the title passed in into the title field and saves the Person instance.
+        - organization (in parameter PARAM_PERSON_ORGANIZATION) - if no title set for person passed in, places the organization passed in into the title field and saves the Person instance.
         
         Associations supported:
            
@@ -3509,6 +3549,7 @@ class ArticleCoder( BasicRateLimited ):
         person_OUT = None
         
         # declare variables.
+        me = "update_person"
         do_save = False
         newspaper_IN = None
         newspaper_notes_IN = ""
@@ -3518,8 +3559,10 @@ class ArticleCoder( BasicRateLimited ):
         external_uuid_notes_IN = ""
         title_IN = ""
         existing_title = ""
-        title_cleaned = ""
-        title_length = ""
+        organization_string_IN = ""
+        existing_organization_string = ""
+        
+        self.output_debug( "Top of " + me + "(): person_IN: " + str( person_IN ) + "; person_details_IN: " + str( person_details_IN ), me, "========>" )
                 
         # got a person?
         if ( person_IN is not None ):
@@ -3538,7 +3581,11 @@ class ArticleCoder( BasicRateLimited ):
             external_uuid_source_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_SOURCE, None )
             external_uuid_notes_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
             title_IN = person_details_IN.get( self.PARAM_TITLE, "" )
+            organization_string_IN = person_details_IN.get( self.PARAM_PERSON_ORGANIZATION, "" )
             
+            #------------------------------------------------------#
+            # ==> newspaper
+
             # got a newspaper instance?
             if ( newspaper_IN is not None ):
             
@@ -3548,6 +3595,9 @@ class ArticleCoder( BasicRateLimited ):
             
             #-- END check to see if newspaper_IN present --#
             
+            #------------------------------------------------------#
+            # ==> UUID
+
             # got a UUID value?
             if ( ( external_uuid_IN is not None ) and ( external_uuid_IN != "" ) ):
             
@@ -3557,37 +3607,55 @@ class ArticleCoder( BasicRateLimited ):
             
             #-- END check to see if external UUID --#
 
-            # see if there is a title.
-            if ( ( title_IN is not None ) and ( title_IN != "" ) ):
+            #------------------------------------------------------#
+            # ==> title
+
+            # has title changed?
+            existing_title = person_OUT.title
+            if ( title_IN != existing_title ):
+
+                # yes.  Update title.
+                self.output_debug( "Updating title from: \"" + str( existing_title ) + "\" to: \"" + str( title_IN ) + "\"", me, "========>" )
+                person_OUT.set_title( title_IN, do_save_IN = False, do_append_IN = True )
+                self.output_debug( "Updated title: " + str( person_OUT.title ), me, "========>" )
+
+                # we need to save.
+                do_save = True
+
+            else:
             
-                # strip out white space.
-                title_cleaned = title_IN.strip()
-                
-                # yes.  Does person already have a title?
-                existing_title = person_OUT.title
-                if ( ( existing_title is None ) or ( existing_title == "" ) ):
-                    
-                    # no existing title.  Is title value longer than 255?
-                    title_length = len( title_cleaned )
-                    if ( title_length > 255 ):
-                        
-                        # title in Person is 255 characters - for this,
-                        #    truncate to 255 so we have something.
-                        title_cleaned = title_cleaned[ : 255 ]
-                        
-                    #-- END check to see if title is too long. --#
-                    
-                    person_OUT.title = title_cleaned
-                    do_save = True
-                    
-                #-- END check to see if existing title. --#
-                
-            #-- END check to see if we have a title --#
+                # title unchanged
+                self.output_debug( "No need to update title - existing: \"" + str( existing_title ) + "\"; new: \"" + str( title_IN ) + "\"", me, "========>" )
+            
+            #-- END check to see if title changed --#
+
+            #------------------------------------------------------#
+            # ==> organization_string
+
+            # has organization string changed?
+            existing_organization_string = person_OUT.organization_string
+            if ( organization_string_IN != existing_organization_string ):
+
+                # yes.  Update organization string.
+                self.output_debug( "Updating organization string from: \"" + str( existing_organization_string ) + "\" to: \"" + str( organization_string_IN ) + "\"", me, "========>" )
+                person_OUT.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
+                self.output_debug( "Updated organization string: " + str( person_OUT.organization_string ), me, "========>" )
+
+                # we need to save.
+                do_save = True
+
+            else:
+            
+                # organization string unchanged.
+                self.output_debug( "No need to update organization string - existing: \"" + str( existing_organization_string ) + "\"; new: \"" + str( organization_string_IN ) + "\"", me, "========>" )
+
+            #-- END check to see if organization_string changed --#
             
             # do we need to save the person itself?
             if ( do_save == True ):
                 
                 # yes.  Save.
+                #self.output_debug( "Saving updated person " + str( person_OUT ), me, "========>" )
                 person_OUT.save()
                 
             #-- END check to see if we need to save person instance --#

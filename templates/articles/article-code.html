@@ -107,11 +107,27 @@
                         <option value="{{ person_type_author }}">Author</option>
                     </select>
                 </p>
-                <p class="inputContainer" id="textarea-title">
-                    <input type="button" id="store-title" name="store-title" value="Title ==>" />:
-                    <br />
-                    <textarea id="person-title" name="person-title" rows="4" cols="35"></textarea>
-                </p>
+
+                {% if include_organization_field %}
+                    <p class="inputContainer" id="textarea-title">
+                        <input type="button" id="store-organization" name="store-organization" value="Organization ==>" />:
+                        <br />
+                        <textarea id="person-organization" name="person-organization" rows="4" cols="35"></textarea>
+                    </p>
+                {% else %}
+                    <input type="hidden" name="person-organization" id="person-organization" />
+                {% endif %}
+
+                {% if include_title_field %}
+                    <p class="inputContainer" id="textarea-title">
+                        <input type="button" id="store-title" name="store-title" value="Title ==>" />:
+                        <br />
+                        <textarea id="person-title" name="person-title" rows="4" cols="35"></textarea>
+                    </p>
+                {% else %}
+                    <input type="hidden" name="person-title" id="person-title" />
+                {% endif %}
+                
                 <p class="inputContainer" id="textarea-source-quote-text">
                     <input type="button" id="store-quote-text" name="store-quote-text" value="First Quote Text ==>" />:
                     <br />

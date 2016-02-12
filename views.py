@@ -1359,11 +1359,13 @@ def article_code( request_IN ):
     # get current user.
     current_user = request_IN.user
 
+    # ! Article_Data
+
     # for now, not accepting an Article_Data ID from page, looking for
     #    Article_Data that matches current user and current article
     #    instead.
     #article_data_id = request_data.get( "article_data_id", -1 )
-    
+
     # see if existing Article_Data for user and article
     article_data_qs = Article_Data.objects.filter( coder = current_user )
     article_data_qs = article_data_qs.filter( article = article_instance )
@@ -1424,7 +1426,7 @@ def article_code( request_IN ):
     # form ready?
     if ( is_form_ready == True ):
     
-        # !TODO - process coding submission
+        # ! process coding submission
         if ( coding_submit_form.is_valid() == True ):
 
             # it is valid - retrieve data_store_json and article_data_id
@@ -1472,16 +1474,9 @@ def article_code( request_IN ):
                         # short circuit article lookup (use empty copy of form) if success.
                         if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
     
-                            # !TODO - success - short circuit article lookup - use empty
-                            #    copy of form - after successful posting of data, place
-                            #    empty ArticleLookupForm() in article_lookup_form so you
-                            #    don't reload the same article automatically (want to keep
-                            #    people from coding twice).
-                            #article_lookup_form = ArticleLookupForm()
-    
-                            # also empty out article_data_instance, so no JSON output.
-                            #article_data_instance = None
-    
+                            # no longer emptying things out - load existing
+                            #    coding, so you can edit.
+
                             # Add status message that just says that Coding was saved.
                             page_status_message_list.append( "Article data successfully saved!" )
     
@@ -1689,6 +1684,8 @@ def article_code( request_IN ):
                     response_dictionary[ 'coding_submit_form' ] = coding_submit_form
                     response_dictionary[ 'base_include_django_ajax_selects' ] = True
                     response_dictionary[ 'do_output_table_html' ] = False
+                    response_dictionary[ 'include_title_field' ] = False
+                    response_dictionary[ 'include_organization_field' ] = True
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()

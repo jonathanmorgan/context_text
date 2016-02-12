@@ -98,6 +98,7 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_person_id = -1
         lookup_person_name = ""
         lookup_title = ""
+        lookup_organization_string = ""
         test_person_details = {}
         test_article_author = None
         test_article_subject = None
@@ -156,10 +157,181 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # check to see if person title updated.
         test_value = test_person_title
-        should_not_be = lookup_title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
         
+        
+        #----------------------------------------------------------------------#
+        # !test 2 - 1031 - Karen Irene Schwarck - use name.       
+        #----------------------------------------------------------------------#
+
+        
+        # retrieve person information.
+        lookup_person_name = "Karen Irene Schwarck"
+        lookup_person_id = 1031
+        lookup_title = "test_title"
+        lookup_organization_string = "test_org"
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = True,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): No person returned for name \"" + lookup_person_name + "\", id = " + str( lookup_person_id )
+        self.assertIsNotNone( test_person, msg = error_message )
+        
+        # retrieve the person and person ID
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        test_person_organization = test_person.organization_string
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = lookup_person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+        # check to see if organization_string updated.
+        test_value = test_person_organization
+        should_be = lookup_organization_string
+        error_message = "In " + me + ": Person " + str( test_person ) + " has organization " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+        #----------------------------------------------------------------------#
+        # !test 3 - No match, don't create.       
+        #----------------------------------------------------------------------#
+
+        
+        # retrieve person information.
+        lookup_person_name = "Irving Beatrix Berlin"
+        lookup_person_id = -1
+        lookup_title = "test_title"
+        lookup_organization_string = "test_org"
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = False,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): Person returned for name \"" + lookup_person_name + "\" when I asked for none to be created: " + str( test_person )
+        self.assertIsNone( test_person, msg = error_message )
+        
+        # try lookup again, just to make sure it didn't create.
+        test_article_author = Article_Author()
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = False,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): Person returned for name \"" + lookup_person_name + "\" when I asked for none to be created: " + str( test_person )
+        self.assertIsNone( test_person, msg = error_message )
+
+        
+        #----------------------------------------------------------------------#
+        # !test 4 - No match, do create.       
+        #----------------------------------------------------------------------#
+
+        
+        # retrieve person information.
+        lookup_person_name = "Irving Beatrix Berlin"
+        lookup_person_id = -1
+        lookup_title = "test_title"
+        lookup_organization_string = "test_org"
+
+        # set up person details
+        person_details = {}
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = True,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): No person returned for name \"" + lookup_person_name + "\", id = " + str( lookup_person_id )
+        self.assertIsNotNone( test_person, msg = error_message )
+        
+        # retrieve the person and person ID
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        test_person_organization = test_person.organization_string
+        
+        # there should be an ID.
+        test_value = test_person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be None."
+        self.assertIsNotNone( test_value, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+        # check to see if organization_string updated.
+        test_value = test_person_organization
+        should_be = lookup_organization_string
+        error_message = "In " + me + ": Person " + str( test_person ) + " has organization " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
     #-- END test method test_lookup_person() --#
 
     
@@ -176,6 +348,7 @@ class ArticleCoderTest( django.test.TestCase ):
         test_article_data = None
         person_name = ""
         title = ""
+        lookup_organization_string = ""
         person_id = -1
         person_details = {}
         test_article_author = None
@@ -212,30 +385,16 @@ class ArticleCoderTest( django.test.TestCase ):
 
         # retrieve person information.
         person_name = "Karen Irene Schwarck"
-        title = "test_title"
+        title = "test_title-1"
+        lookup_organization_string = "test_org-1"
         person_id = 1031
 
         # set up person details
         person_details = {}
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
-        
-        # got a title?
-        if ( ( title is not None ) and ( title != "" ) ):
-            
-            # we do.  store it in person_details, both in title and in author
-            #    organization string.
-            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
-            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
-            
-        #-- END check to see if title --#
-
-        # got a person ID?
-        if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
-            
-            # we do.  store it in person_details.
-            person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = person_id
-            
-        #-- END check to see if title --#
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = person_id
 
         # create an Article_Author.
         test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
@@ -268,7 +427,7 @@ class ArticleCoderTest( django.test.TestCase ):
         # check to see if author organization_string updated.
         test_article_author_org_string = test_article_author.organization_string
         test_value = test_article_author_org_string
-        should_be = title
+        should_be = lookup_organization_string
         error_message = "In " + me + ": Article_Author " + str( test_article_author.id ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )
         
@@ -285,21 +444,14 @@ class ArticleCoderTest( django.test.TestCase ):
         # retrieve person information.
         person_name = "Karen Irene Schwarck"
         title = "test_title-2"
+        lookup_organization_string = "test_org-2"
         person_id = 1031
 
         # set up person details
         person_details = {}
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
-        
-        # got a title?
-        if ( ( title is not None ) and ( title != "" ) ):
-            
-            # we do.  store it in person_details, both in title and in author
-            #    organization string.
-            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
-            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
-            
-        #-- END check to see if title --#
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
 
         # create an article_author.
         test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
@@ -323,9 +475,9 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # check to see if person title updated.
         test_value = test_person_title
-        should_not_be = title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
         
         # ==> Article_Author fields
         
@@ -347,7 +499,7 @@ class ArticleCoderTest( django.test.TestCase ):
         #    updates for existing Article_Author).
         test_article_author_org_string = test_article_author.organization_string
         test_value = test_article_author_org_string
-        should_be = title
+        should_be = lookup_organization_string
         error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org string " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )
 
@@ -364,21 +516,14 @@ class ArticleCoderTest( django.test.TestCase ):
         # retrieve person information.
         person_name = "Karen Irene Schwarck"
         title = "test_title-3"
+        lookup_organization_string = "test_org-3"
         person_id = 1031
 
         # set up person details
         person_details = {}
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
-        
-        # got a title?
-        if ( ( title is not None ) and ( title != "" ) ):
-            
-            # we do.  store it in person_details, both in title and in author
-            #    organization string.
-            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
-            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
-            
-        #-- END check to see if title --#
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
 
         # create an article_author.
         test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
@@ -402,9 +547,9 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # check to see if person title updated.
         test_value = test_person_title
-        should_not_be = title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
         
         # ==> Article_Author fields
         
@@ -425,7 +570,7 @@ class ArticleCoderTest( django.test.TestCase ):
         # check to see if subject title updated (should be - new record).
         test_article_author_org_string = test_article_author.organization_string
         test_value = test_article_author_org_string
-        should_be = title
+        should_be = lookup_organization_string
         error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )
 
@@ -441,22 +586,15 @@ class ArticleCoderTest( django.test.TestCase ):
         # retrieve person information.
         person_name = "Jonas Pierpont Morgan"
         title = "test_title-4"
+        lookup_organization_string = "test_org-4"
         person_id = -1
 
         # set up person details
         person_details = {}
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
-        
-        # got a title?
-        if ( ( title is not None ) and ( title != "" ) ):
-            
-            # we do.  store it in person_details, both in title and in author
-            #    organization string.
-            person_details[ ManualArticleCoder.PARAM_TITLE ] = title
-            person_details[ ManualArticleCoder.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
-            
-        #-- END check to see if title --#
-
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+    
         # create an article_author.
         test_article_author = test_manual_article_coder.process_author_name( test_article_data, person_name, person_details_IN = person_details )
         
@@ -495,7 +633,7 @@ class ArticleCoderTest( django.test.TestCase ):
         # check to see if subject title updated (should be - new record).
         test_article_author_org_string = test_article_author.organization_string
         test_value = test_article_author_org_string
-        should_be = title
+        should_be = lookup_organization_string
         error_message = "In " + me + ": Article_Author " + str( test_person ) + " has org. string " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )
 
@@ -899,9 +1037,9 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # check to see if person title updated.
         test_value = test_person_title
-        should_not_be = title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
         
         # ==> Article_Subject fields
         
@@ -976,9 +1114,9 @@ class ArticleCoderTest( django.test.TestCase ):
         
         # check to see if person title updated.
         test_value = test_person_title
-        should_not_be = title
-        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
-        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        should_be = title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
         
         # ==> Article_Subject fields
         

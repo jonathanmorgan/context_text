@@ -110,6 +110,7 @@ class ManualArticleCoder( ArticleCoder ):
     DATA_STORE_PROP_PERSON_TYPE = ArticleCoder.PARAM_PERSON_TYPE # "person_type"
     DATA_STORE_PROP_PERSON_NAME = ArticleCoder.PARAM_PERSON_NAME # "person_name"
     DATA_STORE_PROP_TITLE = ArticleCoder.PARAM_TITLE             # "title"
+    DATA_STORE_PROP_PERSON_ORGANIZATION = ArticleCoder.PARAM_PERSON_ORGANIZATION # "person_organization"
     DATA_STORE_PROP_QUOTE_TEXT = ArticleCoder.PARAM_QUOTE_TEXT   # "quote_text"
     DATA_STORE_PROP_PERSON_ID = ArticleCoder.PARAM_PERSON_ID     # "person_id"
     DATA_STORE_PROP_PERSON_INDEX = "person_index"
@@ -592,6 +593,7 @@ class ManualArticleCoder( ArticleCoder ):
         person_type = ""
         person_name = ""
         title = ""
+        person_organization = ""
         quote_text = ""
         person_id = -1
         
@@ -761,6 +763,7 @@ class ManualArticleCoder( ArticleCoder ):
                                         person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
                                         person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
                                         title = current_person.get( self.DATA_STORE_PROP_TITLE )
+                                        person_organization = current_person.get( self.DATA_STORE_PROP_PERSON_ORGANIZATION )
                                         quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
                                         person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
         
@@ -841,11 +844,6 @@ class ManualArticleCoder( ArticleCoder ):
                                             current_article_person = current_article_subject
         
                                         elif ( person_type == self.PERSON_TYPE_AUTHOR ):
-                                        
-                                            # Add organization string to person_details
-                                            #    for author, this is in the "title"
-                                            #    field.
-                                            person_details[ self.PARAM_AUTHOR_ORGANIZATION_STRING ] = title
                                         
                                             # ! Article_Author
                                             current_article_author = self.process_author_name( current_article_data,

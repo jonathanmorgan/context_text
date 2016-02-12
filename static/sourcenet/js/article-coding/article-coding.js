@@ -43,8 +43,13 @@ SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
 SOURCENET.INPUT_ID_PERSON_NAME = "person-name";
 SOURCENET.INPUT_ID_PERSON_TYPE = "person-type";
 SOURCENET.INPUT_ID_TITLE = "person-title";
+SOURCENET.INPUT_ID_ORGANIZATION = "person-organization";
 SOURCENET.INPUT_ID_QUOTE_TEXT = "source-quote-text";
 SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
+
+// HTML elements - form submission
+SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING = "input-submit-article-coding";
+SOURCENET.INPUT_ID_DATA_STORE_JSON = "id_data_store_json";
 
 // django-ajax-select HTML
 SOURCENET.INPUT_ID_AJAX_ID_PERSON = "id_person";
@@ -755,6 +760,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     var current_person_type = "";
     var current_person_name = "";
     var current_title = "";
+    var current_person_organization = "";
     var current_quote_text = "";
     var current_person_id = "";
     var current_person_index = -1;
@@ -807,6 +813,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             current_person_type = current_person_data[ "person_type" ];
             current_person_name = current_person_data[ "person_name" ];
             current_title = current_person_data[ "title" ];
+            current_person_organization = current_person_data[ "person_organization" ];
             current_quote_text = current_person_data[ "quote_text" ];
             current_person_id = current_person_data[ "person_id" ];
             current_person_index = current_person_data[ "person_index" ];
@@ -816,6 +823,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             current_person.person_type = current_person_type;
             current_person.person_name = current_person_name;
             current_person.title = current_title;
+            current_person.person_organization = current_person_organization;
             current_person.quote_text = current_quote_text;
             current_person.person_id = current_person_id;
             current_person.person_index = person_index;
@@ -1343,6 +1351,7 @@ SOURCENET.Person = function()
     this.person_name = "";
     this.person_type = "";
     this.title = "";
+    this.person_organization = "";
     this.quote_text = "";
     this.person_id = null;
     //this.location_of_name = "";
@@ -1367,6 +1376,7 @@ SOURCENET.Person.prototype.populate_form = function()
     var my_person_name = "";
     var my_person_type = "";
     var my_title = "";
+    var my_person_organization = "";
     var my_quote_text = "";
     var my_person_id = null;
     var is_value_OK = false;
@@ -1376,6 +1386,7 @@ SOURCENET.Person.prototype.populate_form = function()
     my_person_name = this.person_name;
     my_person_type = this.person_type;
     my_title = this.title;
+    my_person_organization = this.person_organization;
     my_quote_text = this.quote_text;
     my_person_id = this.person_id;
     
@@ -1438,6 +1449,24 @@ SOURCENET.Person.prototype.populate_form = function()
 
     // get <input> element
     temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) )
+    {
+        // store value in element
+        temp_element.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to empty string.
+        temp_element.val( "" );
+    } //-- END check to see if we have value --//
+    
+    //------------------------------------------------------------------------//
+    // person-organization
+    temp_value = my_person_organization;
+
+    // get <input> element
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
     
     if ( ( temp_value != null ) && ( temp_value != "" ) )
     {
@@ -1527,6 +1556,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var my_person_name = "";
     var my_person_type = "";
     var my_title = "";
+    var my_organization = "";
     var my_quote_text = "";
     var my_person_id = null;
     var is_person_id_ok = false;
@@ -1562,6 +1592,12 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
     my_title = temp_element.val();
     this.title = my_title;
+    
+    //------------------------------------------------------------------------//
+    // person-organization
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
+    my_organization = temp_element.val();
+    this.person_organization = my_organization;
     
     //------------------------------------------------------------------------//
     // source-quote-text
@@ -1740,6 +1776,7 @@ SOURCENET.Person.prototype.validate = function()
     var status_string = "";
     
     
+    //------------------------------------------------------------------------//
     // must have a name
     my_name = this.person_name;
     is_name_OK = SOURCENET.is_string_OK( my_name );
@@ -1749,6 +1786,7 @@ SOURCENET.Person.prototype.validate = function()
         status_array_OUT.push( "Must have a name." );
     }
     
+    //------------------------------------------------------------------------//
     // must have a person type
     my_person_type = this.person_type;
     
@@ -1861,6 +1899,10 @@ SOURCENET.clear_coding_form = function( status_message_IN )
 
     // person-title
     temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
+    temp_element.val( "" );
+    
+    // person-organization
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
     temp_element.val( "" );
     
     // source-quote-text
@@ -2336,6 +2378,7 @@ SOURCENET.load_person_into_form = function( person_index_IN )
     var is_index_OK = false;
     var my_data_store = null;
     var my_person_instance = null;
+    var status_message_array = [];
     
     SOURCENET.log_message( "In " + me + "(): person_index_IN = " + person_index_IN );
     
@@ -2356,7 +2399,14 @@ SOURCENET.load_person_into_form = function( person_index_IN )
     }
     else
     {
-        
+       
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( "Could not load person data - invalid index ( \"" + person_index_IN + "\" )" );
+    
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+ 
     }
     
 } //-- END function SOURCENET.load_person_into_form() --//
@@ -2848,7 +2898,7 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
         // <input id="id_data_store_json" name="data_store_json" type="hidden">
         
         // get <input> element
-        input_id_string = "#id_data_store_json";
+        input_id_string = "#" + SOURCENET.INPUT_ID_DATA_STORE_JSON;
         data_store_json_input_element = $( input_id_string );
 
         // make sure we found the element.
@@ -2888,7 +2938,7 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
         
         // we are.  Retrieve submit button, disable it, and then change text
         //    to say "Please wait...".
-        submit_button_element = $( "#input-submit-article-coding" );
+        submit_button_element = $( "#" + SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING );
         submit_button_element.prop( 'disabled', true );
         submit_button_element.val( SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT );
         
@@ -3023,11 +3073,11 @@ $( document ).ready(
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
                 //SOURCENET.log_message( "selected text : \"" + selected_text + "\"" );
-                $( '#person-name' ).val( selected_text );
+                $( '#' + SOURCENET.INPUT_ID_PERSON_NAME ).val( selected_text );
             }
         )
     }
-);
+); //-- END document.ready( #store-name ) --//
 
 // !document.ready( #store-title )
 // javascript to store selected text as source name + title.
@@ -3049,7 +3099,7 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
-                person_title_element = $( '#person-title' )
+                person_title_element = $( '#' + SOURCENET.INPUT_ID_TITLE )
                 existing_text = person_title_element.val()
                 //SOURCENET.log_message( "Existing text: " + existing_text )
                 
@@ -3072,7 +3122,52 @@ $( document ).ready(
             }
         )
     }
-);
+); //-- END document.ready( #store-title ) --//
+
+// !document.ready( #store-organization )
+// javascript to store selected text as organization.
+// Get selected text / 選択部分のテキストを取得
+$( document ).ready(
+    function()
+    {
+        $( '#store-organization' ).click(        
+            function()
+            {
+                // declare variables
+                var selected_text = "";
+                var person_organization_element = null;
+                var existing_text = "";
+    
+                // get selection
+                selected_text = $.selection();
+                selected_text = selected_text.trim();
+                //SOURCENET.log_message( "selected text : " + selected_text );
+                
+                // see if there is already something there.
+                person_organization_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION )
+                existing_text = person_organization_element.val()
+                //SOURCENET.log_message( "Existing text: " + existing_text )
+                
+                // something already there?
+                if ( existing_text != "" )
+                {
+
+                    // yes - append new to the end.
+                    person_organization_element.val( existing_text + " " + selected_text );
+                    
+                }
+                else
+                {
+                    
+                    // no - just overwrite.
+                    person_organization_element.val( selected_text );
+                    
+                }
+
+            }
+        )
+    }
+); //-- END document.ready( #store-organization ) --//
 
 // !document.ready( #store-quote-text )
 // javascript to store selected text as source's quotation text.
@@ -3096,7 +3191,7 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
-                source_quote_text_element = $( '#source-quote-text' )
+                source_quote_text_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT )
                 
                 // store selected text.
                 source_quote_text_element.val( selected_text );
@@ -3121,7 +3216,7 @@ $( document ).ready(
             } //-- END click() nested anonymous function. --//
         ) //-- END click() method call. --//
     } //-- END ready() nested anonymous function --//
-); //-- END document.ready() call --//
+); //-- END document.ready( #store-quote-text ) call --//
 
 // !document.ready( #lookup-person-name )
 // javascript to copy name from #source-name to the Lookup text field.
@@ -3136,12 +3231,12 @@ $( document ).ready(
                 var person_lookup = "";
     
                 // get selection
-                source_text = $( '#person-name' ).val();
+                source_text = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME ).val();
                 //SOURCENET.log_message( "source text : " + source_text );
 
                 // get id_person_text_element text field,  place value, then
                 //    fire lookup event.
-                id_person_text_element = $( '#id_person_text' )
+                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT )
                 id_person_text_element.val( source_text );
                 id_person_text_element.trigger( 'keydown' );
                 
@@ -3168,7 +3263,7 @@ $( document ).ready(
             }
         )
     }
-);
+); //-- END document.ready( #lookup-person-name ) --//
 
 // !document.ready( load existing coding data )
 // javascript to load existing coding data if present.
@@ -3198,7 +3293,7 @@ $( document ).ready(
     
     }
 
-);
+); //-- END document.ready( load existing coding data ) --//
 
 
 // !document.ready( activate coding submit button )
@@ -3216,7 +3311,7 @@ $( document ).ready(
     
         // Retrieve submit button, enable it, and then change text
         //    to say "Submit Article Coding!".
-        submit_button_element = $( "#input-submit-article-coding" );
+        submit_button_element = $( '#' + SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING );
         
         // if disabled, enable.
         submit_button_disabled = submit_button_element.prop( 'disabled' );
@@ -3240,4 +3335,4 @@ $( document ).ready(
     
     }
 
-);
+); //-- END document.ready( activate coding submit button ) --//

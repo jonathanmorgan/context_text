@@ -34,6 +34,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "Nardy Baeza Bickel",
+      "person_organization": "The Grand Rapids Press",
       "title": "The Grand Rapids Press",
       "quote_text": "",
       "person_id": 161
@@ -41,6 +42,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "Nate Reens",
+      "person_organization": "The Grand Rapids Press",
       "title": "The Grand Rapids Press",
       "quote_text": "",
       "person_id": null
@@ -48,6 +50,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Alex McNamara",
+      "person_organization": "",
       "title": "snowboarder",
       "quote_text": "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \\\"long\\\" summer and fall left them eager to bust out their boards.",
       "person_id": null
@@ -55,6 +58,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Justin VanderVelde",
+      "person_organization": "",
       "title": "22-year-old snowboarder",
       "quote_text": "\\\"You have to wait all summer for it to start snowing, so you might as well (hit the hill) as soon as the snow falls,\\\" the 22-year-old VanderVelde said Sunday.",
       "person_id": 162
@@ -62,6 +66,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Pete Goodell",
+      "person_organization": "Pando Winter Sports Park",
       "title": "manager at Pando Winter Sports Park",
       "quote_text": "\\\"We went from green grass to a lot of snow,\\\" said Pete Goodell, a manager at Pando. \\\"We still had to make a lot with the machines, but it was a great start.",
       "person_id": 163
@@ -69,6 +74,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Bob Dukesherer",
+      "person_organization": "National Weather Service",
       "title": "National Weather Service meteorologist",
       "quote_text": "Bob Dukesherer, a National Weather Service meteorologist, says it's a near certainty that will happen by Tuesday, when a storm will settle in and hang over the region through Saturday.",
       "person_id": null
@@ -76,6 +82,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Steve Brown",
+      "person_organization": "Cannonsburg Ski Area",
       "title": "manager at Cannonsburg Ski Area",
       "quote_text": "The forecast should make for good business at Cannonsburg, which drew several hundred customers on its first day of business Sunday, manager Steve Brown said.",
       "person_id": 165
@@ -83,6 +90,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Rick DeGraaf",
+      "person_organization": "",
       "title": "Skier",
       "quote_text": "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill.",
       "person_id": 166
@@ -90,6 +98,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "West Michigan",
+      "person_organization": "",
       "title": "nice day on the hill",
       "quote_text": "this week",
       "person_id": null
@@ -125,6 +134,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "Nardy Baeza Bickel",
+      "person_organization": "The Grand Rapids Press",
       "title": "The Grand Rapids Press",
       "quote_text": "",
       "person_id": 161
@@ -132,6 +142,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "Nate Reens",
+      "person_organization": "The Grand Rapids Press",
       "title": "The Grand Rapids Press",
       "quote_text": "",
       "person_id": null
@@ -140,6 +151,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Alex McNamara",
+      "person_organization": "",
       "title": "snowboarder",
       "quote_text": "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \\\"long\\\" summer and fall left them eager to bust out their boards.",
       "person_id": null
@@ -147,6 +159,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Justin VanderVelde",
+      "person_organization": "",
       "title": "22-year-old snowboarder",
       "quote_text": "\\\"You have to wait all summer for it to start snowing, so you might as well (hit the hill) as soon as the snow falls,\\\" the 22-year-old VanderVelde said Sunday.",
       "person_id": 162
@@ -154,6 +167,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Pete Goodell",
+      "person_organization": "Pando Winter Sports Park",
       "title": "manager at Pando Winter Sports Park",
       "quote_text": "\\\"We went from green grass to a lot of snow,\\\" said Pete Goodell, a manager at Pando. \\\"We still had to make a lot with the machines, but it was a great start.",
       "person_id": 163
@@ -161,6 +175,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Bob Dukesherer",
+      "person_organization": "National Weather Service",
       "title": "National Weather Service meteorologist",
       "quote_text": "Bob Dukesherer, a National Weather Service meteorologist, says it's a near certainty that will happen by Tuesday, when a storm will settle in and hang over the region through Saturday.",
       "person_id": null
@@ -168,6 +183,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Steve Brown",
+      "person_organization": "Cannonsburg Ski Area",
       "title": "manager at Cannonsburg Ski Area",
       "quote_text": "The forecast should make for good business at Cannonsburg, which drew several hundred customers on its first day of business Sunday, manager Steve Brown said.",
       "person_id": 165
@@ -175,6 +191,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Rick DeGraaf",
+      "person_organization": "",
       "title": "Skier",
       "quote_text": "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill.",
       "person_id": 166
@@ -182,6 +199,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "West Michigan",
+      "person_organization": "",
       "title": "nice day on the hill",
       "quote_text": "this week",
       "person_id": null
@@ -216,6 +234,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "Hardy Baeza Bickel",
+      "person_organization": "The Grand Rapids Press",
       "title": "Grand Rapids Press",
       "quote_text": "",
       "person_id": 161
@@ -223,6 +242,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "author",
       "person_name": "James Cabalum",
+      "person_organization": "The Grand Rapids Press",
       "title": "Special to The Grand Rapids Press",
       "quote_text": "",
       "person_id": null
@@ -230,6 +250,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Alex McNamara",
+      "person_organization": "",
       "title": "snowboarder",
       "quote_text": "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \\\"long\\\" summer and fall left them eager to bust out their boards.",
       "person_id": null
@@ -237,6 +258,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Barren hills",
+      "person_organization": "",
       "title": "visible only four days",
       "quote_text": "The snow-covered runs are a beautiful sight to snowboarders Alex McNamara and Justin VanderVelde.",
       "person_id": null
@@ -244,6 +266,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Pete Goodell",
+      "person_organization": "Pando Winter Sports Park",
       "title": "manager at Pando Winter Sports Park",
       "quote_text": "\\\"We went from green grass to a lot of snow,\\\" said Pete Goodell, a manager at Pando. \\\"We still had to make a lot with the machines, but it was a great start.",
       "person_id": 163
@@ -251,6 +274,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Bob Dukesherer",
+      "person_organization": "National Weather Service",
       "title": "meteorologist",
       "quote_text": "Bob Dukesherer, a National Weather Service meteorologist, says it's a near certainty that will happen by Tuesday, when a storm will settle in and hang over the region through Saturday.",
       "person_id": null
@@ -258,6 +282,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "source",
       "person_name": "Steven Brown",
+      "person_organization": "Cannonsburg Ski Area",
       "title": "manager at Cannonsburg Ski Area",
       "quote_text": "The forecast should make for good business at Cannonsburg, which drew several hundred customers on its first day of business Sunday, manager Steve Brown said.",
       "person_id": 165
@@ -265,6 +290,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
     {
       "person_type": "subject",
       "person_name": "Richard DeGraaf",
+      "person_organization": "",
       "title": "good business",
       "quote_text": "Skier Rick DeGraaf, who was headed for his second ride on the lift at Cannonsburg on Sunday, said the day's moderate temperatures made for a nice day on the hill.",
       "person_id": 166
@@ -337,6 +363,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
 
     def test_convert_article_data_to_data_store_json( self ):
         
+        # ! TODO - check if organization coming out correct
         # declare variables
         me = "test_convert_article_data_to_data_store_json"
         debug_string = ""
@@ -397,7 +424,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # and, see if the dict has what we'd expect.
 
         #----------------------------------------------------------------------#
-        # ==> lastest_person_index
+        # ! ==> lastest_person_index
         #----------------------------------------------------------------------#
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_LATEST_PERSON_INDEX
@@ -408,7 +435,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_value, should_be, msg = error_string )
 
         #----------------------------------------------------------------------#
-        # ==> next_person_index
+        # ! ==> next_person_index
         #----------------------------------------------------------------------#
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_NEXT_PERSON_INDEX
@@ -419,7 +446,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_value, should_be, msg = error_string )
         
         #----------------------------------------------------------------------#
-        # ==> person_array
+        # ! ==> person_array
         #----------------------------------------------------------------------#
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_PERSON_ARRAY
@@ -443,7 +470,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #-- END check to see if we have person array list. --#
 
         #----------------------------------------------------------------------#
-        # ==> name_to_person_index_map
+        # ! ==> name_to_person_index_map
         #----------------------------------------------------------------------#
 
         test_name =  ManualArticleCoder.DATA_STORE_PROP_NAME_TO_PERSON_INDEX_MAP
@@ -467,7 +494,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #-- END check to see if we have name_to_person_index_map. --#
 
         #----------------------------------------------------------------------#
-        # ==> id_to_person_index_map
+        # ! ==> id_to_person_index_map
         #----------------------------------------------------------------------#
 
         person_id_to_index_dict = None
@@ -495,7 +522,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # spot check one author name and one source name.
         
         #----------------------------------------------------------------------#
-        # Author "Nate Reens"
+        # ! Author "Nate Reens"
         #----------------------------------------------------------------------#
         
         # set author name
@@ -570,7 +597,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #-- END check to see if author's person dict is None. --#
         
         #----------------------------------------------------------------------#
-        # Source "Rick DeGraaf"
+        # ! Source "Rick DeGraaf"
         #----------------------------------------------------------------------#
         
         # set source name
@@ -689,7 +716,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # initialize JSON string list        
         test_json_string_list = [ self.data_store_json_insert, self.data_store_json_insert_with_nulls ]
         
-        # loop over JSON strings - should be identical in terms of output,
+        # ! ==> loop over JSON strings - each should be identical in terms of output,
         #    one has nulls interspersed, one does not.
         loop_counter = 0
         for test_json_string in test_json_string_list:
@@ -726,7 +753,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             test_article_data = test_manual_article_coder.process_data_store_json( test_article, test_user, test_json_string )
     
             #----------------------------------------------------------------------#
-            # test resulting article data.
+            # ! test resulting article data.
             #----------------------------------------------------------------------#
     
             # author count
@@ -762,7 +789,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             # spot check one author name, an existing source, and a new source.
             
             #----------------------------------------------------------------------#
-            # Author "Nate Reens"
+            # ! Author "Nate Reens"
             #----------------------------------------------------------------------#
             
             # set author name
@@ -779,9 +806,9 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; test person ID is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
             self.assertEqual( test_value, should_be, error_string )            
             
-            # check title
+            # check title (it gets updated now!)
             test_value = test_person.title
-            should_be = "Grand Rapids Press"
+            should_be = "The Grand Rapids Press"
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; test title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
             self.assertEqual( test_value, should_be, error_string )            
             
@@ -800,7 +827,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             self.assertIsNone( test_value, error_string )
     
             #----------------------------------------------------------------------#
-            # Source "Rick DeGraaf"
+            # ! Source "Rick DeGraaf"
             #----------------------------------------------------------------------#
             
             # set source name
@@ -851,7 +878,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; quotation value is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             
-            # !TODO - test position of quotation.
+            # ! - TODO - test position of quotation.
     
             # ==> mention
             test_mention_qs = test_article_subject.article_subject_mention_set.all()
@@ -869,10 +896,10 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; mention value is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             
-            # !TODO - test position of mention.
+            # ! - TODO - test position of mention.
            
             #----------------------------------------------------------------------#
-            # Source "Western Michigan"
+            # ! Source "Western Michigan"
             #----------------------------------------------------------------------#
             
             # set source name
@@ -917,7 +944,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; quotation value is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             
-            # !TODO - test position of quotation.
+            # ! - TODO - test position of quotation.
     
             # ==> mention
             test_mention_qs = test_article_subject.article_subject_mention_set.all()
@@ -935,12 +962,12 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; mention value is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             
-            # !TODO - test position of mention.
+            # ! - TODO - test position of mention.
             
         #-- END loop over list of JSON documents. --#
 
         #----------------------------------------------------------------------#
-        # ! update test
+        # ! ==> update test
         
         print( "\n\nUpdate test\n\n" )
         
@@ -980,7 +1007,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         #----------------------------------------------------------------------#
 
         #----------------------------------------------------------------------#
-        # authors
+        # ! authors
         
         # author count
         test_author_qs = test_article_data.article_author_set.all()
@@ -1016,7 +1043,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         self.assertEqual( test_value, should_be, error_string )
 
         #----------------------------------------------------------------------#
-        # subjects
+        # ! subjects
         
         # subject count
         test_subject_qs = test_article_data.article_subject_set.all()
@@ -1083,7 +1110,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # spot check one author name, an existing source, and a new source.
         
         #----------------------------------------------------------------------#
-        # Author "Nate Reens"
+        # ! Author "Nate Reens"
         #----------------------------------------------------------------------#
         
         # set author name
@@ -1100,23 +1127,38 @@ class ManualArticleCoderTest( django.test.TestCase ):
         error_string = "In " + me + "(): test person ID is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
         self.assertEqual( test_value, should_be, error_string )            
         
-        # check title
-        test_value = test_person.title
-        should_be = "Grand Rapids Press"
-        error_string = "In " + me + "(): test title is \"" + str( test_value ) + "\", should be \"" + str( should_be ) + "\""
-        self.assertEqual( test_value, should_be, error_string )            
-        
         # get Article_Author
         test_article_author_qs = test_article_data.article_author_set.filter( person = test_person )
         
         # should not be one
         test_value = test_article_author_qs.count()
         should_be = 0
-        error_string = "In " + me + "(): Article_Author count for \"Nate Reens\" is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
+        error_string = "In " + me + "(): Article_Author count for \"" + author_name + "\" is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
         self.assertEqual( test_value, should_be, error_string )
         
         #----------------------------------------------------------------------#
-        # Source "Rick DeGraaf"
+        # ! Author "James Cabalum"
+        #----------------------------------------------------------------------#
+        
+        # set author name
+        author_name = "James Cabalum"
+        test_lookup_name = author_name
+        
+        # retrieve person
+        test_person_qs = Person.look_up_person_from_name( test_lookup_name )
+        test_person = test_person_qs.get()
+        
+        # get Article_Author
+        test_article_author_qs = test_article_data.article_author_set.filter( person = test_person )
+        
+        # should be one
+        test_value = test_article_author_qs.count()
+        should_be = 1
+        error_string = "In " + me + "(): Article_Author count for \"" + author_name + "\" is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
+        self.assertEqual( test_value, should_be, error_string )
+        
+        #----------------------------------------------------------------------#
+        # ! Source "Rick DeGraaf"
         #----------------------------------------------------------------------#
         
         # set source name
@@ -1154,7 +1196,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
         # ==> mention
         test_mention_qs = test_article_subject.article_subject_mention_set.all()
 
-        # ! should be 1, but is 2...
+        # ! - TODO - should be 1, but is 2...
         test_value = test_mention_qs.count()
         should_be = 2
         error_string = "In " + me + "(): mention count is " + str( test_value ) +", should be " + str( should_be )
@@ -1168,7 +1210,7 @@ class ManualArticleCoderTest( django.test.TestCase ):
             error_string = "In " + me + "(): mention value is " + str( test_value ) +", should be in " + str( should_be_in )
             self.assertIn( test_value, should_be_in, error_string )
             
-            # !TODO - test position of mention.
+            # ! - TODO - test position of mention.
 
         #-- END loop over mentions --#
         
