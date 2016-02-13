@@ -28,8 +28,10 @@ Interacting with a model that has tags:
 
 # imports
 from sourcenet.models import Article
+from sourcenet.article_coding.article_coding import ArticleCoding
 
 # declare variables
+params = {}
 start_pub_date = ""
 end_pub_date = ""
 tag_in_list = []
@@ -73,11 +75,15 @@ tag_value = ""
 # set tag value and list of article IDs to tag.
 tag_value = "prelim_unit_test_006"
 article_id_in_list = [ 206821, 393270, 205305, 502312, 124085, 194572, 507668, 144914, 26961, 212046 ]
-'''
 
 # set tag value and list of article IDs to tag.
 tag_value = "prelim_unit_test_007"
 article_id_in_list = [ 301421, 278674, 129226, 442001, 8522, 393832, 133315, 933, 392292, 210845 ]
+'''
+
+# set tag value and list of article IDs to tag.
+tag_value = "prelim_training_001"
+article_id_in_list = [ 210962, 318737, 210845, 55327, 442001, 20409, 43243, 107321, 204366, 933, 441982, 278674, 11502, 393270, 114053, 4343, 265657, 144914, 224205, 8522, 13940, 208628, 430963, 5912, 394675, 173981, 468630, 161267, 115737, 283436, 206679, 32594, 54383, 472109, 429682, 140651, 158908, 478518, 128889, 119984 ]
 
 # filter parameters
 params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date
@@ -86,11 +92,6 @@ params[ ArticleCoding.PARAM_TAG_LIST ] = tag_in_list
 params[ ArticleCoding.PARAM_PUBLICATION_LIST ] = paper_id_in_list
 params[ ArticleCoding.PARAM_SECTION_LIST ] = section_list
 params[ ArticleCoding.PARAM_ARTICLE_ID_LIST ] = article_id_in_list
-
-# set coder you want to use.
-
-# OpenCalais REST API
-params[ ArticleCoding.PARAM_CODER_TYPE ] = ArticleCoding.ARTICLE_CODING_IMPL_OPEN_CALAIS_API_V2
 
 # get instance of ArticleCoding
 my_article_coding = ArticleCoding()

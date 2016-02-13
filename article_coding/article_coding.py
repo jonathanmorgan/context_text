@@ -374,6 +374,8 @@ class ArticleCoding( SourcenetBase ):
         query_set_OUT = None
 
         # declare variables
+        me = "create_article_query_set"
+        my_logger = None
         params_IN = None
         start_date_IN = ''
         end_date_IN = ''
@@ -392,6 +394,9 @@ class ArticleCoding( SourcenetBase ):
         current_item = None
         current_query = None
         query_list = []
+        
+        # grab a logger.
+        my_logger = self.get_logger()
 
         # get the request
         params_IN = self.get_param_container()
@@ -408,12 +413,14 @@ class ArticleCoding( SourcenetBase ):
             unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST, None )
             article_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
             section_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_SECTION_LIST, None )
-
+            
             # get all articles to start
             query_set_OUT = Article.objects.all()
 
             # now filter based on parameters passed in.
+            
             # start date
+            my_logger.debug( "In " + me + "(): start_date_IN = " + str( start_date_IN ) )
             if ( start_date_IN != '' ):
 
                 # set up query instance
@@ -425,6 +432,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of start_date --#
 
             # end date
+            my_logger.debug( "In " + me + "(): end_date_IN = " + str( end_date_IN ) )
             if ( end_date_IN != '' ):
 
                 # set up query instance
@@ -436,6 +444,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of end_date --#
 
             # date range?
+            my_logger.debug( "In " + me + "(): date_range_IN = " + str( date_range_IN ) )
             if ( date_range_IN != '' ):
 
                 # first, break up the string into a list of start and end dates.
@@ -473,6 +482,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of date range --#
 
             # publications
+            my_logger.debug( "In " + me + "(): publication_list_IN = " + str( publication_list_IN ) )
             if ( ( publication_list_IN is not None ) and ( len( publication_list_IN ) > 0 ) ):
 
                 # set up query instance
@@ -484,6 +494,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of publications --#
 
             # tags
+            my_logger.debug( "In " + me + "(): tag_list_IN = " + str( tag_list_IN ) )
             if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
 
                 # set up query instance
@@ -495,6 +506,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of tags --#
 
             # unique identifiers IN list
+            my_logger.debug( "In " + me + "(): unique_id_list_IN = " + str( unique_id_list_IN ) )
             if ( ( unique_id_list_IN is not None ) and ( len( unique_id_list_IN ) > 0 ) ):
 
                 # set up query instance to look for articles with
@@ -508,6 +520,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of unique_identifiers --#
 
             # article ID IN list
+            my_logger.debug( "In " + me + "(): article_id_list_IN = " + str( article_id_list_IN ) )
             if ( ( article_id_list_IN is not None ) and ( len( article_id_list_IN ) > 0 ) ):
 
                 # set up query instance to look for articles with
@@ -521,6 +534,7 @@ class ArticleCoding( SourcenetBase ):
             #-- END processing of article IDs --#
 
             # section string list
+            my_logger.debug( "In " + me + "(): section_list_IN = " + str( section_list_IN ) )
             if ( ( section_list_IN is not None ) and ( len( section_list_IN ) > 0 ) ):
 
                 # set up query instance to look for articles with

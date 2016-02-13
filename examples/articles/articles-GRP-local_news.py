@@ -17,20 +17,21 @@ tags_in_list = []
 tags_not_in_list = []
 
 # declare variables - size of random sample we want
-random_count = 20
+random_count = 30
 
 # declare variables - also, apply tag?
-do_apply_tag = False
-tag_to_apply = ""
+do_apply_tag = True
+tag_to_apply = "prelim_training_002"
 
 # set up "local, regional and state news" sections
-grp_local_news_sections.append( "Lakeshore" )
-grp_local_news_sections.append( "Front Page" )
-grp_local_news_sections.append( "City and Region" )
-grp_local_news_sections.append( "Business" )
-grp_local_news_sections.append( "Religion" )
-grp_local_news_sections.append( "State" )
-grp_local_news_sections.append( "Special" )
+#grp_local_news_sections.append( "Lakeshore" )
+#grp_local_news_sections.append( "Front Page" )
+#grp_local_news_sections.append( "City and Region" )
+#grp_local_news_sections.append( "Business" )
+#grp_local_news_sections.append( "Religion" )
+#grp_local_news_sections.append( "State" )
+#grp_local_news_sections.append( "Special" )
+grp_local_news_sections = Article.GRP_NEWS_SECTION_NAME_LIST
 
 # Grand Rapids Press
 # get newspaper instance for GRP.
@@ -80,7 +81,7 @@ for current_article in grp_article_qs:
 grp_article_qs = Article.objects.filter( newspaper = grp_newspaper )
 
 # only the locally implemented sections
-grp_article_qs = grp_article_qs.filter( section__in = Article.GRP_NEWS_SECTION_NAME_LIST )
+grp_article_qs = grp_article_qs.filter( section__in = grp_local_news_sections )
 
 # and, with an in-house author
 grp_article_qs = grp_article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
@@ -88,7 +89,7 @@ grp_article_qs = grp_article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
 # how many is that?
 article_count = grp_article_qs.count()
 
-print( "Article count before pulling out those with tags that contain \"prelim\": " + str( article_count ) )
+print( "Article count before filtering on tags: " + str( article_count ) )
 
 # ==> tags
 
@@ -141,7 +142,7 @@ for current_article in grp_article_qs:
     if ( ( do_apply_tag == True ) and ( tag_to_apply is not None ) and ( tag_to_apply != "" ) ):
     
         # yes, please.  Add tag.
-        current_article.tags.add( tag_value )
+        current_article.tags.add( tag_to_apply )
         
         # output the tags.
         print( "- Tags for article " + str( current_article.id ) + " : " + str( current_article.tags.all() ) )
