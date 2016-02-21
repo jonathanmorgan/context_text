@@ -123,13 +123,37 @@ class ManualArticleCoder( ArticleCoder ):
     DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP = "id_to_person_index_map"
     DATA_STORE_PROP_STATUS_MESSAGE_ARRAY = "status_message_array"
     DATA_STORE_PROP_LATEST_PERSON_INDEX = "latest_person_index"
+    
+    #--------------------------------------------------------------------------#
+    # HTML element IDs
+    #--------------------------------------------------------------------------#
+
+    DIV_ID_PERSON_CODING = "person-coding"
+    INPUT_ID_MATCHED_PERSON_ID = "matched-person-id"
+    INPUT_ID_DATA_STORE_PERSON_INDEX = "data-store-person-index"
+    INPUT_ID_PERSON_NAME = "person-name"
+    INPUT_ID_FIXED_PERSON_NAME = "fixed-person-name"
+    INPUT_ID_PERSON_TYPE = "person-type"
+    INPUT_ID_PERSON_TITLE = "person-title"
+    INPUT_ID_PERSON_ORGANIZATION = "person-organization"
+    INPUT_ID_SOURCE_QUOTE_TEXT = "source-quote-text"
+    DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id"
+    
+    # HTML elements - form submission
+    INPUT_ID_SUBMIT_ARTICLE_CODING = "input-submit-article-coding";
+    INPUT_ID_DATA_STORE_JSON = "id_data_store_json";
+    
+    # HTML elements - django-ajax-select HTML
+    INPUT_ID_AJAX_ID_PERSON = "id_person";
+    INPUT_ID_AJAX_ID_PERSON_TEXT = "id_person_text";
+    DIV_ID_AJAX_ID_PERSON_ON_DECK = "id_person_on_deck";
 
 
-    #============================================================================
+    #==========================================================================#
     # NOT Instance variables
     # Class variables - overriden by __init__() per instance if same names, but
     #    if not set there, shared!
-    #============================================================================
+    #==========================================================================#
 
     
     # declare variables
@@ -138,9 +162,9 @@ class ManualArticleCoder( ArticleCoder ):
     #output_format = ""
 
 
-    #============================================================================
+    #==========================================================================#
     # Constructor
-    #============================================================================
+    #==========================================================================#
 
 
     def __init__( self ):
@@ -166,9 +190,9 @@ class ManualArticleCoder( ArticleCoder ):
     #-- END method __init__() --#
 
 
-    #============================================================================
+    #==========================================================================#
     # Class methods
-    #============================================================================
+    #==========================================================================#
 
 
     @classmethod
@@ -364,6 +388,7 @@ class ManualArticleCoder( ArticleCoder ):
             data_store_dict[ cls.DATA_STORE_PROP_ID_TO_PERSON_INDEX_MAP ] = id_to_person_index_dict
             data_store_dict[ cls.DATA_STORE_PROP_STATUS_MESSAGE_ARRAY ] = []
             data_store_dict[ cls.DATA_STORE_PROP_LATEST_PERSON_INDEX ] = current_index
+            data_store_dict[ 'article_data_id' ] = article_data_IN.id
 
         #-- END check to see if we have Article_Data instance. --#
 

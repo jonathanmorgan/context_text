@@ -56,6 +56,12 @@ SOURCENET.INPUT_ID_AJAX_ID_PERSON = "id_person";
 SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT = "id_person_text";
 SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK = "id_person_on_deck";
 
+// Find in Article Text - Dynamic CSS class names
+SOURCENET.CSS_CLASS_FOUND_IN_TEXT = "foundInText";
+
+// Find in Article Text - HTML element IDs
+SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
+
 
 //----------------------------------------------------------------------------//
 // !==> object definitions
@@ -1876,7 +1882,7 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     var on_deck_person_element = null;
     
     // clear the coding form.
-    SOURCENET.log_message( "Top of " + me )
+    SOURCENET.log_message( "Top of " + me );
         
     // matched-person-id
     temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
@@ -1930,8 +1936,11 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     on_deck_person_element.append( temp_element );
     
     // if populated, clear out the "lookup-person-existing-id" <div>
-    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID )
-    temp_element.text( "" )
+    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+    temp_element.text( "" );
+    
+    // clear any find-in-article-text matches, and clear find text entry field.
+    SOURCENET.clear_find_in_text();
     
     // make status message array (empty message will clear status area).
     status_message_array = [];
@@ -1941,6 +1950,58 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     SOURCENET.output_status_messages( status_message_array );
     
 } //-- END function SOURCENET.clear_coding_form() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.  Also clears out the
+ *     field where text to be found is entered.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so none are assigned
+ *     "foundInText".  Wipes input with id "text-to-find-in-article".
+ */
+SOURCENET.clear_find_in_text = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.clear_find_in_text";
+    var article_paragraphs = null;
+    
+    // clear find in text matches
+    SOURCENET.clear_find_in_text_matches();
+                
+    // get text-to-find-in-article text field, set value to "".
+    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
+    input_element.val( "" );
+
+} //-- END function SOURCENET.clear_find_in_text_matches() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so none are assigned
+ *     "foundInText".
+ */
+SOURCENET.clear_find_in_text_matches = function(  )
+{
+    
+    // declare variables
+    var me = "SOURCENET.clear_find_in_text_matches";
+    var article_paragraphs = null;
+    
+    // get article <p> tags.
+    article_paragraphs = SOURCENET.get_article_paragraphs();
+    
+    // remove class "foundInText" from all.
+    article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false )
+
+} //-- END function SOURCENET.clear_find_in_text_matches() --//
 
 
 /**
@@ -2181,6 +2242,141 @@ SOURCENET.display_persons = function()
 
 
 /**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain text
+ *     passed in are assigned "foundInText".
+ */
+SOURCENET.find_in_article_text = function( find_text_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.find_in_article_text";
+    var is_text_OK = false;
+    var article_paragraphs = null;
+    //var contains_selector = "";
+    //var match_paragraphs = null;
+    
+    // clear any previous matches
+    SOURCENET.clear_find_in_text_matches()
+
+    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
+    
+    // is text passed in OK?
+    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
+    if ( is_text_OK == true )
+    {
+        
+        // get article <p> tags.
+        article_paragraphs = SOURCENET.get_article_paragraphs();
+        
+        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
+        
+        article_paragraphs.each( function()
+            {
+                // declare variables.
+                var jquery_p_element = null;
+                var paragraph_text = "";
+                var found_index = -1;
+                
+                // get paragraph text
+                jquery_p_element = $( this );
+                paragraph_text = jquery_p_element.text();
+                SOURCENET.log_message( "In " + me + "(): find text = " + find_text_IN + "; paragraph text = " + paragraph_text );
+
+                // is find text inside the paragraph?
+                found_index = paragraph_text.indexOf( find_text_IN );
+                
+                // if found, update class.
+                if ( found_index > -1 )
+                {
+                    
+                    // For matches, add class "foundInText".
+                    jquery_p_element.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
+                    
+                }
+            }
+        );
+    
+        // look for those that contain the text passed in.
+        //contains_selector = "p:contains( '" + find_text_IN + "' )";
+        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
+        //match_paragraphs = article_paragraphs.find( contains_selector );
+        
+        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
+    
+        // For matches, add class "foundInText".
+        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
+
+    } //-- END to make sure we have text. --//
+
+} //-- END function SOURCENET.find_in_article_text() --//
+
+
+/**
+ * Retrieves current person's last name, then looks for it in article text.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain
+ *     current last name are assigned "foundInText".
+ */
+SOURCENET.find_last_name_in_article_text = function( find_text_IN )
+{
+    // declare variables
+    var me = "SOURCENET.find_last_name_in_article_text";
+    var last_name_text = "";
+    var input_element = null;
+    
+    // get last name
+    last_name_text = SOURCENET.get_person_last_name_value();
+    //SOURCENET.log_message( "In " + me + "(): last name text : " + last_name_text );
+
+    // get text-to-find-in-article text field, place value.
+    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
+    input_element.val( last_name_text );
+    
+    // find in text.
+    SOURCENET.find_in_article_text( last_name_text );
+    
+} //-- END function SOURCENET.find_last_name_in_article_text() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, returns them in a
+ *     list.  If none found, returns empty list.  If error, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ */
+SOURCENET.get_article_paragraphs = function()
+{
+    
+    // return reference
+    var grafs_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_article_paragraphs";
+    var article_view_div_id = "";
+    var article_view_div = null;
+    
+    // retrieve <div> that contains article text (id/name = "article_view").
+    article_view_div_id = "article_view";
+    article_view_div = $( '#' + article_view_div_id );
+    
+    // find all <p> tags.
+    grafs_OUT = article_view_div.find( "p" );
+
+    return grafs_OUT;
+    
+} //-- END function SOURCENET.get_article_paragraphs() --//
+
+
+/**
  * checks to see if DataStore instance already around.  If so, returns it.
  *    If not, creates one, stores it, then returns it.
  *
@@ -2224,6 +2420,111 @@ SOURCENET.get_data_store = function()
 
 
 /**
+ * Retrieves value in person_name input.  If one found, parses on spaces and
+ *     returns the last token in the list ("last name"). If nothing present,
+ *     returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_last_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_last_name_value";
+    var current_person_name = "";
+    var is_name_OK = false;
+    var name_part_list = null;
+    var name_part_count = -1;
+    
+    // get person name.
+    current_person_name = SOURCENET.get_person_name_value();
+
+    // is name OK?
+    is_name_OK = SOURCENET.is_string_OK( current_person_name );
+    if ( is_name_OK == true )
+    {
+        
+        // got name. split into a list of tokens on space.
+        name_part_list = current_person_name.split( " " )
+        
+        // got anything?
+        if ( name_part_list != null )
+        {
+            
+            // how many matches?
+            name_part_count = name_part_list.length;
+            if ( name_part_count > 0 )
+            {
+                
+                // more than one.  Take last one in the list.
+                value_OUT = name_part_list[ name_part_count - 1 ];
+                
+            }
+            else
+            {
+                
+                // nothing in list.  return null.
+                value_OUT = null;
+                
+            } //-- END check to see if name parts exist. --//
+    
+        }
+        else
+        {
+            
+            // no list?  eek... return null.
+            value_OUT = null;
+            
+        } //-- END check to see if list returned. --//
+        
+    }
+    else
+    {
+        
+        // not OK.  Return null.
+        value_OUT = null;
+        
+    } //-- END check to see if name is OK. --//
+
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_last_name_value() --//
+
+
+/**
+ * Retrieves value in person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_name_value";
+    var name_input_name = "";
+    
+    // get name of input for name from SOURCENET.
+    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
+
+    // get value for that name.
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_PERSON_NAME, null )
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_name_value() --//
+
+
+/**
  * Accepts id of select whose selected value we want to retrieve.  After making
  *    sure we have an OK ID, looks for select with that ID.  If one found, finds
  *    selectedIndex, retrieves option at that index, and retrieves value from
@@ -2244,39 +2545,67 @@ SOURCENET.get_selected_value_for_id = function( select_id_IN )
     
     // declare variables
     var me = "SOURCENET.get_selected_value_for_id";
-    var is_select_id_OK = false;
-    var select_element = null;
-    var selected_index = -1;
-    var selected_value = "";
     
-    // select ID passed in OK?
-    is_select_id_OK = SOURCENET.is_string_OK( select_id_IN );
-    if ( is_select_id_OK == true )
+    // just call get_value_for_id()
+    value_OUT = SOURCENET.get_value_for_id( select_id_IN, null );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_selected_value_for_id() --//
+
+
+/**
+ * Accepts id of input whose value we want to retrieve.  After making sure we
+ *     have an OK ID, looks for input with that ID.  If one found, gets value
+ *     from that input and returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} id_IN - HTML id attribute value for input whose value we want to retrieve.
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.get_value_for_id = function( id_IN, default_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_input_value_for_id";
+    var is_id_OK = false;
+    var element = null;
+    var value = "";
+    
+    // is ID passed in OK?
+    is_id_OK = SOURCENET.is_string_OK( id_IN );
+    if ( is_id_OK == true )
     {
             
         // get select element.
-        select_element = $( '#' + select_id_IN );
+        element = $( '#' + id_IN );
         
         // get selected value
-        selected_value = select_element.val();
+        value = element.val();
         
         // return it.
-        value_OUT = selected_value;
+        value_OUT = value;
         
     }
     else
     {
     
-        // select ID is empty.  Return null.
-        value_OUT = null;
+        // select ID is empty.  Return default.
+        value_OUT = default_IN;
         
     }
     
-    SOURCENET.log_message( "In " + me + "(): <select> ID = " + select_id_IN + "; value = " + value_OUT );
+    SOURCENET.log_message( "In " + me + "(): element ID = " + id_IN + "; value = " + value_OUT );
     
     return value_OUT;
     
-} //-- END function SOURCENET.get_selected_value_for_id() --//
+} //-- END function SOURCENET.get_value_for_id() --//
 
 
 /**
@@ -2396,6 +2725,9 @@ SOURCENET.load_person_into_form = function( person_index_IN )
         // call populate_form()
         my_person_instance.populate_form()
         
+        // place last name in text-to-find-in-article <input>, then try to find
+        //     in text.
+        SOURCENET.find_last_name_in_article_text()
     }
     else
     {
@@ -3030,7 +3362,7 @@ $( function(){
     });
 });
 
-// !document.ready( #select-text )
+// ! document.ready( button - #select-text )
 // javascript to pull text selection into a text input.
 // Get selected text / 選択部分のテキストを取得
 $( document ).ready(
@@ -3057,9 +3389,9 @@ $( document ).ready(
     }
 );
 
-// !document.ready( #store-name )
+
+// ! document.ready( button - #store-name )
 // javascript to store selected text as source name.
-// Get selected text / 選択部分のテキストを取得
 $( document ).ready(
     function()
     {
@@ -3068,20 +3400,26 @@ $( document ).ready(
             {
                 // declare variables
                 var selected_text = "";
+                var last_name_text = "";
+                var input_element = null;
     
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
                 //SOURCENET.log_message( "selected text : \"" + selected_text + "\"" );
                 $( '#' + SOURCENET.INPUT_ID_PERSON_NAME ).val( selected_text );
+                
+                // place last name in text-to-find-in-article <input>, then try
+                //     to find in text.
+                SOURCENET.find_last_name_in_article_text()
             }
         )
     }
 ); //-- END document.ready( #store-name ) --//
 
-// !document.ready( #store-title )
+
+// ! document.ready( button - #store-title )
 // javascript to store selected text as source name + title.
-// Get selected text / 選択部分のテキストを取得
 $( document ).ready(
     function()
     {
@@ -3124,9 +3462,9 @@ $( document ).ready(
     }
 ); //-- END document.ready( #store-title ) --//
 
-// !document.ready( #store-organization )
+
+// ! document.ready( button - #store-organization )
 // javascript to store selected text as organization.
-// Get selected text / 選択部分のテキストを取得
 $( document ).ready(
     function()
     {
@@ -3169,9 +3507,9 @@ $( document ).ready(
     }
 ); //-- END document.ready( #store-organization ) --//
 
-// !document.ready( #store-quote-text )
+
+// ! document.ready( button - #store-quote-text )
 // javascript to store selected text as source's quotation text.
-// Get selected text / 選択部分のテキストを取得
 $( document ).ready(
     function()
     {
@@ -3196,29 +3534,14 @@ $( document ).ready(
                 // store selected text.
                 source_quote_text_element.val( selected_text );
                 
-                // see if "is-quoted" is checked.
-                //is_quoted_element = $( '#is-quoted' )
-                //is_quoted = is_quoted_element.prop( 'checked' )
-
-                // get contents of source-quote-text
-                //source_quote_text_value = source_quote_text_element.val()
-                
-                // quoted?
-                //if ( is_quoted == false )
-                //{
-                    // not yet - got text?
-                    //if ( ( source_quote_text_value != null ) && ( source_quote_text_value != "" ) )
-                    //{
-                        // yes - set checkbox.
-                        //is_quoted_element.prop( 'checked', true )
-                    //}
-                //} //-- END check to see if is-quoted checkbox checked --//
             } //-- END click() nested anonymous function. --//
         ) //-- END click() method call. --//
     } //-- END ready() nested anonymous function --//
-); //-- END document.ready( #store-quote-text ) call --//
+); //-- END document.ready( button - #store-quote-text ) call --//
 
-// !document.ready( #lookup-person-name )
+// ! ----> buttons - person lookup
+
+// ! document.ready( button - #lookup-person-name )
 // javascript to copy name from #source-name to the Lookup text field.
 $( document ).ready(
     function()
@@ -3231,7 +3554,7 @@ $( document ).ready(
                 var person_lookup = "";
     
                 // get selection
-                source_text = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME ).val();
+                source_text = SOURCENET.get_person_name_value();
                 //SOURCENET.log_message( "source text : " + source_text );
 
                 // get id_person_text_element text field,  place value, then
@@ -3263,7 +3586,165 @@ $( document ).ready(
             }
         )
     }
-); //-- END document.ready( #lookup-person-name ) --//
+); //-- END document.ready( button - #lookup-person-name ) --//
+
+
+// ! document.ready( button - #clear-person-lookup )
+// javascript to copy name from #source-name to the Lookup text field.
+$( document ).ready(
+    function()
+    {
+        $( '#clear-person-lookup' ).click(        
+            function()
+            {
+                // declare variables
+                var source_text = "";
+                var person_lookup = "";
+    
+                // get id_person_text_element text field,  place value, then
+                //    fire lookup event.
+                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT )
+                id_person_text_element.val( "" );
+                id_person_text_element.trigger( 'keydown' );
+                
+                // You'd think some of these might work to fire event...
+                //    ...but they don't.
+                //id_person_text_element.trigger( "search", "" );
+                //id_person_text_element.autocomplete( "search", "" );
+                //id_person_text_element.data( "ui-autocomplete" )._trigger( "change" );
+                //id_person_text_element.keyup()
+                //id_person_text_element.click()
+                //id_person_text_element.trigger( 'init-autocomplete' );
+                //id_person_text_element.trigger( 'added' );
+
+                // tried other elements, too - #id_person_on_deck.
+                //id_person_on_deck_element = $( '#id_person_on_deck' );
+                //id_person_on_deck_element.trigger( 'added' );
+                //id_person_on_deck_element.autocomplete( "search", "" );
+
+                // tried other elements, too - #id_person
+                //id_person_element = $( '#id_person' );
+                //id_person_element.trigger( 'added' );
+                //id_person_element.autocomplete( "search", "" );
+
+            }
+        )
+    }
+); //-- END document.ready( button - #clear-person-lookup ) --//
+
+// ! ----> buttons - find in article text
+
+
+// ! document.ready( button - #find-name-in-article-text )
+// javascript to copy name from #source-name to the Find in Article Text text
+//     input.
+$( document ).ready(
+    function()
+    {
+        $( '#find-name-in-article-text' ).click(        
+            function()
+            {
+                // declare variables
+                var name_text = "";
+                var input_element = "";
+    
+                // get name text
+                name_text = SOURCENET.get_person_name_value();
+                //SOURCENET.log_message( "In document.ready( button - #find-name-in-article-text ) - name text : " + name_text );
+
+                // get text-to-find-in-article text field, place value.
+                input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
+                input_element.val( name_text );
+                
+            }
+        )
+    }
+); //-- END document.ready( button - #find-name-in-article-text ) --//
+
+
+// ! document.ready( button - #find-last-name-in-article-text )
+// javascript to copy last name from #source-name to the Find in Article Text
+//     text input.
+$( document ).ready(
+    function()
+    {
+        $( '#find-last-name-in-article-text' ).click(        
+            function()
+            {
+                // declare variables
+                var name_text = "";
+                var input_element = "";
+    
+                // get last name
+                name_text = SOURCENET.get_person_last_name_value();
+                //SOURCENET.log_message( "In document.ready( button - #find-last-name-in-article-text ) - name text : " + name_text );
+
+                // get text-to-find-in-article text field, place value.
+                input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
+                input_element.val( name_text );
+                
+            }
+        )
+    }
+); //-- END document.ready( button - #find-last-name-in-article-text ) --//
+
+
+// ! document.ready( button - #find-in-article-text )
+// javascript to look for whatever is in the <input> with
+//     id="text-to-find-in-article" inside the article's text, and highlight any
+//     paragraphs that contain a match.
+$( document ).ready(
+    function()
+    {
+        $( '#find-in-article-text' ).click(        
+            function()
+            {
+
+                // declare variables
+                var me = "document.ready( button - #find-in-article-text )";
+                var input_element = "";
+                var find_text = "";
+    
+                // get text-to-find-in-article text field,  get value, then
+                //    find_in_article_text().
+                input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
+                find_text = input_element.val();
+
+                //SOURCENET.log_message( "In " + me + " - find text : " + find_text );
+
+                // find in text...
+                SOURCENET.find_in_article_text( find_text );
+                
+            }
+        )
+    }
+); //-- END document.ready( button - #find-in-article-text ) --//
+
+
+// ! document.ready( button - #clear-find-in-article-text )
+// javascript to unmark all paragraphs that have matches in them.
+$( document ).ready(
+    function()
+    {
+        $( '#clear-find-in-article-text' ).click(        
+            function()
+            {
+                // declare variables
+                var me = "document.ready( button - #clear-find-in-article-text )";
+                var name_text = "";
+                var input_element = "";
+    
+                // clear matches.
+                SOURCENET.clear_find_in_text();
+                
+                SOURCENET.log_message( "In " + me );
+            }
+        )
+    }
+); //-- END document.ready( button - #clear-find-in-article-text ) --//
+
+
+// ! ----> load existing coding data
 
 // !document.ready( load existing coding data )
 // javascript to load existing coding data if present.
@@ -3294,6 +3775,9 @@ $( document ).ready(
     }
 
 ); //-- END document.ready( load existing coding data ) --//
+
+
+// ! ----> force activation of coding submit button.
 
 
 // !document.ready( activate coding submit button )

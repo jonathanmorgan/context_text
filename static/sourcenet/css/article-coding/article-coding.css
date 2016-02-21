@@ -188,3 +188,8 @@ table.personListTable
     font-weight: bold;
     font-style: italic;
 }
+
+.foundInText
+{
+    background-color: #fbb00b;
+}

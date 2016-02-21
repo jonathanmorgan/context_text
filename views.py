@@ -1296,15 +1296,21 @@ def article_code( request_IN ):
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'manual_article_coder' ] = None
     response_dictionary[ 'article_instance' ] = None
     response_dictionary[ 'article_text' ] = None
     response_dictionary[ 'base_simple_navigation' ] = True
     response_dictionary[ 'base_post_login_redirect' ] = reverse( article_code )
-    response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
-    response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
-    response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
+    # just passing reference to ManualArticleCoder now.
+    # response_dictionary[ 'person_type_subject' ] = ManualArticleCoder.PERSON_TYPE_SUBJECT
+    # response_dictionary[ 'person_type_source' ] = ManualArticleCoder.PERSON_TYPE_SOURCE
+    # response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
     response_dictionary[ 'existing_data_store_json' ] = ""
     response_dictionary[ 'page_status_message_list' ] = page_status_message_list
+
+    # create article coder and place in response so we can access constants-ish.
+    manual_article_coder = ManualArticleCoder()
+    response_dictionary[ 'manual_article_coder' ] = manual_article_coder
 
     # set my default rendering template
     default_template = 'articles/article-code.html'
@@ -1449,7 +1455,7 @@ def article_code( request_IN ):
                 try:
 
                     # process JSON with instance of ManualArticleCoder
-                    manual_article_coder = ManualArticleCoder()
+                    #manual_article_coder = ManualArticleCoder()
                     
                     # need to get call set up for new parameters.
                     article_data_instance = manual_article_coder.process_data_store_json( article_instance,
@@ -1686,6 +1692,7 @@ def article_code( request_IN ):
                     response_dictionary[ 'do_output_table_html' ] = False
                     response_dictionary[ 'include_title_field' ] = False
                     response_dictionary[ 'include_organization_field' ] = True
+                    response_dictionary[ 'include_find_in_article_text' ] = False
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
