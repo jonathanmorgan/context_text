@@ -101,9 +101,11 @@
                 </p>
                 {% if include_fix_person_name %}
                     <p class="inputContainer" id="fix-person-name-link" name="fix-person-name-link">
-                        <a href="#" onclick="SOURCENET.fix_person_name(); return false;">==> Fix Person Name</a>
+                        <a href="#" onclick="SOURCENET.fix_person_name(); return false;">--> Fix Person Name</a>
                     </p>
-                    <p class="inputContainer" id="fix-person-name" name="fix-person-name">
+                    <p class="inputContainer hidden" id="fix-person-name" name="fix-person-name">
+                        <a href="#" onclick="SOURCENET.cancel_fix_person_name(); return false;"><-- Cancel Fix Person Name</a>
+                        <br />
                         <input type="button" id="fix-name" name="fix-name" value="==> Fix Name" />: <textarea id="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}" name="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}"></textarea>
                     </p>
                 {% else %}
@@ -186,7 +188,7 @@
                         <td>
                             Search for:
                             <br />
-                            <input type="text" name="text-to-find-in-article" id="text-to-find-in-article" size="25" />
+                            <input type="text" name="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" id="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" size="25" />
                             <br />
                             <input type="button" id="find-in-article-text" name="find-in-article-text" value="<== Find in Text" />
                             <br />
@@ -200,6 +202,8 @@
                     </tr>
                 </table>
             </p>
+            {% else %}
+            <input type="hidden" name="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" id="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" />
             {% endif %}
 
         </div>

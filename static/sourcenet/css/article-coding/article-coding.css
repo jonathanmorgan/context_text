@@ -193,3 +193,14 @@ table.personListTable
 {
     background-color: #fcd889;
 }
+
+.foundInTextMatchedWords
+{
+    background-color: #fcac02;
+}
+
+.hidden
+{
+    /* default to not shown - show when "source" type selected. */
+    display: none;
+}

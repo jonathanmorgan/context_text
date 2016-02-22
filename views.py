@@ -1690,6 +1690,7 @@ def article_code( request_IN ):
                     response_dictionary[ 'coding_submit_form' ] = coding_submit_form
                     response_dictionary[ 'base_include_django_ajax_selects' ] = True
                     response_dictionary[ 'do_output_table_html' ] = False
+                    response_dictionary[ 'include_fix_person_name' ] = False
                     response_dictionary[ 'include_title_field' ] = False
                     response_dictionary[ 'include_organization_field' ] = True
                     response_dictionary[ 'include_find_in_article_text' ] = False

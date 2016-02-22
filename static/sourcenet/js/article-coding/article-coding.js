@@ -47,6 +47,12 @@ SOURCENET.INPUT_ID_ORGANIZATION = "person-organization";
 SOURCENET.INPUT_ID_QUOTE_TEXT = "source-quote-text";
 SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
 
+// HTML elements - fix person name
+SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK = "fix-person-name-link";
+SOURCENET.DIV_ID_FIX_PERSON_NAME = "fix-person-name";
+SOURCENET.INPUT_ID_FIXED_PERSON_NAME = "fixed-person-name";
+
+
 // HTML elements - form submission
 SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING = "input-submit-article-coding";
 SOURCENET.INPUT_ID_DATA_STORE_JSON = "id_data_store_json";
@@ -58,9 +64,14 @@ SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK = "id_person_on_deck";
 
 // Find in Article Text - Dynamic CSS class names
 SOURCENET.CSS_CLASS_FOUND_IN_TEXT = "foundInText";
+SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS = "foundInTextMatchedWords";
 
 // Find in Article Text - HTML element IDs
 SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
+
+// Find in Article Text - HTML for matched word highlighting
+SOURCENET.HTML_SPAN_MATCHED_WORDS = "<span class=\"" + SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS + "\">";
+SOURCENET.HTML_SPAN_CLOSE = "</span>";
 
 
 //----------------------------------------------------------------------------//
@@ -1355,6 +1366,7 @@ SOURCENET.Person = function()
     // instance variables
     this.person_index = -1;
     this.person_name = "";
+    this.fixed_person_name = "";
     this.person_type = "";
     this.title = "";
     this.person_organization = "";
@@ -1380,6 +1392,7 @@ SOURCENET.Person.prototype.populate_form = function()
     var temp_value = "";
     var my_person_index = -1;
     var my_person_name = "";
+    var my_fixed_person_name = "";
     var my_person_type = "";
     var my_title = "";
     var my_person_organization = "";
@@ -1390,6 +1403,7 @@ SOURCENET.Person.prototype.populate_form = function()
     // retrieve values from instance.
     my_person_index = this.person_index;
     my_person_name = this.person_name;
+    my_fixed_person_name = this.fixed_person_name;
     my_person_type = this.person_type;
     my_title = this.title;
     my_person_organization = this.person_organization;
@@ -1426,6 +1440,27 @@ SOURCENET.Person.prototype.populate_form = function()
     
     if ( ( temp_value != null ) && ( temp_value != "" ) )
     {
+        // store value in element
+        temp_element.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to empty string.
+        temp_element.val( "" );
+    } //-- END check to see if we have value --//
+    
+    //------------------------------------------------------------------------//
+    // fixed-person-name
+    temp_value = my_fixed_person_name;
+
+    // get <input> element
+    temp_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
+    
+    if ( ( temp_value != null ) && ( temp_value != "" ) )
+    {
+        // reveal field to fix person name if present.
+        SOURCENET.fix_person_name();
+        
         // store value in element
         temp_element.val( temp_value );
     }
@@ -1539,7 +1574,7 @@ SOURCENET.Person.prototype.populate_form = function()
     
     return validate_status_array_OUT;
     
-} //-- END SOURCENET.Person method populate_from_form() --//
+} //-- END SOURCENET.Person method populate_form() --//
 
 
 /**
@@ -1560,6 +1595,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var temp_value = "";
     var my_person_index = -1;
     var my_person_name = "";
+    var my_fixed_person_name = "";
     var my_person_type = "";
     var my_title = "";
     var my_organization = "";
@@ -1588,6 +1624,11 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     this.person_name = my_person_name;
     
     //------------------------------------------------------------------------//
+    // fixed-person-name
+    temp_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
+    my_fixed_person_name = temp_element.val();
+    this.fixed_person_name = my_fixed_person_name;
+    
     // person-type
     temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE );
     my_person_type = temp_value;    
@@ -1862,6 +1903,44 @@ SOURCENET.decode_html = function( html_IN )
     return text_OUT;
 }
 
+
+/**
+ * Opposite of SOURCENET.fix_person_name() - show()s link to fix person name, 
+ *     hides form input and buttons to fix person name, removes current value
+ *     from "fixed-person-name" <input>.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: show()s link to fix person name, hides form input and buttons
+ *     to fix person name, removes current value from "fixed-person-name"
+ *     <input>.
+ */
+SOURCENET.cancel_fix_person_name = function()
+{
+    // declare variables
+    var me = "SOURCENET.cancel_fix_person_name";
+    var fix_link_div_id = "";
+    var fix_link_div = null;
+    var fix_area_div_id = "";
+    var fix_area_div = null;
+    var input_element = null;
+    
+    // get div that contains actual fix area and hide() it.
+    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
+    fix_area_div = $( '#' + fix_area_div_id );
+    fix_area_div.hide();
+
+    // clear fixed-person-name <input>.
+    SOURCENET.clear_fixed_person_name();
+    
+    // get div that contains link and show() it.
+    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
+    fix_link_div = $( '#' + fix_link_div_id );
+    fix_link_div.show();
+    
+} //-- END function SOURCENET.cancel_fix_person_name() --//
+
+
 /**
  * Clears out coding form and status message area, and optionally displays a
  *    status message if one passed in.
@@ -1895,6 +1974,9 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     // person-name
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
     temp_element.val( "" );
+    
+    // fixed-person-name
+    SOURCENET.cancel_fix_person_name();
     
     // person-type
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_TYPE );
@@ -2000,8 +2082,52 @@ SOURCENET.clear_find_in_text_matches = function(  )
     
     // remove class "foundInText" from all.
     article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false )
+    
+    // set all paragraphs' html() back to their text()...
+    article_paragraphs.each( function()
+        {
+            // declare variables.
+            var jquery_p_element = null;
+            var paragraph_html = "";
+            var paragraph_text = "";
+            var span_index = -1;
+            
+            // get paragraph text
+            jquery_p_element = $( this );
+            paragraph_html = jquery_p_element.html();
+            paragraph_text = jquery_p_element.text();
+            
+            // is there a matched words span present in html?
+            span_index = paragraph_html.indexOf( SOURCENET.HTML_SPAN_MATCHED_WORDS );
+            
+            // if found, update store plain text .
+            if ( span_index > -1 )
+            {
+                
+                // store plain text in <p>.html() to remove any HTML.
+                jquery_p_element.html( paragraph_text );
+                                    
+            } //-- END check to see if <span> found --//
+        } //-- END anonymous function called on each paragraph --//
+    );
 
 } //-- END function SOURCENET.clear_find_in_text_matches() --//
+
+
+/**
+ * Loads current person_name value into field where it can be manually fixed.
+ */
+SOURCENET.clear_fixed_person_name = function()
+{
+    
+    // declare variables
+    var input_element = null;
+
+    // get fixed_person_name text field,  place value there.
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element.val( "" );
+    
+} //-- END function SOURCENET.clear_fixed_person_name() --//
 
 
 /**
@@ -2242,8 +2368,11 @@ SOURCENET.display_persons = function()
 
 
 /**
- * Retrieves all the <p> tags that make up the article text, removes class
- *     "foundInText" from any where that class is present.
+ * Retrieves all the <p> tags that make up the article text, loops over each.
+ *     In each, searches for the text in "find_text_IN".  If it finds it,
+ *     Updates classes on article <p> tags so any that contain text passed in
+ *     are assigned "foundInText", and wraps the matched text in a span so it
+ *     stands out.
  *
  * Preconditions: None.
  *
@@ -2279,26 +2408,17 @@ SOURCENET.find_in_article_text = function( find_text_IN )
             {
                 // declare variables.
                 var jquery_p_element = null;
-                var paragraph_text = "";
-                var found_index = -1;
-                
+                var find_text_list = [];
+               
                 // get paragraph text
                 jquery_p_element = $( this );
-                paragraph_text = jquery_p_element.text();
-                SOURCENET.log_message( "In " + me + "(): find text = " + find_text_IN + "; paragraph text = " + paragraph_text );
-
-                // is find text inside the paragraph?
-                found_index = paragraph_text.indexOf( find_text_IN );
                 
-                // if found, update class.
-                if ( found_index > -1 )
-                {
-                    
-                    // For matches, add class "foundInText".
-                    jquery_p_element.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
-                    
-                }
-            }
+                // set up list of items to look for (just find_text_IN).
+                find_text_list.push( find_text_IN );
+                
+                // call function to find in <p> tag
+                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
+            } //-- END anonymous function called on each paragraph --//
         );
     
         // look for those that contain the text passed in.
@@ -2314,6 +2434,80 @@ SOURCENET.find_in_article_text = function( find_text_IN )
     } //-- END to make sure we have text. --//
 
 } //-- END function SOURCENET.find_in_article_text() --//
+
+
+/**
+ * Accepts jquery <p> element instance and list of strings to look for inside.
+ *     for each item in the list, checks to see if the string is in the text.
+ *     If it finds it, updates classes on <p> tag to assign "foundInText",
+ *     and wraps the matched text in a span so it stands out.
+ *
+ * Preconditions: Must have found paragraph tag you want to process and have it
+ *     in a jquery instance.  Must also have broken out list of search text
+ *     items as you want (split on spaces, or don't, etc.).
+ *
+ * Postconditions: if match found, will update the <p> in the jquery instance
+ *     passed in.
+ */
+SOURCENET.find_in_p_tag = function( p_tag_jquery_IN, find_text_list_IN )
+{
+
+    // declare variables.
+    var me = "SOURCENET.find_in_p_tag";
+    var jquery_p_element = null;
+    var paragraph_text = "";
+    var find_text_item_count = -1;
+    var current_index = -1;
+    var current_find_text = "";
+    var found_index = -1;
+    var text_around_match_list = null;
+    var match_html = "";
+    var current_text_index = -1;
+    var new_html = "";
+    
+    // get paragraph text
+    jquery_p_element = p_tag_jquery_IN;
+    paragraph_text = jquery_p_element.text();
+    SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; paragraph text = " + paragraph_text );
+    
+    // split find_text_IN on spaces.
+    find_text_item_count = find_text_list_IN.length;
+    
+    // loop over words
+    for ( current_index = 0; current_index < find_text_item_count; current_index++ )
+    {
+        
+        // get current find item.
+        current_find_text = find_text_list_IN[ current_index ];
+        
+        // is find text inside the paragraph?
+        found_index = paragraph_text.indexOf( current_find_text );
+        
+        // if found, update class.
+        if ( found_index > -1 )
+        {
+            
+            // For matches, add class "foundInText".
+            jquery_p_element.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true );
+            
+            // split on the text we matched.
+            text_around_match_list = paragraph_text.split( current_find_text );
+            
+            // add a span around the matched words.
+            matched_words_html = SOURCENET.HTML_SPAN_MATCHED_WORDS + current_find_text + SOURCENET.HTML_SPAN_CLOSE;
+    
+            // put together again, but with <span>-ed matched words
+            //     rather than just the words themselves.
+            new_html = text_around_match_list.join( matched_words_html );
+            
+            // store new HTML in <p>.
+            jquery_p_element.html( new_html );
+                                
+        } //-- END check to see if text found --//
+
+    } //-- END loop over find text items --//
+
+} //-- END function SOURCENET.find_in_p_tag --//
 
 
 /**
@@ -2343,6 +2537,110 @@ SOURCENET.find_last_name_in_article_text = function( find_text_IN )
     SOURCENET.find_in_article_text( last_name_text );
     
 } //-- END function SOURCENET.find_last_name_in_article_text() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, loops over each.
+ *     In each, searches for each word (space-delimited) in the text in
+ *     "find_text_IN".  If it finds it, updates classes on article <p> tags so
+ *     any that contain a word from text passed in are assigned "foundInText",
+ *     and wraps the matched text in a span so it stands out.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain text
+ *     passed in are assigned "foundInText".
+ */
+SOURCENET.find_words_in_article_text = function( find_text_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.find_words_in_article_text";
+    var is_text_OK = false;
+    var article_paragraphs = null;
+    //var contains_selector = "";
+    //var match_paragraphs = null;
+    
+    // clear any previous matches
+    SOURCENET.clear_find_in_text_matches()
+
+    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
+    
+    // is text passed in OK?
+    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
+    if ( is_text_OK == true )
+    {
+        
+        // get article <p> tags.
+        article_paragraphs = SOURCENET.get_article_paragraphs();
+        
+        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
+        
+        article_paragraphs.each( function()
+            {
+                // declare variables.
+                var jquery_p_element = null;
+                var find_text_list = [];
+               
+                // get paragraph text
+                jquery_p_element = $( this );
+                
+                // set up list of items to look for (split find_text_IN on " ").
+                find_text_list = find_text_IN.split( " " );
+                
+                // call function to find in <p> tag
+                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
+            } //-- END anonymous function called on each paragraph --//
+        );
+    
+        // look for those that contain the text passed in.
+        //contains_selector = "p:contains( '" + find_text_IN + "' )";
+        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
+        //match_paragraphs = article_paragraphs.find( contains_selector );
+        
+        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
+    
+        // For matches, add class "foundInText".
+        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
+
+    } //-- END to make sure we have text. --//
+
+} //-- END function SOURCENET.find_words_in_article_text() --//
+
+
+/**
+ * Hides link to fix person name, reveals form input and buttons to fix person
+ *     name, places current name in "fixed-person-name" <input>.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Hides link to fix person name, reveals form input and buttons
+ *     to fix person name, places current name in "fixed-person-name" <input>.
+ */
+SOURCENET.fix_person_name = function()
+{
+    // declare variables
+    var me = "SOURCENET.fix_person_name";
+    var fix_link_div_id = "";
+    var fix_link_div = null;
+    var fix_area_div_id = "";
+    var fix_area_div = null;
+    var input_element = null;
+    
+    // get div that contains link and hide() it.
+    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
+    fix_link_div = $( '#' + fix_link_div_id );
+    fix_link_div.hide();
+    
+    // load name into fixed-person-name <input>.
+    SOURCENET.load_person_name_to_fix();
+    
+    // get div that contains actual fix area and show() it.
+    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
+    fix_area_div = $( '#' + fix_area_div_id );
+    fix_area_div.show();
+
+} //-- END function SOURCENET.fix_person_name() --//
 
 
 /**
@@ -2420,6 +2718,34 @@ SOURCENET.get_data_store = function()
 
 
 /**
+ * Retrieves value in fixed_person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_fixed_person_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_fixed_person_name_value";
+    var name_input_name = "";
+    
+    // get name of input for name from SOURCENET.
+    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
+
+    // get value for that name.
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_FIXED_PERSON_NAME, null )
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_fixed_person_name_value() --//
+
+
+/**
  * Retrieves value in person_name input.  If one found, parses on spaces and
  *     returns the last token in the list ("last name"). If nothing present,
  *     returns null.
@@ -2442,7 +2768,7 @@ SOURCENET.get_person_last_name_value = function()
     var name_part_count = -1;
     
     // get person name.
-    current_person_name = SOURCENET.get_person_name_value();
+    current_person_name = SOURCENET.get_person_name();
 
     // is name OK?
     is_name_OK = SOURCENET.is_string_OK( current_person_name );
@@ -2494,6 +2820,47 @@ SOURCENET.get_person_last_name_value = function()
     return value_OUT;
     
 } //-- END function SOURCENET.get_person_last_name_value() --//
+
+
+/**
+ * Retrieves value in person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_name = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_name";
+    var fixed_name = "";
+    var is_fixed_name_OK = false;
+    
+    // first, try to get fixed_person_name.
+    fixed_name = SOURCENET.get_fixed_person_name_value();
+    is_fixed_name_OK = SOURCENET.is_string_OK( fixed_name );
+    if ( is_fixed_name_OK == false )
+    {
+        
+        // no fixed name.  get person_name.
+        value_OUT = SOURCENET.get_person_name_value();
+        
+    }
+    else
+    {
+        
+        // looks like there is a fixed name.  Use it.
+        value_OUT = fixed_name;
+        
+    }
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_name() --//
 
 
 /**
@@ -2744,6 +3111,27 @@ SOURCENET.load_person_into_form = function( person_index_IN )
 } //-- END function SOURCENET.load_person_into_form() --//
  
  
+/**
+ * Loads current person_name value into field where it can be manually fixed.
+ */
+SOURCENET.load_person_name_to_fix = function()
+{
+    
+    // declare variables
+    var name_text = "";
+    var input_element = null;
+
+    // get selection
+    name_text = SOURCENET.get_person_name_value();
+    //SOURCENET.log_message( "source text : " + source_text );
+
+    // get fixed_person_name text field,  place value there.
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element.val( name_text );
+    
+} //-- END function SOURCENET.load_person_name_to_fix() --//
+
+
 /**
  * Accepts a message.  If console.log() is available, calls that.  If not, does
  *    nothing.
@@ -3411,11 +3799,41 @@ $( document ).ready(
                 
                 // place last name in text-to-find-in-article <input>, then try
                 //     to find in text.
-                SOURCENET.find_last_name_in_article_text()
+                SOURCENET.find_last_name_in_article_text();
+                
+                // clear out the fix name area.
+                SOURCENET.cancel_fix_person_name();
             }
         )
     }
 ); //-- END document.ready( #store-name ) --//
+
+
+// ! document.ready( button - #fix-person-name )
+// javascript to copy name from #source-name to the Lookup text field.
+$( document ).ready(
+    function()
+    {
+        $( '#fix-person-name' ).click(        
+            function()
+            {
+                // declare variables
+                var name_text = "";
+                var person_lookup = "";
+                var input_element = null;
+    
+                // get selection
+                name_text = SOURCENET.get_person_name_value();
+                //SOURCENET.log_message( "source text : " + source_text );
+
+                // get id_person_text_element text field,  place value, then
+                //    fire lookup event.
+                input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+                input_element.val( name_text );
+            }
+        )
+    }
+); //-- END document.ready( button - #fix-person-name ) --//
 
 
 // ! document.ready( button - #store-title )
@@ -3554,7 +3972,7 @@ $( document ).ready(
                 var person_lookup = "";
     
                 // get selection
-                source_text = SOURCENET.get_person_name_value();
+                source_text = SOURCENET.get_person_name();
                 //SOURCENET.log_message( "source text : " + source_text );
 
                 // get id_person_text_element text field,  place value, then
@@ -3649,7 +4067,7 @@ $( document ).ready(
                 var input_element = "";
     
                 // get name text
-                name_text = SOURCENET.get_person_name_value();
+                name_text = SOURCENET.get_person_name();
                 //SOURCENET.log_message( "In document.ready( button - #find-name-in-article-text ) - name text : " + name_text );
 
                 // get text-to-find-in-article text field, place value.

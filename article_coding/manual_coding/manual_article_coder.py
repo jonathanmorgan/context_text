@@ -147,6 +147,9 @@ class ManualArticleCoder( ArticleCoder ):
     INPUT_ID_AJAX_ID_PERSON = "id_person";
     INPUT_ID_AJAX_ID_PERSON_TEXT = "id_person_text";
     DIV_ID_AJAX_ID_PERSON_ON_DECK = "id_person_on_deck";
+    
+    # HTML elements - find in text
+    INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
 
 
     #==========================================================================#
