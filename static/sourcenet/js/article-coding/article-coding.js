@@ -3570,42 +3570,58 @@ SOURCENET.render_coding_form_inputs = function( form_IN )
         
     } //-- END check to see if author count is 0 --//
     
-    // Is there at least one source?
-    source_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
-    if ( source_count <= 0 )
+    // canceled?
+    if ( do_submit_OUT == true )
     {
         
-        // no sources - see if that is correct.
-        is_source_count_valid = confirm( "No sources coded.  Is this correct?" );
-        if ( is_source_count_valid == false )
+        // not canceled yet, keep checking...
+        
+        // Is there at least one source?
+        source_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
+        if ( source_count <= 0 )
         {
             
-            // oops - forgot to code sources.  Back to form.
-            do_submit_OUT = false;
-            SOURCENET.log_message( "In " + me + "(): forgot to code sources - back to form!" );
+            // no sources - see if that is correct.
+            is_source_count_valid = confirm( "No sources coded.  Is this correct?" );
+            if ( is_source_count_valid == false )
+            {
+                
+                // oops - forgot to code sources.  Back to form.
+                do_submit_OUT = false;
+                SOURCENET.log_message( "In " + me + "(): forgot to code sources - back to form!" );
+                
+            } //-- END check to see if no sources --//
             
-        } //-- END check to see if no authors --//
-        
-    } //-- END check to see if author count is 0 --//
+        } //-- END check to see if source count is 0 --//
+
+    } //-- END check to see if we are already canceled, so don't need to keep checking --//
     
     // !TODO - check for sources that don't have quote selected?
     
-    // confirm submit?
-    if ( do_confirm_submit == true )
+    // canceled?
+    if ( do_submit_OUT == true )
     {
         
-        // no sources - see if that is correct.
-        ok_to_submit = confirm( "OK to submit coding?" );
-        if ( ok_to_submit == false )
+        // not canceled yet, keep checking...
+        
+        // confirm submit?
+        if ( do_confirm_submit == true )
         {
             
-            // Not ready to submit just yet.  Back to form.
-            do_submit_OUT = false;
-            SOURCENET.log_message( "In " + me + "(): User not ready to submit.  Back to the form!" );
+            // We are confirming submit - ask for confirmation.
+            ok_to_submit = confirm( "OK to submit coding?" );
+            if ( ok_to_submit == false )
+            {
+                
+                // Not ready to submit just yet.  Back to form.
+                do_submit_OUT = false;
+                SOURCENET.log_message( "In " + me + "(): User not ready to submit.  Back to the form!" );
+                
+            } //-- END check to see if ready to submit --//
             
-        } //-- END check to see if no authors --//
+        } //-- END check to see if we are confirming submission --//
         
-    } //-- END check to see if author count is 0 --//
+    } //-- END check to see if we are already canceled, so don't need to keep checking --//
     
     // no sense doing anything more if we aren't submitting.
     if ( do_submit_OUT == true )
