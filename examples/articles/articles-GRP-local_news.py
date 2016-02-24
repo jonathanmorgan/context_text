@@ -17,11 +17,11 @@ tags_in_list = []
 tags_not_in_list = []
 
 # declare variables - size of random sample we want
-random_count = 30
+random_count = 60
 
 # declare variables - also, apply tag?
 do_apply_tag = True
-tag_to_apply = "prelim_training_002"
+tag_to_apply = "prelim_training_003"
 
 # set up "local, regional and state news" sections
 #grp_local_news_sections.append( "Lakeshore" )

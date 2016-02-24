@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from sourcenet.models import Analysis_Reliability_Names
 from sourcenet.models import Article
 from sourcenet.models import Article_Data
+from sourcenet.models import Article_Subject
 from sourcenet.models import Person
 
 #-------------------------------------------------------------------------------
@@ -30,19 +31,40 @@ class Reliability_Names( object ):
     ARTICLE_DATA_ID_LIST = "article_data_id_list"
     ARTICLE_CODER_ID_LIST = "article_coder_id_list"
     AUTHOR_INFO_DICT = "author_info_dict"
-    SOURCE_INFO_DICT = "source_info_dict"
+    SUBJECT_INFO_DICT = "subject_info_dict"
     
     # source and author info dicts will use same field names.
     PERSON_ID = "person_id"
     PERSON_NAME = "person_name"
-    PERSON_CODER_ID_LIST = "person_coder_id_list"
+    PERSON_CODER_ID_TO_CODING_INFO_DICT = "person_coder_id_to_coding_info_dict"
+    # PERSON_CODER_ID_LIST = "person_coder_id_list"
+    
+    # coder-specific person coding info map
+    PERSON_CODING_INFO_CODER_ID = "coder_id"
+    PERSON_CODING_INFO_PERSON_TYPE = "person_type"
+    PERSON_CODING_INFO_PERSON_TYPE_INT = "person_type_int"
+    PERSON_CODING_INFO_ARTICLE_PERSON_ID = "article_person_id"
+    PERSON_CODING_INFO_NAME_LIST = [ PERSON_CODING_INFO_CODER_ID, PERSON_CODING_INFO_PERSON_TYPE, PERSON_CODING_INFO_PERSON_TYPE_INT, PERSON_CODING_INFO_ARTICLE_PERSON_ID ]
     
     # person types
     PERSON_TYPE_AUTHOR = "author"
+    PERSON_TYPE_SUBJECT = "subject"
     PERSON_TYPE_SOURCE = "source"
-    
+
+    # Article_Subject subject_types
+    SUBJECT_TYPE_MENTIONED = Article_Subject.SUBJECT_TYPE_MENTIONED
+    SUBJECT_TYPE_QUOTED = Article_Subject.SUBJECT_TYPE_QUOTED
+
+    # person or subject types to int ID map.
+    PERSON_TYPE_TO_INT_MAP = {}
+    PERSON_TYPE_TO_INT_MAP[ PERSON_TYPE_AUTHOR ] = 1
+    PERSON_TYPE_TO_INT_MAP[ PERSON_TYPE_SUBJECT ] = 2
+    PERSON_TYPE_TO_INT_MAP[ PERSON_TYPE_SOURCE ] = 3
+    PERSON_TYPE_TO_INT_MAP[ SUBJECT_TYPE_MENTIONED ] = 2
+    PERSON_TYPE_TO_INT_MAP[ SUBJECT_TYPE_QUOTED ] = 3
+        
     # information about table.
-    TABLE_MAX_CODERS = 3
+    TABLE_MAX_CODERS = 10
 
     
     #----------------------------------------------------------------------------
@@ -131,7 +153,7 @@ class Reliability_Names( object ):
             
         #-- END loop over ID-to-index map. --#
         
-        print( "++++ found ID: " + str( matching_user_id ) )
+        #print( "++++ found ID: " + str( matching_user_id ) )
         
         # if we have an ID, use it to get User instance.
         if ( matching_user_id > 0 ):
@@ -157,11 +179,13 @@ class Reliability_Names( object ):
               article.
            - article_coder_id_list - list of IDs of Coders who coded the article.
            - author_dict - dictionary that maps person IDs of authors to dictionary
-              that contains details of author, including author ID, name, and list of
-              coders who found the author.
+              that contains details of author, including author ID, name, and 
+              map of coder IDs who detected the author to their coding info for
+              the author.
            - source_dict - dictionary that maps person IDs of sources to dictionary
-              that contains details of source, including source ID, name, and list of
-              coders who found the source.
+              that contains details of source, including source ID, name, and
+              map of coder IDs who detected the subject to their coding info for
+              the subject.
               
         Loops over the items in the dictionary, processing each.  For each article,
            gets dictionaries of authors and sources and for each author and source,
@@ -181,7 +205,7 @@ class Reliability_Names( object ):
         my_article_data_id_list = []
         my_article_coder_id_list = []
         my_author_info_dict = {}
-        my_source_info_dict = {}
+        my_subject_info_dict = {}
         my_article = None
         coder_id_to_index_dict = {}
         current_coder_index = -1
@@ -210,7 +234,7 @@ class Reliability_Names( object ):
                 my_article_data_id_list = my_article_info.get( self.ARTICLE_DATA_ID_LIST, [] )
                 my_article_coder_id_list = my_article_info.get( self.ARTICLE_CODER_ID_LIST, [] )
                 my_author_info_dict = my_article_info.get( self.AUTHOR_INFO_DICT, {} )
-                my_source_info_dict = my_article_info.get( self.SOURCE_INFO_DICT, {} )
+                my_subject_info_dict = my_article_info.get( self.SUBJECT_INFO_DICT, {} )
                 
                 # set up information needed for reliability row output.
                 
@@ -237,15 +261,15 @@ class Reliability_Names( object ):
                 #-- END check to see if we have author info. --#
                 
                 # got source info?
-                if ( ( my_source_info_dict is not None ) and ( len ( my_source_info_dict ) > 0 ) ):
+                if ( ( my_subject_info_dict is not None ) and ( len ( my_subject_info_dict ) > 0 ) ):
                 
                     # loop over the info in the dictionary, calling function to
                     #    output a given person's row to the reliability table for
                     #    each.
-                    for my_person_id, my_person_info_dict in six.iteritems( my_source_info_dict ):
+                    for my_person_id, my_person_info_dict in six.iteritems( my_subject_info_dict ):
                     
                         # call function to output reliability table row.
-                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_SOURCE, label_IN = label_IN )
+                        reliability_row = self.output_reliability_name_row( my_article, my_person_info_dict, self.PERSON_TYPE_SUBJECT, label_IN = label_IN )
                         print ( "- source: " + str( reliability_row ) )
                     
                     #-- END loop over author info ---#
@@ -259,24 +283,26 @@ class Reliability_Names( object ):
     #-- END method output_reliability_data --##
     
     
-    def output_reliability_name_row( self, article_IN, person_info_dict_IN, person_type_IN, label_IN = "" ):
+    def output_reliability_name_row( self, article_IN, person_info_dict_IN, article_person_type_IN, label_IN = "" ):
         
         '''
         Accepts:
         - article_IN - article this person was detected within.
         - person_info_dict_IN, dictionary that maps person IDs to the
-           following:
-           - person_id - ID of person found in article.
-           - person_name - String name of that person.
-           - person_coder_id_list - list of the IDs of the coders who detected and
-              recorded the presence of that person.
-        - coder_id_to_index_map_IN, a map that tells this method which
-           coder User IDs correspond to which coder index in the reliability row
-        - person_type_IN, the type of the person ("author" or "source").
+            following:
+            - person_id - ID of person found in article.
+            - person_name - String name of that person.
+            - person_coder_id_to_coding_info_dict - dictionary that maps IDs of
+                coders who detected and recorded the presence of that person to
+                details of their coding.  For now, just has coder ID, person
+                type, and Article_Person record ID.  Could have more information
+                in the future.
+        - article_person_type_IN, the type of the Article_Person children we are
+            processing ("author" or "subject").
         - label_IN - label to assign to this set of data in the database.
          
-        Creates an instance of Analysis_Reliability_Names, stores values from the
-           dictionary in the appropriate columns, then saves it.
+        Creates an instance of Analysis_Reliability_Names, stores values from
+            the dictionary in the appropriate columns, then saves it.
            
         Returns the row model instance, or None if error.
         '''
@@ -291,10 +317,14 @@ class Reliability_Names( object ):
         my_person_id = -1
         my_person = None
         my_person_name = ""
-        my_coder_list = []
+        my_coder_person_info_dict = None
+        coder_count = -1
         current_coder_id = -1
+        current_person_coding_info = None
         current_coder_index = -1
         current_coder_user = None
+        current_coding_info_name = None
+        current_coding_info_value = None
         index_used_list = []
         current_number = -1
         current_index = -1
@@ -321,7 +351,7 @@ class Reliability_Names( object ):
                 if ( coder_id_to_index_map_IN is not None ):
                 
                     # person type.
-                    if ( ( person_type_IN is not None ) and ( person_type_IN != "" ) ):
+                    if ( ( article_person_type_IN is not None ) and ( article_person_type_IN != "" ) ):
                     
                         # got everything.  make reliability row.
                         reliability_instance = Analysis_Reliability_Names()
@@ -338,16 +368,25 @@ class Reliability_Names( object ):
                         my_person_id = person_info_dict_IN.get( self.PERSON_ID, -1 )
                         my_person = Person.objects.get( id = my_person_id )
                         my_person_name = person_info_dict_IN.get( self.PERSON_NAME, None )
-                        my_coder_list = person_info_dict_IN.get( self.PERSON_CODER_ID_LIST, -1 )
+                        my_coder_person_info_dict = person_info_dict_IN.get( self.PERSON_CODER_ID_TO_CODING_INFO_DICT, {} )
                         
                         # place info inside
                         reliability_instance.article = article_IN
                         reliability_instance.person = my_person
                         reliability_instance.person_name = my_person_name
-                        reliability_instance.person_type = person_type_IN
+                        reliability_instance.person_type = article_person_type_IN
+                        
+                        # check to see if more than TABLE_MAX_CODERS.
+                        coder_count = len( my_coder_person_info_dict )
+                        if ( coder_count > self.TABLE_MAX_CODERS ):
+                        
+                            # bad news - print error.
+                            print ( "====> In " + me + ": ERROR - more coders ( " + str( coder_count ) + " ) than table allows ( " + str( self.TABLE_MAX_CODERS ) + " ).\"" )
+                            
+                        #-- END check to see if more coders than slots in table --#
                         
                         # loop over coders.
-                        for current_coder_id in my_coder_list:
+                        for current_coder_id, current_person_coding_info in six.iteritems( my_coder_person_info_dict ):
                         
                             # look up index.
                             current_coder_index = coder_id_to_index_map_IN.get( current_coder_id, -1 )
@@ -404,6 +443,19 @@ class Reliability_Names( object ):
                                 field_name = "coder" + str( current_coder_index ) + "_person_id"
                                 setattr( reliability_instance, field_name, my_person_id )
                                 
+                                # set fields from current_person_coding_info.
+                                #     Each name in dictionary corresponds to
+                                #     column in database table.
+                                for current_coding_info_name, current_coding_info_value in six.iteritems( current_person_coding_info ):
+                                
+                                    # set field name using name.
+                                    field_name = "coder" + str( current_coder_index ) + "_" + current_coding_info_name
+                                    
+                                    # use that field name to set value.
+                                    setattr( reliability_instance, field_name, current_coding_info_value )
+                                    
+                                #-- END loop over coding info. --#
+
                                 # coder#_article_data_id - id of coder's
                                 #    Article_Data row.
                                 # Got an ID?
@@ -439,6 +491,14 @@ class Reliability_Names( object ):
                                 if ( current_index not in index_used_list ):
                                 
                                     # no - add values.
+                                    
+                                    # If you are going to be calculating
+                                    #     reliability on a numeric column, you
+                                    #     need to set it to 0 here for coders
+                                    #     who did not detect the current person,
+                                    #     else you'll have NaN problems in R.
+                                    # If you don't set it here, column will get
+                                    #     default value, usually NULL in SQL.
 
                                     # coder# - reference to User who coded.
                                     current_coder_user = self.get_coder_for_index( current_index )
@@ -454,8 +514,13 @@ class Reliability_Names( object ):
                                     #    coder didn't detect this person).
                                     field_name = "coder" + str( current_index ) + "_person_id"
                                     setattr( reliability_instance, field_name, 0 )
-                                    
-                                #-- END check to see if index has been used. --#
+                                                                    
+                                    # coder#_person_type_int - person type of 
+                                    #    person (0, since coder didn't detect
+                                    #    this person).
+                                    field_name = "coder" + str( current_index ) + "_person_type_int"
+                                    setattr( reliability_instance, field_name, 0 )
+                                                                    
                                 
                             #-- END loop over numbers 1 through TABLE_MAX_CODERS --#
                             
@@ -480,7 +545,7 @@ class Reliability_Names( object ):
     #-- END method output_reliability_name_row() --#
 
 
-    def process_articles( self, tag_list_IN = [] ):
+    def process_articles( self, tag_list_IN = [], limit_to_sources_IN = False ):
 
         '''
         Grabs articles with a tag in tag_list_IN.  For each, loops through their
@@ -514,12 +579,15 @@ class Reliability_Names( object ):
         coder_counter = -1
         current_article_data = None
         article_data_id_list = None
+        article_data_author_qs = None
+        article_data_subject_qs = None
         article_coder_id_list = None
         article_data_id = -1
         article_data_coder = None
         article_data_coder_id = None
+        person_type = ""
         author_info_dict = None
-        source_info_dict = None
+        subject_info_dict = None
 
         #-------------------------------------------------------------------------------
         # process articles to build data
@@ -555,7 +623,7 @@ class Reliability_Names( object ):
             article_data_id_list = []
             article_coder_id_list = []
             author_info_dict = {}
-            source_info_dict = {}
+            subject_info_dict = {}
         
             # get article_id
             article_id = current_article.id
@@ -634,15 +702,29 @@ class Reliability_Names( object ):
                 article_data_id = current_article_data.id
                 article_data_id_list.append( article_data_id )
                 
-                # get lists of authors and sources.
+                # get lists of authors and subjects.
                 article_data_author_qs = current_article_data.article_author_set.all()
-                article_data_source_qs = current_article_data.get_quoted_article_sources_qs()
+
+                # all subjects, or just sources?
+                if ( limit_to_sources_IN == True ):
+
+                    # just sources.
+                    article_data_subject_qs = current_article_data.get_quoted_article_sources_qs()
+                    
+                else:
+                
+                    # all subjects (the default).
+                    article_data_subject_qs = current_article_data.article_subject_set.all()
+                    
+                #-- END check to see if all subjects or just sources. --#
                 
                 # call process_person_qs for authors.
-                author_info_dict = self.process_person_qs( article_data_coder, article_data_author_qs, author_info_dict )
+                person_type = self.PERSON_TYPE_AUTHOR
+                author_info_dict = self.process_person_qs( article_data_coder, article_data_author_qs, author_info_dict, person_type )
                         
-                # and call process_person_qs for sources.
-                source_info_dict = self.process_person_qs( article_data_coder, article_data_source_qs, source_info_dict )
+                # and call process_person_qs for subjects.
+                person_type = self.PERSON_TYPE_SUBJECT
+                subject_info_dict = self.process_person_qs( article_data_coder, article_data_subject_qs, subject_info_dict, person_type )
                         
             #-- END loop over related Article_Data
             
@@ -651,7 +733,7 @@ class Reliability_Names( object ):
             article_info_dict[ self.ARTICLE_DATA_ID_LIST ] = article_data_id_list
             article_info_dict[ self.ARTICLE_CODER_ID_LIST ] = article_coder_id_list
             article_info_dict[ self.AUTHOR_INFO_DICT ] = author_info_dict
-            article_info_dict[ self.SOURCE_INFO_DICT ] = source_info_dict    
+            article_info_dict[ self.SUBJECT_INFO_DICT ] = subject_info_dict    
         
             # shouldn't need to do anything more - reference to this dictionary is
             #    already in the master map of article IDs to article info.
@@ -661,16 +743,18 @@ class Reliability_Names( object ):
     #-- END method process_articles() --#
 
 
-    def process_person_qs( self, coder_IN, article_person_qs_IN, person_info_dict_IN ):
+    def process_person_qs( self, coder_IN, article_person_qs_IN, person_info_dict_IN, article_person_type_IN ):
         
         '''
-        Accepts User instance of user who coded the Article, Article_Person QuerySet
-           (either Article_Author or Article_Subject) and a dictionary to be used to
-           build up a map of IDs to information on people found in a given article.
-           Loops over entries and builds up this dictionary that maps IDs of persons
-           identified in the text to details on the person (including the Person's
-           ID, string name, and the coders who detected that person).  Returns the
-           dictionary.
+        Accepts User instance of user who coded the Article, Article_Person
+            QuerySet (either Article_Author or Article_Subject) and a dictionary
+            to be used to build up a map of IDs to information on people found
+            in a given article. Loops over entries and builds up this dictionary
+            that maps IDs of persons identified in the text to details on the
+            person (including the Person's ID, string name, and a map of coder
+            IDs to a dictionary for each coder who detected that person with
+            their coding info, at this point their ID and the type they assigned
+            to the person).  Returns the updated person_info_dict dictionary.
         '''
         
         # return reference
@@ -684,7 +768,10 @@ class Reliability_Names( object ):
         person_id = -1
         person_name = ""
         person_info = None
-        person_coder_list = None
+        person_coding_info_dict = None
+        person_coding_info = None
+        current_person_type = None
+        current_person_type_int = None
         
         # make sure we have a coder
         if ( coder_IN is not None ):
@@ -692,66 +779,114 @@ class Reliability_Names( object ):
             # make sure we have a queryset.
             if ( article_person_qs_IN is not None ):
             
-                # got a dictionary passed in?
-                if ( person_info_dict_IN is not None ):
-                
-                    person_info_dict_OUT = person_info_dict_IN
-                
-                #-- END check to see if we have a dictionary passed in. --#
-        
-                # compile information on authors.
-                for current_article_person in article_person_qs_IN:
-                
-                    # get coder ID.
-                    coder_id = coder_IN.id
-                
-                    # get person instance.
-                    person_instance = current_article_person.person
-                
-                    # got one?  Anonymous sources won't have one.  If we find a
-                    #    record with no associated person, move on.
-                    if ( person_instance is not None ):
-                
-                        # get person ID and name.
-                        person_id = person_instance.id
-                        person_name = person_instance.get_name_string()
+                # make sure we have a person type passed in.
+                if ( ( article_person_type_IN is not None ) and ( article_person_type_IN != "" ) ):
+            
+                    # got a dictionary passed in?
+                    if ( person_info_dict_IN is not None ):
+                    
+                        person_info_dict_OUT = person_info_dict_IN
+                    
+                    #-- END check to see if we have a dictionary passed in. --#
+            
+                    # compile information on authors.
+                    for current_article_person in article_person_qs_IN:
+                    
+                        # get coder ID.
+                        coder_id = coder_IN.id
                         
-                        # look for person in person info dictionary.
-                        if person_id in person_info_dict_OUT:
+                        # get current person type, different way based on person
+                        #     type passed in.
+                        # Article_Author QuerySet?
+                        if ( article_person_type_IN == self.PERSON_TYPE_AUTHOR ):
                         
-                            # person already encountered.  Add the coder ID to the coder
-                            #    list.
-                            person_info = person_info_dict_OUT.get( person_id )
+                            # only one type of author, so use the type passed in.
+                            current_person_type = article_person_type_IN
+                        
+                        # Article_Subject QuerySet?
+                        elif ( ( article_person_type_IN == self.PERSON_TYPE_SUBJECT )
+                            or ( article_person_type_IN == self.PERSON_TYPE_SOURCE ) ):
+                        
+                            # this is an Article_Subject, so get subject_type.
+                            current_person_type = current_article_person.subject_type
                             
-                            # get coder list.
-                            person_coder_list = person_info.get( self.PERSON_CODER_ID_LIST )
+                        
+                        else:
+                        
+                            # unknown Article_Person type.  set to empty string.
+                            current_person_type = ""
+                        
+                        #-- END check to see how we get person type. --#
+                        
+                        # also get integer value
+                        current_person_type_int = self.PERSON_TYPE_TO_INT_MAP[ current_person_type ]
+                        
+                        # get person instance.
+                        person_instance = current_article_person.person
+                    
+                        # got one?  Anonymous sources won't have one.  If we find a
+                        #    record with no associated person, move on.
+                        if ( person_instance is not None ):
+                    
+                            # get person ID and name.
+                            person_id = person_instance.id
+                            person_name = person_instance.get_name_string()
                             
-                            # append coder ID.
-                            person_coder_list.append( coder_id )
+                            # create coding info. for this coder.
+                            person_coding_info = {}
+                            
+                            # coder ID
+                            person_coding_info[ self.PERSON_CODING_INFO_CODER_ID ] = coder_id
+                            
+                            # person type
+                            person_coding_info[ self.PERSON_CODING_INFO_PERSON_TYPE ]  = current_person_type
+                            person_coding_info[ self.PERSON_CODING_INFO_PERSON_TYPE_INT ]  = current_person_type_int
+                            
+                            # Article_Person child record ID.
+                            person_coding_info[ self.PERSON_CODING_INFO_ARTICLE_PERSON_ID ] = current_article_person.id
+                            
+                            # look for person in person info dictionary.
+                            if person_id in person_info_dict_OUT:
+                            
+                                # person already encountered.  Add coding info
+                                #    to the coding info list.
+                                person_info = person_info_dict_OUT.get( person_id )
+                                
+                                # get person_coding_info_list.
+                                person_coding_info_dict = person_info.get( self.PERSON_CODER_ID_TO_CODING_INFO_DICT )
+                                
+                                # append person_coding_info
+                                person_coding_info_dict[ coder_id ] = person_coding_info
+                                
+                            else:
+                            
+                                # person not in the dictionary yet.  Create new dictionary.
+                                person_info = {}
+                                
+                                # add information.
+                                person_info[ self.PERSON_ID ] = person_id
+                                person_info[ self.PERSON_NAME ] = person_name
+                                
+                                # add person coding info. for this coder.
+                                person_coding_info_dict = {}
+                                person_coding_info_dict[ coder_id ] = person_coding_info
+                                person_info[ self.PERSON_CODER_ID_TO_CODING_INFO_DICT ] = person_coding_info_dict
+                                
+                                # add info to return dictionary.
+                                person_info_dict_OUT[ person_id ] = person_info
+                                
+                            #-- END check to see if person is already in the dictionary. --#
                             
                         else:
                         
-                            # person not in the dictionary yet.  Create new dictionary.
-                            person_info = {}
+                            # no person - output a message.
+                            print( "In " + me + ": no person found for record: " + str( current_article_person ) )
                             
-                            # add information.
-                            person_info[ self.PERSON_ID ] = person_id
-                            person_info[ self.PERSON_NAME ] = person_name
-                            person_info[ self.PERSON_CODER_ID_LIST ] = [ coder_id, ]
-                            
-                            # add info to return dictionary.
-                            person_info_dict_OUT[ person_id ] = person_info
-                            
-                        #-- END check to see if person is already in the dictionary. --#
-                        
-                    else:
+                        #-- END check to make sure that person is present. --#
+            
+                    #-- END loop over persons. --#
                     
-                        # no person - output a message.
-                        print( "In " + me + ": no person found for record: " + str( current_article_person ) )
-                        
-                    #-- END check to make sure that person is present. --#
-        
-                #-- END loop over persons. --#
+                #-- END check to see if we have person type. --#
                 
             #-- END check to see if QuerySet passed in. --#  
         
