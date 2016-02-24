@@ -7,14 +7,14 @@
 # source( "db_connect.r" )
 # - Initialize the functions contained in reliability_functions.r, also in this same folder.
 # source( "functions-reliability.r" )
-# - Set personType to either "author" or "source"
+# - Set personType to either "author" or "subject"
 # - If you want to filter on a label, declare the label in filterOnLabel
 
-# if no personType, default to "source".
+# if no personType, default to "subject".
 if ( exists( "personType" ) == FALSE ){
 
-    # no person type.  Default to "source".
-    personType <- "source"
+    # no person type.  Default to "subject".
+    personType <- "subject"
 
 }
 
@@ -33,7 +33,7 @@ outputFile <- paste( personType, "-name_detection_results.txt", sep = "" )
 # Retrieve data
 #==============================================================================#
 
-# execute query to pull in the source information from reliability table.
+# execute query to pull in the information from reliability table.
 resultSet <- queryReliabilityData( personType, filterOnLabel )
 
 # retrieve rows into data.frame
