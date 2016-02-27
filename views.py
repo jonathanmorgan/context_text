@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2016 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -55,6 +55,9 @@ from django.shortcuts import render
 # import django code for csrf security stuff.
 from django.template.context_processors import csrf
 
+# python_utilities - django view helper
+from python_utilities.django_utils.django_view_helper import DjangoViewHelper
+
 # python_utilities - exceptions
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 
@@ -67,7 +70,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 # python_utilities - string helper
 from python_utilities.strings.string_helper import StringHelper
 
-# Import the form classes for network output
+# Import form classes
 from sourcenet.forms import Article_DataSelectForm
 from sourcenet.forms import ArticleCodingForm
 from sourcenet.forms import ArticleCodingSubmitForm
@@ -94,7 +97,7 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 
 
 #================================================================================
-# Shared variables and functions
+# ! ==> Shared variables and functions
 #================================================================================
 
 NO_GRAF = "no_graf"
@@ -352,16 +355,8 @@ def get_request_data( request_IN ):
     # return reference
     request_data_OUT = None
 
-    # do we have input parameters?
-    if ( request_IN.method == 'POST' ):
-
-        request_data_OUT = request_IN.POST
-        
-    elif ( request_IN.method == 'GET' ):
-    
-        request_data_OUT = request_IN.GET
-        
-    #-- END check to see request type so we initialize form correctly. --#
+    # call method in DjangoViewHelper
+    request_data_OUT = DjangoViewHelper.get_request_data( request_IN )
     
     return request_data_OUT
     
@@ -370,11 +365,11 @@ def get_request_data( request_IN ):
 
 
 '''
-Gross debugging code, shared across all models.
+debugging code, shared across all models.
 '''
 
-DEBUG = True
-
+DEBUG = False
+LOGGER_NAME = "sourcenet.views"
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
     
@@ -384,60 +379,29 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
     '''
     
     # declare variables
-    my_message = ""
-    my_logger = None
     my_logger_name = ""
+    
+    # got a logger name?
+    my_logger_name = LOGGER_NAME
+    if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
+    
+        # use logger name passed in.
+        my_logger_name = logger_name_IN
+        
+    #-- END check to see if logger name --#
 
-    # got a message?
-    if ( message_IN ):
-    
-        # only print if debug is on.
-        if ( DEBUG == True ):
-        
-            my_message = message_IN
-        
-            # got a method?
-            if ( method_IN ):
-            
-                # We do - append to front of message.
-                my_message = "In " + method_IN + ": " + my_message
-                
-            #-- END check to see if method passed in --#
-            
-            # indent?
-            if ( indent_with_IN ):
-                
-                my_message = indent_with_IN + my_message
-                
-            #-- END check to see if we indent. --#
-        
-            # debug is on.  Start logging rather than using print().
-            #print( my_message )
-            
-            # got a logger name?
-            my_logger_name = "sourcenet.views"
-            if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
-            
-                # use logger name passed in.
-                my_logger_name = logger_name_IN
-                
-            #-- END check to see if logger name --#
-                
-            # get logger
-            my_logger = LoggingHelper.get_a_logger( my_logger_name )
-            
-            # log debug.
-            my_logger.debug( my_message )
-        
-        #-- END check to see if debug is on --#
-    
-    #-- END check to see if message. --#
+    # call DjangoViewHelper method.
+    DjangoViewHelper.output_debug( message_IN,
+                                   method_IN = method_IN,
+                                   indent_with_IN = indent_with_IN,
+                                   logger_name_IN = my_logger_name,
+                                   debug_flag_IN = DEBUG )
 
 #-- END method output_debug() --#
 
 
 #===============================================================================
-# view action methods (in alphabetical order)
+# ! ==> view action methods (in alphabetical order)
 #===============================================================================
 
 
@@ -505,726 +469,6 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
 #    return response_OUT
 
 #-- end view method results() --#
-
-
-def logout( request_IN ):
-
-    # declare variables
-    me = "sourcenet.views.logout"
-    request_data = None
-    redirect_path = ""
-    
-    # initialize redirect_path
-    redirect_path = "/"
-    
-    # do we have input parameters?
-    request_data = get_request_data( request_IN )
-    if ( request_data is not None ):
-    
-        # we do.  See if we have redirect.
-        redirect_path = request_data.get( "post_logout_redirect", "/" )
-
-    #-- END check to see if we have request data. --#
-
-    # log out the user.
-    auth.logout( request_IN )
-
-    # Redirect to server home page for now.
-    return HttpResponseRedirect( redirect_path )
-    
-#-- END view method logout() --#
-
-
-@login_required
-def article_view( request_IN ):
-
-    #return reference
-    response_OUT = None
-
-    # declare variables
-    me = "article_view"
-    response_dictionary = {}
-    default_template = ''
-    request_inputs = None
-    article_lookup_form = None
-    is_form_ready = False
-    article_id = -1
-    article_qs = None
-    article_count = -1
-    article_instance = None
-    article_paragraph_list = None
-    
-    # declare variables - interacting with article text
-    article_content = ""
-    article_content_bs = None
-    p_tag_list = []
-    p_tag_count = -1
-    rendered_article_html = ""
-    paragraph_index = -1
-    paragraph_number = -1
-    p_tag_bs = None
-    p_tag_html = ""
-
-    # initialize response dictionary
-    response_dictionary = {}
-    response_dictionary.update( csrf( request_IN ) )
-    response_dictionary[ 'article_instance' ] = None
-    response_dictionary[ 'article_text' ] = None
-
-    # set my default rendering template
-    default_template = 'articles/article-view.html'
-
-    # variables for building, populating person array that is used to control
-    #    building of network data matrices.
-
-    # do we have output parameters?
-    if ( request_IN.method == 'POST' ):
-
-        # use request_IN.POST as request_inputs.
-        request_inputs = request_IN.POST
-        
-    elif ( request_IN.method == 'GET' ):
-    
-        # use request_IN.GET as request_inputs.
-        request_inputs = request_IN.GET
-        
-    #-- END check of request method to set request_inputs --#
-    
-    # got inputs?
-    if ( request_inputs is not None ):
-        
-        # create ArticleLookupForm
-        article_lookup_form = ArticleLookupForm( request_inputs )
-
-        # get information we need from request.
-        article_id = request_inputs.get( "article_id", -1 )
-
-        is_form_ready = True
-    
-    #-- END check to see if inputs. --#
-    
-    # form ready?
-    if ( is_form_ready == True ):
-
-        if ( article_lookup_form.is_valid() == True ):
-
-            # retrieve article specified by the input parameter, then create
-            #   HTML output of article plus Article_Text.
-            
-            # get article ID.
-            # already populated above.
-            #article_id = request_IN.POST.get( "article_id", -1 )
-
-            # retrieve QuerySet that contains that article.
-            article_qs = Article.objects.filter( pk = article_id )
-
-            # get count of queryset return items
-            if ( ( article_qs != None ) and ( article_qs != "" ) ):
-
-                # get count of articles
-                article_count = article_qs.count()
-    
-                # should only be one.
-                if ( article_count == 1 ):
-                
-                    # get article instance
-                    article_instance = article_qs.get()
-                    
-                    # retrieve article text.
-                    article_text = article_instance.article_text_set.get()
-                    
-                    # get content
-                    article_content = article_text.get_content()
-                    
-                    # parse with beautifulsoup
-                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
-                    # get paragraph tag list
-                    p_tag_list = article_content_bs.find_all( 'p' )
-                    p_tag_count = len( p_tag_list )
-                    
-                    # got p-tags?
-                    if ( p_tag_count > 0 ):
-                    
-                        # yes.  create a table with two columns per row:
-                        # - paragraph number
-                        # - paragraph text
-                        rendered_article_html = '''
-                            <table class="gridtable">
-                                <tr>
-                                    <th>graf#</th>
-                                    <th>text</th>
-                                </tr>
-                        '''
-                    
-                        # for each paragraph, grab that <p> and place it in a table
-                        #    cell.
-                        for paragraph_index in range( p_tag_count ):
-                        
-                            # paragraph number is index + 1
-                            paragraph_number = paragraph_index + 1
-                            
-                            # get <p> tag with ID of paragraph_number
-                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
-                            # render row
-                            p_tag_html = p_tag_bs.prettify()
-                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
-                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
-
-                            # calling str() on any part of a string being
-                            #    concatenated causes all parts of the string to
-                            #    try to encode to default encoding ('ascii').
-                            #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
-                        
-                        #-- END loop over <p> ids. --#
-                        
-                        rendered_article_html += "</table>"
-                    
-                    else:
-                    
-                        # no p-tags - just use article_text.
-                        rendered_article_html = article_content
-                        
-                    #-- END check to see if paragraph tags. --#
-                    
-                    # seed response dictionary.
-                    response_dictionary[ 'article_instance' ] = article_instance
-                    response_dictionary[ 'article_text' ] = article_text
-                    response_dictionary[ 'article_content' ] = rendered_article_html
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-                    # get paragraph list
-                    #article_paragraph_list = article_text.get_paragraph_list()
-                    
-                else:
-                
-                    # error - none or multiple articles found for ID. --#
-                    print( "No article returned for ID passed in." )
-                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
-                #-- END check to see if there is one or other than one. --#
-
-            else:
-            
-                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
-                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
-                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
-            #-- END check to see if query set is None --#
-
-        else:
-
-            # not valid - render the form again
-            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-        #-- END check to see whether or not form is valid. --#
-
-    else:
-    
-        # new request, make an empty instance of network output form.
-        article_lookup_form = ArticleLookupForm()
-        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-    #-- END check to see if new request or POST --#
-    
-    # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
-
-    # render response
-    response_OUT = render( request_IN, default_template, response_dictionary )
-
-    return response_OUT
-
-#-- END view method article_view() --#
-
-
-@login_required
-def article_view_article_data( request_IN ):
-
-    #return reference
-    response_OUT = None
-
-    # declare variables
-    me = "article_view_article_data"
-    response_dictionary = {}
-    default_template = ''
-    request_inputs = None
-    article_lookup_form = None
-    is_form_ready = False
-    article_id = -1
-    article_data_qs = None
-    article_data_count = -1
-    article_data_list = []
-    
-    # declare variables - for selecting specific article_data to output.
-    article_data_select_form = None
-    article_data_id_list = []
-
-    # initialize response dictionary
-    response_dictionary = {}
-    response_dictionary.update( csrf( request_IN ) )
-    response_dictionary[ 'article_instance' ] = None
-    response_dictionary[ 'article_text' ] = None
-
-    # set my default rendering template
-    default_template = 'articles/article-view-article-data.html'
-
-    # do we have output parameters?
-    if ( request_IN.method == 'POST' ):
-
-        # use request_IN.POST as request_inputs.
-        request_inputs = request_IN.POST
-        
-    elif ( request_IN.method == 'GET' ):
-    
-        # use request_IN.GET as request_inputs.
-        request_inputs = request_IN.GET
-        
-    #-- END check of request method to set request_inputs --#
-    
-    # got inputs?
-    if ( request_inputs is not None ):
-        
-        # create ArticleLookupForm
-        article_lookup_form = ArticleLookupForm( request_inputs )
-
-        # get information we need from request.
-        article_id = request_inputs.get( "article_id", -1 )
-
-        # need to also get Article_DataSelectForm?
-        if ( article_id > 0 ):
-
-            # yes - make one, pass it the article id.
-            article_data_select_form = Article_DataSelectForm( request_inputs, article_id = article_id )
-
-        #-- END check to see if article_id is populated. --#
-
-        is_form_ready = True
-    
-    #-- END check to see if inputs. --#
-    
-    # form ready?
-    if ( is_form_ready == True ):
-
-        if ( article_lookup_form.is_valid() == True ):
-
-            # retrieve QuerySet of Article_Data related to article.
-            article_data_qs = Article_Data.objects.filter( article_id = article_id )
-
-            # get count of queryset return items
-            if ( ( article_data_qs is not None ) and ( article_data_qs != "" ) ):
-
-                # do we need to further filter the list?
-                if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
-                
-                    # yes.  Get list of IDs.
-                    article_data_id_list = request_inputs.getlist( "article_data_id_select" )
-                    
-                    # got any?  If not, just display all.
-                    if ( len( article_data_id_list ) > 0 ):
-                    
-                        # filter to just Article_Data whose IDs were selected.
-                        article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
-                        
-                    #-- END check to see if any IDs selected --#
-                
-                #-- END check to see if we need to further filter Article_Data list --#
-    
-                # get count of articles
-                article_data_count = article_data_qs.count()
-                
-                # to start, just make a list out of the article data and pass it
-                #    to the template.
-                article_data_list = list( article_data_qs )
-
-                # seed response dictionary.
-                response_dictionary[ 'article_id' ] = article_id
-                response_dictionary[ 'article_data_list' ] = article_data_list
-                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                response_dictionary[ 'article_data_select_form' ] = article_data_select_form
-
-            else:
-            
-                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
-                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
-                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
-            #-- END check to see if query set is None --#
-
-        else:
-
-            # not valid - render the form again
-            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-        #-- END check to see whether or not form is valid. --#
-
-    else:
-    
-        # new request, make an empty instance of network output form.
-        article_lookup_form = ArticleLookupForm()
-        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-    #-- END check to see if new request or POST --#
-    
-    # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
-
-    # render response
-    response_OUT = render( request_IN, default_template, response_dictionary )
-
-    return response_OUT
-
-#-- END view method article_view_article_data() --#
-
-
-@login_required
-def article_view_article_data_with_text( request_IN ):
-
-    #return reference
-    response_OUT = None
-
-    # declare variables
-    me = "article_view_article_data_with_text"
-    response_dictionary = {}
-    default_template = ''
-    request_inputs = None
-    article_lookup_form = None
-    is_form_ready = False
-    article_id = -1
-    article_qs = None
-    article_count = -1
-    article_instance = None
-    article_paragraph_list = None
-    
-    # declare variables - selecting and filtering Article_Data
-    article_data_qs = None
-    article_data_count = -1
-    article_data_instance = None
-    graf_to_subject_map = {}
-    id_to_author_list_map = {}
-
-    # declare variables - for selecting specific article_data to output.
-    article_data_select_form = None
-    article_data_coder = None
-    article_data_coder_id = -1
-    article_data_coder_username = ""
-    rendered_author_html = ""
-    author_qs = None
-    author_organization = ""
-    
-    # declare variables - for unassociated subjects
-    subject_list = None
-    rendered_subject_html = ""
-    
-    # declare variables - interacting with article text
-    p_tag_id_to_subject_map = {}
-    current_graf_subjects_list = []
-    subject = None
-    article_content = ""
-    article_content_bs = None
-    p_tag_list = []
-    p_tag_count = -1
-    rendered_article_html = ""
-    paragraph_index = -1
-    paragraph_number = -1
-    p_tag_bs = None
-    p_tag_html = ""
-
-    # initialize response dictionary
-    response_dictionary = {}
-    response_dictionary.update( csrf( request_IN ) )
-    response_dictionary[ 'article_instance' ] = None
-    response_dictionary[ 'article_text' ] = None
-
-    # set my default rendering template
-    default_template = 'articles/article-view-article-data-with-text.html'
-
-    # do we have output parameters?
-    if ( request_IN.method == 'POST' ):
-
-        # use request_IN.POST as request_inputs.
-        request_inputs = request_IN.POST
-        
-    elif ( request_IN.method == 'GET' ):
-    
-        # use request_IN.GET as request_inputs.
-        request_inputs = request_IN.GET
-        
-    #-- END check of request method to set request_inputs --#
-    
-    # got inputs?
-    if ( request_inputs is not None ):
-        
-        # create ArticleLookupForm
-        article_lookup_form = ArticleLookupForm( request_inputs )
-
-        # get information we need from request.
-        article_id = request_inputs.get( "article_id", -1 )
-
-        # need to also get Article_DataSelectForm?
-        if ( article_id > 0 ):
-
-            # yes - make one, pass it the article id.
-            article_data_select_form = Article_DataSelectForm( request_inputs, article_id = article_id )
-
-        #-- END check to see if article_id is populated. --#
-
-        is_form_ready = True
-    
-    #-- END check to see if inputs. --#
-    
-    # form ready?
-    if ( is_form_ready == True ):
-
-        if ( article_lookup_form.is_valid() == True ):
-
-            # retrieve article specified by the input parameter, then create
-            #   HTML output of article plus Article_Text.
-            
-            # retrieve QuerySet that contains that article.
-            article_qs = Article.objects.filter( pk = article_id )
-
-            # get count of queryset return items
-            if ( ( article_qs != None ) and ( article_qs != "" ) ):
-
-                # get count of articles
-                article_count = article_qs.count()
-    
-                # should only be one.
-                if ( article_count == 1 ):
-                
-                    # retrieve QuerySet of Article_Data related to article.
-                    article_data_qs = Article_Data.objects.filter( article_id = article_id )
-        
-                    # do we need to further filter the list?
-                    if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
-                    
-                        # yes.  Get list of IDs.
-                        article_data_id_list = request_inputs.getlist( "article_data_id_select" )
-                        
-                        # got any?  If not, just display all.
-                        if ( len( article_data_id_list ) > 0 ):
-                        
-                            # filter to just Article_Data whose IDs were selected.
-                            article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
-                            
-                        #-- END check to see if any IDs selected --#
-                    
-                    #-- END check to see if we need to further filter Article_Data list --#
-                    
-                    article_data_qs = article_data_qs.order_by( "coder__id" )
-                    
-                    # ! authors
-                    
-                    # got any Article_Data?
-                    if ( article_data_qs.count() > 0 ):
-                    
-                        rendered_author_html = '''
-                            <table class="gridtable">
-                                <tr>
-                                    <th>coder</th>
-                                    <th>author</th>
-                                </tr>
-                        '''
-
-                        # make table of authors broken out by coder, then person
-                        #    ID.
-                        for article_data_instance in article_data_qs:
-                        
-                            # get coder information
-                            article_data_coder = article_data_instance.coder
-                            article_data_coder_id = article_data_coder.id
-                            article_data_coder_username = article_data_coder.username
-                        
-                            # retrieve all authors
-                            author_qs = article_data_instance.article_author_set.all()
-                            author_qs = author_qs.order_by( "person__last_name", "person__first_name" )
-                            
-                            # loop over authors.
-                            for author in author_qs:
-                            
-                                # build HTML
-                                # calling str() on any part of a string being
-                                #    concatenated causes all parts of the string to
-                                #    try to encode to default encoding ('ascii').
-                                #    This breaks if there are non-ascii characters.
-                                rendered_author_html += "\n        <tr><td>" + unicode( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + unicode( author )
-                                
-                                # got an organization string?
-                                author_organization = author.organization_string
-                                if ( ( author_organization is not None ) and ( author_organization != "" ) ):
-                                    rendered_author_html += "<br />==> organization: " + author_organization
-                                #-- END check to see if name captured. --#
-
-                                rendered_author_html += "</td></tr>"
-                            
-                            #-- END loop over authors. --#
-                        
-                        #-- END loop over Article_Data instances --#
-                    
-                        rendered_author_html += "</table>"
-
-                    #-- END check to see if we have any Article_Data --#
-                    
-                    # get map of subjects to <p> tags.
-                    p_tag_id_to_subject_map = create_graf_to_subject_map( article_data_qs )
-                
-                    # ! subjects with no mentions (so no associated graf)
-                    
-                    # got any unassociated subjects?
-                    subject_list = p_tag_id_to_subject_map.get( NO_GRAF, [] )
-                    if ( len ( subject_list ) > 0 ):
-                    
-                        # we do.  Make a table for them.
-                        rendered_subject_html = create_subject_table_html( subject_list, include_header_row_IN = True )
-
-                    #-- END check to see if unassociated subjects --#
-                    
-                    # ! text and subjects
-                    
-                    # get article instance
-                    article_instance = article_qs.get()
-                    
-                    # retrieve article text.
-                    article_text = article_instance.article_text_set.get()
-                    
-                    # get content
-                    article_content = article_text.get_content()
-                    
-                    # parse with beautifulsoup
-                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
-                    # get paragraph tag list
-                    p_tag_list = article_content_bs.find_all( 'p' )
-                    p_tag_count = len( p_tag_list )
-                    
-                    # got p-tags?
-                    if ( p_tag_count > 0 ):
-                    
-                        # yes.  create a table with three columns per row:
-                        # - paragraph number
-                        # - paragraph text
-                        # - subjects detected in that paragraph
-                        rendered_article_html = '''
-                            <table class="gridtable">
-                                <tr>
-                                    <th>graf#</th>
-                                    <th>text</th>
-                                    <th>subjects coded</th>
-                                </tr>
-                        '''
-                    
-                        # for each paragraph, grab that <p> and place it in a table
-                        #    cell.
-                        for paragraph_index in range( p_tag_count ):
-                        
-                            # paragraph number is index + 1
-                            paragraph_number = paragraph_index + 1
-                            
-                            # get <p> tag with ID of paragraph_number
-                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
-                            # render row
-                            p_tag_html = p_tag_bs.prettify()
-                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
-                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
-
-                            # calling str() on any part of a string being
-                            #    concatenated causes all parts of the string to
-                            #    try to encode to default encoding ('ascii').
-                            #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td>"
-                            
-                            # check if any Article_Subjects for this paragraph.
-                            current_graf_subjects_list = p_tag_id_to_subject_map.get( paragraph_number, [] )
-                            if ( len( current_graf_subjects_list ) > 0 ):
-                            
-                                # open cell for subject table.
-                                rendered_article_html += "<td>"
-                                
-                                # generate HTML for subject table.
-                                rendered_article_html += create_subject_table_html( current_graf_subjects_list, include_header_row_IN = True )
-
-                                # close table cell
-                                rendered_article_html += "</td>"
-
-                            else:
-                            
-                                # none.
-                                rendered_article_html += "<td>None</td>"
-                            
-                            #-- END check to see if Article_Subjects for graf --#
-                            
-                            # close off the row.
-                            rendered_article_html += "\n</tr>"
-                        
-                        #-- END loop over <p> ids. --#
-                        
-                        rendered_article_html += "</table>"
-                    
-                    else:
-                    
-                        # no p-tags - just use article_text.
-                        rendered_article_html = article_content
-                        
-                    #-- END check to see if paragraph tags. --#
-                    
-                    # seed response dictionary.
-                    response_dictionary[ 'article_instance' ] = article_instance
-                    response_dictionary[ 'article_text' ] = article_text
-                    response_dictionary[ 'author_info' ] = rendered_author_html
-                    response_dictionary[ 'subject_info' ] = rendered_subject_html
-                    response_dictionary[ 'article_content' ] = rendered_article_html
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    response_dictionary[ 'article_data_select_form' ] = article_data_select_form
-
-                    # get paragraph list
-                    #article_paragraph_list = article_text.get_paragraph_list()
-                    
-                else:
-                
-                    # error - none or multiple articles found for ID. --#
-                    print( "No article returned for ID passed in." )
-                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
-                #-- END check to see if there is one or other than one. --#
-
-            else:
-            
-                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
-                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
-                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
-            #-- END check to see if query set is None --#
-
-        else:
-
-            # not valid - render the form again
-            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-        #-- END check to see whether or not form is valid. --#
-
-    else:
-    
-        # new request, make an empty instance of network output form.
-        article_lookup_form = ArticleLookupForm()
-        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-    #-- END check to see if new request or POST --#
-    
-    # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
-
-    # render response
-    response_OUT = render( request_IN, default_template, response_dictionary )
-
-    return response_OUT
-
-#-- END view method article_view_article_data_with_text() --#
 
 
 @login_required
@@ -1313,7 +557,7 @@ def article_code( request_IN ):
     response_dictionary[ 'manual_article_coder' ] = manual_article_coder
 
     # set my default rendering template
-    default_template = 'articles/article-code.html'
+    default_template = 'sourcenet/articles/article-code.html'
 
     # init coding status variables
     # start with it being OK to process coding.
@@ -1793,6 +1037,753 @@ def article_code( request_IN ):
 
 
 @login_required
+def article_view( request_IN ):
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_view"
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    article_lookup_form = None
+    is_form_ready = False
+    article_id = -1
+    article_qs = None
+    article_count = -1
+    article_instance = None
+    article_paragraph_list = None
+    
+    # declare variables - interacting with article text
+    article_content = ""
+    article_content_bs = None
+    p_tag_list = []
+    p_tag_count = -1
+    rendered_article_html = ""
+    paragraph_index = -1
+    paragraph_number = -1
+    p_tag_bs = None
+    p_tag_html = ""
+
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'article_instance' ] = None
+    response_dictionary[ 'article_text' ] = None
+
+    # set my default rendering template
+    default_template = 'sourcenet/articles/article-view.html'
+
+    # variables for building, populating person array that is used to control
+    #    building of network data matrices.
+
+    # do we have output parameters?
+    if ( request_IN.method == 'POST' ):
+
+        # use request_IN.POST as request_inputs.
+        request_inputs = request_IN.POST
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        # use request_IN.GET as request_inputs.
+        request_inputs = request_IN.GET
+        
+    #-- END check of request method to set request_inputs --#
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create ArticleLookupForm
+        article_lookup_form = ArticleLookupForm( request_inputs )
+
+        # get information we need from request.
+        article_id = request_inputs.get( "article_id", -1 )
+
+        is_form_ready = True
+    
+    #-- END check to see if inputs. --#
+    
+    # form ready?
+    if ( is_form_ready == True ):
+
+        if ( article_lookup_form.is_valid() == True ):
+
+            # retrieve article specified by the input parameter, then create
+            #   HTML output of article plus Article_Text.
+            
+            # get article ID.
+            # already populated above.
+            #article_id = request_IN.POST.get( "article_id", -1 )
+
+            # retrieve QuerySet that contains that article.
+            article_qs = Article.objects.filter( pk = article_id )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # should only be one.
+                if ( article_count == 1 ):
+                
+                    # get article instance
+                    article_instance = article_qs.get()
+                    
+                    # retrieve article text.
+                    article_text = article_instance.article_text_set.get()
+                    
+                    # get content
+                    article_content = article_text.get_content()
+                    
+                    # parse with beautifulsoup
+                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
+                    
+                    # get paragraph tag list
+                    p_tag_list = article_content_bs.find_all( 'p' )
+                    p_tag_count = len( p_tag_list )
+                    
+                    # got p-tags?
+                    if ( p_tag_count > 0 ):
+                    
+                        # yes.  create a table with two columns per row:
+                        # - paragraph number
+                        # - paragraph text
+                        rendered_article_html = '''
+                            <table class="gridtable">
+                                <tr>
+                                    <th>graf#</th>
+                                    <th>text</th>
+                                </tr>
+                        '''
+                    
+                        # for each paragraph, grab that <p> and place it in a table
+                        #    cell.
+                        for paragraph_index in range( p_tag_count ):
+                        
+                            # paragraph number is index + 1
+                            paragraph_number = paragraph_index + 1
+                            
+                            # get <p> tag with ID of paragraph_number
+                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
+                            
+                            # render row
+                            p_tag_html = p_tag_bs.prettify()
+                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
+                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
+
+                            # calling str() on any part of a string being
+                            #    concatenated causes all parts of the string to
+                            #    try to encode to default encoding ('ascii').
+                            #    This breaks if there are non-ascii characters.
+                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
+                        
+                        #-- END loop over <p> ids. --#
+                        
+                        rendered_article_html += "</table>"
+                    
+                    else:
+                    
+                        # no p-tags - just use article_text.
+                        rendered_article_html = article_content
+                        
+                    #-- END check to see if paragraph tags. --#
+                    
+                    # seed response dictionary.
+                    response_dictionary[ 'article_instance' ] = article_instance
+                    response_dictionary[ 'article_text' ] = article_text
+                    response_dictionary[ 'article_content' ] = rendered_article_html
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+                    # get paragraph list
+                    #article_paragraph_list = article_text.get_paragraph_list()
+                    
+                else:
+                
+                    # error - none or multiple articles found for ID. --#
+                    print( "No article returned for ID passed in." )
+                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                    
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, make an empty instance of network output form.
+        article_lookup_form = ArticleLookupForm()
+        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view method article_view() --#
+
+
+@login_required
+def article_view_article_data( request_IN ):
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_view_article_data"
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    article_lookup_form = None
+    is_form_ready = False
+    article_id = -1
+    article_data_qs = None
+    article_data_count = -1
+    article_data_list = []
+    
+    # declare variables - for selecting specific article_data to output.
+    article_data_select_form = None
+    article_data_id_list = []
+
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'article_instance' ] = None
+    response_dictionary[ 'article_text' ] = None
+
+    # set my default rendering template
+    default_template = 'sourcenet/articles/article-view-article-data.html'
+
+    # do we have output parameters?
+    if ( request_IN.method == 'POST' ):
+
+        # use request_IN.POST as request_inputs.
+        request_inputs = request_IN.POST
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        # use request_IN.GET as request_inputs.
+        request_inputs = request_IN.GET
+        
+    #-- END check of request method to set request_inputs --#
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create ArticleLookupForm
+        article_lookup_form = ArticleLookupForm( request_inputs )
+
+        # get information we need from request.
+        article_id = request_inputs.get( "article_id", -1 )
+
+        # need to also get Article_DataSelectForm?
+        if ( article_id > 0 ):
+
+            # yes - make one, pass it the article id.
+            article_data_select_form = Article_DataSelectForm( request_inputs, article_id = article_id )
+
+        #-- END check to see if article_id is populated. --#
+
+        is_form_ready = True
+    
+    #-- END check to see if inputs. --#
+    
+    # form ready?
+    if ( is_form_ready == True ):
+
+        if ( article_lookup_form.is_valid() == True ):
+
+            # retrieve QuerySet of Article_Data related to article.
+            article_data_qs = Article_Data.objects.filter( article_id = article_id )
+
+            # get count of queryset return items
+            if ( ( article_data_qs is not None ) and ( article_data_qs != "" ) ):
+
+                # do we need to further filter the list?
+                if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
+                
+                    # yes.  Get list of IDs.
+                    article_data_id_list = request_inputs.getlist( "article_data_id_select" )
+                    
+                    # got any?  If not, just display all.
+                    if ( len( article_data_id_list ) > 0 ):
+                    
+                        # filter to just Article_Data whose IDs were selected.
+                        article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
+                        
+                    #-- END check to see if any IDs selected --#
+                
+                #-- END check to see if we need to further filter Article_Data list --#
+    
+                # get count of articles
+                article_data_count = article_data_qs.count()
+                
+                # to start, just make a list out of the article data and pass it
+                #    to the template.
+                article_data_list = list( article_data_qs )
+
+                # seed response dictionary.
+                response_dictionary[ 'article_id' ] = article_id
+                response_dictionary[ 'article_data_list' ] = article_data_list
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                response_dictionary[ 'article_data_select_form' ] = article_data_select_form
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, make an empty instance of network output form.
+        article_lookup_form = ArticleLookupForm()
+        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view method article_view_article_data() --#
+
+
+@login_required
+def article_view_article_data_with_text( request_IN ):
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_view_article_data_with_text"
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    article_lookup_form = None
+    is_form_ready = False
+    article_id = -1
+    article_qs = None
+    article_count = -1
+    article_instance = None
+    article_paragraph_list = None
+    
+    # declare variables - selecting and filtering Article_Data
+    article_data_qs = None
+    article_data_count = -1
+    article_data_instance = None
+    graf_to_subject_map = {}
+    id_to_author_list_map = {}
+
+    # declare variables - for selecting specific article_data to output.
+    article_data_select_form = None
+    article_data_coder = None
+    article_data_coder_id = -1
+    article_data_coder_username = ""
+    rendered_author_html = ""
+    author_qs = None
+    author_organization = ""
+    
+    # declare variables - for unassociated subjects
+    subject_list = None
+    rendered_subject_html = ""
+    
+    # declare variables - interacting with article text
+    p_tag_id_to_subject_map = {}
+    current_graf_subjects_list = []
+    subject = None
+    article_content = ""
+    article_content_bs = None
+    p_tag_list = []
+    p_tag_count = -1
+    rendered_article_html = ""
+    paragraph_index = -1
+    paragraph_number = -1
+    p_tag_bs = None
+    p_tag_html = ""
+
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'article_instance' ] = None
+    response_dictionary[ 'article_text' ] = None
+
+    # set my default rendering template
+    default_template = 'sourcenet/articles/article-view-article-data-with-text.html'
+
+    # do we have output parameters?
+    if ( request_IN.method == 'POST' ):
+
+        # use request_IN.POST as request_inputs.
+        request_inputs = request_IN.POST
+        
+    elif ( request_IN.method == 'GET' ):
+    
+        # use request_IN.GET as request_inputs.
+        request_inputs = request_IN.GET
+        
+    #-- END check of request method to set request_inputs --#
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create ArticleLookupForm
+        article_lookup_form = ArticleLookupForm( request_inputs )
+
+        # get information we need from request.
+        article_id = request_inputs.get( "article_id", -1 )
+
+        # need to also get Article_DataSelectForm?
+        if ( article_id > 0 ):
+
+            # yes - make one, pass it the article id.
+            article_data_select_form = Article_DataSelectForm( request_inputs, article_id = article_id )
+
+        #-- END check to see if article_id is populated. --#
+
+        is_form_ready = True
+    
+    #-- END check to see if inputs. --#
+    
+    # form ready?
+    if ( is_form_ready == True ):
+
+        if ( article_lookup_form.is_valid() == True ):
+
+            # retrieve article specified by the input parameter, then create
+            #   HTML output of article plus Article_Text.
+            
+            # retrieve QuerySet that contains that article.
+            article_qs = Article.objects.filter( pk = article_id )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # should only be one.
+                if ( article_count == 1 ):
+                
+                    # retrieve QuerySet of Article_Data related to article.
+                    article_data_qs = Article_Data.objects.filter( article_id = article_id )
+        
+                    # do we need to further filter the list?
+                    if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
+                    
+                        # yes.  Get list of IDs.
+                        article_data_id_list = request_inputs.getlist( "article_data_id_select" )
+                        
+                        # got any?  If not, just display all.
+                        if ( len( article_data_id_list ) > 0 ):
+                        
+                            # filter to just Article_Data whose IDs were selected.
+                            article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
+                            
+                        #-- END check to see if any IDs selected --#
+                    
+                    #-- END check to see if we need to further filter Article_Data list --#
+                    
+                    article_data_qs = article_data_qs.order_by( "coder__id" )
+                    
+                    # ! authors
+                    
+                    # got any Article_Data?
+                    if ( article_data_qs.count() > 0 ):
+                    
+                        rendered_author_html = '''
+                            <table class="gridtable">
+                                <tr>
+                                    <th>coder</th>
+                                    <th>author</th>
+                                </tr>
+                        '''
+
+                        # make table of authors broken out by coder, then person
+                        #    ID.
+                        for article_data_instance in article_data_qs:
+                        
+                            # get coder information
+                            article_data_coder = article_data_instance.coder
+                            article_data_coder_id = article_data_coder.id
+                            article_data_coder_username = article_data_coder.username
+                        
+                            # retrieve all authors
+                            author_qs = article_data_instance.article_author_set.all()
+                            author_qs = author_qs.order_by( "person__last_name", "person__first_name" )
+                            
+                            # loop over authors.
+                            for author in author_qs:
+                            
+                                # build HTML
+                                # calling str() on any part of a string being
+                                #    concatenated causes all parts of the string to
+                                #    try to encode to default encoding ('ascii').
+                                #    This breaks if there are non-ascii characters.
+                                rendered_author_html += "\n        <tr><td>" + unicode( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + unicode( author )
+                                
+                                # got an organization string?
+                                author_organization = author.organization_string
+                                if ( ( author_organization is not None ) and ( author_organization != "" ) ):
+                                    rendered_author_html += "<br />==> organization: " + author_organization
+                                #-- END check to see if name captured. --#
+
+                                rendered_author_html += "</td></tr>"
+                            
+                            #-- END loop over authors. --#
+                        
+                        #-- END loop over Article_Data instances --#
+                    
+                        rendered_author_html += "</table>"
+
+                    #-- END check to see if we have any Article_Data --#
+                    
+                    # get map of subjects to <p> tags.
+                    p_tag_id_to_subject_map = create_graf_to_subject_map( article_data_qs )
+                
+                    # ! subjects with no mentions (so no associated graf)
+                    
+                    # got any unassociated subjects?
+                    subject_list = p_tag_id_to_subject_map.get( NO_GRAF, [] )
+                    if ( len ( subject_list ) > 0 ):
+                    
+                        # we do.  Make a table for them.
+                        rendered_subject_html = create_subject_table_html( subject_list, include_header_row_IN = True )
+
+                    #-- END check to see if unassociated subjects --#
+                    
+                    # ! text and subjects
+                    
+                    # get article instance
+                    article_instance = article_qs.get()
+                    
+                    # retrieve article text.
+                    article_text = article_instance.article_text_set.get()
+                    
+                    # get content
+                    article_content = article_text.get_content()
+                    
+                    # parse with beautifulsoup
+                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
+                    
+                    # get paragraph tag list
+                    p_tag_list = article_content_bs.find_all( 'p' )
+                    p_tag_count = len( p_tag_list )
+                    
+                    # got p-tags?
+                    if ( p_tag_count > 0 ):
+                    
+                        # yes.  create a table with three columns per row:
+                        # - paragraph number
+                        # - paragraph text
+                        # - subjects detected in that paragraph
+                        rendered_article_html = '''
+                            <table class="gridtable">
+                                <tr>
+                                    <th>graf#</th>
+                                    <th>text</th>
+                                    <th>subjects coded</th>
+                                </tr>
+                        '''
+                    
+                        # for each paragraph, grab that <p> and place it in a table
+                        #    cell.
+                        for paragraph_index in range( p_tag_count ):
+                        
+                            # paragraph number is index + 1
+                            paragraph_number = paragraph_index + 1
+                            
+                            # get <p> tag with ID of paragraph_number
+                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
+                            
+                            # render row
+                            p_tag_html = p_tag_bs.prettify()
+                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
+                            output_debug( "In " + me + ": p_tag_html type = " + str( type( p_tag_html ) ) )
+
+                            # calling str() on any part of a string being
+                            #    concatenated causes all parts of the string to
+                            #    try to encode to default encoding ('ascii').
+                            #    This breaks if there are non-ascii characters.
+                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td>"
+                            
+                            # check if any Article_Subjects for this paragraph.
+                            current_graf_subjects_list = p_tag_id_to_subject_map.get( paragraph_number, [] )
+                            if ( len( current_graf_subjects_list ) > 0 ):
+                            
+                                # open cell for subject table.
+                                rendered_article_html += "<td>"
+                                
+                                # generate HTML for subject table.
+                                rendered_article_html += create_subject_table_html( current_graf_subjects_list, include_header_row_IN = True )
+
+                                # close table cell
+                                rendered_article_html += "</td>"
+
+                            else:
+                            
+                                # none.
+                                rendered_article_html += "<td>None</td>"
+                            
+                            #-- END check to see if Article_Subjects for graf --#
+                            
+                            # close off the row.
+                            rendered_article_html += "\n</tr>"
+                        
+                        #-- END loop over <p> ids. --#
+                        
+                        rendered_article_html += "</table>"
+                    
+                    else:
+                    
+                        # no p-tags - just use article_text.
+                        rendered_article_html = article_content
+                        
+                    #-- END check to see if paragraph tags. --#
+                    
+                    # seed response dictionary.
+                    response_dictionary[ 'article_instance' ] = article_instance
+                    response_dictionary[ 'article_text' ] = article_text
+                    response_dictionary[ 'author_info' ] = rendered_author_html
+                    response_dictionary[ 'subject_info' ] = rendered_subject_html
+                    response_dictionary[ 'article_content' ] = rendered_article_html
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                    response_dictionary[ 'article_data_select_form' ] = article_data_select_form
+
+                    # get paragraph list
+                    #article_paragraph_list = article_text.get_paragraph_list()
+                    
+                else:
+                
+                    # error - none or multiple articles found for ID. --#
+                    print( "No article returned for ID passed in." )
+                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
+                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+                    
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
+                response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, make an empty instance of network output form.
+        article_lookup_form = ArticleLookupForm()
+        response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view method article_view_article_data_with_text() --#
+
+
+@login_required
+def index( request_IN ):
+    
+    # return reference
+    me = "index"
+    response_OUT = None
+    response_dictionary = {}
+    default_template = ''
+
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
+    # set my default rendering template
+    default_template = 'sourcenet/index.html'
+
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view method index() --#
+
+
+def logout( request_IN ):
+
+    # declare variables
+    me = "sourcenet.views.logout"
+    request_data = None
+    redirect_path = ""
+    
+    # initialize redirect_path
+    redirect_path = "/"
+    
+    # do we have input parameters?
+    request_data = get_request_data( request_IN )
+    if ( request_data is not None ):
+    
+        # we do.  See if we have redirect.
+        redirect_path = request_data.get( "post_logout_redirect", "/" )
+
+    #-- END check to see if we have request data. --#
+
+    # log out the user.
+    auth.logout( request_IN )
+
+    # Redirect to server home page for now.
+    return HttpResponseRedirect( redirect_path )
+    
+#-- END view method logout() --#
+
+
+@login_required
 def output_articles( request_IN ):
 
     #return reference
@@ -1816,7 +1807,7 @@ def output_articles( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet_output_articles.html'
+    default_template = 'sourcenet/sourcenet_output_articles.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -1962,7 +1953,7 @@ def output_network( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my template
-    default_template = 'sourcenet_output_network.html'
+    default_template = 'sourcenet/sourcenet_output_network.html'
     
     # output parameters
  

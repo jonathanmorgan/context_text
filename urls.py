@@ -38,9 +38,9 @@ v1_api = Api( api_name='v1' )
 v1_api.register( ArticleResource() )
 '''
 
-# polls-specific URL settings, intended to be included in master urls.py file.
-#urlpatterns = patterns( 'mysite.polls.views',
+# sourcenet URL settings, intended to be included in master urls.py file.
 urlpatterns = [
+
     # Example:
     # url(r'^mysite/', include('mysite.foo.urls')),
 
@@ -71,6 +71,9 @@ urlpatterns = [
 
     # Uncomment the next line to enable the admin:
     #url(r'^admin/', include(admin.site.urls)),
+    
+    # index page
+    url( r'^index$', sourcenet.views.index, name = "sourcenet-index" ),
 
     # left in all the stuff above as a sample.  Making an output view, to let a
     #    user specify what they want in output, and then an output/display view

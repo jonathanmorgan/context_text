@@ -1,10 +1,10 @@
-{% extends "base.html" %}
+{% extends "sourcenet/base.html" %}
 
-{% block title %}View article{% endblock %}
+{% block title %}View article + coding{% endblock %}
 
 {% block content %}
 
-    <h1>View article</h1>
+    <h1>View article + coding</h1>
     
     {# got an output_string? #}
     {% if output_string %}
@@ -27,6 +27,13 @@
                 {{ article_lookup_form }}
             </p>
                 
+            {% if article_data_select_form %}
+            <p>
+                {# if there is an article selected, include form to select certain Article_Data instances #}
+                {{ article_data_select_form }}
+            </p>
+            {% endif %}
+
             <p>
                 <input type="submit" />
             </p>
@@ -49,17 +56,30 @@
                 <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
                 <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
                 <li><em>Author:</em> {{ article_instance.author_string }}</li>
+                <li><a href="{% url 'sourcenet-article_view' %}?article_id={{ article_instance.id }}">View article</a></li>
             </ul>
-            <h4>Article Text</h4>
-            {{ article_content|safe }}
+
+            {% if author_info %}
+            <h4>Authors</h4>
+            {{ author_info | safe }}
+            {% endif %}
+
+            {% if subject_info %}
+            <h4>Unassociated Subjects</h4>
+            {{ subject_info | safe }}
+            {% endif %}
+
+            {% if article_content %}
+            <h4>Article Text and Subjects</h4>
+            {{ article_content | safe }}
+            {% endif %}
+
             <!-- 
             <hr />
             {{ article_text.get_content|safe }}
             -->
             <hr />
             <h3>Article_Data Record(s)</h3>
-
-            <p><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ article_instance.id }}">View coding alongside article text</a></p>
 
             <p><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}">View all related Article_Data</a></p>
             
@@ -70,8 +90,6 @@
                     <li><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}&article_data_id_select={{article_data.id}}">{{ article_data }}</a></li>
                 {% endfor %}
             </ul>
-            
-            
         </div>
 
     {% endif %}

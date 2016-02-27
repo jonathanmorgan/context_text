@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "sourcenet/base.html" %}
 
 {% block title %}Output SourceNet article data{% endblock %}
 
@@ -8,12 +8,12 @@
 
     {% if article_select_form.errors %}
         <p style="color: red;">
-            Please correct the error{{ article_select_form.errors|pluralize }} below.
+            Please correct the error{{ article_select_form.errors | pluralize }} below.
         </p>
     {% endif %}
     {% if output_type_form.errors %}
         <p style="color: red;">
-            Please correct the error{{ output_type_form.errors|pluralize }} below.
+            Please correct the error{{ output_type_form.errors | pluralize }} below.
         </p>
     {% endif %}
 
