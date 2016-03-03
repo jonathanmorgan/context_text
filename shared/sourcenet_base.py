@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2014 Jonathan Morgan
+Copyright 2010-2016 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -29,7 +29,6 @@ from django.db.models import Q
 # python_utilities
 from python_utilities.parameters.param_container import ParamContainer
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
-
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -83,7 +82,7 @@ class SourcenetBase( BasicRateLimited ):
     # automated coder user
     CODER_USERNAME_AUTOMATED = "automated"
     CODER_USER_AUTOMATED = None
-    
+        
 
     #============================================================================
     # instance variables

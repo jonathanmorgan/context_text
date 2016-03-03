@@ -93,6 +93,8 @@ class ManualArticleCoder( ArticleCoder ):
     # config application
     CONFIG_APPLICATION = "Manual_Coding"
 
+    '''
+    # ==> Moved to Article_Coder class.
     # person types
     PERSON_TYPE_SUBJECT = "subject"
     PERSON_TYPE_SOURCE = "source"
@@ -102,6 +104,7 @@ class ManualArticleCoder( ArticleCoder ):
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
+    '''
 
     # kwarg parameter names
     KWARG_DATA_STORE_JSON_STRING = "data_store_json_string_IN"

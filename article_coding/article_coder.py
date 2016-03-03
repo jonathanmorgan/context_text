@@ -131,6 +131,17 @@ class ArticleCoder( BasicRateLimited ):
     PROP_LOOKUP_STATUS_VALUE_MULTIPLE = "multiple"
     PROP_LOOKUP_STATUS_VALUE_ERROR = "error"
     PROP_EXCEPTION = "exception"
+    
+    # person types
+    PERSON_TYPE_SUBJECT = "subject"
+    PERSON_TYPE_SOURCE = "source"
+    PERSON_TYPE_AUTHOR = "author"
+
+    # subject_type to person type dictionary
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
+
 
 
     #----------------------------------------------------------------------------
