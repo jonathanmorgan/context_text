@@ -21,7 +21,7 @@ random_count = 60
 
 # declare variables - also, apply tag?
 do_apply_tag = True
-tag_to_apply = "prelim_training_003"
+tag_to_apply = "prelim_reliability_test"
 
 # set up "local, regional and state news" sections
 #grp_local_news_sections.append( "Lakeshore" )
@@ -85,6 +85,9 @@ grp_article_qs = grp_article_qs.filter( section__in = grp_local_news_sections )
 
 # and, with an in-house author
 grp_article_qs = grp_article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
+
+# and no columns
+grp_article_qs = grp_article_qs.exclude( index_terms__icontains = "Column" )
 
 # how many is that?
 article_count = grp_article_qs.count()
