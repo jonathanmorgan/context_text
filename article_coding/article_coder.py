@@ -1002,13 +1002,13 @@ class ArticleCoder( BasicRateLimited ):
                 
                     person_instance = Person.objects.get( pk = person_id )
                 
-                except DoesNotExist as dne:
+                except Person.DoesNotExist as dne:
                 
                     # Not found.
                     self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but DoesNotExist." )
                     person_instance = None
                     
-                except MultipleObjectsReturned as more:
+                except Person.MultipleObjectsReturned as more:
                 
                     # multiple found.  Big error.
                     self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but MultipleObjectsReturned." )
