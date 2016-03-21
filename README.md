@@ -20,9 +20,9 @@ to install:
 
     sudo apt-get install libxml2 libxml2-dev libxslt1-dev
 
-If you want to use a YAML API, you'll also need to install libyaml and libyaml-dev:
+If you want to use a YAML API, you'll also need to install libyaml and libyaml-dev. The easiest way to do this is to just install libyaml-dev, and let it pull in dependencies:
 
-    sudo apt-get install libyaml libyaml-dev
+    sudo apt-get install libyaml-dev
 
 ## virtualenv and virtualenvwrapper
 
@@ -61,7 +61,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 - required python packages (install with pip):
 
-    - django - `(sudo) pip install django` - 1.7.X - latest 1.4.X, 1.5.X, or 1.6.X should work, too, but migrations won't - south migrations are no longer being updated.
+    - django - `(sudo) pip install django` - 1.9.X - latest 1.4.X, 1.5.X, 1.6.X, 1.7.X, or 1.8.X might work, too, but django moves fast, you'd be wise to try to get to current.  Migrations require 1.7.X or greater - south migrations are no longer being updated.
     - nameparser - `(sudo) pip install nameparser`
     - bleach - `(sudo) pip install bleach`
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
@@ -90,11 +90,11 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 - inside the sourcenet project, requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
 
     - install django now using pip: `(sudo) pip install django`
-    - continue on in this guide until you 
+    - continue on in this guide until you have downloaded and installed sourcenet from github, then:
     - `(sudo) pip install -r sourcenet/requirements.txt`
-    - you could also just 
+    - you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
     
-- Natural Language Processing (NLP) APIs:
+- Natural Language Processing (NLP) APIs, if you are building your own thing:
 
     - To use Alchemy API, clone the `Alchemy_API` python client into your django project's root folder:
     
@@ -122,8 +122,9 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 /research
                     settings.py
 
-    - move sourcenet into your django application directory using the git program to clone it from github:
+    - cd into your django project directory, then clone the sourcenet application from github into your django project directory using the git program:
 
+            cd research
             git clone https://github.com/jonathanmorgan/sourcenet.git
             
         - at this point, if you only installed django and want to install the rest of the required Python packages using requirements.txt, do the following:
@@ -143,7 +144,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 ## settings.py - Configure logging, database, applications:
 
-The following are all changes to `research/research/settings.py`.  You'll configure logging, database information, and applications, then you'll save the file and initialize the database.  Make sure to save the file once you are done making changes.
+The following are all changes to the django settings file in your django project.  If  you created a project named "research", this will be located at `research/research/settings.py`.  You'll configure logging, database information, and applications, then you'll save the file and initialize the database.  Make sure to save the file once you are done making changes.
 
 ### logging
 
@@ -193,7 +194,30 @@ Edit the `research/research/settings.py` file and update it with details of your
 
 ### database
 
-Edit the research/research/settings.py file and update it with details of your database configuration
+Edit the research/research/settings.py file and update it with details of your database configuration.
+
+In general, for any database other than sqlite3, in your database system of choice you'll need to:
+
+- create a database for django to use.
+- create a database user for django to use that is not an admin.
+- give the django database user all privileges on the django database.
+- place connection information for the database - connecting as your django database user to the django database - in settings.py.
+
+An example for postgresql looks like this:
+
+    DATABASES = {
+        'default': {        
+            # PostgreSQL - sourcenet
+            'ENGINE': 'django.db.backends.postgresql', # Add 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+            'NAME': 'sourcenet',                      # Or path to database file if using sqlite3.
+            'USER': 'django_user',                      # Not used with sqlite3.
+            'PASSWORD': '<db_password>',                  # Not used with sqlite3.
+            'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
+            'PORT': '5432',                      # Set to empty string for default. Not used with sqlite3.
+        },
+    }
+
+More information:
     
 - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
 - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
@@ -202,7 +226,7 @@ Edit the research/research/settings.py file and update it with details of your d
 
 Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', and 'taggit' to your list of INSTALLED\_APPS:
 
-        INSTALLED_APPS = (
+        INSTALLED_APPS = [
             'django.contrib.auth',
             'django.contrib.contenttypes',
             'django.contrib.sessions',
@@ -216,11 +240,11 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             'sourcenet',
             'django_config',
             'taggit',
-        )
+        ]
 
 - you can also add sourcenet and django_config using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
 
-        INSTALLED_APPS = (
+        INSTALLED_APPS = [
             'django.contrib.auth',
             'django.contrib.contenttypes',
             'django.contrib.sessions',
@@ -234,9 +258,16 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             'sourcenet.apps.SourcenetConfig',
             'django_config.apps.Django_ConfigConfig',
             'taggit',
-        )
+        ]
 
-- add settings properties that tell django how to log people in and out.
+- add settings properties that tell django how to log people in and out.  Example:
+
+        # login configuration
+        LOGIN_URL = '<apache_URL_path_to_django_project>/sourcenet/sourcenet/accounts/login/'
+        LOGIN_REDIRECT_URL = '<apache_URL_path_to_django_project>/sourcenet/output/network/'
+        LOGOUT_URL = '/'
+
+    The following sample assumes that you'll follow the examples later on how to configure apache, and so serve the django sourcenet application from an apache directory named "sourcenet".  If you choose a different directory, you'll need to adjust these properties' values accordingly.
 
         # login configuration
         LOGIN_URL = '/sourcenet/sourcenet/accounts/login/'
@@ -251,13 +282,19 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
     
 ### initialize the database
 
-Once you've made the changes above, save the `settings.py` file, then go into the `research` directory where manage.py is installed, and run `python manage.py migrate`.
+Once you've made the changes above, save the `settings.py` file, then go into the `research` directory where manage.py is installed.
+
+First, to test if your database settings are correct, just try listing out pending database migrations:
+
+    python manage.py migrate --list
+
+If that fails, the error messages should tell you about any database configuration issues you need to address.  Once it succeeds and lists out migrations that need to run, run the migrations to create database tables:
 
     python manage.py migrate
 
-- the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
+Once the database tables are created, you'll want to make a django admin user at this point, as well, making a note of username and password.  You'll need it later.
 
-        python manage.py createsuperuser
+    python manage.py createsuperuser
 
 
 ## Enable django admins:
@@ -280,31 +317,52 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
             (sudo) service apache2 restart
 
-- Update your django project's wsgi.py file to reflect your Python environment (`<path_to_django_project_parent>/research/wsgi.py`):
+- Update your django project's `wsgi.py` file to reflect your Python environment:
 
-    - Add a line that adds your project's directory to the python path:
+    - NOTE: the `wsgi.py` file lives in your django project's configuration folder.  This folder sits inside the project folder, and is named the same as the project folder.  So, if you followed the example above and named your django project "research", your wsgi.py file will be at path `<path_to_django_project_parent>/research/research/wsgi.py`.
+    - In `wsgi.py`, add a line that adds your project's directory to the python path:
 
-            # Add the app's directory to the PYTHONPATH
-            sys.path.append( '<path_to_django_project_parent>/research' )
-        
+        - add an import of the `sys` package to the imports at the top:
+
+                import sys
+
+        - Add, just after the imports, add the project directory to the PYTHONPATH:
+
+                # Add the app's directory to the PYTHONPATH
+                sys.path.append( '<path_to_django_project_parent>/research' )
+            
+            WHERE:
+
+            - `<path_to_django_project_parent>` is the path of the folder where you used the `django-admin.py startproject research` command to create your django project.
+
     - If you are using virtualenv:
     
-        - import the `site` packge:
+        - import the `site` package in the imports at the top:
         
                 import site
                 
-        - Add the `site-packages` of the desired virtualenv:
+        - Just after the code where you added your project's path to the PYTHONPATH, add the `site-packages` of the desired virtualenv:
                 
                 # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages' )
         
-        - Activate your virtualenv:
+            WHERE:
+
+            - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
+            - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
+
+        - Then, just after the line where the `DJANGO_SETTINGS_MODULE` environment variable is set, activate your virtualenv:
         
                 # Activate your virtualenv
-                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/bin/activate_this.py" )
                 execfile( activate_env, dict( __file__ = activate_env ) )
         
-        - here's how it all should look:
+            WHERE (again):
+
+            - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
+            - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
+
+        - assuming you named your virtualenv "sourcenet" and your django project "research", here's how it all should look:
     
                 """
                 WSGI config for research project.
@@ -337,7 +395,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 # load django application
                 application = get_wsgi_application()
                 
-            make sure to replace:
+            again, make sure to replace:
             
             - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
             - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
@@ -371,18 +429,18 @@ Once you've made the changes above, save the `settings.py` file, then go into th
         
         - `<.virtualenvs_parent_dir>` is usually the home directory of your user (`/home/<username>`).
     
-    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the python-path directive in addition to the site directory, with the paths separated by a colon.  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
+    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the python-path directive in addition to the site directory, with the paths separated by a colon (the example above is configured this way).  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
 
     - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
 
+        - make sure to uncomment `Allow from all` in the file above, and comment out `Require all granted`.
+        
     - If you are using apache 2.4 on ubuntu 13.10 or greater:
 
         - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
         
-        - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
-        
         - enable it with the a2enconf command, then restart apache (just to be safe):
-    
+        
                 (sudo) a2enconf django-sourcenet
                 (sudo) service apache2 restart
 
@@ -401,26 +459,40 @@ Once you've made the changes above, save the `settings.py` file, then go into th
     
     - In django 1.6 and up, the django.contrib.admin application will already be uncommented by default, so you'll have done this above when you "`migrate`"-ed.
 
-- open up the `urls.py` file in the folder where settings.py lives and add the following line to the urlpatterns variable to complete admin documentation setup:
+- open up the `urls.py` file in the folder where settings.py lives and:
 
-        url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
+    - in the imports at the top, import the `include` function from `django.conf.urls` if it isn't already imported:
+
+            from django.conf.urls import include
+
+    - add the following line to the urlpatterns variable to complete admin documentation setup:
+
+            url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
 
     urls.py should look like the following once you are done:
 
-        from django.conf.urls import patterns, include, url
-        
+        """research URL Configuration
+
+        The `urlpatterns` list routes URLs to views. For more information please see:
+            https://docs.djangoproject.com/en/1.9/topics/http/urls/
+        Examples:
+        Function views
+            1. Add an import:  from my_app import views
+            2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+        Class-based views
+            1. Add an import:  from other_app.views import Home
+            2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+        Including another URLconf
+            1. Import the include() function: from django.conf.urls import url, include
+            2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+        """
+        from django.conf.urls import url
+        from django.conf.urls import include
         from django.contrib import admin
-        admin.autodiscover()
-        
+
         urlpatterns = [
-
-            # Examples:
-            # url(r'^$', 'research.views.home', name='home'),
-            # url(r'^blog/', include('blog.urls')),
-        
-            url( r'^admin/', include( admin.site.urls ) ),
+            url(r'^admin/', admin.site.urls),
             url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
         ]
 
 ### Static file support:
@@ -453,6 +525,8 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
         http://<your_server>/sourcenet/admin/
 
+- and then logging in with the django superuser you created earlier.
+
 ## Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
 
 - get the admins working.
@@ -461,7 +535,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
     - add 'ajax_select' to your list of INSTALLED\_APPS.  Result:
 
-            INSTALLED_APPS = (
+            INSTALLED_APPS = [
                 'django.contrib.admin',
                 'django.contrib.admindocs',
                 'django.contrib.auth',
@@ -469,11 +543,11 @@ Once you've made the changes above, save the `settings.py` file, then go into th
                 'django.contrib.sessions',
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
-                'sourcenet',
-                'django_config',
+                'sourcenet.apps.SourcenetConfig',
+                'django_config.apps.Django_ConfigConfig',
                 'taggit',
                 'ajax_select',
-            )
+            ]
         
     - if you are using django 1.6 or earlier (you shouldn't be, but...) add the following to the bottom of the `settings.py` file (if you are using django 1.7 or greater, it automatically finds the channels defined in sourcenet/lookups.py):
     
@@ -500,48 +574,52 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
 - add the following to resesarch/urls.py to enable django-ajax-selects URL lookups.
 
-    - Add:
+    - Add an import of `ajax_select_urls` from `ajax_select`:
 
             # django-ajax-selects URLs
             from ajax_select import urls as ajax_select_urls
             
-        and
+        and add the actual `ajax_select` URLs:
 
             # django-ajax-select URLs
             url( r'^admin/lookups/', include( ajax_select_urls ) ),
 
     - Example Result:
 
-            from django.conf.urls import patterns, include, url
-            
+            """research URL Configuration
+
+            The `urlpatterns` list routes URLs to views. For more information please see:
+                https://docs.djangoproject.com/en/1.9/topics/http/urls/
+            Examples:
+            Function views
+                1. Add an import:  from my_app import views
+                2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+            Class-based views
+                1. Add an import:  from other_app.views import Home
+                2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+            Including another URLconf
+                1. Import the include() function: from django.conf.urls import url, include
+                2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+            """
+            from django.conf.urls import url
+            from django.conf.urls import include
+            from django.contrib import admin
+
             # django-ajax-selects URLs
             from ajax_select import urls as ajax_select_urls
-            
-            # Uncomment the next two lines to enable the admin:
-            from django.contrib import admin
-            admin.autodiscover()
-            
-            urlpatterns = [
 
-                # Examples:
-                # url(r'^$', 'research.views.home', name='home'),
-                # url(r'^research/', include('research.foo.urls')),
-                
+            urlpatterns = [
+                url(r'^admin/', admin.site.urls),
+                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
+
                 # django-ajax-select URLs
                 url( r'^admin/lookups/', include( ajax_select_urls ) ),
-                
-                # Uncomment the admin/doc line below to enable admin documentation:
-                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-            
-                # Uncomment the next line to enable the admin:
-                url( r'^admin/', include( admin.site.urls ) ),
-
             ]
-            
-## Enable sourcenet network data output pages
+                        
+## Enable sourcenet application pages
 
 - get the admins working.
-
+- set up `django-ajax-selects`.
 - add a line to resesarch/urls.py to enable the sourcenet URLs (in `sourcenet.urls`) to the urlpatterns structure.
 
     - Add:
@@ -551,31 +629,51 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
     - Result:
 
-            urlpatterns = [
+            """research URL Configuration
 
-                # Examples:
-                # url(r'^$', 'research.views.home', name='home'),
-                # url(r'^research/', include('research.foo.urls')),
-                
+            The `urlpatterns` list routes URLs to views. For more information please see:
+                https://docs.djangoproject.com/en/1.9/topics/http/urls/
+            Examples:
+            Function views
+                1. Add an import:  from my_app import views
+                2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+            Class-based views
+                1. Add an import:  from other_app.views import Home
+                2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+            Including another URLconf
+                1. Import the include() function: from django.conf.urls import url, include
+                2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+            """
+            from django.conf.urls import url
+            from django.conf.urls import include
+            from django.contrib import admin
+
+            # django-ajax-selects URLs
+            from ajax_select import urls as ajax_select_urls
+
+            urlpatterns = [
+                url(r'^admin/', admin.site.urls),
+                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
+
                 # django-ajax-select URLs
                 url( r'^admin/lookups/', include( ajax_select_urls ) ),
-                
-                # Uncomment the admin/doc line below to enable admin documentation:
-                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-            
-                # Uncomment the next line to enable the admin:
-                url( r'^admin/', include( admin.site.urls ) ),
-                
+
                 # sourcenet URLs:
                 url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
-
             ]
-            
+
 ### Test!
+
+- to make sure that your changes are loaded by apache and mod_wsgi, you need to update the modified time stamp on the file `research/wsgi.py`.  To do this, in a command prompt in your project folder:
+
+        touch research/wsgi.py
 
 - test by going to the URL:
 
-        http://<your_server>/sourcenet/sourcenet/output/network
+        http://<your_server>/sourcenet/sourcenet/index
+
+- log in with your django superuser user.
+- You should see a home page for sourcenet with a welcome message and a header that lists out the pages in the sourcenet application.
 
 # Collecting Articles
 
