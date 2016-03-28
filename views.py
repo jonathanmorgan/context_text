@@ -1153,6 +1153,7 @@ def article_coding_list( request_IN ):
             
             # retrieve QuerySet that contains articles with requested tag(s).
             article_qs = Article.filter_articles( tags_in_list_IN = tags_in_list )
+            article_qs = article_qs.order_by( "id" )
 
             # get count of queryset return items
             if ( ( article_qs != None ) and ( article_qs != "" ) ):
