@@ -29,6 +29,16 @@
             <hr />
         {% endif %}
 
+        {# got a source (such that we want user to be able to return)? #}
+        {% if source %}
+            <div id="return-to-source" class="returnToSource">
+                <ul>
+                    <li><a href="{% url 'sourcenet-article_coding_list' %}?tags_in_list={{ tags_in_list }}">Return to Article Coding List</a></li>
+                </ul>
+            </div>
+            <hr />
+        {% endif %}
+
         <h1>Code article</h1>
         
         <div id="article_form" name="article_form">
@@ -42,7 +52,19 @@
                     {# output article lookup form #}
                     {{ article_lookup_form }}
                 </p>
-                    
+                
+                {% if source %}
+                    <input type="hidden" name="source" value="{{ source }}" />
+                {% else %}
+                    <input type="hidden" name="source" value="" />
+                {% endif %}
+                
+                {% if tags_in_list %}
+                    <input type="hidden" name="tags_in_list" value="{{ tags_in_list }}" />
+                {% else %}
+                    <input type="hidden" name="tags_in_list" value="" />
+                {% endif %}
+                            
                 <p>
                     <input type="submit" value="Load Article" />
                 </p>
@@ -175,6 +197,19 @@
                         {{ coding_submit_form }}
                     {% endif %}
                     <input type="hidden" name="article_id" id="submit-article-coding-article-id" value="{{ article_instance.id }}" />
+
+                    {% if source %}
+                        <input type="hidden" name="source" value="{{ source }}" />
+                    {% else %}
+                        <input type="hidden" name="source" value="" />
+                    {% endif %}
+                    
+                    {% if tags_in_list %}
+                        <input type="hidden" name="tags_in_list" value="{{ tags_in_list }}" />
+                    {% else %}
+                        <input type="hidden" name="tags_in_list" value="" />
+                    {% endif %}
+                            
                     <input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id="input-submit-article-coding" />
                 </form>
             </div>

@@ -64,6 +64,9 @@ import logging
 import pickle
 #import re
 
+# import six for Python 2 and 3 compatibility.
+import six
+
 # nameparse import
 # http://pypi.python.org/pypi/nameparser
 from nameparser import HumanName
@@ -100,6 +103,7 @@ from django.utils.encoding import python_2_unicode_compatible
 
 # python_utilities - text cleanup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
+from python_utilities.lists.list_helper import ListHelper
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
 
@@ -2261,7 +2265,7 @@ class Article( models.Model ):
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
 
-    # LOOKUP parameters
+    # filter (LOOKUP) parameters
     #==================
 
     # newspaper filter (expects instance of Newspaper model)
@@ -2269,7 +2273,7 @@ class Article( models.Model ):
     PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
     PARAM_NEWSPAPER_INSTANCE = "newspaper"
 
-    # date range parameters, for article lookup.
+    # date range filter parameters, for article lookup.
     PARAM_START_DATE = "start_date"
     PARAM_END_DATE = "end_date"
     PARAM_SINGLE_DATE = "single_date"
@@ -2280,6 +2284,10 @@ class Article( models.Model ):
     PARAM_SECTION_NAME_LIST = "section_name_list"
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
     PARAM_JUST_PROCESS_ALL = "just_process_all" # set to True if just want sum of all sections, not records for each individual section.  If False, processes each section individually, then generates the "all" record.
+
+    # filter on tags.
+    PARAM_TAGS_IN_LIST = "tags_in_list_IN"
+    PARAM_TAGS_NOT_IN_LIST = "tags_not_in_list_IN"
 
     # other article parameters.
     PARAM_CUSTOM_ARTICLE_Q = "custom_article_q"
@@ -2508,6 +2516,10 @@ class Article( models.Model ):
         newspaper_instance = None
         q_date_range = None
         section_name_list_IN = None
+        tags_in_list_IN = None
+        tags_in_list = None
+        tags_not_in_list_IN = None
+        tags_not_in_list = None
         custom_q_IN = None
 
         # got a query set?
@@ -2527,8 +2539,9 @@ class Article( models.Model ):
         
         #-- END check to see if query set passed in --#
 
-        # newspapers
-        #-----------
+        #----------------
+        # ==> newspapers
+        #----------------
 
         # try to update QuerySet for selected newspaper.
         if ( cls.PARAM_NEWSPAPER_ID in kwargs ):
@@ -2562,8 +2575,9 @@ class Article( models.Model ):
             # Yes.  Filter.
             qs_OUT = qs_OUT.filter( newspaper = newspaper_instance )
 
-        # date range
-        #-----------
+        #----------------
+        # ==> date range
+        #----------------
 
         # try to get Q() for start and end dates.
         q_date_range = cls.create_q_article_date_range( "", "", *args, **kwargs )
@@ -2576,8 +2590,9 @@ class Article( models.Model ):
 
         #-- END check to see if date range present.
 
-        # Sections
-        #---------
+        #--------------
+        # ==> Sections
+        #--------------
 
         # try to update QuerySet for selected sections.
         if ( cls.PARAM_SECTION_NAME_LIST in kwargs ):
@@ -2588,8 +2603,56 @@ class Article( models.Model ):
     
         #-- END check to see if start date in arguments --#
 
-        # Custom-built Q() object
-        #------------------------
+        #------------------
+        # ==> Tags IN list
+        #------------------
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( cls.PARAM_TAGS_IN_LIST in kwargs ):
+    
+            # yup.  Use it.
+            tags_in_list_IN = kwargs[ cls.PARAM_TAGS_IN_LIST ]
+            
+            # get the value as a list, whether it is a delimited string or list.
+            tags_in_list = ListHelper.get_value_as_list( tags_in_list_IN )
+            
+            # filter?
+            if ( len( tags_in_list ) > 0 ):
+
+                # something in list - filter.
+                qs_OUT = qs_OUT.filter( tags__name__in = tags_in_list )
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #----------------------
+        # ==> Tags NOT IN list
+        #----------------------
+
+        # Update QuerySet to exclude articles with tags in list?
+        if ( cls.PARAM_TAGS_NOT_IN_LIST in kwargs ):
+    
+            # yup.  Use it.
+            tags_not_in_list_IN = kwargs[ cls.PARAM_TAGS_NOT_IN_LIST ]
+            
+            # get the value as a list, whether it is a delimited string or list.
+            tags_not_in_list = ListHelper.get_value_as_list( tags_not_in_list_IN )
+            
+            # filter?
+            if ( len( tags_not_in_list ) > 0 ):
+
+                # something in list - filter.
+                qs_OUT = qs_OUT.exclude( tags__name__in = tags_not_in_list )
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #-----------------------------
+        # ==> Custom-built Q() object
+        #-----------------------------
+
         # try to update QuerySet for selected sections.
         if ( cls.PARAM_CUSTOM_ARTICLE_Q in kwargs ):
 

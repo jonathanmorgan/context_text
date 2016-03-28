@@ -73,6 +73,7 @@ from python_utilities.strings.string_helper import StringHelper
 # Import form classes
 from sourcenet.forms import Article_DataSelectForm
 from sourcenet.forms import ArticleCodingForm
+from sourcenet.forms import ArticleCodingListForm
 from sourcenet.forms import ArticleCodingSubmitForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
@@ -99,6 +100,11 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 #================================================================================
 # ! ==> Shared variables and functions
 #================================================================================
+
+# Form input names
+INPUT_NAME_ARTICLE_ID = "article_id"
+INPUT_NAME_SOURCE = "source"
+INPUT_NAME_TAGS_IN_LIST = "tags_in_list"
 
 NO_GRAF = "no_graf"
 
@@ -474,6 +480,13 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
 @login_required
 def article_code( request_IN ):
 
+    '''
+    View for coding a single article.  Form accepts article ID.  If article ID
+        present, looks up coding for that article for current user.  If found,
+        loads it, if not, initializes to empty.  Loads article, loads coding
+        form, then if existing coding, pre-populates coding form.
+    '''
+
     # return reference
     response_OUT = None
 
@@ -493,6 +506,8 @@ def article_code( request_IN ):
     article_lookup_form = None
     is_form_ready = False
     request_data = None
+    source = None
+    tags_in_list = None
     article_id = -1
     article_qs = None
     article_count = -1
@@ -501,7 +516,7 @@ def article_code( request_IN ):
     
     # declare variables - coding submission.
     data_store_json_string = ""
-    coder_user = None
+    current_user = None
     has_existing_article_data = False
     article_data_qs = None
     article_data_count = -1
@@ -567,6 +582,17 @@ def article_code( request_IN ):
     request_data = get_request_data( request_IN )
     if ( request_data is not None ):
 
+        # get information needed from request, add to response dictionary.
+
+        # ==> source (passed by article_code_list).
+        source = request_data.get( INPUT_NAME_SOURCE, "" )
+        response_dictionary[ INPUT_NAME_SOURCE ] = source
+        
+        # ==> tags_in_list (passed by article_code_list).
+        tags_in_list = request_data.get( INPUT_NAME_TAGS_IN_LIST, [] )
+        response_dictionary[ INPUT_NAME_TAGS_IN_LIST ] = tags_in_list
+
+        # OK to process.
         is_form_ready = True
         
     #-- END check to see if we have request data. --#
@@ -583,7 +609,7 @@ def article_code( request_IN ):
     article_lookup_form = ArticleLookupForm( request_data )
 
     # store the article ID if passed in.
-    article_id = request_data.get( "article_id", -1 )
+    article_id = request_data.get( INPUT_NAME_ARTICLE_ID, -1 )
 
     # check to see if ""
     if ( article_id == "" ):
@@ -1036,6 +1062,206 @@ def article_code( request_IN ):
 #-- END view method article_code() --#
 
 
+@login_required
+def article_coding_list( request_IN ):
+
+    '''
+    This view allows a user to look up a set of articles (first by entering a
+        tag to use to filter articles), and then see which have been coded.
+        Regardless, for each article provides a link to code.  If coded, the
+        link is details on the Article_Data record for that article.  If not, it
+        is just a link to the coding page for that article.
+    '''
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_coding_list"
+    current_user = None
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    article_coding_list_form = None
+    tags_in_list = []
+    is_form_ready = False
+    article_qs = None
+    article_counter = -1
+    article_data_qs = None
+    article_details_list = []
+    article_details = {}
+    article_instance = ""
+    article_data = None
+    article_status = ""
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+    response_dictionary[ 'base_simple_navigation' ] = True
+    response_dictionary[ 'base_post_login_redirect' ] = reverse( article_code )
+
+    # set my default rendering template
+    default_template = 'sourcenet/articles/article-code-list.html'
+    
+    # get current user
+    current_user = request_IN.user
+
+    # variables for building, populating person array that is used to control
+    #    building of network data matrices.
+
+    # do we have input parameters?
+    request_inputs = get_request_data( request_IN )
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create ArticleCodingListForm
+        article_coding_list_form = ArticleCodingListForm( request_inputs )
+
+        # get information we need from request.
+        tags_in_list = request_inputs.get( INPUT_NAME_TAGS_IN_LIST, [] )
+
+        is_form_ready = True
+    
+    else:
+    
+        # no inputs - create empty form
+        article_coding_list_form = ArticleCodingListForm()
+
+        is_form_ready = False
+    
+    #-- END check to see if inputs. --#
+
+    # store form in response
+    response_dictionary[ 'article_coding_list_form' ] = article_coding_list_form
+
+    # store tags in list value in response dictionary.
+    response_dictionary[ 'tags_in_list' ] = tags_in_list
+    
+    # form ready?
+    if ( is_form_ready == True ):
+
+        if ( article_coding_list_form.is_valid() == True ):
+
+            # retrieve articles specified by the input parameters, ordered by
+            #     Article ID, then create HTML output of list of articles.  For
+            #     each, output:
+            #     - article string
+            #     - link to code article.  If no existing coding, make it a
+            #         generic link.  If existing coding, make the Article_Data
+            #         string the link.
+            
+            # retrieve QuerySet that contains articles with requested tag(s).
+            article_qs = Article.filter_articles( tags_in_list_IN = tags_in_list )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # got one or more?
+                if ( article_count >= 1 ):
+                
+                    # yes - initialize list of article_details
+                    article_details_list = []
+                
+                    # loop over articles
+                    article_counter = 0
+                    for article_instance in article_qs:
+                    
+                        # increment article_counter
+                        article_counter += 1
+                    
+                        # new article_details
+                        article_details = {}
+                        
+                        # store index and article
+                        article_details[ "index" ] = article_counter
+                        article_details[ "article_instance" ] = article_instance
+                        
+                        # see if there is an Article_Data for current user.
+                        try:
+                        
+                            #look up Article_Data
+                            article_data_qs = article_instance.article_data_set
+                            article_data = article_data_qs.get( coder = current_user )
+                            article_status = "coded"
+                            
+                        except Article_Data.MultipleObjectsReturned as amore:
+                        
+                            # multiple returned.
+                            article_data = None
+                            article_status = "multiple"
+
+                        except Article_Data.DoesNotExist as adne:
+                        
+                            # None returned.
+                            article_data = None
+                            article_status = "new"
+
+                        except Exception as e:
+                        
+                            # multiple returned.
+                            article_data = None
+                            article_status = "error" + str( e )
+                            
+                        #-- END attempt to get Article_Data for current user. --#
+                        
+                        # place article_data in article_details
+                        article_details[ "article_data" ] = article_data
+                        article_details[ "article_status" ] = article_status
+                        
+                        # add details to list.
+                        article_details_list.append( article_details )
+
+                    #-- END loop over articles --#
+                    
+                    # seed response dictionary.
+                    response_dictionary[ 'article_details_list' ] = article_details_list
+                    
+                else:
+                
+                    # error - none or multiple articles found for ID. --#
+                    print( "No article returned for ID passed in." )
+                    response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to Article.filter_articles() ( tags_in_list_IN = " + str( tags_in_list ) + " )."
+                    response_dictionary[ 'article_coding_list_form' ] = article_coding_list_form
+                    
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
+                
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'output_string' ] = "ArticleCodingListForm is not valid."
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, just use empty instance of form created and stored above.
+        pass
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view function article_coding_list() --#
+
+    
 @login_required
 def article_view( request_IN ):
 

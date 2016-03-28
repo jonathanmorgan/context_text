@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2015 Jonathan Morgan
+Copyright 2010-2016 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -204,6 +204,19 @@ class ArticleCodingForm( forms.ModelForm ):
     person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
 
 #-- END ArticleCodingForm --#
+
+
+class ArticleCodingListForm( forms.Form ):
+
+    '''
+    form to hold lookup criteria for articles that need to be coded.  To start,
+        just includes list of tags.
+    '''
+
+    # list of unique tags to limit to.
+    tags_in_list = forms.CharField( required = True, label = "Article Tag List (comma-delimited)" )
+
+#-- END ArticleLookupForm --#
 
 
 class ArticleCodingSubmitForm( forms.Form ):

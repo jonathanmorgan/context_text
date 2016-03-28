@@ -93,7 +93,8 @@ urlpatterns = [
     url( r'^article/article_data/view/$', sourcenet.views.article_view_article_data, name = "sourcenet-article_view_article_data" ),
     url( r'^article/article_data/view_with_text/$', sourcenet.views.article_view_article_data_with_text, name = "sourcenet-article_view_article_data_with_text" ),
 
-    # article coding page
+    # article coding pages
+    url( r'^article/code/list/', sourcenet.views.article_coding_list, name = "sourcenet-article_coding_list" ),
     url( r'^article/code/', sourcenet.views.article_code, name = "sourcenet-article_code" ),
 
 ]
