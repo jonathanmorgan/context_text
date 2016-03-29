@@ -1098,7 +1098,7 @@ def article_coding_list( request_IN ):
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
     response_dictionary[ 'base_simple_navigation' ] = True
-    response_dictionary[ 'base_post_login_redirect' ] = reverse( article_code )
+    response_dictionary[ 'base_post_login_redirect' ] = reverse( article_coding_list )
 
     # set my default rendering template
     default_template = 'sourcenet/articles/article-code-list.html'

@@ -24,7 +24,7 @@ article_counter = -1
 
 # declare variables - also, apply tag?
 do_apply_tag = True
-tag_to_apply = "grp_month"
+tag_to_apply = "minnesota3-20160328"
 
 # set up "local, regional and state news" sections
 #grp_local_news_sections.append( "Lakeshore" )
@@ -80,12 +80,18 @@ for current_article in grp_article_qs:
 #-- END loop over articles. --#
 '''
 
-# filter on date range
-grp_article_qs = Article.filter_articles( start_date = "2009-12-01",
+# start with all articles
+grp_article_qs = Article.objects.all()
+
+'''
+# date range, newspaper, section list, and in-house reporters.
+grp_article_qs = Article.filter_articles( qs_IN = grp_article_qs,
+                                          start_date = "2009-12-01",
                                           end_date = "2009-12-31",
                                           newspaper = grp_newspaper,
                                           section_name_list = grp_local_news_sections,
                                           custom_article_q = Article.Q_GRP_IN_HOUSE_AUTHOR )
+'''
 
 # now, need to find local news articles to test on.
 #grp_article_qs = grp_article_qs.filter( newspaper = grp_newspaper )
@@ -108,6 +114,7 @@ print( "Article count before filtering on tags: " + str( article_count ) )
 
 # tags to exclude
 #tags_not_in_list = [ "prelim_reliability", "prelim_network" ]
+tags_not_in_list = [ "minnesota1-20160328", "minnesota2-20160328", ]
 if ( len( tags_not_in_list ) > 0 ):
 
     # exclude those in a list
@@ -118,6 +125,7 @@ if ( len( tags_not_in_list ) > 0 ):
 
 # include only those with certain tags.
 #tags_in_list = [ "prelim_unit_test_001", "prelim_unit_test_002", "prelim_unit_test_003", "prelim_unit_test_004", "prelim_unit_test_005", "prelim_unit_test_006", "prelim_unit_test_007" ]
+tags_in_list = [ "grp_month", ]
 if ( len( tags_in_list ) > 0 ):
 
     # filter
@@ -142,7 +150,7 @@ article_count = grp_article_qs.count()
 print( "Article count after tag filtering: " + str( article_count ) )
 
 # do we want a random sample?
-#random_count = 60
+random_count = 147
 if ( random_count > 0 ):
 
     # to get random, order them by "?", then use slicing to retrieve requested
