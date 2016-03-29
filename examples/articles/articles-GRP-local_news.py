@@ -15,13 +15,16 @@ article_counter = -1
 article_id_list = []
 tags_in_list = []
 tags_not_in_list = []
+filter_out_prelim_tags = False
+random_count = -1
+article_counter = -1
 
 # declare variables - size of random sample we want
-random_count = 60
+#random_count = 60
 
 # declare variables - also, apply tag?
 do_apply_tag = True
-tag_to_apply = "prelim_reliability_test"
+tag_to_apply = "grp_month"
 
 # set up "local, regional and state news" sections
 #grp_local_news_sections.append( "Lakeshore" )
@@ -77,14 +80,21 @@ for current_article in grp_article_qs:
 #-- END loop over articles. --#
 '''
 
+# filter on date range
+grp_article_qs = Article.filter_articles( start_date = "2009-12-01",
+                                          end_date = "2009-12-31",
+                                          newspaper = grp_newspaper,
+                                          section_name_list = grp_local_news_sections,
+                                          custom_article_q = Article.Q_GRP_IN_HOUSE_AUTHOR )
+
 # now, need to find local news articles to test on.
-grp_article_qs = Article.objects.filter( newspaper = grp_newspaper )
+#grp_article_qs = grp_article_qs.filter( newspaper = grp_newspaper )
 
 # only the locally implemented sections
-grp_article_qs = grp_article_qs.filter( section__in = grp_local_news_sections )
+#grp_article_qs = grp_article_qs.filter( section__in = grp_local_news_sections )
 
 # and, with an in-house author
-grp_article_qs = grp_article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
+#grp_article_qs = grp_article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
 
 # and no columns
 grp_article_qs = grp_article_qs.exclude( index_terms__icontains = "Column" )
@@ -104,13 +114,6 @@ if ( len( tags_not_in_list ) > 0 ):
     print( "filtering out articles with tags: " + str( tags_not_in_list ) )
     grp_article_qs = grp_article_qs.exclude( tags__name__in = tags_not_in_list )
 
-else:
-
-    # if not specified, filter out all articles with any tag whose name contains
-    #    "prelim".
-    print( "filtering out articles with tags that contain \"prelim\"" )
-    grp_article_qs = grp_article_qs.exclude( tags__name__contains = "prelim" )
-    
 #-- END check to see if we have a specific list of tags we want to exclude --#
 
 # include only those with certain tags.
@@ -123,20 +126,41 @@ if ( len( tags_in_list ) > 0 ):
     
 #-- END check to see if we have a specific list of tags we want to include --#
 
+# filter out "*prelim*" tags?
+#filter_out_prelim_tags = True
+if ( filter_out_prelim_tags == True ):
+
+    # ifilter out all articles with any tag whose name contains "prelim".
+    print( "filtering out articles with tags that contain \"prelim\"" )
+    grp_article_qs = grp_article_qs.exclude( tags__name__icontains = "prelim" )
+    
+#-- END check to see if we filter out "prelim_*" tags --#
+
 # how many is that?
 article_count = grp_article_qs.count()
 
 print( "Article count after tag filtering: " + str( article_count ) )
 
-# to get random, order them by "?", then use slicing to just grab 10 or so.
-grp_article_qs = grp_article_qs.order_by( "?" )[ : random_count ]
+# do we want a random sample?
+#random_count = 60
+if ( random_count > 0 ):
+
+    # to get random, order them by "?", then use slicing to retrieve requested
+    #     number.
+    grp_article_qs = grp_article_qs.order_by( "?" )[ : random_count ]
+    
+#-- END check to see if we want random sample --#
 
 # this is a nice algorithm, also:
 # - http://www.titov.net/2005/09/21/do-not-use-order-by-rand-or-how-to-get-random-rows-from-table/
 
 # make list of article IDs.
 article_id_list = []
+article_counter = 0
 for current_article in grp_article_qs:
+
+    # increment article_counter
+    article_counter += 1
 
     # add IDs to article_id_list
     article_id_list.append( str( current_article.id ) )
@@ -147,12 +171,13 @@ for current_article in grp_article_qs:
         # yes, please.  Add tag.
         current_article.tags.add( tag_to_apply )
         
-        # output the tags.
-        print( "- Tags for article " + str( current_article.id ) + " : " + str( current_article.tags.all() ) )
-
     #-- END check to see if we apply tag. --#
-    
+
+    # output the tags.
+    print( "- Tags for article " + str( current_article.id ) + " : " + str( current_article.tags.all() ) )
+   
 #-- END loop over articles --#
 
 # output the list.
-print( "List of " + str( random_count ) + " local GRP staff article IDs: " + ", ".join( article_id_list ) )
+print( "Found " + str( article_counter ) + " articles ( " + str( article_count ) + " )." )
+print( "List of " + str( len( article_id_list ) ) + " local GRP staff article IDs: " + ", ".join( article_id_list ) )

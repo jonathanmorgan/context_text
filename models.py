@@ -2272,6 +2272,7 @@ class Article( models.Model ):
     PARAM_NEWSPAPER_ID = "newspaper_id"
     PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
     PARAM_NEWSPAPER_INSTANCE = "newspaper"
+    PARAM_NEWSPAPER_ID_IN_LIST = "newspaper_id_in_list"
 
     # date range filter parameters, for article lookup.
     PARAM_START_DATE = "start_date"
@@ -2495,15 +2496,26 @@ class Article( models.Model ):
         
         '''
         Accepts parameters in kwargs.  Uses arguments to filter a QuerySet of
-           articles, which it subsequently returns.  Currently, you can pass
-           this method a section name list and date range start and end dates.
-           You can also pass in an optional QuerySet instance.  If QuerySet
-           passed in, this method appends filters to it.  If not, starts with
-           a new QuerySet.
+            articles, which it subsequently returns.  Currently, you can pass
+            this method a section name list and date range start and end dates.
+            You can also pass in an optional QuerySet instance.  If QuerySet
+            passed in, this method appends filters to it.  If not, starts with
+            a new QuerySet.  Specifically, accepts:
+            - cls.PARAM_NEWSPAPER_ID ("newspaper_id") - ID of newspapers whose articles we want to limit to.
+            - cls.PARAM_NEWSPAPER_NEWSBANK_CODE ("newspaper_newsbank_code") - newsbank code of newspaper whose articles we want.
+            - cls.PARAM_NEWSPAPER_INSTANCE ("newspaper") - instance of newspaper whose articles we want.
+            - cls.PARAM_NEWSPAPER_ID_IN_LIST ("newspaper_id_in_list") - list of IDs of newspapers whose articles we want included in our filtered set.
+            - cls.PARAM_START_DATE ("start_date") - date string in "YYYY-MM-DD" format of date on which and after we want articles published.
+            - cls.PARAM_END_DATE ("end_date") - date string in "YYYY-MM-DD" format of date up to and including which we want articles published.
+            - cls.PARAM_SECTION_NAME_LIST ("section_name_list") - list of section names an article can have in our filtered article set.
+            - cls.PARAM_TAGS_IN_LIST ("tags_in_list_IN") - tags articles in our set should have.
+            - cls.PARAM_TAGS_NOT_IN_LIST ("tags_not_in_list_IN") - tags articles in our set should not have.
+            - cls.PARAM_CUSTOM_ARTICLE_Q ("custom_article_q") - Django django.db.models.Q instance to apply to filtered QuerySet.
+           
         Preconditions: None.
         Postconditions: returns the QuerySet passed in with filters added as
-           specified by arguments.  If no QuerySet passed in, creates new
-           Article QuerySet, returns it with filters added.
+            specified by arguments.  If no QuerySet passed in, creates new
+            Article QuerySet, returns it with filters added.
         '''
         
         # return reference
@@ -2514,6 +2526,8 @@ class Article( models.Model ):
         newspaper_ID_IN = None
         newspaper_newsbank_code_IN = None
         newspaper_instance = None
+        newspaper_id_in_list_IN = None
+        paper_id_in_list = None
         q_date_range = None
         section_name_list_IN = None
         tags_in_list_IN = None
@@ -2539,9 +2553,9 @@ class Article( models.Model ):
         
         #-- END check to see if query set passed in --#
 
-        #----------------
-        # ==> newspapers
-        #----------------
+        #---------------
+        # ==> newspaper
+        #---------------
 
         # try to update QuerySet for selected newspaper.
         if ( cls.PARAM_NEWSPAPER_ID in kwargs ):
@@ -2574,6 +2588,26 @@ class Article( models.Model ):
 
             # Yes.  Filter.
             qs_OUT = qs_OUT.filter( newspaper = newspaper_instance )
+            
+        #-- END check to see if newspaper instance found.
+        
+        # got a newspaper ID IN list?
+        if ( cls.PARAM_NEWSPAPER_ID_IN_LIST in kwargs ):
+        
+            # get list
+            newspaper_id_in_list_IN = kwargs[ cls.PARAM_NEWSPAPER_ID_IN_LIST ]
+            paper_id_in_list = ListHelper.get_value_as_list( newspaper_id_in_list_IN )
+            
+            # filter?
+            if ( len( paper_id_in_list ) > 0 ):
+
+                # something in list - filter.
+                qs_OUT = qs_OUT.filter( newspaper__id__in = paper_id_in_list )
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if newspaper ID IN list is in arguments --#
+
 
         #----------------
         # ==> date range
