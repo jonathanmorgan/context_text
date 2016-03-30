@@ -2115,6 +2115,7 @@ class ArticleCoder( BasicRateLimited ):
 
                             #-- END check to see if suffix passed in. --#
 
+                            # ! Find in Text (FIT) inconsistent - look for string in plain text
                             found_list = article_text.find_in_plain_text( find_full_string )
                             found_list_count = len( found_list )
                             if ( found_list_count >= 1 ):
@@ -2139,7 +2140,7 @@ class ArticleCoder( BasicRateLimited ):
                                 full_string_index = sanity_check_index
                                 
                                 #-----------------------------------------------------------
-                                # plain text index
+                                # ! ==> plain text index
                                 #-----------------------------------------------------------
 
                                 # get actual plain text index (no prefix)
@@ -2218,15 +2219,30 @@ class ArticleCoder( BasicRateLimited ):
                                 #-- END check to see if found mention + suffix
                                 
                                 #-----------------------------------------------------------
-                                # canonical index
+                                # ! ==> canonical index
                                 #-----------------------------------------------------------
 
                                 # canonical text seems to be a troublesome one.  Start out
                                 #    looking for the full string.
                                 found_list = article_text.find_in_canonical_text( find_full_string )
                                 found_list_count = len( found_list )
-                                if ( found_list_count == 1 ):
                                 
+                                # one or more matches?
+                                if ( found_list_count >= 1 ):
+    
+                                    # more than one?
+                                    if ( found_list_count > 1 ):
+
+                                        # WARNING.
+                                        notes_string = "In " + me + ": WARNING - canonical index - prefix + mention + suffix ( \"" + find_full_string + "\" ) returned multiple matches: " + str( found_list ) + ".  Using 1st match."
+                                        notes_list.append( notes_string )
+                                        self.output_debug( notes_string )
+
+                                        # OK to update...  Just broken.
+                                        # is_ok_to_update = False
+
+                                    #-- END check to see if more than one match --#
+
                                     # found it.  load value from list.
                                     canonical_index = found_list[ 0 ]
                                     
@@ -2244,17 +2260,17 @@ class ArticleCoder( BasicRateLimited ):
                                 else:
                                 
                                     # ERROR.
-                                    notes_string = "In " + me + ": ERROR - canonical index - prefix + mention + suffix ( \"" + find_full_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
+                                    notes_string = "In " + me + ": ERROR - canonical index - prefix + mention + suffix ( \"" + find_full_string + "\" ) returned 0 matches: " + str( found_list )
                                     notes_list.append( notes_string )
                                     self.output_debug( notes_string )
 
                                     # OK to update...  Just broken.
                                     # is_ok_to_update = False
                                 
-                                #-- END check to see if found mention + suffix
+                                #-- END check to see if found in canonical text --#
                                 
                                 #-----------------------------------------------------------
-                                # word first and last numbers
+                                # ! ==> word first and last numbers
                                 #-----------------------------------------------------------
 
                                 # Start out looking for the full string.
@@ -2303,10 +2319,10 @@ class ArticleCoder( BasicRateLimited ):
                                     mention_word_count = len( mention_word_list )
                                     last_word_number = first_word_number + mention_word_count - 1
 
-                                #-- END check to see if 1 or more matches. --#
+                                #-- END check to see if 1 or more matches in word list. --#
                                     
                                 #-----------------------------------------------------------
-                                # paragraph number
+                                # ! ==> paragraph number
                                 #-----------------------------------------------------------
 
                                 # Start out looking for the full string.
@@ -2332,7 +2348,7 @@ class ArticleCoder( BasicRateLimited ):
                                     # use first
                                     paragraph_number = found_list[ 0 ]
                                 
-                                #-- END check to see if found mention + suffix
+                                #-- END check to see if found paragraph --#
                                                     
                             else:
                             
@@ -2344,7 +2360,7 @@ class ArticleCoder( BasicRateLimited ):
                             
                             #-- END check to see if match for prefix + mention + suffix --#
                             
-                        #-- END check to make sure all searches returned same count of matches. --#
+                        #-- END FIT check to make sure all searches returned same count of matches, else look more closely. --#
                         
                         # OK to update the stuff from FIT?
                         if ( is_ok_to_update == True ):
