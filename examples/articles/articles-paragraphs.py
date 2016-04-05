@@ -70,7 +70,7 @@ for current_content in bs_temp_tag.contents:
             if ( isinstance( paragraph_element, NavigableString) ):
             
                 # it is text - convert it to string.
-                current_paragraph_text = unicode( paragraph_element )
+                current_paragraph_text = StringHelper.object_to_unicode_string( paragraph_element )
             
             else:
             

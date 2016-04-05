@@ -3,6 +3,9 @@
 # nameparser
 from nameparser import HumanName
 
+# python_utilities
+from python_utilities.strings.string_helper import StringHelper
+
 # sourcenet Person model
 from sourcenet.models import Article_Author
 from sourcenet.models import Article_Subject
@@ -130,7 +133,7 @@ if ( name_part_count == 2 ):
 # look for people with same full-string name.
 
 # get full name from parsed.
-full_name_test = unicode( parsed )
+full_name_test = StringHelper.object_to_unicode_string( parsed )
 print( "FULL NAME - looking for \"" + full_name_test + "\"" )
 
 full_name_qs = Person.objects.filter( full_name_string__iexact = full_name_test )

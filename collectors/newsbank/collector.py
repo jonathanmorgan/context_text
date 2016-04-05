@@ -23,15 +23,16 @@ This code file contains a class that can be used to pull down articles from
 #================================================================================
 
 # imports
-import cookielib
 import datetime
 import os
 import sys
 import traceback
-import urllib2
 
 # regular expression library.
 import re
+
+# six - Python 2 and 3 support
+import six
 
 # HTML parsing
 from bs4 import BeautifulSoup

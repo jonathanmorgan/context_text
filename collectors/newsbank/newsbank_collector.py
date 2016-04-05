@@ -23,15 +23,24 @@ This code file contains a class that can be used to pull down articles from
 #================================================================================
 
 # imports
-import cookielib
 import datetime
 import gc
 import os
 import sys
-import urllib2
 
 # regular expression library.
 import re
+
+# six - Python 2 and 3 support
+import six
+
+#import urllib2
+from six.moves import urllib
+#import cookielib
+from six.moves import http_cookiejar
+from six.moves.urllib.request import build_opener
+from six.moves.urllib.request import HTTPCookieProcessor
+from six.moves.urllib.request import Request
 
 # HTML parsing
 from bs4 import BeautifulSoup
@@ -164,7 +173,7 @@ class NewsBankWebCollector( NewsBankCollector ):
 
     '''
     This class is a helper for Collecting articles out of NewsBank.  It depends
-       on urllib2, cookielib, and datetime.
+       on urllib2, http_cookiejar, and datetime.
     '''
 
     #============================================================================
@@ -439,7 +448,7 @@ class NewsBankWebCollector( NewsBankCollector ):
             #-- END debug output --#
             
             # we do. Create a request.
-            request_OUT = urllib2.Request( url_IN, None, { self.HEADER_VARIABLE_NAME_USER_AGENT : self.user_agent } )
+            request_OUT = Request( url_IN, None, { self.HEADER_VARIABLE_NAME_USER_AGENT : self.user_agent } )
 
         #-- END check to see if we have the things we need to generate request --#
         
@@ -741,8 +750,8 @@ class NewsBankWebCollector( NewsBankCollector ):
         current_connection = None
         
         # initialize URL opener.
-        self.cookie_jar = cookielib.CookieJar()
-        self.url_opener = urllib2.build_opener( urllib2.HTTPCookieProcessor( self.cookie_jar ) )
+        self.cookie_jar = http_cookiejar.CookieJar()
+        self.url_opener = build_opener( HTTPCookieProcessor( self.cookie_jar ) )
         
         # do we have an init URL?
         if ( self.init_url ):

@@ -24,15 +24,24 @@ This code file contains a class that implements functions for interacting with
 #================================================================================
 
 # imports
-import cookielib
 import datetime
 import os
 import sys
-import urllib2
 from xml.sax import saxutils
 
 # regular expression library.
 import re
+
+# six - Python 2 and 3 support
+import six
+
+#import urllib2
+from six.moves import urllib
+#import cookielib
+from six.moves import http_cookiejar
+from six.moves.urllib.request import build_opener
+from six.moves.urllib.request import HTTPCookieProcessor
+from six.moves.urllib.request import Request
 
 # HTML parsing
 from bs4 import BeautifulSoup
@@ -387,7 +396,7 @@ class NewsBankHelper( object ):
             self.output_debug( ">>> making request for URL: " + str( url_IN ) + "\n" )
             
             # we do. Create a request.
-            request_OUT = urllib2.Request( url_IN, None, { self.HEADER_VARIABLE_NAME_USER_AGENT : self.user_agent } )
+            request_OUT = Request( url_IN, None, { self.HEADER_VARIABLE_NAME_USER_AGENT : self.user_agent } )
 
         #-- END check to see if we have the things we need to generate request --#
         
@@ -710,8 +719,8 @@ class NewsBankHelper( object ):
     def initialize_url_opener( self ):
     
         # initialize URL opener.
-        self.cookie_jar = cookielib.CookieJar()
-        self.url_opener = urllib2.build_opener( urllib2.HTTPCookieProcessor( self.cookie_jar ) )
+        self.cookie_jar = http_cookiejar.CookieJar()
+        self.url_opener = build_opener( HTTPCookieProcessor( self.cookie_jar ) )
     
     #-- END method initialize_url_opener() --#
 

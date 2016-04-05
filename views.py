@@ -270,7 +270,7 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
             article_data_coder = article_data_instance.coder
             article_data_coder_id = article_data_coder.id
             article_data_coder_username = article_data_coder.username
-            html_OUT += unicode( article_data_coder_id ) + " - " + article_data_coder_username
+            html_OUT += StringHelper.object_to_unicode_string( article_data_coder_id ) + " - " + article_data_coder_username
 
             # got a coder type?
             article_data_coder_type = article_data_instance.coder_type
@@ -286,7 +286,7 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
             #------------------------------------------#
             # and subject information
             html_OUT += "<td>"
-            html_OUT += unicode( article_subject_instance )
+            html_OUT += StringHelper.object_to_unicode_string( article_subject_instance )
     
             # got a name?
             subject_name = article_subject_instance.name
@@ -324,7 +324,7 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
                 quote_value = quote.value
                 quote_paragraph_number = quote.paragraph_number
                 
-                html_OUT += quote_value + " ( graf: " + unicode( quote_paragraph_number ) + " )"
+                html_OUT += quote_value + " ( graf: " + StringHelper.object_to_unicode_string( quote_paragraph_number ) + " )"
     
             else:
                 
@@ -938,7 +938,7 @@ def article_code( request_IN ):
                             #    concatenated causes all parts of the string to
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
+                            rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
                         
                         #-- END loop over <p> ids. --#
                         
@@ -1404,7 +1404,7 @@ def article_view( request_IN ):
                             #    concatenated causes all parts of the string to
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
+                            rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
                         
                         #-- END loop over <p> ids. --#
                         
@@ -1779,7 +1779,7 @@ def article_view_article_data_with_text( request_IN ):
                                 #    concatenated causes all parts of the string to
                                 #    try to encode to default encoding ('ascii').
                                 #    This breaks if there are non-ascii characters.
-                                rendered_author_html += "\n        <tr><td>" + unicode( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + unicode( author )
+                                rendered_author_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + StringHelper.object_to_unicode_string( author )
                                 
                                 # got an organization string?
                                 author_organization = author.organization_string
@@ -1864,7 +1864,7 @@ def article_view_article_data_with_text( request_IN ):
                             #    concatenated causes all parts of the string to
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + unicode( paragraph_number ) + "</td><td>" + p_tag_html + "</td>"
+                            rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td>"
                             
                             # check if any Article_Subjects for this paragraph.
                             current_graf_subjects_list = p_tag_id_to_subject_map.get( paragraph_number, [] )

@@ -14,7 +14,7 @@ __author__="jonathanmorgan"
 __date__ ="$May 1, 2010 6:26:35 PM$"
 
 if __name__ == "__main__":
-    print "Hello World"
+    print( "Hello World" )
 
 #===============================================================================
 # imports (in alphabetical order by package, then by name)

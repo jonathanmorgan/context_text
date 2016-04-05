@@ -121,8 +121,12 @@ class TopicInline( admin.TabularInline ):
     ordering = [ "name" ]
 
 class ArticleNotesInline( admin.StackedInline ):
+
     model = Article_Notes
+    extra = 1
     fk_name = 'article'
+
+#-- END inline class ArticleNotesInline --#
 
 class ArticleRawDataInline( admin.StackedInline ):
     model = Article_RawData
@@ -146,7 +150,7 @@ class ArticleAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'status', 'tags' ]
+                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'author_string', 'author_varchar', 'author_affiliation', 'status', 'tags' ]
             }
         ),
         ( 
@@ -164,8 +168,8 @@ class ArticleAdmin( admin.ModelAdmin ):
         ArticleRawDataInline
     ]
 
-    list_display = ( 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
-    list_display_links = ( 'headline', )
+    list_display = ( 'id', 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
+    list_display_links = ( 'id', 'headline', )
     list_filter = [ 'pub_date', 'newspaper' ]
     search_fields = [ 'headline', 'unique_identifier', 'id' ]
     #search_fields = [ 'newspaper', 'coder', 'headline' ]

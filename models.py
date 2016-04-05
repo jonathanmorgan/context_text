@@ -764,7 +764,7 @@ class Abstract_Person( Abstract_Person_Parent ):
         # return reference
         string_OUT = ""
     
-        string_OUT += "HumanName: \"" + unicode( human_name_IN ) + "\"\n"
+        string_OUT += "HumanName: \"" + StringHelper.object_to_unicode_string( human_name_IN ) + "\"\n"
         string_OUT += "- title: " + human_name_IN.title + "\n"
         string_OUT += "- first: " + human_name_IN.first + "\n"
         string_OUT += "- middle: " + human_name_IN.middle + "\n"
@@ -1554,8 +1554,8 @@ class Abstract_Person( Abstract_Person_Parent ):
         name_HumanName = self.to_HumanName()
             
         # use it to update the full_name_string.
-        self.full_name_string = unicode( name_HumanName )
-        
+        self.full_name_string = StringHelper.object_to_unicode_string( name_HumanName )
+
         # call parent save() method.
         super( Abstract_Person, self ).save( *args, **kwargs )
         
@@ -1655,7 +1655,11 @@ class Abstract_Person( Abstract_Person_Parent ):
             
             # Finally, store the full name string (and the pickled object?).
             standardized_hn = self.to_HumanName()
-            self.full_name_string = unicode( standardized_hn )
+
+            # convert name to string - different in python 2 and 3.
+            self.full_name_string = StringHelper.object_to_unicode_string( standardized_hn )
+
+            # not pickling at the moment.
             #self.nameparser_pickled = pickle.dumps( standardized_hn )
             
         else:
@@ -3587,7 +3591,7 @@ class Article_Text( Unique_Article_Content ):
                 if ( isinstance( paragraph_element, NavigableString ) ):
                 
                     # it is NavigableString - convert it to string.
-                    current_paragraph_text = unicode( paragraph_element )
+                    current_paragraph_text = StringHelper.object_to_unicode_string( paragraph_element )
                 
                 else:
                 

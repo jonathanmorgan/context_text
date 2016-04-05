@@ -16,7 +16,7 @@ __author__="jonathanmorgan"
 __date__ ="$November 26, 2014 3:03:35 PM$"
 
 if __name__ == "__main__":
-    print "Hello World"
+    print( "Hello World" )
 
 #===============================================================================
 # imports (in alphabetical order by package, then by name)
@@ -29,6 +29,9 @@ import datetime
 import logging
 #import copy
 import re
+
+# six - python 2 + 3
+import six
 
 # Django imports
 from django.contrib.auth.models import User
@@ -44,6 +47,8 @@ from django.core.exceptions import MultipleObjectsReturned
 # python_utilities
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
+from python_utilities.sequences.sequence_helper import SequenceHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # Import the classes for our SourceNet application
 from sourcenet.models import Article_Author
@@ -984,6 +989,9 @@ class ArticleCoder( BasicRateLimited ):
         organization_cleaned = ""
         organization_length = -1
         
+        # declare variables - debug logging
+        debug_string = ""
+        
         # got a return reference?
         if ( article_person_IN is not None ):
 
@@ -1138,7 +1146,11 @@ class ArticleCoder( BasicRateLimited ):
                     #-- END check to see if person_instance --#
                     
                     # get full name string.
-                    standardized_full_name = person_instance.full_name_string
+                    standardized_full_name = StringHelper.object_to_unicode_string( person_instance.full_name_string )
+                    
+                    # log the type of the variable here.
+                    #debug_string = "standardized full name = \"" + str( standardized_full_name ) + "\"; type = " + str( type( standardized_full_name ) )
+                    #self.output_debug( debug_string, me )
                         
                     # look for matches based on full name string.
                     full_name_qs = Person.objects.filter( full_name_string__iexact = standardized_full_name )
@@ -3713,5 +3725,116 @@ class ArticleCoder( BasicRateLimited ):
         
     #-- END method update_person() --#
     
+
+    def validate_FIT_results( self, FIT_values_IN ):
+
+        '''
+        Accepts a dictionary of results from a Article_Text.find_in_text() call.
+           Looks for problems (counts of nested lists not being 1, not being all
+           the same).  If it finds problems, returns list of string messages 
+           describing problems.  If no problems, returns empty list.
+        '''
+        
+        # return reference
+        status_list_OUT = []
+        
+        # declare variables
+        me = "validate_FIT_results"
+        status_OUT = ""
+        canonical_index_list = []
+        plain_text_index_list = []
+        paragraph_list = []
+        first_word_list = []
+        last_word_list = []
+        canonical_index_count = -1
+        plain_text_index_count = -1
+        paragraph_count = -1
+        first_word_count = -1
+        last_word_count = -1
+        count_list = []
+        unique_count_list = []
+        unique_count = -1
+        match_count = -1
+
+        # Unpack results - for each value, could be 0, 1, or more.
+        # - If 0, no match - ERROR.
+        # - If 1, use value.
+        # - If more than one, multiple matches - WARNING.
+        # - All lists should have same count.  If any are different - WARNING (can be because of complications relating to punctuation - "'s" or "." after name, etc.).
+
+        # get result lists.
+        canonical_index_list = FIT_values_IN.get( Article_Text.FIT_CANONICAL_INDEX_LIST, [] )
+        plain_text_index_list = FIT_values_IN.get( Article_Text.FIT_TEXT_INDEX_LIST, [] )
+        paragraph_list = FIT_values_IN.get( Article_Text.FIT_PARAGRAPH_NUMBER_LIST, [] )
+        first_word_list = FIT_values_IN.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
+        last_word_list = FIT_values_IN.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
+
+        # get counts and add them to list.
+        canonical_index_count = len( canonical_index_list )
+        count_list.append( canonical_index_count )
+
+        plain_text_index_count = len( plain_text_index_list )
+        count_list.append( plain_text_index_count )
+
+        paragraph_count = len( paragraph_list )
+        count_list.append( paragraph_count )
+
+        first_word_count = len( first_word_list )
+        count_list.append( first_word_count )
+
+        last_word_count = len( last_word_list )
+        count_list.append( last_word_count )
+
+        # counts all the same?
+        unique_count_list = SequenceHelper.list_unique_values( count_list )
+        
+        # first, see how many unique values (should be 1).
+        unique_count = len( unique_count_list )
+        if ( unique_count == 1 ):
+        
+            # all have same count.  What is it?
+            match_count = unique_count_list[ 0 ]
+            if ( match_count == 1 ):
+            
+                # this is the normal case.  Return empty list.
+                status_list_OUT = []
+
+            elif ( match_count == 0 ):
+            
+                # error - no matches returned for quotation.  What to do?
+                status_OUT = "In " + me + ": ERROR - search for string in text yielded no matches."
+                status_list_OUT.append( status_OUT )
+                self.output_debug( status_OUT )
+                
+            elif ( match_count > 1 ):
+            
+                # warning - multiple matches returned for quotation.  What to do?
+                status_OUT = "In " + me + ": WARNING - search for string in text yielded " + str( match_count ) + " matches."
+                status_list_OUT.append( status_OUT )
+                self.output_debug( status_OUT )
+                
+            else:
+            
+                # error - matches returned something other than 0, 1, or
+                #    > 1.  What to do?
+                status_OUT = "In " + me + ": ERROR - search for string in text yielded invalid count: " + str( match_count )
+                status_list_OUT.append( status_OUT )
+                self.output_debug( status_OUT )
+                
+            #-- END check to see how many matches were found. --#
+            
+        else:
+
+            # warning - unique_count_list does not have only one thing in it.
+            status_OUT = "In " + me + ": WARNING - search for string in text yielded different numbers of results for different ways of searching: " + str( unique_count_list )
+            status_list_OUT.append( status_OUT )
+            self.output_debug( status_OUT )
+            
+        #-- END check to make sure all searches returned same count of matches. --#
+        
+        return status_list_OUT        
+        
+    #-- END method validate_FIT_results() --#
+
 
 #-- END class ArticleCoder --#
