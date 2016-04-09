@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2015 Jonathan Morgan
+Copyright 2010-present (2016) Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -12,8 +12,8 @@ sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
 '''
 
-__author__="jonathanmorgan"
-__date__ ="$November 26, 2014 3:03:35 PM$"
+__author__ = "jonathanmorgan"
+__date__ = "$November 26, 2014 3:03:35 PM$"
 
 if __name__ == "__main__":
     print( "Hello World" )
@@ -90,6 +90,7 @@ class ArticleCoder( BasicRateLimited ):
     # status constants
     STATUS_SUCCESS = "Success!"    
     STATUS_ERROR_PREFIX = "Error: "
+    STATUS_LIST_DELIMITER = " || "
 
     # DEPRECATED STATUSES - DO NOT USE IN NEW CODE
     STATUS_OK = "OK!"
@@ -97,12 +98,16 @@ class ArticleCoder( BasicRateLimited ):
     # debug
     DEBUG_FLAG = True
     
+    # logging
+    LOGGER_NAME = "sourcenet.article_coding.article_coder"
+    
     # config parameters
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
     
     # author string processing
-    REGEX_BEGINS_WITH_BY = re.compile( r'^BY ', re.IGNORECASE )
+    REGEX_BEGINS_WITH_BY = re.compile( r'^\s*BY\s+', re.IGNORECASE )
+    REGEX_CONTAINS_AND = re.compile( r'\s+AND\s+', re.IGNORECASE )
     
     # PARAMS for update_person()
     PARAM_PERSON_ID = "person_id"
@@ -121,6 +126,12 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_SUBJECT_TYPE = "subject_type"
     PARAM_CODER_TYPE = "coder_type"
 
+    # author info properties
+    AUTHOR_INFO_AUTHOR_NAME_STRING = "author_name_string"
+    AUTHOR_INFO_AUTHOR_NAME_LIST = "author_name_list"
+    AUTHOR_INFO_AUTHOR_AFFILIATION = "author_affiliation"
+    AUTHOR_INFO_STATUS = "status"
+    
     # for lookup, match statuses
     MATCH_STATUS_SINGLE = "single"
     MATCH_STATUS_MULTIPLE = "multiple"
@@ -198,6 +209,189 @@ class ArticleCoder( BasicRateLimited ):
     #-- END class method get_automated_coding_user() --#
     
     
+    @classmethod
+    def parse_author_string( cls, author_string_IN, capitalize_each_word_IN = False, *args, **kwargs ):
+        
+        '''
+        Accepts an author string.  Parses into author name string, author name
+            list, and author affiliation string as follows:
+            - strip off "BY" and any number of spaces from beginning if present.
+            - split string on "/" to separate name(s) from affiliation
+            - split name string on "and", and then ",", to find multiple names.
+            - all names go in name list.
+        '''
+        
+        # return reference
+        author_info_OUT = {}
+        
+        # declare variables
+        me = "parse_author_string"
+        my_logger = None
+        status_message = ""
+        status_message_list = []
+        status_OUT = ""
+        author_parts = None
+        author_parts_length = -1
+        author_affiliation = ""
+        author_name_string = ""
+        author_name_list = []
+        author_split_on_and_list = []
+        author_and_part = ""
+        current_author_name = ""
+        author_split_on_comma_list = []
+        author_comma_part = ""
+        
+        # get logger
+        my_logger = cls.get_a_logger( cls.LOGGER_NAME )
+        
+        # get author_string
+        author_string = author_string_IN
+        
+        # got a string?
+        if ( ( author_string is not None ) and ( author_string != "" ) ):
+        
+            my_logger.debug( "--- In " + me + ": Processing author string: \"" + author_string + "\"" )
+            
+            # got an author string.  Parse it.  First, break out organization.
+            # split author string on "/"
+            author_parts = author_string.split( '/' )
+            
+            # got two parts?
+            author_parts_length = len( author_parts )
+            if ( author_parts_length == 2 ):
+                
+                # we do.  2nd part = organization
+                author_affiliation = author_parts[ 1 ]
+                author_affiliation = author_affiliation.strip()
+                
+                # first part is author string we look at going forward.
+                author_name_string = author_parts[ 0 ]
+                author_name_string = author_name_string.strip()
+                
+                # also, if string starts with "By " and any number of spaces,
+                #     remove it.
+                author_name_string = re.sub( cls.REGEX_BEGINS_WITH_BY, "", author_name_string )
+                
+            # one part? (just call it the name string)
+            elif ( author_parts_length == 1 ):
+            
+                # consider the one item in list to be author string.
+                author_name_string = author_parts[ 0 ]
+                author_name_string = author_name_string.strip()
+                
+                # also, if string starts with "By " and any number of spaces,
+                #     remove it.
+                author_name_string = re.sub( cls.REGEX_BEGINS_WITH_BY, "", author_name_string )
+            
+            elif ( ( author_parts_length == 0 ) or ( author_parts_length > 2 ) ):
+            
+                # error.  what to do?
+                status_message = cls.STATUS_ERROR_PREFIX + " in " + me + ": splitting on '/' resulted in either an empty array or more than two things.  This isn't right ( " + author_string + " )."
+                status_message_list.append( status_message )
+                
+                # do not process.
+                author_name_string = None
+                
+            #-- END check results of splitting on "/"
+            
+            # Got something in author_name_string?
+            if ( ( author_name_string is not None ) and ( author_name_string != "" ) ):
+
+                # after splitting, we have a string.  Now need to split on
+                #    "," and " and ".  First, split on " and ".
+                
+                # make sure any " and " is all lower case...
+                author_name_string = re.sub( cls.REGEX_CONTAINS_AND, " and ", author_name_string )
+                
+                # ...then, split on " and "...
+                author_split_on_and_list = author_name_string.split( " and " )
+
+                # ...and then loop over parts.
+                for author_and_part in author_split_on_and_list:
+                
+                    # strip out white space
+                    current_author_name = author_and_part.strip()
+                
+                    # try splitting on comma.
+                    author_split_on_comma_list = current_author_name.split( "," )
+                    
+                    # got any?
+                    if ( len( author_split_on_comma_list ) > 0 ):
+                    
+                        # yes.  Add each as a name.
+                        for author_comma_part in author_split_on_comma_list:
+                        
+                            # strip out white space
+                            current_author_name = author_comma_part.strip()
+                            
+                            # still got something?
+                            if ( ( current_author_name is not None ) and ( current_author_name != "" ) ):
+
+                                # capitalize each word?
+                                if ( capitalize_each_word_IN == True ):
+                                
+                                    # yes - capitalize each word.
+                                    current_author_name = StringHelper.capitalize_each_word( current_author_name )
+                                    
+                                #-- END check to see if we are to capitalize each word --#
+
+                                # add name to list of names.
+                                author_name_list.append( current_author_name )
+                                
+                            #-- END check to make sure there was a name. --#
+                            
+                        #-- END loop over authors separated by commas. --#
+                        
+                    else:
+                    
+                        # no comma-delimited names.
+                        
+                        # capitalize each word?
+                        if ( capitalize_each_word_IN == True ):
+                        
+                            # yes - capitalize each word.
+                            current_author_name = StringHelper.capitalize_each_word( current_author_name )
+                            
+                        #-- END check to see if we are to capitalize each word --#
+
+                        # Add current string to name list.
+                        author_name_list.append( current_author_name )
+                        
+                    #-- END check to see if comma-delimited names --#
+                    
+                #-- END loop over and-delimited split of authors --#
+                
+                # time to start testing.  Print out the array.
+                my_logger.debug( "In " + me + ": Author list: " + str( author_name_list ) )
+                
+            else:                
+                
+                # error.  what to do?
+                status_message = cls.STATUS_ERROR_PREFIX + "in " + me + ": after splitting on '/', no author string left.  Not a standard byline ( " + author_string + " )."
+                status_message_list.append( status_message )
+
+            #-- END check to see if anything in author string. --#
+        
+        else:
+        
+            # No author string - error.
+            status_message = cls.STATUS_ERROR_PREFIX + "in " + me + ": no author string, so nothing to do."
+            status_message_list.append( status_message )
+        
+        #-- END check to see if author string. --#
+
+        # place values in author info dictionary.
+        author_info_OUT = {}
+        author_info_OUT[ cls.AUTHOR_INFO_AUTHOR_NAME_STRING ] = author_name_string
+        author_info_OUT[ cls.AUTHOR_INFO_AUTHOR_NAME_LIST ] = author_name_list
+        author_info_OUT[ cls.AUTHOR_INFO_AUTHOR_AFFILIATION ] = author_affiliation
+        author_info_OUT[ cls.AUTHOR_INFO_STATUS ] = " || ".join( status_message_list )
+    
+        return author_info_OUT
+    
+    #-- END class method parse_author_string() --#
+
+
     #----------------------------------------------------------------------------
     # __init__() method
     #----------------------------------------------------------------------------
@@ -236,7 +430,7 @@ class ArticleCoder( BasicRateLimited ):
         
         # set logger name (for LoggingHelper parent class: (LoggingHelper -->
         #    BasicRateLimited --> ArticleCoder).
-        self.set_logger_name( "sourcenet.article_coding.article_coder" )
+        self.set_logger_name( self.LOGGER_NAME )
 
     #-- END method __init__() --#
 
@@ -2517,10 +2711,12 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables.
         me = "process_newsbank_grpress_author_string"
+        status_message = ""
+        status_message_list = []
         my_logger = None
         author_string = ""
-        author_parts = None
-        author_parts_length = -1
+        author_info = {}
+        author_name_string = ""
         author_organization = ""
         author_name_list = []
         author_and_part = ""
@@ -2545,73 +2741,29 @@ class ArticleCoder( BasicRateLimited ):
             
                 # get capture method
                 my_capture_method = article_data_IN.coder_type
-        
-                my_logger.debug( "--- In " + me + ": Processing author string: \"" + author_string + "\"" )
                 
-                # got an author string.  Parse it.  First, break out organization.
-                # split author string on "/"
-                author_parts = author_string.split( '/' )
+                # parse author string.
+                author_info = self.parse_author_string( author_string )
                 
-                # got two parts?
-                author_parts_length = len( author_parts )
-                if ( author_parts_length == 2 ):
+                # retrieve information    
+                author_name_string = author_info[ self.AUTHOR_INFO_AUTHOR_NAME_STRING ]
+                author_organization = author_info[ self.AUTHOR_INFO_AUTHOR_NAME_LIST ]
+                author_name_list = author_info[ self.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+                status_message = author_info[ self.AUTHOR_INFO_STATUS ]
+                if ( ( status_message is not None ) and ( status_message != "" ) ):
                 
-                    # we do.  2nd part = organization
-                    author_organization = author_parts[ 1 ]
-                    author_organization = author_organization.strip()
+                    # append to list.
+                    status_message_list.append( status_message )
                     
-                    # first part is author string we look at going forward.
-                    author_string = author_parts[ 0 ]
-                    author_string = author_string.strip()
-                    
-                    # also, if string starts with "By ", remove it.
-                    author_string = re.sub( self.REGEX_BEGINS_WITH_BY, "", author_string )
-                    
-                elif ( ( author_parts_length == 0 ) or ( author_parts_length > 2 ) ):
-                
-                    # error.  what to do?
-                    status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": splitting on '/' resulted in either an empty array or more than two things.  This isn't right ( " + my_article.author_string + " )."
-                    
-                #-- END check results of splitting on "/"
-                
-                # Got something in author_string?
-                if ( ( author_string is not None ) and ( author_string != "" ) ):
-    
-                    # after splitting, we have a string.  Now need to split on
-                    #    "," and " and ".  First, split on " and ".
-                    for author_and_part in author_string.split( " and " ):
-                    
-                        # try splitting on comma.
-                        author_parts = author_and_part.split( "," )
-                        
-                        # got any?
-                        if ( len( author_parts ) > 0 ):
-                        
-                            # yes.  Add each as a name.
-                            for author_comma_part in author_parts:
-                            
-                                # add name to list of names.
-                                author_name_list.append( author_comma_part )
-                                
-                            #-- END loop over authors separated by commas. --#
-                            
-                        else:
-                        
-                            # no comma-delimited names.  Add current string to
-                            #    name list.
-                            author_name_list.append( author_and_part )
-                            
-                        #-- END check to see if comma-delimited names --#
-                        
-                    #-- END loop over and-delimited split of authors --#
-                    
-                    # time to start testing.  Print out the array.
-                    my_logger.debug( "In " + me + ": Author list: " + str( author_name_list ) )
-    
+                #-- END check to see if status message. --#
+
+                # anything in the list?
+                if ( ( author_name_list is not None ) and ( len( author_name_list ) > 0 ) ):
+
                     # For each name in array, see if we already have a matching
                     #    person.
                     for author_name in author_name_list:
-                    
+                        
                         # call process_author_name() to deal with author.
                         person_details = {}
                         person_details[ self.PARAM_PERSON_ORGANIZATION ] = author_organization
@@ -2622,43 +2774,43 @@ class ArticleCoder( BasicRateLimited ):
                         # do anything with status?
                         if ( process_author_name_status != self.STATUS_SUCCESS ):
 
-                            # any previous error messages?
-                            if ( status_OUT == self.STATUS_SUCCESS ):
-                        
-                                # no just replace success message
-                                status_OUT = process_author_name_status
-                                
-                            else:
-                            
-                                # already one error message.  Append.
-                                status_OUT += "; " + process_author_name_status
-                                
-                            #-- END check to see if first error message. --#
+                            # append to status message list.
+                            status_message_list.append( process_author_name_status )
                             
                         #-- END check to see if error status. --#
                     
                     #-- END loop over author names. --#
-    
-                else:                
-                    
-                    # error.  what to do?
-                    status_OUT = self.STATUS_ERROR_PREFIX + "in " + me + ": after splitting on '/', no author string left.  Not a standard byline ( " + author_string + " )."
-    
-                #-- END check to see if anything in author string.
-            
+                
+                #-- END check to see if list has anything in it. --#
+
             else:
             
                 # No author string - error.
-                status_OUT = self.STATUS_ERROR_PREFIX + "in " + me + ": no author string, so nothing to do."
+                status_message = self.STATUS_ERROR_PREFIX + "in " + me + ": no author string, so nothing to do."
+                status_message_list.append( status_message )
             
             #-- END check to see if author string. --#
             
         else:
         
             # No Article_Data instance.
-            status_OUT = self.STATUS_ERROR_PREFIX + "in " + me + ": no Article_Data instance, so no place to store author data."            
+            status_message = self.STATUS_ERROR_PREFIX + "in " + me + ": no Article_Data instance, so no place to store author data."    
+            status_message_list.append( status_message )        
         
         #-- END check to see if article data instance. --#
+        
+        # got status message(s)?
+        if ( ( status_message_list is not None ) and ( len( status_message_list ) > 0 ) ):
+        
+            # yes.  Join into status_OUT.
+            status_OUT = self.STATUS_LIST_DELIMITER.join( status_message_list )
+            
+        else:
+        
+            # no - return success.
+            status_OUT = self.STATUS_SUCCESS
+            
+        #-- END check to see if anything in status_message_list --#
         
         return status_OUT
     
@@ -3738,99 +3890,8 @@ class ArticleCoder( BasicRateLimited ):
         # return reference
         status_list_OUT = []
         
-        # declare variables
-        me = "validate_FIT_results"
-        status_OUT = ""
-        canonical_index_list = []
-        plain_text_index_list = []
-        paragraph_list = []
-        first_word_list = []
-        last_word_list = []
-        canonical_index_count = -1
-        plain_text_index_count = -1
-        paragraph_count = -1
-        first_word_count = -1
-        last_word_count = -1
-        count_list = []
-        unique_count_list = []
-        unique_count = -1
-        match_count = -1
-
-        # Unpack results - for each value, could be 0, 1, or more.
-        # - If 0, no match - ERROR.
-        # - If 1, use value.
-        # - If more than one, multiple matches - WARNING.
-        # - All lists should have same count.  If any are different - WARNING (can be because of complications relating to punctuation - "'s" or "." after name, etc.).
-
-        # get result lists.
-        canonical_index_list = FIT_values_IN.get( Article_Text.FIT_CANONICAL_INDEX_LIST, [] )
-        plain_text_index_list = FIT_values_IN.get( Article_Text.FIT_TEXT_INDEX_LIST, [] )
-        paragraph_list = FIT_values_IN.get( Article_Text.FIT_PARAGRAPH_NUMBER_LIST, [] )
-        first_word_list = FIT_values_IN.get( Article_Text.FIT_FIRST_WORD_NUMBER_LIST, [] )
-        last_word_list = FIT_values_IN.get( Article_Text.FIT_LAST_WORD_NUMBER_LIST, [] )
-
-        # get counts and add them to list.
-        canonical_index_count = len( canonical_index_list )
-        count_list.append( canonical_index_count )
-
-        plain_text_index_count = len( plain_text_index_list )
-        count_list.append( plain_text_index_count )
-
-        paragraph_count = len( paragraph_list )
-        count_list.append( paragraph_count )
-
-        first_word_count = len( first_word_list )
-        count_list.append( first_word_count )
-
-        last_word_count = len( last_word_list )
-        count_list.append( last_word_count )
-
-        # counts all the same?
-        unique_count_list = SequenceHelper.list_unique_values( count_list )
-        
-        # first, see how many unique values (should be 1).
-        unique_count = len( unique_count_list )
-        if ( unique_count == 1 ):
-        
-            # all have same count.  What is it?
-            match_count = unique_count_list[ 0 ]
-            if ( match_count == 1 ):
-            
-                # this is the normal case.  Return empty list.
-                status_list_OUT = []
-
-            elif ( match_count == 0 ):
-            
-                # error - no matches returned for quotation.  What to do?
-                status_OUT = "In " + me + ": ERROR - search for string in text yielded no matches."
-                status_list_OUT.append( status_OUT )
-                self.output_debug( status_OUT )
-                
-            elif ( match_count > 1 ):
-            
-                # warning - multiple matches returned for quotation.  What to do?
-                status_OUT = "In " + me + ": WARNING - search for string in text yielded " + str( match_count ) + " matches."
-                status_list_OUT.append( status_OUT )
-                self.output_debug( status_OUT )
-                
-            else:
-            
-                # error - matches returned something other than 0, 1, or
-                #    > 1.  What to do?
-                status_OUT = "In " + me + ": ERROR - search for string in text yielded invalid count: " + str( match_count )
-                status_list_OUT.append( status_OUT )
-                self.output_debug( status_OUT )
-                
-            #-- END check to see how many matches were found. --#
-            
-        else:
-
-            # warning - unique_count_list does not have only one thing in it.
-            status_OUT = "In " + me + ": WARNING - search for string in text yielded different numbers of results for different ways of searching: " + str( unique_count_list )
-            status_list_OUT.append( status_OUT )
-            self.output_debug( status_OUT )
-            
-        #-- END check to make sure all searches returned same count of matches. --#
+        # call class method on Article_Text.
+        status_list_OUT = Article_Text.validate_FIT_results( FIT_values_IN )
         
         return status_list_OUT        
         

@@ -24,7 +24,11 @@ if __name__ == "__main__":
 # import Python libraries for CSV output
 import copy
 import csv
-import StringIO
+
+# six imports - support Pythons 2 and 3
+import six
+# import StringIO
+from six import StringIO
 
 # Django DB classes, just to play with...
 #from django.db.models import Count # for aggregating counts of authors, sources.
@@ -1705,7 +1709,7 @@ class CsvArticleOutput( object ):
         #    article and add it to the CSV output.
 
         # Initialize CSV output.
-        output_string_buffer = StringIO.StringIO()
+        output_string_buffer = StringIO()
         output_csv = csv.writer( output_string_buffer )
         self.csv_output = output_csv
 

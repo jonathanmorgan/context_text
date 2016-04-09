@@ -2265,9 +2265,39 @@ class Article( models.Model ):
     #----------------------------------------------------------------------------
     
     
+    # status values
+    STATUS_NEW = "new"
+    STATUS_ERROR = "error"
+    STATUS_DEFAULT = STATUS_NEW
+    
+    # cleanup_status values
+    CLEANUP_STATUS_NEW = "new"
+    CLEANUP_STATUS_AUTHOR_FIXED = "author_fixed"
+    CLEANUP_STATUS_AUTHOR_ERROR = "author_error"
+    CLEANUP_STATUS_TEXT_FIXED = "text_fixed"
+    CLEANUP_STATUS_TEXT_ERROR = "text_error"
+    CLEANUP_STATUS_AUTHOR_AND_TEXT_FIXED = "author_and_text_fixed"
+    CLEANUP_STATUS_COMPLETE = "complete"
+    CLEANUP_STATUS_ERROR = "error"
+    CLEANUP_STATUS_DEFAULT = CLEANUP_STATUS_NEW
+
+    CLEANUP_STATUS_CHOICES = (
+        ( CLEANUP_STATUS_NEW, "new" ),
+        ( CLEANUP_STATUS_AUTHOR_FIXED, "author fixed" ),
+        ( CLEANUP_STATUS_AUTHOR_ERROR, "author error" ),
+        ( CLEANUP_STATUS_TEXT_FIXED, "text fixed" ),
+        ( CLEANUP_STATUS_TEXT_ERROR , "text error" ),
+        ( CLEANUP_STATUS_AUTHOR_AND_TEXT_FIXED, "author & text fixed" ),
+        ( CLEANUP_STATUS_COMPLETE, "complete" ), 
+        ( CLEANUP_STATUS_ERROR, "error" )
+    )
+    
     # parameters that can be passed in to class methods 
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
+    
+    # author_string
+    AUTHOR_STRING_DIVIDER = "/"
 
     # filter (LOOKUP) parameters
     #==================
@@ -2322,6 +2352,7 @@ class Article( models.Model ):
     page = models.CharField( max_length = 255, blank = True, null = True )
     author_string = models.TextField( blank = True, null = True )
     author_varchar = models.CharField( max_length = 255, blank = True, null = True )
+    author_name = models.CharField( max_length = 255, blank = True, null = True )
     author_affiliation = models.CharField( max_length = 255, blank = True, null = True )
     headline = models.CharField( max_length = 255 )
     # What is this? - author = models.CharField( max_length = 255, blank = True, null = True )
@@ -2346,7 +2377,8 @@ class Article( models.Model ):
     # tags!
     tags = TaggableManager( blank = True )
 
-    status = models.CharField( max_length = 255, blank = True, null = True, default = "new" )
+    status = models.CharField( max_length = 255, blank = True, null = True, default = STATUS_DEFAULT )
+    cleanup_status = models.CharField( max_length = 255, blank = True, null = True, choices = CLEANUP_STATUS_CHOICES, default = CLEANUP_STATUS_DEFAULT )
     is_local_news = models.BooleanField( default = 0 )
     is_sports = models.BooleanField( default = 0 )
     is_local_author = models.BooleanField( default = 0 )
@@ -2414,8 +2446,15 @@ class Article( models.Model ):
         # get section name.
         my_section_list = section_list_IN
         
-        # add filter for name being in the list
-        qs_OUT = qs_OUT.filter( section__in = my_section_list )
+        # got a list?
+        if ( ( my_section_list is not None )
+            and ( isinstance( my_section_list, list ) == True )
+            and ( len( my_section_list ) > 0 ) ):
+
+            # add filter for name being in the list
+            qs_OUT = qs_OUT.filter( section__in = my_section_list )
+            
+        #-- END check to see if list was populated. --#
                 
         return qs_OUT
         
@@ -2446,7 +2485,7 @@ class Article( models.Model ):
         # retrieve dates
         # start date
         start_date = start_date_IN
-        if ( start_date == "" ):
+        if ( ( start_date is None ) or ( start_date == "" ) ):
 
             # no start date passed in. Check in the kwargs.
             if ( cls.PARAM_START_DATE in kwargs ):
@@ -2460,7 +2499,7 @@ class Article( models.Model ):
         
         # end date
         end_date = end_date_IN
-        if( end_date == "" ):
+        if( ( end_date is None ) or ( end_date == "" ) ):
             
             # no end date passed in.  Check in kwargs.
             if ( cls.PARAM_END_DATE in kwargs ):
@@ -2472,18 +2511,19 @@ class Article( models.Model ):
 
         #-- END check to see if end date passed in.
 
-        if ( ( start_date ) and ( end_date ) ):
+        if ( ( ( start_date is not None ) and ( start_date != "" ) )
+            and ( ( end_date is not None ) and ( end_date != "" ) ) ):
         
             # both start and end.
             q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date, cls.DEFAULT_DATE_FORMAT ) )
             q_OUT = q_OUT & Q( pub_date__lte = datetime.datetime.strptime( end_date, cls.DEFAULT_DATE_FORMAT ) )
         
-        elif( start_date ):
+        elif( ( start_date is not None ) and ( start_date != "" ) ):
         
             # just start date
             q_OUT = Q( pub_date__gte = datetime.datetime.strptime( start_date, cls.DEFAULT_DATE_FORMAT ) )
         
-        elif( end_date ):
+        elif( ( end_date is not None ) and ( end_date != "" ) ):
         
             # just end date
             q_OUT = Q( pub_date__lte = datetime.datetime.strptime( end_date, cls.DEFAULT_DATE_FORMAT ) )
@@ -2560,26 +2600,10 @@ class Article( models.Model ):
         #---------------
         # ==> newspaper
         #---------------
+        
+        newspaper_instance = None
 
-        # try to update QuerySet for selected newspaper.
-        if ( cls.PARAM_NEWSPAPER_ID in kwargs ):
-    
-            # yup.  Use it.
-            newspaper_ID_IN = kwargs[ cls.PARAM_NEWSPAPER_ID ]
-            newspaper_instance = Newspaper.objects.get( pk = newspaper_ID_IN )
-    
-        #-- END check to see if newspaper instance in arguments --#
-
-        # try to update QuerySet for selected newspaper.
-        if ( cls.PARAM_NEWSPAPER_NEWSBANK_CODE in kwargs ):
-    
-            # yup.  Use it.
-            newspaper_newsbank_code_IN = kwargs[ cls.PARAM_NEWSPAPER_NEWSBANK_CODE ]
-            newspaper_instance = Newspaper.objects.get( newsbank_code = newspaper_newsbank_code_IN )
-    
-        #-- END check to see if newspaper instance in arguments --#
-
-        # try to update QuerySet for selected newspaper.
+        # selected newspaper instance passed in?
         if ( cls.PARAM_NEWSPAPER_INSTANCE in kwargs ):
     
             # yup.  Use it.
@@ -2587,8 +2611,44 @@ class Article( models.Model ):
     
         #-- END check to see if newspaper instance in arguments --#
 
+        # selected newspaper ID passed in?
+        if ( ( newspaper_instance is None ) and ( cls.PARAM_NEWSPAPER_ID in kwargs ) ):
+    
+            # yup.  Got an ID specified.
+            newspaper_ID_IN = kwargs[ cls.PARAM_NEWSPAPER_ID ]
+            
+            # Make sure it isn't empty.
+            if ( ( newspaper_ID_IN is not None )
+                and ( newspaper_ID_IN != "" )
+                and ( isinstance( newspaper_ID_IN, int ) == True )
+                and ( int( newspaper_ID_IN ) > 0 ) ):
+                
+                # not empty - look up newspaper by ID
+                newspaper_instance = Newspaper.objects.get( pk = newspaper_ID_IN )
+                
+            #-- END check to see if newspaper ID populated. --#
+    
+        #-- END check to see if newspaper instance in arguments --#
+
+        # selected newspaper code passed in?
+        if ( ( newspaper_instance is None ) and ( cls.PARAM_NEWSPAPER_NEWSBANK_CODE in kwargs ) ):
+    
+            # yup.  Use it.
+            newspaper_newsbank_code_IN = kwargs[ cls.PARAM_NEWSPAPER_NEWSBANK_CODE ]
+            
+            # Make sure it isn't empty.
+            if ( ( newspaper_newsbank_code_IN is not None )
+                and ( newspaper_newsbank_code_IN != "" ) ):
+                
+                # not empty - look up newspaper by code.
+                newspaper_instance = Newspaper.objects.get( newsbank_code = newspaper_newsbank_code_IN )
+                
+            #-- END check to see if newspaper code was empty. --#
+    
+        #-- END check to see if newspaper instance in arguments --#
+
         # got a newspaper instance?
-        if ( newspaper_instance ):
+        if ( newspaper_instance is not None ):
 
             # Yes.  Filter.
             qs_OUT = qs_OUT.filter( newspaper = newspaper_instance )
@@ -2621,7 +2681,7 @@ class Article( models.Model ):
         q_date_range = cls.create_q_article_date_range( "", "", *args, **kwargs )
 
         # got a Q()?
-        if ( q_date_range ):
+        if ( q_date_range is not None ):
 
             # Yes.  Add it to query set.
             qs_OUT = qs_OUT.filter( q_date_range )
@@ -2698,7 +2758,8 @@ class Article( models.Model ):
             custom_q_IN = kwargs[ cls.PARAM_CUSTOM_ARTICLE_Q ]
 
             # got something in the parameter?
-            if ( custom_q_IN ):
+            if ( ( custom_q_IN is not None )
+                and ( isinstance( custom_q_IN, Q ) == True ) ):
 
                 # yes.  Filter.
                 qs_OUT = qs_OUT.filter( custom_q_IN )
@@ -2767,6 +2828,44 @@ class Article( models.Model ):
     #-- END method __str__() --#
     
     
+    def create_notes( self, text_IN = "", content_type_IN = "text", do_save_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a piece of text.  Adds it as a related Article_Notes instance.
+        Preconditions: Probably should do this after you've saved the article,
+           so there is an ID in it, so this child class will know what article
+           it is related to.
+        Postconditions: Article_Notes instance is returned, saved if save flag
+           is true.
+        '''
+        
+        # return reference
+        instance_OUT = None
+
+        # declare variables
+        me = "create_notes"
+
+        # Nothing.  Make new one.
+        instance_OUT = Article_Notes()
+        instance_OUT.article = self
+        instance_OUT.content_type = content_type_IN
+            
+        # set the text in the instance.
+        instance_OUT.set_content( text_IN )
+            
+        # save?
+        if ( do_save_IN == True ):
+            
+            # yes.
+            instance_OUT.save()
+            
+        #-- END check to see if we save. --#
+        
+        return instance_OUT
+
+    #-- END method create_notes() --#
+    
+
     def get_article_data_for_coder( self, coder_IN = None, coder_type_IN = "", *args, **kwargs ):
 
         '''
@@ -2858,16 +2957,19 @@ class Article( models.Model ):
     #-- END method get_article_data_for_coder() --#
     
     
-    def set_notes( self, text_IN = "", do_save_IN = True, *args, **kwargs ):
+    def set_notes( self, text_IN = "", do_save_IN = True, do_append_to_content_IN = True, *args, **kwargs ):
         
         '''
-        Accepts a piece of text.  Adds it as a related Article_RawData instance.
-           If there is already an Article_RawData instance, we just replace that
-           instance's content with the text passed in.  If not, we make one.
+        Accepts a piece of text.  Adds it as a related Article_Notes instance.
+           If there is already an Article_Notes instance, we can either replace
+           that instance's content with the text passed in, or append text to
+           note.  Defaults to appending.  If no existing note, we make one.
+           If you have multiple Article_Notes, this won't work.  Just create
+           another Article_Note.
         Preconditions: Probably should do this after you've saved the article,
            so there is an ID in it, so this child class will know what article
            it is related to.
-        Postconditions: Article_RawData instance is returned, saved if save flag
+        Postconditions: Article_Notes instance is returned, saved if save flag
            is true.
         '''
         
@@ -2878,7 +2980,7 @@ class Article( models.Model ):
         me = "set_notes"
         current_qs = None
         current_count = -1
-        current_content = None
+        updated_content = ""
         
         # get current text QuerySet
         current_qs = self.article_notes_set
@@ -2906,8 +3008,24 @@ class Article( models.Model ):
 
         if ( instance_OUT ):
 
-            # set the text in the instance.
-            instance_OUT.set_content( text_IN )
+            # append?
+            if ( do_append_to_content_IN == True ):
+            
+                # get current content
+                updated_content = instance_OUT.get_content()
+                
+                # append the new text, separated by a newline.
+                updated_content += "\n" + text_IN
+                
+            else:
+            
+                # just use what is there.
+                updated_content = text_IN
+                
+            #-- END check to see if we append --#
+            
+            # store the updated content
+            instance_OUT.set_content( updated_content )
             
             # save?
             if ( do_save_IN == True ):
@@ -3430,6 +3548,7 @@ class Article_Text( Unique_Article_Content ):
     # Constants-ish
     #----------------------------------------------------------------------------
     
+    STATUS_SUCCESS = "Success!"
 
     # Body Text Cleanup
     #==================
@@ -3630,6 +3749,118 @@ class Article_Text( Unique_Article_Content ):
         return string_OUT
         
     #-- END method process_paragraph_contents() --#
+
+
+    @classmethod
+    def validate_FIT_results( cls, FIT_values_IN ):
+
+        '''
+        Accepts a dictionary of results from a Article_Text.find_in_text() call.
+           Looks for problems (counts of nested lists not being 1, not being all
+           the same).  If it finds problems, returns list of string messages 
+           describing problems.  If no problems, returns empty list.
+        '''
+        
+        # return reference
+        status_list_OUT = []
+        
+        # declare variables
+        me = "validate_FIT_results"
+        status_OUT = ""
+        canonical_index_list = []
+        plain_text_index_list = []
+        paragraph_list = []
+        first_word_list = []
+        last_word_list = []
+        canonical_index_count = -1
+        plain_text_index_count = -1
+        paragraph_count = -1
+        first_word_count = -1
+        last_word_count = -1
+        count_list = []
+        unique_count_list = []
+        unique_count = -1
+        match_count = -1
+
+        # Unpack results - for each value, could be 0, 1, or more.
+        # - If 0, no match - ERROR.
+        # - If 1, use value.
+        # - If more than one, multiple matches - WARNING.
+        # - All lists should have same count.  If any are different - WARNING (can be because of complications relating to punctuation - "'s" or "." after name, etc.).
+
+        # get result lists.
+        canonical_index_list = FIT_values_IN.get( cls.FIT_CANONICAL_INDEX_LIST, [] )
+        plain_text_index_list = FIT_values_IN.get( cls.FIT_TEXT_INDEX_LIST, [] )
+        paragraph_list = FIT_values_IN.get( cls.FIT_PARAGRAPH_NUMBER_LIST, [] )
+        first_word_list = FIT_values_IN.get( cls.FIT_FIRST_WORD_NUMBER_LIST, [] )
+        last_word_list = FIT_values_IN.get( cls.FIT_LAST_WORD_NUMBER_LIST, [] )
+
+        # get counts and add them to list.
+        canonical_index_count = len( canonical_index_list )
+        count_list.append( canonical_index_count )
+
+        plain_text_index_count = len( plain_text_index_list )
+        count_list.append( plain_text_index_count )
+
+        paragraph_count = len( paragraph_list )
+        count_list.append( paragraph_count )
+
+        first_word_count = len( first_word_list )
+        count_list.append( first_word_count )
+
+        last_word_count = len( last_word_list )
+        count_list.append( last_word_count )
+
+        # counts all the same?
+        unique_count_list = SequenceHelper.list_unique_values( count_list )
+        
+        # first, see how many unique values (should be 1).
+        unique_count = len( unique_count_list )
+        if ( unique_count == 1 ):
+        
+            # all have same count.  What is it?
+            match_count = unique_count_list[ 0 ]
+            if ( match_count == 1 ):
+            
+                # this is the normal case.  Return empty list.
+                status_list_OUT = []
+
+            elif ( match_count == 0 ):
+            
+                # error - no matches returned for quotation.  What to do?
+                status_OUT = "In " + me + ": ERROR - search for string in text yielded no matches."
+                status_list_OUT.append( status_OUT )
+                output_debug( status_OUT )
+                
+            elif ( match_count > 1 ):
+            
+                # warning - multiple matches returned for quotation.  What to do?
+                status_OUT = "In " + me + ": WARNING - search for string in text yielded " + str( match_count ) + " matches."
+                status_list_OUT.append( status_OUT )
+                output_debug( status_OUT )
+                
+            else:
+            
+                # error - matches returned something other than 0, 1, or
+                #    > 1.  What to do?
+                status_OUT = "In " + me + ": ERROR - search for string in text yielded invalid count: " + str( match_count )
+                status_list_OUT.append( status_OUT )
+                output_debug( status_OUT )
+                
+            #-- END check to see how many matches were found. --#
+            
+        else:
+
+            # warning - unique_count_list does not have only one thing in it.
+            status_OUT = "In " + me + ": WARNING - search for string in text yielded different numbers of results for different ways of searching: " + str( unique_count_list )
+            status_list_OUT.append( status_OUT )
+            output_debug( status_OUT )
+            
+        #-- END check to make sure all searches returned same count of matches. --#
+        
+        return status_list_OUT        
+        
+    #-- END class method validate_FIT_results() --#
 
 
     #----------------------------------------------------------------------------
@@ -4359,7 +4590,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method find_in_paragraph_list() --#
         
         
-    def find_in_plain_text( self, string_IN ):
+    def find_in_plain_text( self, string_IN, ignore_case_IN = False ):
         
         '''
         Accepts a string that we want to locate in the nested article text with
@@ -4382,7 +4613,7 @@ class Article_Text( Unique_Article_Content ):
             my_text = self.get_content_sans_html()
             
             # first step is to try to find the string, as-is.
-            list_OUT = StringHelper.find_substring_match_list( my_text, string_IN )
+            list_OUT = StringHelper.find_substring_match_list( my_text, string_IN, ignore_case_IN = ignore_case_IN )
             
         else:
         
@@ -4396,29 +4627,30 @@ class Article_Text( Unique_Article_Content ):
     #-- END method find_in_plain_text() --#
         
         
-    def find_in_text( self, string_IN, requested_items_IN = None ):
+    def find_in_text( self, string_IN, requested_items_IN = None, ignore_case_IN = False, *args, **kwargs ):
         
         '''
         Accepts a string that we want to locate in the nested article text.
-           If not found, returns None.  If found, returns a dictionary with the
-           following values:
-           - FIT_CANONICAL_INDEX_LIST = "canonical_index_list" - list of
-              index(ices) of start of the string passed in in the canonical text
-              for this article.
-           - FIT_TEXT_INDEX_LIST = "index_list" - index(ices) of the start of
-              the string passed in in the plain text for this article.
-           - FIT_FIRST_WORD_NUMBER_LIST = "first_word_number_list" - the
-              number(s) of the word in this article, when converted to a word
-              list, of the first word in the string passed in.  Number, not
-              index (so index + 1).
-           - FIT_LAST_WORD_NUMBER_LIST = "last_word_number_list" - the number(s)
-              of the word in this article, when converted to a word list, of the
-              last word in the string passed in.  Number, not index
-              (so index + 1).
-           - FIT_PARAGRAPH_NUMBER_LIST = "paragraph_number_list" - list of the
-              number (s) of the paragraph in this article that contains the
-              string (or, if it spans multiple paragraphs, the start of this
-              string).
+            If error, returns None (for now, just no string passed in to find).
+            If not found, returns empty dictionary. If found, returns dictionary
+            with the following values:
+            - FIT_CANONICAL_INDEX_LIST = "canonical_index_list" - list of
+                index(ices) of start of the string passed in in the canonical
+                text for this article.
+            - FIT_TEXT_INDEX_LIST = "index_list" - index(ices) of the start of
+                the string passed in in the plain text for this article.
+            - FIT_FIRST_WORD_NUMBER_LIST = "first_word_number_list" - the
+                number(s) of the word in this article, when converted to a word
+                list, of the first word in the string passed in.  Number, not
+                index (so index + 1).
+            - FIT_LAST_WORD_NUMBER_LIST = "last_word_number_list" - number(s)
+                of the word in this article, when converted to a word list, of
+                the last word in the string passed in.  Number, not index
+                (so index + 1).
+            - FIT_PARAGRAPH_NUMBER_LIST = "paragraph_number_list" - list of the
+                number (s) of the paragraph in this article that contains the
+                string (or, if it spans multiple paragraphs, the start of this
+                string).
         '''
         
         # return reference
@@ -4468,7 +4700,7 @@ class Article_Text( Unique_Article_Content ):
             
                 # find the index of the start of the string in the plain text
                 #    for this article.
-                current_value = self.find_in_plain_text( string_IN )
+                current_value = self.find_in_plain_text( string_IN, ignore_case_IN = ignore_case_IN )
                 dict_OUT[ self.FIT_TEXT_INDEX_LIST ] = current_value
             
             #-- END FIT_TEXT_INDEX_LIST --#
@@ -4840,6 +5072,160 @@ class Article_Text( Unique_Article_Content ):
         return string_OUT
         
     #-- END method make_paragraph_string() --#
+
+
+    def remove_paragraphs( self, paragraph_id_list_IN, *args, **kwargs ):
+        
+        '''
+        Accepts a list of ids of paragraphs we want to remove (based on the id
+            attributes in <p> tags in canonical text).
+            
+        Retrieves the desired canonical text, parses it using BeautifulSoup,
+            removes the paragraphs one-by-one, decrementing the IDs of any
+            paragraphs with ids higher than the one currently being removed.
+            After processing, converts the text back to a string and stores it,
+            then returns status string - "Success!" if no problems, delimited
+            list of error messages separated by " || " if problems arose.
+            
+        Postconditions: The canonical text inside this instance is updated after
+            calling this routine, but you still need to save() to persist the
+            updates to the database.
+        '''
+        
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables.
+        me = "remove_paragraphs"
+        status_message = ""
+        status_message_list = []
+        canonical_text = ""
+        canonical_text_bs = None
+        sorted_desc_id_list = []
+        p_list_bs = None
+        p_to_delete_bs = None
+        p_to_delete_counter = -1
+        removed_p_bs = None
+        removed_p_list = []
+        current_p_bs = None
+        current_id = ""
+        current_id_int = ""
+        current_p_string = ""
+        p_text_list = []
+        
+        # is list populated?
+        if ( ( paragraph_id_list_IN is not None )
+            and ( isinstance( paragraph_id_list_IN, list ) == True )
+            and ( len( paragraph_id_list_IN ) > 0 ) ):
+        
+            # it is.  Sort list in descending order.
+            sorted_desc_id_list = list( paragraph_id_list_IN )
+            sorted_desc_id_list.sort( reverse = True )
+            
+            # get canonical text
+            canonical_text = self.content
+            
+            # parse with beautiful soup
+            canonical_text_bs = BeautifulSoup( canonical_text )
+            
+            # loop over IDs.
+            for id_to_remove in sorted_desc_id_list:
+            
+                # find paragraph with this ID and remove it.
+                p_list_bs = canonical_text_bs.find_all( "p", id = str( id_to_remove ) )
+                
+                # loop - should be only 1.
+                p_to_delete_counter = 0
+                for p_to_delete_bs in p_list_bs:
+                
+                    # increment counter
+                    p_to_delete_counter += 1
+                    
+                    # remove the <p> from the document.
+                    removed_p_bs = p_to_delete_bs.extract()
+                    
+                    # add it to removed list
+                    removed_p_list.append( removed_p_bs )
+                    
+                #-- END loop over p tags that match ID. --#
+                
+                # check count - should be 1.
+                if ( p_to_delete_counter > 1 ):
+                
+                    # error.
+                    status_message = "In " + me + "(): multiple <p> tags ( " + str( p_to_delete_counter ) + " ) with id of " + str( id_to_remove ) + " - they are all gone...  Should only have been one."
+                    status_message_list.append( status_message )
+                
+                #-- END sanity check for multiple <p> with same id -->
+                
+                # get all <p> tags and for those with id greater than that we
+                #     deleted, decrement their IDs by 1.
+                p_list_bs = canonical_text_bs.find_all( "p" )
+                for current_p_bs in p_list_bs:
+                
+                    # get id
+                    current_id = current_p_bs[ 'id' ]
+                    
+                    # convert to integer
+                    current_id_int = int( current_id )
+                    
+                    # is it greater than the ID of the <p> we deleted?
+                    if ( current_id_int > id_to_remove ):
+                    
+                        # it is.  Decrement value by 1...
+                        current_id_int = current_id_int - 1
+                        
+                        # ...and store back in p tag.
+                        current_p_bs[ 'id' ] = str( current_id_int )
+                        
+                    #-- END check if id is greater than that of deleted <p>. --#
+                    
+                #-- END loop over <p> tags. --#
+                
+            #-- END loop over IDs of <p> tags to remove --#
+            
+            # after all that, convert BeautifulSoup instance back to text. --#
+            p_text_list = []
+            p_list_bs = canonical_text_bs.find_all( "p" )
+            for current_p_bs in p_list_bs:
+            
+                # convert to string
+                current_p_string = StringHelper.object_to_unicode_string( current_p_bs )
+                
+                # add to list
+                p_text_list.append( current_p_string )
+                
+            #-- END loop over <p> tags. --#
+
+            # join list to create new canonical text.
+            canonical_text = "".join( p_text_list )
+            
+            # store back in content
+            self.content = canonical_text
+        
+        else:
+        
+            status_message = "In " + me + "(): ERROR - nothing in list of IDs to delete, so not updating text."
+            status_message_list.append( status_message )
+            
+        #-- END Check to see if any IDs in list. --#
+        
+        # got statuses?
+        if ( ( status_message_list is not None ) and ( len( status_message_list ) > 0 ) ):
+        
+            # convert to string
+            status_OUT = " || ".join( status_message_list )
+            
+        else:
+        
+            # nothing - return empty string.
+            status_OUT = self.STATUS_SUCCESS
+            
+        #-- END check to see if status messages. --#
+        
+        return status_OUT
+        
+    #-- END method remove_paragraphs() --#
 
 
     def save(self, *args, **kwargs):

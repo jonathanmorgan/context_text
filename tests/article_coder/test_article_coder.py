@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 import django.test
 
 # python_utilities imports
+from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.network.http_helper import Http_Helper
 
 # sourcenet imports
@@ -335,6 +336,139 @@ class ArticleCoderTest( django.test.TestCase ):
     #-- END test method test_lookup_person() --#
 
     
+    def test_parse_author_string( self ):
+    
+        # declare variables
+        me = "test_parse_author_string"
+        my_logger_name = ""
+        my_logger = None
+        debug_string = ""
+        error_message = ""
+        test_author_string = ""
+        test_author_info = {}
+        test_author_name_string = ""
+        test_author_name_list = []
+        test_author_affiliation = ""
+        test_author_status = ""
+        
+        print( "\n\n==> Top of " + me + "\n" )
+        my_logger_name = "TestArticleCoder." + me
+        my_logger = LoggingHelper.get_a_logger( my_logger_name )
+
+        #======================================================================#
+        # ! "By Jonathan Morgan / The Detroit News"
+        #======================================================================#
+
+        test_author_string = "By Jonathan Morgan / The Detroit News"
+        test_author_info = ArticleCoder.parse_author_string( test_author_string )
+        test_author_name_string = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
+        test_author_name_list = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_LIST ]
+        test_author_affiliation = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+        test_author_status = test_author_info[ ArticleCoder.AUTHOR_INFO_STATUS ]
+
+        # assertions:
+        
+        # name string should be "Jonathan Morgan"
+        test_value = test_author_name_string
+        should_be = "Jonathan Morgan"
+        error_message = "In " + me + ": name string should contain \"" + should_be + "\", has instead \"" + test_value + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should have 1 entry.
+        test_value = len( test_author_name_list )
+        should_be = 1
+        error_message = "In " + me + ": name list should have len() \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should just contain "Jonathan Morgan"
+        test_value = " || ".join( test_author_name_list )
+        should_be = "Jonathan Morgan"
+        error_message = "In " + me + ": name list should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # affiliation should be "The Detroit News"
+        test_value = test_author_affiliation
+        should_be = "The Detroit News"
+        error_message = "In " + me + ": affiliation should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        #======================================================================#
+        # ! "by  Jonathan Morgan  and Andrew Mellon / The Detroit News"
+        #======================================================================#
+
+        test_author_string = "by  Jonathan Morgan  and Andrew Mellon / The Detroit News"
+        test_author_info = ArticleCoder.parse_author_string( test_author_string )
+        test_author_name_string = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
+        test_author_name_list = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_LIST ]
+        test_author_affiliation = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+        test_author_status = test_author_info[ ArticleCoder.AUTHOR_INFO_STATUS ]
+        
+        # assertions:
+        
+        # name string should be "Jonathan Morgan and Andrew Mellon"
+        test_value = test_author_name_string
+        should_be = "Jonathan Morgan and Andrew Mellon"
+        error_message = "In " + me + ": name string should contain \"" + should_be + "\", has instead \"" + test_value + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should have 2 entries.
+        test_value = len( test_author_name_list )
+        should_be = 2
+        error_message = "In " + me + ": name list should have len() \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should contain "Jonathan Morgan || Andrew Mellon"
+        test_value = " || ".join( test_author_name_list )
+        should_be = "Jonathan Morgan || Andrew Mellon"
+        error_message = "In " + me + ": name list should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # affiliation should be "The Detroit News"
+        test_value = test_author_affiliation
+        should_be = "The Detroit News"
+        error_message = "In " + me + ": affiliation should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        #======================================================================#
+        # ! " bY Jonathan Morgan, Richard Henninger, and Andrew Mellon / The Detroit News"
+        #======================================================================#
+
+        test_author_string = " bY Jonathan Morgan, Richard Henninger, and Andrew Mellon / The Detroit News"
+        test_author_info = ArticleCoder.parse_author_string( test_author_string )
+        test_author_name_string = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
+        test_author_name_list = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_LIST ]
+        test_author_affiliation = test_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+        test_author_status = test_author_info[ ArticleCoder.AUTHOR_INFO_STATUS ]
+
+        # assertions:
+        
+        # name string should be "Jonathan Morgan, Richard Henninger, and Andrew Mellon"
+        test_value = test_author_name_string
+        should_be = "Jonathan Morgan, Richard Henninger, and Andrew Mellon"
+        error_message = "In " + me + ": name string should contain \"" + should_be + "\", has instead \"" + test_value + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should have 3 entries.
+        test_value = len( test_author_name_list )
+        should_be = 3
+        error_message = "In " + me + ": name list should have len() \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # name list should contain "Jonathan Morgan || Richard Henninger || Andrew Mellon"
+        test_value = " || ".join( test_author_name_list )
+        should_be = "Jonathan Morgan || Richard Henninger || Andrew Mellon"
+        error_message = "In " + me + ": name list should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # affiliation should be "The Detroit News"
+        test_value = test_author_affiliation
+        should_be = "The Detroit News"
+        error_message = "In " + me + ": affiliation should contain \"" + str( should_be ) + "\", has instead \"" + str( test_value ) + "\"."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+    #-- END test method test_parse_author_name() --#
+    
+        
     def test_process_author_name( self ):
         
         # declare variables

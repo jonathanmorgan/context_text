@@ -22,7 +22,11 @@ if __name__ == "__main__":
 
 # python libraries
 import csv
-import StringIO
+
+# six imports - support Pythons 2 and 3
+import six
+# import StringIO
+from six import StringIO
 
 # Django DB classes, just to play with...
 #from django.db.models import Count # for aggregating counts of authors, sources.

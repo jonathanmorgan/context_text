@@ -23,7 +23,11 @@ if __name__ == "__main__":
 # python libraries
 import csv
 # documentation: https://docs.python.org/2/library/csv.html
-import StringIO
+
+# six imports - support Pythons 2 and 3
+import six
+# import StringIO
+from six import StringIO
 
 # Django DB classes, just to play with...
 #from django.db.models import Count # for aggregating counts of authors, sources.
@@ -505,7 +509,7 @@ class NDO_CSVMatrix( NetworkDataOutput ):
         output_writer = None
         
         # Make string buffer.
-        output_string_buffer = StringIO.StringIO()
+        output_string_buffer = StringIO()
         
         # Use it to create writer.
         output_writer = csv.writer( output_string_buffer, delimiter=self.delimiter )

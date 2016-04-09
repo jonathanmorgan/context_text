@@ -150,13 +150,13 @@ class ArticleAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'author_string', 'author_varchar', 'author_affiliation', 'status', 'tags' ]
+                'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'author_string', 'author_varchar', 'author_name', 'author_affiliation', 'status', 'tags' ]
             }
         ),
         ( 
             "More details (Optional)",
             {
-                'fields' : [ 'index_terms'  ],
+                'fields' : [ 'index_terms', 'cleanup_status'  ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -168,9 +168,9 @@ class ArticleAdmin( admin.ModelAdmin ):
         ArticleRawDataInline
     ]
 
-    list_display = ( 'id', 'newspaper', 'pub_date', 'unique_identifier', 'headline' )
+    list_display = ( 'id', 'newspaper', 'section', 'pub_date', 'unique_identifier', 'headline' )
     list_display_links = ( 'id', 'headline', )
-    list_filter = [ 'pub_date', 'newspaper' ]
+    list_filter = [ 'pub_date', 'newspaper', 'section' ]
     search_fields = [ 'headline', 'unique_identifier', 'id' ]
     #search_fields = [ 'newspaper', 'coder', 'headline' ]
     #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
