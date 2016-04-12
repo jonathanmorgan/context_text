@@ -38,6 +38,7 @@ from django.db.models import Q
 # imports - python_utilities
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.logging.logging_helper import LoggingHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # imports - sourcenet.article_coding
 from sourcenet.article_coding.article_coder import ArticleCoder
@@ -84,6 +85,13 @@ class DTNB( LoggingHelper ):
         AFFILIATION_REGEX_BUREAU
     ]
 
+    # collective author strings
+    AUTHOR_THE_DETROIT_NEWS = "The Detroit News"
+    AUTHOR_DETROIT_NEWS_STAFF = "Detroit News staff"
+    AUTHOR_STAFF_AND_WIRE = "Detroit News staff and wire reports"
+    AUTHOR_WIRE_REPORTS = "Detroit News wire reports"
+    STAFF_AUTHOR_STRINGS_LIST = [ AUTHOR_THE_DETROIT_NEWS, AUTHOR_DETROIT_NEWS_STAFF, AUTHOR_STAFF_AND_WIRE ]
+
     # author info cleanup
     AUTHOR_INFO_CLEANUP_STATUS_ABORT_LIST = [ Article.CLEANUP_STATUS_AUTHOR_FIXED, Article.CLEANUP_STATUS_AUTHOR_AND_TEXT_FIXED, Article.CLEANUP_STATUS_COMPLETE ]
 
@@ -94,12 +102,17 @@ class DTNB( LoggingHelper ):
     # In-house author string patterns
     Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.*\s*/\s*the\s*detroit\s*news$' ) | Q( author_varchar__iregex = r'.*\s*/\s*detroit\s*news\s*.*\s*bureau$' ) | Q( author_varchar__iregex = r'.*\s*/\s*special\s*to\s*the\s*detroit\s*news$' )
 
-
     # DEBUG
     DEBUG_FLAG = True
     
     # logging
     LOGGER_NAME = "sourcenet.collectors.newsbank.newspapers.DTNB"
+    
+    # better anomaly detail
+    AUTHOR_ANOMALY_DETAIL_ARTICLE_ID = "article_id"
+    AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING = "author_string"
+    AUTHOR_ANOMALY_DETAIL_GRAF_1 = "graf_1"
+    AUTHOR_ANOMALY_DETAIL_GRAF_2 = "graf_2"
 
 
     #===========================================================================
@@ -116,7 +129,7 @@ class DTNB( LoggingHelper ):
     def find_affiliation_in_string( cls, string_IN, default_affiliation_IN = None, return_all_matches_IN = False, *args, **kwargs ):
         
         '''
-        Loops through cls.AFFILIATION_LIST, returns the last thing that is found
+        Loops through cls.AFFILIATION_REGEX_LIST, returns the last match found
             within the string passed in.  If optional parameter 
             return_all_matches_IN is True, returns list of matches ordered from
             most recent first ( [ 0 ] ) to least recent last.
@@ -125,57 +138,13 @@ class DTNB( LoggingHelper ):
         # return reference
         value_OUT = ""
         
-        # declare variables
-        match_list = []
-        current_regex = ""
-        affiliation_match = None
-        current_affiliation = ""
-        
-        # got a string?
-        if ( ( string_IN is not None ) and ( string_IN != "" ) ):
-        
-            # yes.  Loop over affiliation regular expressions, checking for
-            #     match for each in string_IN.
-            for current_regex in cls.AFFILIATION_REGEX_LIST:
-            
-                # look for match
-                affiliation_match = re.search( current_regex, string_IN )
-
-                # got match?
-                if ( affiliation_match is not None ):
-
-                    # yes.  store it.
-                    current_affiliation = affiliation_match.group()
-                    match_list.insert( 0, current_affiliation )
-                    
-                #-- END check to see if affiliation is in string. --#
-                
-            #-- END loop over affiliations --#
-        
-        #-- END check to see if string --#
-        
-        # set value_OUT
-        if ( return_all_matches_IN == True ):
-        
-            # return list of matches.
-            value_OUT = match_list
-            
-        else:
-        
-            # return first item in list.
-            if ( ( match_list is not None ) and ( len( match_list ) > 0 ) ):
-            
-                # return first item
-                value_OUT = match_list[ 0 ]
-                
-            else:
-            
-                # no match.  Return default.
-                value_OUT = default_affiliation_IN
-            
-            #-- END check to see if anything in match_list --#
-
-        #-- END check to see if we want the last match, or all matches. --#
+        # call StringHelper regex function.
+        value_OUT = StringHelper.find_regex_matches( string_IN,
+                                                     cls.AFFILIATION_REGEX_LIST,
+                                                     default_value_IN = default_affiliation_IN,
+                                                     return_all_matches_IN = return_all_matches_IN,
+                                                     *args,
+                                                     **kwargs )
         
         return value_OUT
         
@@ -210,7 +179,7 @@ class DTNB( LoggingHelper ):
         self.graf_1_has_name_section_list = []
         self.graf_1_no_name_id_list = []
         self.graf_1_no_name_section_list = []
-        self.graf_1_no_name_text_list = []
+        self.graf_1_no_name_detail_list = []
         self.graf_1_no_name_yes_author_count = 0
         
         # init graf 1 by summary info
@@ -219,7 +188,7 @@ class DTNB( LoggingHelper ):
         self.graf_1_has_by_section_list = []
         self.graf_1_no_by_id_list = []
         self.graf_1_no_by_section_list = []
-        self.graf_1_no_by_text_list = []
+        self.graf_1_no_by_detail_list = []
         self.graf_1_no_by_yes_author_count = 0
         
         # init graf 2 summary info
@@ -228,6 +197,7 @@ class DTNB( LoggingHelper ):
         self.graf_2_has_DN_section_list = []
         self.graf_2_no_DN_id_list = []
         self.graf_2_no_DN_section_list = []
+        self.graf_2_no_DN_detail_list = []
         
         # audit case of author's name different in database, body of article.
         self.case_mismatch_article_list = []
@@ -272,6 +242,7 @@ class DTNB( LoggingHelper ):
         author_part_counter = -1
         author_name = ""
         author_affiliation = ""
+        author_info = None
         author_name_string = ""
         affiliation_list = ""
         
@@ -294,6 +265,9 @@ class DTNB( LoggingHelper ):
         graf_1_lower = ""
         graf_2 = ""
         graf_2_lower = ""
+        
+        # declare variables - better anomaly tracking.
+        error_detail_dict = {}
         
         # reset analysis variables
         self.reset_analysis_variables()
@@ -408,19 +382,29 @@ class DTNB( LoggingHelper ):
                     
                         # no known delimiter.  Look for author name in 1st graf,
                         #     see if it is present in the author_string...
-                        author_name_string = ArticleCoder.parse_name_string( graf_1 )
-                        if ( author_name_string.lower() in author_string_lower ):
-                        
-                            # it is there - use author_name_string
-                            debug_string = "Author name from graf 1 ( \"" + author_name_string + "\" ) present in author_string ( \"" + author_string + "\" )"
-                            self.output_debug_message( debug_string, me )
-                        
-                        #-- END check to see if graf 1 name is in author_string --#
+                        author_info = ArticleCoder.parse_author_string( graf_1 )
+
+                        # got anything back?
+                        if ( ( author_info is not None ) and (  ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING in author_info ) ):
+
+                            # retrieve author_name_string
+                            author_name_string = author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
+
+                            # check if the name retrieved from first paragraph
+                            #     is the same as the author_string.
+                            if ( author_name_string.lower() in author_string_lower ):
                             
+                                # it is there - use author_name_string
+                                debug_string = "Author name from graf 1 ( \"" + author_name_string + "\" ) present in author_string ( \"" + author_string + "\" )"
+                                self.output_debug_message( debug_string, me )
+                            
+                            #-- END check to see if graf 1 name is in author_string --#
+                            
+                        #-- END check to see if author name string in author info --#
                         
                         # ...and then, look for known affiliations in the author
                         #     string.
-                        affiliation_list = cls.find_affiliation_in_author_string( author_string, return_all_matches_IN = True )
+                        affiliation_list = self.find_affiliation_in_string( author_string, return_all_matches_IN = True )
                         if ( ( affiliation_list is not None ) and ( len( affiliation_list ) > 0 ) ):
                         
                             # first item is the affiliation
@@ -567,14 +551,16 @@ class DTNB( LoggingHelper ):
                     
                     #-- END check to see if section already in list. --#
                     
-                    # add the paragraph text to list
-                    if ( graf_1 not in self.graf_1_no_name_text_list ):
+                    # build dict of author_string, graf 1, and graf 2.
+                    error_detail_dict = {}
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID ] = current_article_id
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING ] = author_string
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_1 ] = graf_1
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_2 ] = graf_2
                     
-                        # not there yet - add it.
-                        self.graf_1_no_name_text_list.append( author_string + " | " + graf_1 )
+                    # append it to the list.
+                    self.graf_1_no_name_detail_list.append( error_detail_dict )
                         
-                    #-- END check to avoid duplication in paragraph text list --#
-                    
                 #-- END check to see if contains author name. --#
             
                 # Does graf_1 contain the word "by"
@@ -609,14 +595,16 @@ class DTNB( LoggingHelper ):
                     
                     #-- END check to see if section already in list. --#
                     
-                    # add the paragraph text to list
-                    if ( graf_1 not in self.graf_1_no_by_text_list ):
+                    # build dict of author_string, graf 1, and graf 2.
+                    error_detail_dict = {}
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID ] = current_article_id
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING ] = author_string
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_1 ] = graf_1
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_2 ] = graf_2
                     
-                        # not there yet - add it.
-                        self.graf_1_no_by_text_list.append( graf_1 )
+                    # not there yet - add it.
+                    self.graf_1_no_by_detail_list.append( error_detail_dict )
                         
-                    #-- END check to avoid duplication in paragraph text list --#
-                    
                     # Even though no "by", is name here?
                     if ( author_string.lower() in graf_1_lower ):
                     
@@ -650,7 +638,7 @@ class DTNB( LoggingHelper ):
             
                 else:
                 
-                    # no "by" in graf 1 - store article ID
+                    # no "detroit news" in graf 2 - store article ID
                     self.graf_2_no_DN_id_list.append( current_article_id )
             
                     # add section to list.
@@ -661,6 +649,16 @@ class DTNB( LoggingHelper ):
                     
                     #-- END check to see if section already in list. --#
                     
+                    # build dict of author_string, graf 1, and graf 2.
+                    error_detail_dict = {}
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID ] = current_article_id
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING ] = author_string
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_1 ] = graf_1
+                    error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_2 ] = graf_2
+                    
+                    # not there yet - add it.
+                    self.graf_2_no_DN_detail_list.append( error_detail_dict )
+                        
                 #-- END check to see if contains "detroit news".
                 
             else:
@@ -684,6 +682,7 @@ class DTNB( LoggingHelper ):
     def capture_author_info( self,
                              article_IN,
                              save_changes_IN = True,
+                             require_affiliation_IN = True,
                              *args,
                              **kwargs ):
                                     
@@ -853,8 +852,14 @@ class DTNB( LoggingHelper ):
                     notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\" ) does not contain either a known affiliation or \"detroit news\".  This might not be an error, but it is non-standard."
                     notes_list.append( notes_message )
                     
-                    # and add that to the status list.
-                    status_list_OUT.append( notes_message )
+                    # do we require an affiliation?
+                    if ( require_affiliation_IN == True ):
+                    
+                        # and add that to the status list (doesn't update other
+                        #     than to set cleanup_status to an error status).
+                        status_list_OUT.append( notes_message )
+                        
+                    #-- END check to see if we save if no affiliation --#
                     
                 #-- END check to see if graf 2 looks like an affiliation --#
                     
@@ -1047,9 +1052,16 @@ class DTNB( LoggingHelper ):
         graf_2 = ""
         graf_2_lower = ""
         
+        # declare variables - trying to fix non-standard articles
+        keep_trying = True
+        original_author_string = ""
+        staff_author_string = ""
+        
         # declare variables - look for affiliation in author_string.
         author_string_affiliation = ""
         contains_detroit_news = False
+        author_string_work = ""
+        retry_capture_status_list = None
         
         # comparing author_string to graf 1
         graf_1_author_info = {}
@@ -1077,16 +1089,18 @@ class DTNB( LoggingHelper ):
                 
                 # first try capture_author_info(), to see if this fits the standard
                 #     pattern: graf 1 = name, graf 2 = affiliation.
-                capture_status_list = self.capture_author_info( article_IN, save_changes_IN = save_changes_IN )
+                capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN )
                 
                 # errors?
                 if ( len( capture_status_list ) > 0 ):
     
                     # yes - need to do more digging.
+                    keep_trying = True
     
                     # ! non-standard - retrieve article data
                     current_article_id = current_article.id
                     author_string = current_article.author_string
+                    original_author_string = author_string
                     author_string_lower = author_string.lower()
                     section_string = current_article.section
                     
@@ -1104,16 +1118,80 @@ class DTNB( LoggingHelper ):
                     graf_1_lower = graf_1.lower()
                     graf_2 = paragraph_list[ 1 ]
                     graf_2_lower = graf_2.lower()
-                
-                    # ! is an affiliation in the author string?
-                    author_string_affiliation = self.find_affiliation_in_string( author_string )
-                    #if ( author_string_affiliation ):
-                
-                    # ! compare affiliation to graf 1
                     
-                    # see if it is just a name by checking to see if author_string
-                    #     is in first paragraph.
-                    if ( author_string_lower in graf_1_lower ):
+                    # ! look for known anomalies
+                    # There are specific problems that occur frequently that we
+                    #     should check for.
+                    # 1) Author is "The Detroit News".  In this case, that
+                    #     string does not appear in the first paragraph, so we
+                    #     move on.
+                    # 2) Author and affiliation are in the author field. Usually
+                    #     this is accompanied by the body of the article being
+                    #     standard - the name is in the first paragraph, the
+                    #     affiliation is in the second paragraph.  Also deals
+                    #     with much rarer variation where the two are separated
+                    #     by a semi-colon (just removes all semi-colons).
+                
+                    #----------------------------------------------------------#
+                    # ! --> 1) is author_string "The Detroit News"?
+                    
+                    for staff_author_string in self.STAFF_AUTHOR_STRINGS_LIST:
+                    
+                        if ( author_string_lower == staff_author_string.lower() ):
+                    
+                            # author_string is one of the ways paper indicates
+                            #     that staff collectively wrote the story.  No
+                            #     need to keep trying to figure out author info.
+                            keep_trying = False
+                            
+                        #-- END check to see if author_string is staff --#
+                        
+                    #-- END loop over staff author strings. --#
+                    
+                    #----------------------------------------------------------#
+                    # ! --> 2) Is affiliation with author in author_string?
+                    
+                    author_string_affiliation = self.find_affiliation_in_string( author_string )
+                    if ( ( keep_trying == True )
+                        and ( author_string_affiliation is not None )
+                        and ( author_string_affiliation != "" ) ):
+                        
+                        # author affiliation is in the author_string.  Remove
+                        #     author_string_affiliation from author_string...
+                        author_string_work = author_string.replace( author_string_affiliation, "" )
+
+                        # also remove any semi-colons
+                        author_string_work = author_string_work.replace( ";", "" )
+
+                        # and remove white space                        
+                        author_string_work = author_string_work.strip()
+                        
+                        # ...assuming original_author_string is set and has not
+                        #     been altered, replace author_string...
+                        current_article.author_string = author_string_work
+                        
+                        # ...then try capture_author_info() again.
+                        retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN )
+                        
+                        # Any error messages?
+                        if ( len( retry_capture_status_list ) > 0 ):
+                        
+                            # still errors.
+                            keep_trying = True
+                            
+                        else:
+                        
+                            # no errors.  calling it good.
+                            keep_trying = False
+                            
+                        #-- END check to see if name sans affiliation worked --#
+                                                
+                    #-- END check to see if affiliation is in author string --#
+                                    
+                    #----------------------------------------------------------#
+                    # ! --> is name from graf 1 in author_string?
+
+                    if ( keep_trying == True ):
                     
                         # Sanity check - process graph one
                         #     as an author string and see if it is the same as the
@@ -1125,52 +1203,60 @@ class DTNB( LoggingHelper ):
                         # the same?
                         if ( author_string == graf_1_as_author_string ):
                         
-                            # exactly the same.  This is author name...
-                            my_author_name = author_string
+                            # exactly the same.  Did it fail because of lack of
+                            #     affiliation?
+                            retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN, require_affiliation_IN = False )
                             
-                            # ...and we want to remove the first paragraph.
-                            grafs_to_delete_list.append( 1 )
+                            # Any error messages?
+                            if ( len( retry_capture_status_list ) > 0 ):
+                            
+                                # still errors.
+                                keep_trying = True
+                                
+                            else:
+                            
+                                # no errors.  calling it good.
+                                keep_trying = False
+                                
+                            #-- END check to see if name sans affiliation worked --#
                             
                         # different capitalization?
                         elif ( author_string_lower == graf_1_as_author_string.lower() ):
                         
-                            # same characters, different capitalization.  Still use
-                            #     author_string...
-                            my_author_name = author_string
+                            # same characters, different capitalization.  This
+                            #     should have worked.  Did it fail because of
+                            #     lack of affiliation?
+                            retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN, require_affiliation_IN = False )
                             
-                            # ...and we want to remove the first paragraph...
-                            grafs_to_delete_list.append( 1 )
+                            # Any error messages?
+                            if ( len( retry_capture_status_list ) > 0 ):
                             
-                            # ...and make a note of the difference.
-                            notes_message = "author_string ( \"" + author_string + "\" ) not the same case as name in graf 1 ( \"" + graf_1_as_author_string + "\" )."
-                            notes_list.append( notes_message )
+                                # still errors.
+                                keep_trying = True
+                                
+                            else:
                             
+                                # no errors.  calling it good.
+                                keep_trying = False
+                                
+                            #-- END check to see if name sans affiliation worked --#
+
+                        # see if the string from graf 1 is "in" author_string
+                        elif ( graf_1_as_author_string.lower() in author_string_lower ):
+                        
+                            # yes - so, still some other stuff in author_string?
+                            #     keep trying, but not hopeful here...
+                            keep_trying = True
+                        
                         else:
                         
-                            # not the same, but author string is in graf 1.  Store
-                            #     author_string in author_name...
-                            my_author_name = author_string
-                            
-                            # ...flag graf 1 for deletion?...
-                            grafs_to_delete_list.append( 1 )
-                            
-                            # ...make a note of the difference...
-                            notes_message = "author_string ( \"" + author_string + "\" ) in graf 1, but there is more to graf 1 ( contents = \"" + graf_1 + "\"; as author string: \"" + graf_1_as_author_string + "\"; graf 1 info: " + str( graf_1_author_info ) + " ).  Might be that affiliation is in one or the other of these strings."
-                            notes_list.append( notes_message )
-                            
-                            # ...then check if more than just the author's name in
-                            #     either author_string or graf 1?
-                            look_for_affiliation_in_author_string = True
-                            look_for_affiliation_in_graf_1 = True
+                            # not the same.  Misspelling?  This would be a good
+                            #     point for an edit distance check...
+                            keep_trying = True
                             
                         #-- END check to see if graf 1 is just name. --#
                         
-                    else:
-                    
-                        # author_string is not in graf 1.  Down the rabbit hole...
-                        look_more_closely = True
-                        
-                    #-- END check to see if author string is in graf 1. --#
+                    #-- END check to see if we keep trying. --#
                     
                 else:
                 
@@ -1323,7 +1409,7 @@ class DTNB( LoggingHelper ):
         self.graf_1_has_name_section_list = []
         self.graf_1_no_name_id_list = []
         self.graf_1_no_name_section_list = []
-        self.graf_1_no_name_text_list = []
+        self.graf_1_no_name_detail_list = []
         self.graf_1_no_name_yes_author_count = 0
         
         # init graf 1 by summary info
@@ -1332,7 +1418,7 @@ class DTNB( LoggingHelper ):
         self.graf_1_has_by_section_list = []
         self.graf_1_no_by_id_list = []
         self.graf_1_no_by_section_list = []
-        self.graf_1_no_by_text_list = []
+        self.graf_1_no_by_detail_list = []
         self.graf_1_no_by_yes_author_count = 0
         
         # init graf 2 summary info

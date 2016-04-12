@@ -51,6 +51,7 @@ from python_utilities.sequences.sequence_helper import SequenceHelper
 from python_utilities.strings.string_helper import StringHelper
 
 # Import the classes for our SourceNet application
+from sourcenet.models import Article
 from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
@@ -185,7 +186,7 @@ class ArticleCoder( BasicRateLimited ):
     
     
     #-----------------------------------------------------------------------------
-    # class methods
+    # ! ==> class methods
     #-----------------------------------------------------------------------------
 
 
@@ -210,7 +211,7 @@ class ArticleCoder( BasicRateLimited ):
     
     
     @classmethod
-    def parse_author_string( cls, author_string_IN, capitalize_each_word_IN = False, *args, **kwargs ):
+    def parse_author_string( cls, author_string_IN, capitalize_each_word_IN = False, delimiter_IN = Article.AUTHOR_STRING_DIVIDER, *args, **kwargs ):
         
         '''
         Accepts an author string.  Parses into author name string, author name
@@ -254,7 +255,7 @@ class ArticleCoder( BasicRateLimited ):
             
             # got an author string.  Parse it.  First, break out organization.
             # split author string on "/"
-            author_parts = author_string.split( '/' )
+            author_parts = author_string.split( delimiter_IN )
             
             # got two parts?
             author_parts_length = len( author_parts )
@@ -393,7 +394,7 @@ class ArticleCoder( BasicRateLimited ):
 
 
     #----------------------------------------------------------------------------
-    # __init__() method
+    # ! ==> __init__() method
     #----------------------------------------------------------------------------
 
 
@@ -436,7 +437,7 @@ class ArticleCoder( BasicRateLimited ):
 
 
     #----------------------------------------------------------------------------
-    # instance methods, in alphabetical order
+    # ! ==> instance methods, in alphabetical order
     #----------------------------------------------------------------------------
 
 

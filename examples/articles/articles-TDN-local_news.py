@@ -1,13 +1,18 @@
 # imports - python_utilities
 from python_utilities.logging.logging_helper import LoggingHelper
 
-# imports
+#==============================================================================#
+# ! imports
+#==============================================================================#
+
 from sourcenet.collectors.newsbank.newspapers.DTNB import DTNB
 from sourcenet.models import Article
 from sourcenet.models import Article_Text
 from sourcenet.models import Newspaper
 
-# declare variables
+#==============================================================================#
+# ! declare variables
+#==============================================================================#
 selected_newspaper = None
 article_qs = None
 article_count = -1
@@ -40,6 +45,18 @@ processing_section_list = []
 do_apply_tag = False
 tags_to_apply_list = [ "minnesota1-20160409", "minnesota2-20160409", "minnesota3-20160409" ]
 
+# declare variables - details on author string anomalies
+anomaly_detail = {}
+author_anomaly_article_id = -1
+author_anomaly_author_string = ""
+author_anomaly_graf_1 = ""
+author_anomaly_graf_2 = ""
+anomaly_detail_string = ""
+
+#==============================================================================#
+# ! processing
+#==============================================================================#
+
 # set up "local, regional and state news" sections
 #local_news_sections.append( "Lakeshore" )
 #local_news_sections.append( "Front Page" )
@@ -66,14 +83,14 @@ selected_newspaper = Newspaper.objects.get( id = 2 )
 # date range, newspaper, section list, and custom Q().
 start_date = ""
 end_date = ""
-#section_name_in_list = None
-#custom_article_q = None
+section_name_in_list = None
+custom_article_q = None
 
-# month of in house local news from GRP from 2009-12-01 to 2009-12-31
-#start_date = "2009-12-01"
-#end_date = "2009-12-31"
+# month of local news from Detroit News from 2009-12-01 to 2009-12-31
+start_date = "2009-12-01"
+end_date = "2009-12-31"
 section_name_in_list = DTNB.NEWS_SECTION_NAME_LIST
-custom_article_q = DTNB.Q_IN_HOUSE_AUTHOR
+#custom_article_q = DTNB.Q_IN_HOUSE_AUTHOR
 
 article_qs = Article.filter_articles( qs_IN = article_qs,
                                       start_date = start_date,
@@ -101,7 +118,7 @@ if ( len( tags_not_in_list ) > 0 ):
 
 # include only those with certain tags.
 #tags_in_list = [ "prelim_reliability", "prelim_network" ]
-tags_in_list = [ "prelim_reliability", ]
+#tags_in_list = [ "prelim_reliability", ]
 if ( len( tags_in_list ) > 0 ):
 
     # filter
@@ -165,48 +182,111 @@ tdn = DTNB()
 tdn.analyze_author_info( article_qs )
 
 # output details.
-print( "========================================" )
-print( "Found " + str( tdn.article_counter ) + " articles ( " + str( tdn.article_count ) + " )." )
+tdn.output_debug_message( "========================================" )
+tdn.output_debug_message( "Found " + str( tdn.article_counter ) + " articles ( " + str( tdn.article_count ) + " )." )
 
 # name in 1st paragraph?
-print( "\n" )
-print( "Found " + str( len( tdn.graf_1_has_name_id_list ) ) + " ( " + str( tdn.graf_1_has_name_count ) + " ) articles WITH name in 1st graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_1_has_name_section_list ) ) )
-print( "----> IDs: " + str( sorted( tdn.graf_1_has_name_id_list ) ) )
-print( "" )
-print( "Found " + str( len( tdn.graf_1_no_name_id_list ) ) + " articles WITHOUT name in 1st graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_1_no_name_section_list ) ) )
-print( "----> IDs (sorted): " + str( sorted( tdn.graf_1_no_name_id_list ) ) )
-print( "----> IDs: " + str( tdn.graf_1_no_name_id_list ) )
-print( "----> graf text: "  + str( tdn.graf_1_no_name_text_list ) )
-print( "----> got name?: " + str( tdn.graf_1_no_name_yes_author_count ) )
+tdn.output_debug_message( "\n" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_1_has_name_id_list ) ) + " ( " + str( tdn.graf_1_has_name_count ) + " ) articles WITH name in 1st graf." )
+#tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_1_has_name_section_list ) ) )
+#tdn.output_debug_message( "----> IDs: " + str( sorted( tdn.graf_1_has_name_id_list ) ) )
+tdn.output_debug_message( "" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_1_no_name_id_list ) ) + " articles WITHOUT name in 1st graf." )
+tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_1_no_name_section_list ) ) )
+tdn.output_debug_message( "----> IDs (sorted): " + str( sorted( tdn.graf_1_no_name_id_list ) ) )
+tdn.output_debug_message( "----> IDs: " + str( tdn.graf_1_no_name_id_list ) )
+tdn.output_debug_message( "----> graf text: " )
+tdn.output_debug_message( "----> NO NAME 1st GRAF anomaly details: " )
+
+# output author name anomaly details.
+for anomaly_detail in tdn.graf_1_no_name_detail_list:
+
+    # get anomaly details
+    author_anomaly_article_id = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID, -1 )
+    author_anomaly_author_string = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING, "" )
+    author_anomaly_graf_1 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_1, "" )
+    author_anomaly_graf_2 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_2, "" )
+    
+    # output them.
+    anomaly_detail_string = "--------> article ID: " + str( author_anomaly_article_id )
+    anomaly_detail_string += "\n- author_string: " + str( author_anomaly_author_string )
+    anomaly_detail_string += "\n- graf 1: " + author_anomaly_graf_1
+    anomaly_detail_string += "\n- graf 2: " + author_anomaly_graf_2
+    anomaly_detail_string += "\n"
+    tdn.output_debug_message( anomaly_detail_string )
+
+#-- END loop over author anomaly details --#
+
+tdn.output_debug_message( "----> got name?: " + str( tdn.graf_1_no_name_yes_author_count ) )
 
 # "by" in 1st paragraph?
-print( "\n" )
-print( "Found " + str( len( tdn.graf_1_has_by_id_list ) ) + " ( " + str( tdn.graf_1_has_by_count ) + " ) articles WITH \"by\" in 1st graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_1_has_by_section_list ) ) )
-print( "----> IDs: " + str( sorted( tdn.graf_1_has_by_id_list ) ) )
-print( "" )
-print( "Found " + str( len( tdn.graf_1_no_by_id_list ) ) + " articles WITHOUT \"by\" in 1st graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_1_no_by_section_list ) ) )
-print( "----> IDs (sorted): " + str( sorted( tdn.graf_1_no_by_id_list ) ) )
-print( "----> IDs: " + str( tdn.graf_1_no_by_id_list ) )
-print( "----> graf text: "  + str( tdn.graf_1_no_by_text_list ) )
-print( "----> got name?: " + str( tdn.graf_1_no_by_yes_author_count ) )
+tdn.output_debug_message( "\n" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_1_has_by_id_list ) ) + " ( " + str( tdn.graf_1_has_by_count ) + " ) articles WITH \"by\" in 1st graf." )
+#tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_1_has_by_section_list ) ) )
+#tdn.output_debug_message( "----> IDs: " + str( sorted( tdn.graf_1_has_by_id_list ) ) )
+tdn.output_debug_message( "" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_1_no_by_id_list ) ) + " articles WITHOUT \"by\" in 1st graf." )
+tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_1_no_by_section_list ) ) )
+tdn.output_debug_message( "----> IDs (sorted): " + str( sorted( tdn.graf_1_no_by_id_list ) ) )
+tdn.output_debug_message( "----> IDs: " + str( tdn.graf_1_no_by_id_list ) )
+tdn.output_debug_message( "----> graf text: " )
+tdn.output_debug_message( "----> NO BY 1st GRAF anomaly details: " )
+
+# output author name anomaly details.
+for anomaly_detail in tdn.graf_1_no_by_detail_list:
+
+    # get anomaly details
+    author_anomaly_article_id = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID, -1 )
+    author_anomaly_author_string = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING, "" )
+    author_anomaly_graf_1 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_1, "" )
+    author_anomaly_graf_2 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_2, "" )
+    
+    # output them.
+    anomaly_detail_string = "--------> article ID: " + str( author_anomaly_article_id )
+    anomaly_detail_string += "\n- author_string: " + str( author_anomaly_author_string )
+    anomaly_detail_string += "\n- graf 1: " + author_anomaly_graf_1
+    anomaly_detail_string += "\n- graf 2: " + author_anomaly_graf_2
+    anomaly_detail_string += "\n"
+    tdn.output_debug_message( anomaly_detail_string )
+
+#-- END loop over author anomaly details --#
+
+tdn.output_debug_message( "----> got name?: " + str( tdn.graf_1_no_by_yes_author_count ) )
 
 # "detroit news" in 2nd paragraph?
-print( "\n" )
-print( "Found " + str( len( tdn.graf_2_has_DN_id_list ) ) + " ( " + str( tdn.graf_2_has_DN_count ) + " ) articles WITH \"detroit news\" in 2nd graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_2_has_DN_section_list ) ) )
-print( "----> IDs: " + str( sorted( tdn.graf_2_has_DN_id_list ) ) )
-print( "" )
-print( "Found " + str( len( tdn.graf_2_no_DN_id_list ) ) + " articles WITHOUT \"detroit news\" in 2nd graf." )
-print( "----> Sections: " + str( sorted( tdn.graf_2_no_DN_section_list ) ) )
-print( "----> IDs: " + str( sorted( tdn.graf_2_no_DN_id_list ) ) )
+tdn.output_debug_message( "\n" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_2_has_DN_id_list ) ) + " ( " + str( tdn.graf_2_has_DN_count ) + " ) articles WITH \"detroit news\" in 2nd graf." )
+#tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_2_has_DN_section_list ) ) )
+#tdn.output_debug_message( "----> IDs: " + str( sorted( tdn.graf_2_has_DN_id_list ) ) )
+tdn.output_debug_message( "" )
+tdn.output_debug_message( "Found " + str( len( tdn.graf_2_no_DN_id_list ) ) + " articles WITHOUT \"detroit news\" in 2nd graf." )
+tdn.output_debug_message( "----> Sections: " + str( sorted( tdn.graf_2_no_DN_section_list ) ) )
+tdn.output_debug_message( "----> IDs: " + str( sorted( tdn.graf_2_no_DN_id_list ) ) )
+tdn.output_debug_message( "----> graf text: " )
+tdn.output_debug_message( "----> NO \"detroit news\" 2nd GRAF anomaly details: " )
+
+# output author name anomaly details.
+for anomaly_detail in tdn.graf_2_no_DN_detail_list:
+
+    # get anomaly details
+    author_anomaly_article_id = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_ARTICLE_ID, -1 )
+    author_anomaly_author_string = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING, "" )
+    author_anomaly_graf_1 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_1, "" )
+    author_anomaly_graf_2 = anomaly_detail.get( DTNB.AUTHOR_ANOMALY_DETAIL_GRAF_2, "" )
+    
+    # output them.
+    anomaly_detail_string = "--------> article ID: " + str( author_anomaly_article_id )
+    anomaly_detail_string += "\n- author_string: " + str( author_anomaly_author_string )
+    anomaly_detail_string += "\n- graf 1: " + author_anomaly_graf_1
+    anomaly_detail_string += "\n- graf 2: " + author_anomaly_graf_2
+    anomaly_detail_string += "\n"
+    tdn.output_debug_message( anomaly_detail_string )
+
+#-- END loop over author anomaly details --#
 
 # all article IDs in set.
-print( "\n" )
-print( "List of " + str( len( tdn.article_id_list ) ) + " filtered article IDs: " + str( sorted( tdn.article_id_list ) ) )
+#tdn.output_debug_message( "\n" )
+#tdn.output_debug_message( "List of " + str( len( tdn.article_id_list ) ) + " filtered article IDs: " + str( sorted( tdn.article_id_list ) ) )
 
 # loop over articles?
 if ( ( do_apply_tag == True ) or ( do_capture_author_info == True ) ):
