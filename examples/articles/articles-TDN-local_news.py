@@ -1,10 +1,17 @@
-# imports - python_utilities
-from python_utilities.logging.logging_helper import LoggingHelper
+# support Python 3:
+from __future__ import unicode_literals
 
 #==============================================================================#
 # ! imports
 #==============================================================================#
 
+# Django query object for OR-ing selection criteria together.
+from django.db.models import Q
+
+# imports - python_utilities
+from python_utilities.logging.logging_helper import LoggingHelper
+
+# imports - sourcenet
 from sourcenet.collectors.newsbank.newspapers.DTNB import DTNB
 from sourcenet.models import Article
 from sourcenet.models import Article_Text
@@ -26,10 +33,12 @@ section_name_in_list = []
 custom_article_q = None
 affiliation = ""
 article_id_list = []
+article_id_in_list = []
 tags_in_list = []
 tags_not_in_list = []
 filter_out_prelim_tags = False
 random_count = -1
+limit_count = -1
 article_counter = -1
 
 # declare variables - capturing author info.
@@ -43,7 +52,7 @@ processing_section_list = []
 
 # declare variables - also, apply tag?
 do_apply_tag = False
-tags_to_apply_list = [ "minnesota1-20160409", "minnesota2-20160409", "minnesota3-20160409" ]
+tags_to_apply_list = []
 
 # declare variables - details on author string anomalies
 anomaly_detail = {}
@@ -54,44 +63,91 @@ author_anomaly_graf_2 = ""
 anomaly_detail_string = ""
 
 #==============================================================================#
-# ! processing
+# ! configure filters
 #==============================================================================#
 
-# set up "local, regional and state news" sections
-#local_news_sections.append( "Lakeshore" )
-#local_news_sections.append( "Front Page" )
-#local_news_sections.append( "City and Region" )
-#local_news_sections.append( "Business" )
-#local_news_sections.append( "Religion" )
-#local_news_sections.append( "State" )
-#local_news_sections.append( "Special" )
-#local_news_sections = DTNB.NEWS_SECTION_NAME_LIST
-
-# start with all articles
-article_qs = Article.objects.all()
-
-# The Detroit News
-# get newspaper instance for TDN.
-selected_newspaper = Newspaper.objects.get( id = 2 )
-
-# and, with an in-house author
-#article_qs = article_qs.filter( Article.Q_GRP_IN_HOUSE_AUTHOR )
-
-# and no columns
-#article_qs = article_qs.exclude( index_terms__icontains = "Column" )
-
+# ==> Article.filter_articles()
 # date range, newspaper, section list, and custom Q().
 start_date = ""
 end_date = ""
+selected_newspaper = None
 section_name_in_list = None
 custom_article_q = None
 
 # month of local news from Detroit News from 2009-12-01 to 2009-12-31
 start_date = "2009-12-01"
 end_date = "2009-12-31"
+selected_newspaper = Newspaper.objects.get( id = 2 ) # Detroit News
+
+# limit to "local, regional and state news" sections.
 section_name_in_list = DTNB.NEWS_SECTION_NAME_LIST
+
+# limit to staff reporters.
 #custom_article_q = DTNB.Q_IN_HOUSE_AUTHOR
 
+# ==> article IDs - include
+#article_id_in_list = None
+
+# tests
+#article_id_in_list = [ 90603 ]
+#article_id_in_list = [ 90875 ]
+#article_id_in_list = [ 91600 ]
+#article_id_in_list = [ 91885 ]
+#article_id_in_list = [ 91640 ]
+#article_id_in_list = [ 91394 ]
+#article_id_in_list = [ 91378 ]
+#article_id_in_list = [ 90726 ]
+
+# collective author names ("Detroit News staff", "The Detroit News", etc.)
+#article_id_in_list = [ 92050 ]
+#article_id_in_list = [ 92052 ]
+#article_id_in_list = [ 92055 ]
+#article_id_in_list = [ 92059 ]
+#article_id_in_list = [ 92060 ]
+#article_id_in_list = [ 92078 ]
+#article_id_in_list = [ 92101 ]
+#article_id_in_list = [ 92103 ]
+
+# multiple names in byline
+#article_id_in_list = [ 92069 ] # "Steve Pardo and Tom Greenwood"
+#article_id_in_list = [ 92093 ] # "George Hunter, Tom Greenwood and Mark Hicks"
+
+
+article_id_in_list = [ 92075 ]
+
+# ==> tags - exclude
+#tags_not_in_list = [ "prelim_reliability", "prelim_network" ]
+tags_not_in_list = None
+
+# ==> tags - include only those with certain tags.
+#tags_in_list = [ "prelim_reliability", "prelim_network" ]
+#tags_in_list = [ "prelim_reliability", ]
+tags_in_list = None
+
+# ==> filter out "*prelim*" tags?
+filter_out_prelim_tags = False
+
+# ==> ORDER BY - do we want a random sample?
+#random_count = 10
+random_count = -1
+
+#==============================================================================#
+# ! configure processing
+#==============================================================================#
+
+do_capture_author_info = True
+do_apply_tag = False
+tags_to_apply_list = []
+#tags_to_apply_list = [ "minnesota1-20160409", "minnesota2-20160409", "minnesota3-20160409" ]
+
+#==============================================================================#
+# ! filtering
+#==============================================================================#
+
+# start with all articles
+article_qs = Article.objects.all()
+
+# ! ==> call Article.filter_articles()
 article_qs = Article.filter_articles( qs_IN = article_qs,
                                       start_date = start_date,
                                       end_date = end_date,
@@ -101,25 +157,34 @@ article_qs = Article.filter_articles( qs_IN = article_qs,
 
 # how many is that?
 article_count = article_qs.count()
+print( "Article count before filtering on Article IDs: " + str( article_count ) )
 
+# ! ==> article IDs in list
+if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
+
+    # include those in a list
+    print( "filtering articles to those with IDs: " + str( article_id_in_list ) )
+    article_qs = article_qs.filter( id__in = article_id_in_list )
+
+#-- END check to see if we have a specific list of tags we want to exclude --#
+
+# how many is that?
+article_count = article_qs.count()
 print( "Article count before filtering on tags: " + str( article_count ) )
 
-# ! ==> tags
+# ! ==> tags - exclude
 
 # tags to exclude
-#tags_not_in_list = [ "prelim_reliability", "prelim_network" ]
-if ( len( tags_not_in_list ) > 0 ):
+if ( ( tags_not_in_list is not None ) and ( len( tags_not_in_list ) > 0 ) ):
 
     # exclude those in a list
-    print( "filtering out articles with tags: " + str( tags_not_in_list ) )
+    print( "exclude-ing articles with tags: " + str( tags_not_in_list ) )
     article_qs = article_qs.exclude( tags__name__in = tags_not_in_list )
 
 #-- END check to see if we have a specific list of tags we want to exclude --#
 
-# include only those with certain tags.
-#tags_in_list = [ "prelim_reliability", "prelim_network" ]
-#tags_in_list = [ "prelim_reliability", ]
-if ( len( tags_in_list ) > 0 ):
+# ! ==> tags - include only those with certain tags.
+if ( ( tags_in_list is not None ) and ( len( tags_in_list ) > 0 ) ):
 
     # filter
     print( "filtering to just articles with tags: " + str( tags_in_list ) )
@@ -127,8 +192,7 @@ if ( len( tags_in_list ) > 0 ):
     
 #-- END check to see if we have a specific list of tags we want to include --#
 
-# filter out "*prelim*" tags?
-#filter_out_prelim_tags = True
+# ! ==> filter out "*prelim*" tags?
 if ( filter_out_prelim_tags == True ):
 
     # ifilter out all articles with any tag whose name contains "prelim".
@@ -143,13 +207,12 @@ article_count = article_qs.count()
 print( "Article count after tag filtering: " + str( article_count ) )
 
 # just want un-cleaned-up:
-#article_qs = article_qs.filter( cleanup_status = Article.CLEANUP_STATUS_NEW )
-#article_count = article_qs.count()
+article_qs = article_qs.filter( Q( cleanup_status = Article.CLEANUP_STATUS_NEW ) | Q( cleanup_status__isnull = True ) )
+article_count = article_qs.count()
 
-#print( "Article count after filtering for cleanup_status: " + str( article_count ) )
+print( "Article count after filtering on cleanup_status - filter out any that have already been cleaned up: " + str( article_count ) )
 
-
-# do we want a random sample?
+# ! ==> ORDER BY - do we want a random sample?
 #random_count = 10
 if ( random_count > 0 ):
 
@@ -168,12 +231,25 @@ else:
 # this is a nice algorithm, also:
 # - http://www.titov.net/2005/09/21/do-not-use-order-by-rand-or-how-to-get-random-rows-from-table/
 
-# ! LIMIT
-#article_qs = article_qs[ : 10 ]
+# how many is that?
+article_count = article_qs.count()
+print( "Article count after ORDER-ing: " + str( article_count ) )
+
+# ! ==> LIMIT
+# limit_count = 1
+if ( limit_count > 0 ):
+
+    article_qs = article_qs[ : limit_count ]
+    
+#-- END check to see if we limit. --#
 
 # how many is that?
 article_count = article_qs.count()
-print( "Article count after ordering: " + str( article_count ) )
+print( "Article count after LIMIT-ing: " + str( article_count ) )
+
+#==============================================================================#
+# ! analyze_author_info()
+#==============================================================================#
 
 # create instance of DTNB.
 tdn = DTNB()
@@ -288,6 +364,10 @@ for anomaly_detail in tdn.graf_2_no_DN_detail_list:
 #tdn.output_debug_message( "\n" )
 #tdn.output_debug_message( "List of " + str( len( tdn.article_id_list ) ) + " filtered article IDs: " + str( sorted( tdn.article_id_list ) ) )
 
+#==============================================================================#
+# ! processing - apply tags, capture author info
+#==============================================================================#
+
 # loop over articles?
 if ( ( do_apply_tag == True ) or ( do_capture_author_info == True ) ):
 
@@ -311,18 +391,23 @@ if ( ( do_apply_tag == True ) or ( do_capture_author_info == True ) ):
         
         print( "\nArticle " + str( processing_counter ) + " of " + str( article_count ) + ": " + str( current_article ) )
 
+        # ! ==> capture_author_info()
+        
         # are we capturing author info?
         if ( do_capture_author_info ):
     
             print( "- Attempting to capture author information from body of article.")
     
             # call capture_author_info()
-            capture_status_list = tdn.capture_author_info( current_article )
+            capture_status = tdn.capture_author_info( current_article )
+            capture_status_list = capture_status.get_message_list()
             
             # output status list
-            print( "====> " + str( processing_counter ) + " - Article ID: " + str( current_article.id ) + "; capture_status_list = " + str( capture_status_list ) )
+            print( "====> " + str( processing_counter ) + " - Article ID: " + str( current_article.id ) + "; capture_status = " + str( capture_status ) )
             
         #-- END check to see if we try to capture author info --#
+        
+        # ! ==> apply tags
         
         # apply tag(s) while we are at it?
         if ( ( do_apply_tag == True ) and ( tags_to_apply_list is not None ) and ( len( tags_to_apply_list ) > 0 ) ):

@@ -29,15 +29,17 @@
             <hr />
         {% endif %}
 
-        {# got a source (such that we want user to be able to return)? #}
-        {% if source %}
-            <div id="return-to-source" class="returnToSource">
-                <ul>
-                    <li><a href="{% url 'sourcenet-article_coding_list' %}?tags_in_list={{ tags_in_list }}">Return to Article Coding List</a></li>
-                </ul>
-            </div>
-            <hr />
-        {% endif %}
+        <div id="return-to-source" class="returnToSource">
+            <ul>
+                {# if source, persist tag list for return to coding list page #}
+                <li>
+                    <a href="{% url 'sourcenet-article_coding_list' %}{% if source %}?tags_in_list={{ tags_in_list }}{% endif %}">
+                        {% if source %}Return to {% endif %}Article Coding List
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <hr />
 
         <h1>Code article</h1>
         

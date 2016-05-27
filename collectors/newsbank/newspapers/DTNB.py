@@ -38,7 +38,11 @@ from django.db.models import Q
 # imports - python_utilities
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.logging.logging_helper import LoggingHelper
+from python_utilities.status.status_container import StatusContainer
 from python_utilities.strings.string_helper import StringHelper
+
+# imports - django_messages
+from django_messages.models import Message
 
 # imports - sourcenet.article_coding
 from sourcenet.article_coding.article_coder import ArticleCoder
@@ -72,6 +76,7 @@ class DTNB( LoggingHelper ):
     AFFILIATION_REGEX_THE_DETROIT_NEWS = re.compile( r"The\s+Detroit\s+News", re.IGNORECASE )
     AFFILIATION_REGEX_SPECIAL_TO = re.compile( r"Special\s+to\s+The\s+Detroit\s+News", re.IGNORECASE )
     AFFILIATION_REGEX_BUREAU = re.compile( r"Detroit News\s+.*\s+Bureau", re.IGNORECASE )
+    AFFILIATION_REGEX_EDITOR = re.compile( r"Detroit News\s+.*\s+Editor", re.IGNORECASE )
     AFFILIATION_DEFAULT = NEWSPAPER_NAME
     
     # affiliation list is organized from most general to most specific, such
@@ -79,18 +84,22 @@ class DTNB( LoggingHelper ):
     #     after "The Detroit News" in the list, for example, so while "The
     #     Detroit News" will match, so will "Special to The Detroit News"
     #     subsequently.
-    AFFILIATION_REGEX_LIST = [
+    STAFF_AFFILIATION_REGEX_LIST = [
         AFFILIATION_REGEX_THE_DETROIT_NEWS,
         AFFILIATION_REGEX_SPECIAL_TO,
-        AFFILIATION_REGEX_BUREAU
+        AFFILIATION_REGEX_BUREAU,
+        AFFILIATION_REGEX_EDITOR
     ]
 
     # collective author strings
     AUTHOR_THE_DETROIT_NEWS = "The Detroit News"
     AUTHOR_DETROIT_NEWS_STAFF = "Detroit News staff"
+    AUTHOR_THE_DETROIT_NEWS_STAFF = "The Detroit News Staff"
+    AUTHOR_STAFF_REPORTS = "Detroit News staff reports"
     AUTHOR_STAFF_AND_WIRE = "Detroit News staff and wire reports"
     AUTHOR_WIRE_REPORTS = "Detroit News wire reports"
-    STAFF_AUTHOR_STRINGS_LIST = [ AUTHOR_THE_DETROIT_NEWS, AUTHOR_DETROIT_NEWS_STAFF, AUTHOR_STAFF_AND_WIRE ]
+    AUTHOR_WIRE_SERVICES = "Detroit News wire services"
+    STAFF_AUTHOR_STRINGS_LIST = [ AUTHOR_THE_DETROIT_NEWS, AUTHOR_DETROIT_NEWS_STAFF, AUTHOR_THE_DETROIT_NEWS_STAFF, AUTHOR_STAFF_REPORTS, AUTHOR_STAFF_AND_WIRE, AUTHOR_WIRE_REPORTS, AUTHOR_WIRE_SERVICES ]
 
     # author info cleanup
     AUTHOR_INFO_CLEANUP_STATUS_ABORT_LIST = [ Article.CLEANUP_STATUS_AUTHOR_FIXED, Article.CLEANUP_STATUS_AUTHOR_AND_TEXT_FIXED, Article.CLEANUP_STATUS_COMPLETE ]
@@ -101,6 +110,12 @@ class DTNB( LoggingHelper ):
     
     # In-house author string patterns
     Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.*\s*/\s*the\s*detroit\s*news$' ) | Q( author_varchar__iregex = r'.*\s*/\s*detroit\s*news\s*.*\s*bureau$' ) | Q( author_varchar__iregex = r'.*\s*/\s*special\s*to\s*the\s*detroit\s*news$' )
+
+    # Columns are mixed in with news, you have to filter them out by Columnist
+    #     name.
+    COLUMNIST_LAURA_BERMAN = "Laura Berman"
+    COLUMNIST_DANIEL_HOWES = "Daniel Howes"
+    COLUMNIST_NAME_LIST = [ COLUMNIST_LAURA_BERMAN, COLUMNIST_DANIEL_HOWES ]
 
     # DEBUG
     DEBUG_FLAG = True
@@ -113,6 +128,24 @@ class DTNB( LoggingHelper ):
     AUTHOR_ANOMALY_DETAIL_AUTHOR_STRING = "author_string"
     AUTHOR_ANOMALY_DETAIL_GRAF_1 = "graf_1"
     AUTHOR_ANOMALY_DETAIL_GRAF_2 = "graf_2"
+    
+    # StatusContainer status tags - capture_author_info()
+    STATUS_TAG_AUTHOR_NAME_GRAF_1_MISMATCH = "author_name_graf_1_mismatch"
+    STATUS_TAG_GRAF_2_UNKNOWN_AFFILIATION = "graf_2_unknown_affiliation"
+    STATUS_TAG_USED_DEFAULT_AFFILIATION = "used_default_affiliation"
+    STATUS_TAG_UPDATED_AUTHOR_STRING = "updated_author_string"
+    STATUS_TAG_NO_ARTICLE = "no_article"
+    STATUS_TAG_AUTHOR_NAME_GRAF_1_AFFILIATION_MISMATCH = "author_name_graf_1_affiliation_mismatch"
+    
+    # StatusContainer status tags - clean_up_author_info()
+    STATUS_TAG_COLLECTIVE_BYLINE = "collective_byline"
+    STATUS_TAG_AFFILIATION_IN_AUTHOR_STRING = "affiliation_in_author_string"
+    STATUS_TAG_REMOVED_AFFILIATION_STILL_FAILED = "removed_affiliation_still_failed"
+    STATUS_TAG_AFFILIATION_NOT_IN_AUTHOR_STRING = "affiliation_not_in_author_string"
+    STATUS_TAG_NOT_AFFILIATION_MISSING = "not_affiliation_missing"
+    STATUS_TAG_AUTHOR_MATCHES_GRAF_1 = "author_matches_graf_1"
+    STATUS_TAG_AUTHOR_MATCHES_GRAF_1_CI = "author_matches_graf_1_ci"
+    STATUS_TAG_GRAF_1_STRING_IN_AUTHOR_CI = "graf_1_string_in_author_ci"
 
 
     #===========================================================================
@@ -129,7 +162,7 @@ class DTNB( LoggingHelper ):
     def find_affiliation_in_string( cls, string_IN, default_affiliation_IN = None, return_all_matches_IN = False, *args, **kwargs ):
         
         '''
-        Loops through cls.AFFILIATION_REGEX_LIST, returns the last match found
+        Loops through cls.STAFF_AFFILIATION_REGEX_LIST, returns the last match found
             within the string passed in.  If optional parameter 
             return_all_matches_IN is True, returns list of matches ordered from
             most recent first ( [ 0 ] ) to least recent last.
@@ -140,7 +173,7 @@ class DTNB( LoggingHelper ):
         
         # call StringHelper regex function.
         value_OUT = StringHelper.find_regex_matches( string_IN,
-                                                     cls.AFFILIATION_REGEX_LIST,
+                                                     cls.STAFF_AFFILIATION_REGEX_LIST,
                                                      default_value_IN = default_affiliation_IN,
                                                      return_all_matches_IN = return_all_matches_IN,
                                                      *args,
@@ -149,6 +182,61 @@ class DTNB( LoggingHelper ):
         return value_OUT
         
     #-- END method find_affiliation_in_string() --#
+    
+
+    @classmethod
+    def is_collective_byline( cls, string_IN, *args, **kwargs ):
+        
+        '''
+        For now, looks for the author string passed in in the list of staff
+            author strings.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # call StringHelper is_in_string_list() function.
+        value_OUT = StringHelper.is_in_string_list( string_IN, cls.STAFF_AUTHOR_STRINGS_LIST, ignore_case_IN = True )
+        
+        return value_OUT
+        
+    #-- END method is_collective_byline() --#
+    
+
+    @classmethod
+    def is_staff_author_string( cls, string_IN, *args, **kwargs ):
+        
+        '''
+        Uses find_affiliation_in_string() to look for affiliation in author
+            string.  If it finds one, returns true - that is likely a staff
+            author.  If it doesn't find one, returns False.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        affiliation_value = ""
+        
+        # call StringHelper regex function.
+        affiliation_value = cls.find_affiliation_in_string( cls,
+                                                            string_IN,
+                                                            default_value_IN = None,
+                                                            return_all_matches_IN = False,
+                                                            *args,
+                                                            **kwargs )
+                                                             
+        # got anything back?
+        if ( ( affiliation_value is not None ) and ( affiliation_value != "" ) ):
+        
+            # got something.
+            value_OUT = True
+            
+        #-- END check to see if found an affiliation --#
+        
+        return value_OUT
+        
+    #-- END method is_staff_author_string() --#
     
 
     #===========================================================================
@@ -211,6 +299,9 @@ class DTNB( LoggingHelper ):
         my_exception_helper = ExceptionHelper()
         #my_exception_helper.set_logging_level( logging.DEBUG )
         self.set_exception_helper( my_exception_helper )
+        
+        # default affiliation
+        self.default_affiliation = None
 
     #-- END method __init__() --#
 
@@ -244,6 +335,7 @@ class DTNB( LoggingHelper ):
         author_affiliation = ""
         author_info = None
         author_name_string = ""
+        is_collective_byline = False
         affiliation_list = ""
         
         # declare variables - finding author in text
@@ -273,7 +365,7 @@ class DTNB( LoggingHelper ):
         self.reset_analysis_variables()
         
         # got a QuerySet?
-        if ( ( article_qs_IN is not None ) and ( article_qs_IN.count() > 0 ) ):
+        if ( article_qs_IN is not None ):
         
             # use it.
             article_qs = article_qs_IN
@@ -683,6 +775,7 @@ class DTNB( LoggingHelper ):
                              article_IN,
                              save_changes_IN = True,
                              require_affiliation_IN = True,
+                             default_affiliation_IN = None,
                              *args,
                              **kwargs ):
                                     
@@ -696,8 +789,17 @@ class DTNB( LoggingHelper ):
             are in the body of the article in the first (name) and second
             (affiliation) paragraphs.
             
-        This method checks to make sure this is the case.  If it finds anything
-            unexpected, then it returns list of problems.
+        This method checks to make sure this is the case.  Returns an intance of
+            StatusContainer with status_code set to "success" if OK, "error" if
+            it finds anything unexpected.  Also includes a list of status tags
+            and status messages that capture the details of processing.
+            
+            Possible tags:
+            - self.STATUS_TAG_AUTHOR_NAME_GRAF_1_MISMATCH - added if author name is not the same in author_string and graf 1.
+            - self.STATUS_TAG_GRAF_2_UNKNOWN_AFFILIATION - could not find a known affiliation in paragraph 2.
+            - self.STATUS_TAG_USED_DEFAULT_AFFILIATION - applied default affiliation since no affiliation found.
+            - self.STATUS_TAG_UPDATED_AUTHOR_STRING - processing resulted in an updated author_string.
+            - self.STATUS_TAG_NO_ARTICLE - no article passed in.  Self-inflicted wound.
             
         Postconditions:
             - success: This method updates article and article text if it thinks
@@ -717,7 +819,7 @@ class DTNB( LoggingHelper ):
         '''
         
         # return reference
-        status_list_OUT = []
+        status_OUT = StatusContainer()
         
         # declare variables
         me = "capture_author_info"
@@ -734,6 +836,8 @@ class DTNB( LoggingHelper ):
         notes_message = ""
         notes_list = []
         grafs_to_delete_list = []
+        is_affiliation_required = False
+        default_affiliation = ""
         
         # declare variables - article data
         current_article_id = -1
@@ -749,14 +853,23 @@ class DTNB( LoggingHelper ):
         graf_2 = ""
         graf_2_lower = ""
         
-        # comparing author_string to graf 1
+        # declare variables - comparing author_string to graf 1
         graf_1_author_info = {}
         graf_1_as_author_string = ""
+        author_string_affiliation = ""
+        author_string_work = ""
+        graf_1_affiliation = ""
+        graf_1_work = ""
+        graf_2_affiliation = ""
         
         # declare variables - graf 2 - affiliation
-        found_affiliation = ""
+        affiliation_value = ""
         contains_detroit_news = False
         
+        # init status
+        status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+        status_OUT.process_name = me
+
         # first, check to make sure we have an article.
         if ( article_IN is not None ):
         
@@ -779,6 +892,13 @@ class DTNB( LoggingHelper ):
             # first, see if author info has already been captured.
             if ( cleanup_status not in self.AUTHOR_INFO_CLEANUP_STATUS_ABORT_LIST ):
             
+                #--------------------------------------------------------------#
+                # ! ==> cleanup setup
+                #--------------------------------------------------------------#
+                
+                # require affiliation?
+                is_affiliation_required = require_affiliation_IN
+
                 # set up search
                 find_string = author_string
                 
@@ -794,89 +914,392 @@ class DTNB( LoggingHelper ):
                 graf_2 = paragraph_list[ 1 ]
                 graf_2_lower = graf_2.lower()
                 
-                # ! graf 1 - author name
+                # check whether author_string, graf_1, and graf_2 contain
+                #     affiliation (we'll use it on down).
+                author_string_affiliation = self.find_affiliation_in_string( author_string )
+                graf_1_affiliation = self.find_affiliation_in_string( graf_1 )
+                graf_2_affiliation = self.find_affiliation_in_string( graf_2 )
+                
+                #--------------------------------------------------------------#
+                # ! ==> author name (graf 1)
+                #--------------------------------------------------------------#
                 
                 # first, parse contents of graf 1 to get rid of "By"
                 graf_1_author_info = ArticleCoder.parse_author_string( graf_1 )
                 graf_1_as_author_string = graf_1_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
                 
-                # check to see if this matches the author_string, ignoring case
-                #     (it should).
-                if ( author_string_lower == graf_1_as_author_string.lower() ):
+                # check to see if the author_string is one of those that denote
+                #     collective staff authorship.
                 
-                    # it does.  use version from author string.
-                    my_author_name = author_string
+                # make sure there is an author string.
+                if ( ( author_string is not None ) and ( author_string != "" ) ):
                     
-                    # ...and we want to remove the first paragraph...
-                    grafs_to_delete_list.append( 1 )
-                    
-                    # ...and make a note.
-                    notes_message = "Removing graf 1 - author_string ( \"" + author_string + "\" ) same as name in graf 1 ( \"" + graf_1_as_author_string + "\" )."
-                    notes_list.append( notes_message )
+                    # yes - check it for collective byline.
+                    is_collective_byline = self.is_collective_byline( author_string )
                     
                 else:
                 
-                    # it does not.  ERROR.
-                    notes_message = "ERROR - author_string ( \"" + author_string + "\" ) not the same as name in graf 1 ( \"" + graf_1_as_author_string + "\" ).  graf 1 contents = \"" + graf_1 + "\"."
-                    notes_list.append( notes_message )
+                    # no author_string - see if graf 1 is collective byline.
+                    #     (sometimes with collective byline, there is no
+                    #     author_string, but the author in graf 1 is collective
+                    #     byline).
+                    is_collective_byline = self.is_collective_byline( graf_1_as_author_string )
                     
-                    # and add that to the status list.
-                    status_list_OUT.append( notes_message )
-                    
-                #-- END check to see if graf 1 = author_string --#
+                #-- END check to see if collective byline --#
                 
-                # ! graf 2 - author affiliation
+                #--------------------------------------------------------------#
+                # collective byline?  Might include an affiliation string.
+                #--------------------------------------------------------------#
                 
-                # check to see if the contents of graph 2 contain a known
-                #     affiliation, or if it at least contains "detroit news".
-                found_affiliation = self.find_affiliation_in_string( graf_2 )
-                contains_detroit_news = self.STRING_DETROIT_NEWS_LOWER in graf_2_lower
+                if ( is_collective_byline == True ):
                 
-                # either got affiliation, or contains "detroit news"?
-                if ( ( ( found_affiliation is not None ) and ( found_affiliation != "" ) )
-                    or ( contains_detroit_news == True ) ):
+                    # ! --> IS collective byline
                     
-                    # yes.  Looks like an affiliation.  use it.
-                    my_author_affiliation = graf_2
-    
-                    # ...and we want to remove the second paragraph...
-                    grafs_to_delete_list.append( 2 )
-                    
-                    # ...and make a note.
-                    notes_message = "Removing graf 2 - graf 2 ( contents = \"" + graf_2 + "\" ) either contains a known affiliation ( found_affiliation = \"" + str( found_affiliation ) + "\" ) or \"detroit news\" ( contains_detroit_news = \"" + str( contains_detroit_news ) + "\" -when no found_affiliation, this is likely an indicator of an affiliation variation we haven't encountered yet)."
-                    notes_list.append( notes_message )
-                    
-                else:
-                
-                    # no.  ERROR.
-                    notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\" ) does not contain either a known affiliation or \"detroit news\".  This might not be an error, but it is non-standard."
-                    notes_list.append( notes_message )
-                    
-                    # do we require an affiliation?
-                    if ( require_affiliation_IN == True ):
-                    
-                        # and add that to the status list (doesn't update other
-                        #     than to set cleanup_status to an error status).
-                        status_list_OUT.append( notes_message )
+                    # with collective byline, use the byline as the author name.
+
+                    # is it in author_string...?
+                    if ( ( author_string is not None ) and ( author_string != "" ) ):
                         
-                    #-- END check to see if we save if no affiliation --#
+                        # yes - store it and make note.
+                        my_author_name = author_string
+
+                        # make a note.
+                        notes_message = "author_string \"" + author_string + "\" is a collective byline, so processing it special - just use the author_string as-is, and don't look at the 2nd paragraph."
+                        notes_list.append( notes_message )
+    
+                    # ...or is it in graf 1?
+                    else:
                     
-                #-- END check to see if graf 2 looks like an affiliation --#
+                        # not in author string, so must be in graf 1 - store it
+                        #     and make note.
+                        my_author_name = graf_1
+
+                        # make a note.
+                        notes_message = "graf 1 \"" + graf_1 + "\" is a collective byline, so processing it special - just use graf_1 as author name as-is, and don't look at the 2nd paragraph."
+                        notes_list.append( notes_message )
+                        
+                    #-- END check to see if collective byline --#
+
+                    # ...and there is no affiliation.
+                    my_author_affiliation = None
+                    
+                    # if graf_1_lower = my_author_name.lower(), remove graf 1.
+                    if ( graf_1_lower == my_author_name.lower() ):
+                    
+                        # same - remove graf 1.
+                        grafs_to_delete_list.append( 1 )
+                        
+                        # make a note.
+                        notes_message = "my_author_name ( \"" + my_author_name + "\" ) is same as 1st paragraph ( \"" + graf_1 + "\" ), so removing first paragraph."
+                        notes_list.append( notes_message )
+    
+                    #-- END check to see if we remove graf 1. --#
+                    
+                    # NOTE - don't do anything to graf 2.
+                
+                else:
+                
+                    # ! --> NOT collective byline
+                    
+                    # ! ----> if affiliation present, remove it
+                    if ( ( graf_1_affiliation is not None )
+                        and ( graf_1_affiliation != "" ) ):
+                        
+                        # affiliation is present.  Remove it from author string.
+                        
+                        # Remove graf_1_affiliation from graf_1_as_author_string...
+                        graf_1_as_author_string = self.remove_affiliation_from_author_string( graf_1_as_author_string )
+    
+                    #-- END check to see if graf 1 has affiliation. --#
+                    
+                    if ( ( author_string_affiliation is not None )
+                        and ( author_string_affiliation != "" ) ):
+                        
+                        # affiliation is present.  Remove it from author string.
+                        
+                        # Remove author_string_affiliation from author_string...
+                        author_string = self.remove_affiliation_from_author_string( author_string )
+                        author_string_lower = author_string.lower()
+    
+                    #-- END check to see if graf 1 has affiliation. --#
+                    
+                    # ! ----> Did either contain affiliation?
+                    if ( ( ( author_string_affiliation is not None ) and ( author_string_affiliation != "" ) )
+                        or ( ( graf_1_affiliation is not None ) and ( graf_1_affiliation != "" ) ) ):
+                    
+                        # Did they both contain affiliation?  Sometimes
+                        #     both graf 1 and author_string contain affiliation, and
+                        #     no affiliation in paragraph 2.
+                        if ( ( author_string_affiliation is not None )
+                            and ( author_string_affiliation != "" )
+                            and ( graf_1_affiliation is not None )
+                            and ( graf_1_affiliation != "" ) ):
+                            
+                            # They do both have affiliation.
+                            notes_message = "Affiliation found in both graf 1 ( \"" + graf_1_affiliation + "\" ) and author_string ( \"" + author_string_affiliation + "\" )."
+        
+                            # Is it the same affiliation?
+                            if ( author_string_affiliation == graf_1_affiliation ):
+                            
+                                # same affiliation.  Set my_author_affiliation.
+                                my_author_affiliation = author_string_affiliation
+                                default_affiliation = author_string_affiliation
+                                
+                                # and no longer need affiliation from 2nd paragraph.
+                                is_affiliation_required = False
+                                
+                                # add detail to note.
+                                notes_message += "  Using affiliation retrieved from author_string as default."
+                            
+                            else:
+                            
+                                # different affiliations?  ERROR.
+                                notes_message += "  BUT, they are different!  ERROR!"
+                                
+                                # Create message
+                                Message.create_message( "In article " + str( current_article_id ) + ": " + notes_message,
+                                                        application_IN = self.LOGGER_NAME,
+                                                        status_IN = Message.STATUS_ERROR )
+                                                        
+                                # This is an error.  update status.
+                                status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                                status_OUT.add_tag( self.STATUS_TAG_AUTHOR_NAME_GRAF_1_AFFILIATION_MISMATCH )
+                                status_OUT.add_message( notes_message )
+                            
+                            #-- END check to see if affiliation 
+                            
+                            # Store to Article_Notes
+                            notes_list.append( notes_message )
+                        
+                        elif ( ( graf_1_affiliation is not None )
+                            and ( graf_1_affiliation != "" ) ):
+                            
+                            # affiliation in graf 1.  Use it.
+                            my_author_affiliation = graf_1_affiliation
+                            default_affiliation = graf_1_affiliation
+                            
+                            # and no longer need affiliation from 2nd paragraph.
+                            is_affiliation_required = False
+                            
+                            # add detail to note.
+                            notes_message = "Using affiliation retrieved from graf 1 ( \"" + graf_1_affiliation + "\" ) as default."
+                            
+                            # Store to Article_Notes
+                            notes_list.append( notes_message )
+        
+                        elif ( ( author_string_affiliation is not None )
+                            and ( author_string_affiliation != "" ) ):
+                            
+                            # affiliation in author_string.  Use it.
+                            my_author_affiliation = author_string_affiliation
+                            default_affiliation = author_string_affiliation
+                            
+                            # and no longer need affiliation from 2nd paragraph.
+                            is_affiliation_required = False
+                            
+                            # add detail to note.
+                            notes_message = "Using affiliation retrieved from author_string ( \"" + author_string_affiliation + "\" ) as default."
+            
+                            # Store to Article_Notes
+                            notes_list.append( notes_message )
+    
+                        #-- END check to see if both graf 1 and author_string had affiliation --#
+    
+                    #-- END check to see if affiliation found in author_string or graf 1 --#
+    
+                    # now that we've cleaned out affiliations, check again to
+                    #     see if the author_string is one of those that
+                    #     denote collective staff authorship.
+                    is_collective_byline = self.is_collective_byline( author_string )
+                    
+                    # ! ----> do author_string and graf 1 match?
+                    
+                    if ( ( ( author_string_lower is not None ) and ( author_string_lower != "" ) )
+                        and ( ( graf_1_as_author_string is not None ) and ( graf_1_as_author_string ) ) ):
+                        
+                        # check to see if author_string matches graf_1, ignoring
+                        #      case (it should).
+                        if ( author_string_lower == graf_1_as_author_string.lower() ):
+                    
+                            # it does.
+                            
+                            # use author name from author string.
+                            my_author_name = author_string
+                            
+                            # ...and we want to remove the first paragraph...
+                            grafs_to_delete_list.append( 1 )
+                            
+                            # ...and make a note.
+                            notes_message = "Removing graf 1 - author_string ( \"" + author_string + "\" ) same as name in graf 1 ( \"" + graf_1_as_author_string + "\" )."
+                            notes_list.append( notes_message )                    
+                            
+                        else:
+                        
+                            # it does not.  ERROR.
+                            notes_message = "ERROR - original author_string ( \"" + author_string + "\" ) not the same as name in graf 1 ( \"" + graf_1_as_author_string + "\" ).  graf 1 contents = \"" + graf_1 + "\"."
+                            notes_list.append( notes_message )
+        
+                            # Create message
+                            Message.create_message( "In article " + str( current_article_id ) + ": " + notes_message,
+                                                    application_IN = self.LOGGER_NAME,
+                                                    status_IN = Message.STATUS_ERROR )
+                        
+                            # and add that to the status list.
+                            status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                            status_OUT.add_tag( self.STATUS_TAG_AUTHOR_NAME_GRAF_1_MISMATCH )
+                            status_OUT.add_message( notes_message )
+                            
+                            # see if the string from graf 1 is "in" author_string
+                            if ( graf_1_as_author_string.lower() in author_string_lower ):
+                            
+                                # graf 1 string is in author_string - odd.  ERROR.
+                                notes_message = "ERROR - name in graf 1 ( \"" + graf_1_as_author_string + "\" ) is in author_string ( \"" + author_string + "\" ), but they are not the same.  graf 1 contents = \"" + graf_1 + "\"."
+                                notes_list.append( notes_message )
+            
+                                # Create message
+                                Message.create_message( "In article " + str( current_article_id ) + ": " + notes_message,
+                                                        application_IN = self.LOGGER_NAME,
+                                                        status_IN = Message.STATUS_ERROR )
+                            
+                                # and add that to the status list.
+                                status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                                status_OUT.add_tag( self.STATUS_TAG_GRAF_1_STRING_IN_AUTHOR_CI )
+                                status_OUT.add_message( notes_message )
+                            
+                            #-- END check to see if graf 1 is just name. --#
+        
+                        #-- END check to see if graf 1 = author_string --#
+                        
+                    else:
+                    
+                        # one or the other or both author strings are missing.
+                        #     Error.
+                        notes_message = "ERROR - either graf 1 ( \"" + graf_1_as_author_string + "\" ) or author_string ( \"" + author_string_lower + "\" ) is empty (or both are empty).  This should not happen."
+                        notes_list.append( notes_message )
+    
+                        # Create message
+                        Message.create_message( "In article " + str( current_article_id ) + ": " + notes_message,
+                                                application_IN = self.LOGGER_NAME,
+                                                status_IN = Message.STATUS_ERROR )
+                    
+                        # and add that to the status list.
+                        status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                        status_OUT.add_tag( self.STATUS_TAG_GRAF_1_STRING_IN_AUTHOR_CI )
+                        status_OUT.add_message( notes_message )
+                        
+                    #-- END check to see if both author_string and graf 1 are not empty --# 
+                    
+                    # ! ==> author affiliation (graf 2)
+                    
+                    # first, check if collective byline.  If so, no affiliation,
+                    #     ignore graf 2.
+                    if ( is_collective_byline == False ):
+                    
+                        # check to see if the contents of graph 2 contain a known
+                        #     affiliation, or if it at least contains "detroit news".
+                        affiliation_value = self.find_affiliation_in_string( graf_2 )
+                        contains_detroit_news = self.STRING_DETROIT_NEWS_LOWER in graf_2_lower
+                        
+                        # Was an affiliation found?
+                        if ( ( affiliation_value is not None ) and ( affiliation_value != "" ) ):
+                        
+                            # found an affiliation.  Is it the entire contents
+                            #     of graf 2?
+                            if ( affiliation_value.lower() == graf_2_lower ):
+
+                                # yes again - looks like an affiliation.  use it.
+                                my_author_affiliation = graf_2
+                
+                                # ...and we want to remove the second paragraph...
+                                grafs_to_delete_list.append( 2 )
+                                
+                                # ...and make a note.
+                                notes_message = "Removing graf 2 - graf 2 ( contents = \"" + graf_2 + "\" ) contains a known affiliation ( affiliation_value = \"" + str( affiliation_value ) + "\" ) and nothing else.  Affiliation assigned to author."
+                                notes_list.append( notes_message )
+                                
+                            else:
+                            
+                                # affiliation is not the entire contents of graf
+                                #     2.  Could be a mention in a larger
+                                #     paragraph.  Because of this, err on the
+                                #     side of caution.
+                                notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) contains a known affiliation ( affiliation_value = \"" + str( affiliation_value ) + "\" ), but also has other text.  In case it is part of a sentence, not using graf 2 as the affiliation."
+                                notes_list.append( notes_message )                                
+                                
+                            #-- END check to see if affiliation is graf 2 --#
+                            
+                        else:
+                        
+                            # note that no affiliation found in graf 2.
+                            notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) does not contain a known affiliation.  If it does contain \"detroit news\" ( contains_detroit_news = \"" + str( contains_detroit_news ) + "\" ), this could be an indicator of an affiliation variation we haven't encountered yet, or it could be that the affiliation string was in a sentence.  Since the 2nd is a possibilty, we err on the side of caution and don't use graf 2 as affiliation."
+                            notes_list.append( notes_message )
+                            
+                        #-- END check to see if affiliation found in graf 2 --#
+                                
+                        # got an affiliation?
+                        if ( ( my_author_affiliation is None ) or ( my_author_affiliation == "" ) ):
+                        
+                            # no.  ERROR.
+                            notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\"; contains \"detroit_news\"?: " + str( contains_detroit_news ) + " ) does not contain a known affiliation.  This might not be an error, but it is non-standard."
+                            
+                            # do we require an affiliation?
+                            if ( is_affiliation_required == True ):
+                            
+                                # Create message
+                                Message.create_message( notes_message,
+                                                        application_IN = self.LOGGER_NAME,
+                                                        status_IN = Message.STATUS_ERROR )
+                            
+                                # and update the status container (doesn't update other
+                                #     than to set cleanup_status to an error status).
+                                status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                                status_OUT.add_tag( self.STATUS_TAG_GRAF_2_UNKNOWN_AFFILIATION )
+                                status_OUT.add_message( notes_message )
+                                
+                            else:
+                            
+                                # is there a default?
+                                if ( ( default_affiliation is not None ) and ( default_affiliation != "" ) ):
+                                
+                                    # there is.  Use that.
+                                    my_author_affiliation = default_affiliation
+                                
+                                    # and update the status container with a tag and
+                                    #     message.
+                                    notes_message += "  Using default affiliation of " + default_affiliation + "."
+                                    status_OUT.add_tag( self.STATUS_TAG_USED_DEFAULT_AFFILIATION )
+                                    status_OUT.add_message( notes_message )
+        
+                                #-- END check to see if default.
+                            
+                            #-- END check to see if we save if no affiliation --#
+                            
+                            # add the notes message.
+                            notes_list.append( notes_message )
+        
+                        #-- END check to see if graf 2 looks like an affiliation --#
+                        
+                    else:
+                    
+                        # add a note to explain.
+                        notes_message = "cleaned author_string contained a collective byline ( \"" + author_string + "\" ), so no need to process paragraph 2 or set an author_affiliation."
+                        notes_list.append( notes_message )
+                    
+                    #-- END check to see if collective byline --#
+
+                #-- END check to see if collective byline --#
                     
                 # ! update article
                 
                 # do we update Article (if status messages, then error)?
-                if ( len( status_list_OUT ) == 0 ):
+                if ( status_OUT.is_success() == True ):
                 
-                    # yes.  first, create new author_string from name and
-                    #     affiliation
-                    my_author_string = my_author_name
-                    if ( ( my_author_affiliation is not None ) and ( my_author_affiliation != "" ) ):
-                    
-                        # append, separated by delimiter.
-                        my_author_string += " " + Article.AUTHOR_STRING_DIVIDER + " " + my_author_affiliation
-                        
-                    #-- END building author_string value --#
+                    # yes.  store author name and affiliation in article.
+                    current_article.set_author_name( my_author_name, do_rebuild_IN = False )
+                    current_article.set_author_affiliation( my_author_affiliation, do_rebuild_IN = False )
+
+                    # rebuild author_string and author_varchar.
+                    my_author_string = current_article.rebuild_author_string()
                     
                     # did this change anything?
                     if ( my_author_string != original_author_string ):
@@ -885,18 +1308,16 @@ class DTNB( LoggingHelper ):
                         notes_message = "Updated author_string from \"" + original_author_string + "\" to \"" + my_author_string + "\"."
                         notes_list.append( notes_message )
                         
+                        # And add to status info.
+                        status_OUT.add_tag( self.STATUS_TAG_UPDATED_AUTHOR_STRING )
+                        status_OUT.add_message( notes_message )
+
                     #-- END check to see if we updated author_string. --#
-                    
-                    # store values in article...
-                    current_article.author_string = my_author_string
-                    current_article.author_varchar = my_author_string
-                    current_article.author_name = my_author_name
-                    current_article.author_affiliation = my_author_affiliation
                     
                     # ...set status to "author_fixed"...
                     current_article.cleanup_status = Article.CLEANUP_STATUS_AUTHOR_FIXED
     
-                    # ...and save() changes to database?
+                    # ...save() changes to database?...
                     if ( save_changes_IN == True ):
                     
                         # save.
@@ -904,7 +1325,7 @@ class DTNB( LoggingHelper ):
                         
                     #-- END check to see if we save --#
                     
-                    # and remove paragraphs from Article_Text?
+                    # ...and remove paragraphs from Article_Text?
                     if ( ( grafs_to_delete_list is not None ) and ( len( grafs_to_delete_list ) > 0 ) ):
                         
                         # remove paragraphs...
@@ -939,7 +1360,8 @@ class DTNB( LoggingHelper ):
                 if ( ( notes_list is not None ) and ( len( notes_list ) > 0 ) ):
                 
                     # yes.  Add a note.
-                    note_string = "\n".join( notes_list )
+                    note_string = "\n- ".join( notes_list )
+                    note_string = "- " + note_string
                     
                     debug_string = "====> Notes:\n" + note_string
                     self.output_debug_message( debug_string, me )
@@ -959,7 +1381,8 @@ class DTNB( LoggingHelper ):
                 # This article has already been processed.  It won't go well
                 #     running this a second time on a given article.
                 status_message = "In " + me + ": author information has already been captured."
-                status_list_OUT.append( status_message )
+                status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+                status_OUT.add_message( status_message )
             
             #-- END check to see if already has been captured. --#
                     
@@ -967,11 +1390,13 @@ class DTNB( LoggingHelper ):
         
             # no article, can't clean.
             status_message = "In " + me + ": no article passed in, so can't clean up author information."
-            status_list_OUT.append( status_message )
+            status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.add_tag( self.STATUS_TAG_NO_ARTICLE )
+            status_OUT.add_message( status_message )
             
         #-- END check to see if article. --#
         
-        return status_list_OUT
+        return status_OUT
         
     #-- END method capture_author_info() --#
                                 
@@ -1018,55 +1443,31 @@ class DTNB( LoggingHelper ):
         '''
         
         # return reference
-        status_list_OUT = []
+        status_OUT = StatusContainer()
         
         # declare variables
         me = "clean_up_author_info"
-        debug_message = ""
         status_message = ""
+        capture_status = None
         capture_status_list = []
-        
-        # declare variables - variables to hold final values for article
-        my_author_name = ""
-        my_author_affiliation = ""
-        my_author_string = ""
-        
-        # declare variables - process control
-        notes_message = ""
-        notes_list = []
-        grafs_to_delete_list = []
-        look_for_affiliation_in_author_string = False
-        look_for_affiliation_in_graf_1 = False
         
         # declare variables - article data
         cleanup_status = ""
-        current_article_id = -1
-        author_string = ""
-        author_string_lower = ""
-        section_string = ""
-        find_string = ""
-        article_text = None
-        paragraph_list = None
-        graf_1 = ""
-        graf_1_lower = ""
-        graf_2 = ""
-        graf_2_lower = ""
         
         # declare variables - trying to fix non-standard articles
         keep_trying = True
-        original_author_string = ""
-        staff_author_string = ""
-        
-        # declare variables - look for affiliation in author_string.
-        author_string_affiliation = ""
-        contains_detroit_news = False
-        author_string_work = ""
+        retry_capture_status = None
         retry_capture_status_list = None
         
-        # comparing author_string to graf 1
-        graf_1_author_info = {}
-        graf_1_as_author_string = ""
-        found_affiliation = ""
+        # evaluate if just missing affiliation.
+        tag_count = -1
+        is_affiliation_missing = False
+        valid_affiliation = ""
+        is_valid_affiliation = False
+        
+        # init status
+        status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+        status_OUT.process_name = me
         
         # first, check to make sure we have an article.
         if ( article_IN is not None ):
@@ -1089,188 +1490,96 @@ class DTNB( LoggingHelper ):
                 
                 # first try capture_author_info(), to see if this fits the standard
                 #     pattern: graf 1 = name, graf 2 = affiliation.
-                capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN )
+                capture_status = self.capture_author_info( current_article, save_changes_IN = save_changes_IN )
+                capture_status_list = capture_status.get_message_list()
+
+                # store status
+                status_OUT.add_status_container( capture_status )
                 
                 # errors?
-                if ( len( capture_status_list ) > 0 ):
+                if ( capture_status.is_error() == True ):
     
-                    # yes - need to do more digging.
-                    keep_trying = True
-    
-                    # ! non-standard - retrieve article data
-                    current_article_id = current_article.id
-                    author_string = current_article.author_string
-                    original_author_string = author_string
-                    author_string_lower = author_string.lower()
-                    section_string = current_article.section
-                    
-                    # set up search
-                    find_string = author_string
-                    
-                    # get article text for article.
-                    article_text = current_article.article_text_set.get()
-                    
-                    # retrieve first two paragraphs
-                    paragraph_list = article_text.get_paragraph_list()
-                    
-                    # get and output paragraphs 1 and 2:
-                    graf_1 = paragraph_list[ 0 ]
-                    graf_1_lower = graf_1.lower()
-                    graf_2 = paragraph_list[ 1 ]
-                    graf_2_lower = graf_2.lower()
-                    
-                    # ! look for known anomalies
-                    # There are specific problems that occur frequently that we
-                    #     should check for.
-                    # 1) Author is "The Detroit News".  In this case, that
-                    #     string does not appear in the first paragraph, so we
-                    #     move on.
-                    # 2) Author and affiliation are in the author field. Usually
-                    #     this is accompanied by the body of the article being
-                    #     standard - the name is in the first paragraph, the
-                    #     affiliation is in the second paragraph.  Also deals
-                    #     with much rarer variation where the two are separated
-                    #     by a semi-colon (just removes all semi-colons).
-                
-                    #----------------------------------------------------------#
-                    # ! --> 1) is author_string "The Detroit News"?
-                    
-                    for staff_author_string in self.STAFF_AUTHOR_STRINGS_LIST:
-                    
-                        if ( author_string_lower == staff_author_string.lower() ):
-                    
-                            # author_string is one of the ways paper indicates
-                            #     that staff collectively wrote the story.  No
-                            #     need to keep trying to figure out author info.
-                            keep_trying = False
-                            
-                        #-- END check to see if author_string is staff --#
-                        
-                    #-- END loop over staff author strings. --#
-                    
-                    #----------------------------------------------------------#
-                    # ! --> 2) Is affiliation with author in author_string?
-                    
-                    author_string_affiliation = self.find_affiliation_in_string( author_string )
-                    if ( ( keep_trying == True )
-                        and ( author_string_affiliation is not None )
-                        and ( author_string_affiliation != "" ) ):
-                        
-                        # author affiliation is in the author_string.  Remove
-                        #     author_string_affiliation from author_string...
-                        author_string_work = author_string.replace( author_string_affiliation, "" )
+                    # yes - see if just missing affiliation.
+                    tag_count = capture_status.get_tag_count()
+                    is_affiliation_missing = capture_status.has_tag( self.STATUS_TAG_GRAF_2_UNKNOWN_AFFILIATION )
+                    if ( ( tag_count == 1 ) and ( is_affiliation_missing == True ) ):
 
-                        # also remove any semi-colons
-                        author_string_work = author_string_work.replace( ";", "" )
+                        # missing affiliation.  Try again with default?
+                        if ( ( self.default_affiliation is not None ) and ( self.default_affiliation != "" ) ):
+                        
+                            # make sure the affiliation is valid.
+                            valid_affiliation = self.find_affiliation_in_string( self.default_affiliation )
+                            if ( ( valid_affiliation is not None ) and ( valid_affiliation != "" ) ):
 
-                        # and remove white space                        
-                        author_string_work = author_string_work.strip()
+                                # retry, setting affiliation to default.
+                                retry_capture_status = self.capture_author_info( current_article, save_changes_IN = save_changes_IN, require_affiliation_IN = False, default_affiliation_IN = self.NEWSPAPER_NAME )
                         
-                        # ...assuming original_author_string is set and has not
-                        #     been altered, replace author_string...
-                        current_article.author_string = author_string_work
-                        
-                        # ...then try capture_author_info() again.
-                        retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN )
-                        
-                        # Any error messages?
-                        if ( len( retry_capture_status_list ) > 0 ):
-                        
-                            # still errors.
-                            keep_trying = True
-                            
-                        else:
-                        
-                            # no errors.  calling it good.
-                            keep_trying = False
-                            
-                        #-- END check to see if name sans affiliation worked --#
-                                                
-                    #-- END check to see if affiliation is in author string --#
+                                # errors?
+                                if ( retry_capture_status.is_error() == True ):
+                                
+                                    # not just that the affiliation was missing.  Error.
+                                    keep_trying = True
                                     
-                    #----------------------------------------------------------#
-                    # ! --> is name from graf 1 in author_string?
-
-                    if ( keep_trying == True ):
-                    
-                        # Sanity check - process graph one
-                        #     as an author string and see if it is the same as the
-                        #     author string (looking for more in paragraph 1 than just
-                        #     the name - this happens sometimes).
-                        graf_1_author_info = ArticleCoder.parse_author_string( graf_1 )
-                        graf_1_as_author_string = graf_1_author_info[ ArticleCoder.AUTHOR_INFO_AUTHOR_NAME_STRING ]
-                        
-                        # the same?
-                        if ( author_string == graf_1_as_author_string ):
-                        
-                            # exactly the same.  Did it fail because of lack of
-                            #     affiliation?
-                            retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN, require_affiliation_IN = False )
-                            
-                            # Any error messages?
-                            if ( len( retry_capture_status_list ) > 0 ):
-                            
-                                # still errors.
-                                keep_trying = True
+                                else:
+                                
+                                    # it was missing affiliation.  Set it to default.
+                                    keep_trying = False
+                                    status_OUT.add_status_container( retry_capture_status )
+                                
+                                #-- END check to see if problem was affiliation missing --#
                                 
                             else:
                             
-                                # no errors.  calling it good.
-                                keep_trying = False
-                                
-                            #-- END check to see if name sans affiliation worked --#
-                            
-                        # different capitalization?
-                        elif ( author_string_lower == graf_1_as_author_string.lower() ):
-                        
-                            # same characters, different capitalization.  This
-                            #     should have worked.  Did it fail because of
-                            #     lack of affiliation?
-                            retry_capture_status_list = self.capture_author_info( current_article, save_changes_IN = save_changes_IN, require_affiliation_IN = False )
-                            
-                            # Any error messages?
-                            if ( len( retry_capture_status_list ) > 0 ):
-                            
-                                # still errors.
+                                # default affiliation provided is unknown.
                                 keep_trying = True
-                                
-                            else:
                             
-                                # no errors.  calling it good.
-                                keep_trying = False
-                                
-                            #-- END check to see if name sans affiliation worked --#
-
-                        # see if the string from graf 1 is "in" author_string
-                        elif ( graf_1_as_author_string.lower() in author_string_lower ):
-                        
-                            # yes - so, still some other stuff in author_string?
-                            #     keep trying, but not hopeful here...
-                            keep_trying = True
-                        
+                            #-- END check to see if affiliation is valid --#
+                            
                         else:
                         
-                            # not the same.  Misspelling?  This would be a good
-                            #     point for an edit distance check...
+                            # no default affiliation.  Can't set one.  Error.
                             keep_trying = True
-                            
-                        #-- END check to see if graf 1 is just name. --#
                         
-                    #-- END check to see if we keep trying. --#
+                        #-- END check to see if default affiliation present. --#
+                        
+                    else:
                     
+                        # not just missing affiliation.  Error.
+                        keep_trying = True
+                    
+                    #-- END check to see if just missing affiliation. --#
+
                 else:
                 
                     # standard cleanup worked.
-                    status_list_OUT = capture_status_list
+                    keep_trying = False
                 
                 #-- END check to see if standard cleanup worked --#
+                
+                # set overall status based on keep_trying.
+                if ( keep_trying == True ):
+                
+                    # still problems.  Error.
+                    status_message = "In " + me + ": Unable to clean up author data.  Status stored in nested status_container_list.  Look there for more details."
+                    status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+                    status_OUT.add_message( status_message )
+                    
+                else:
+                
+                    # Success!
+                    status_message = "In " + me + ": Successfully cleaned up author data."
+                    status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+                    status_OUT.add_message( status_message )
+                    
+                #-- END check of overall status. --#
             
             else:
                         
                 # This article has already been processed.  It won't go well
                 #     running this a second time on a given article.
                 status_message = "In " + me + ": author information has already been captured."
-                status_list_OUT.append( status_message )
+                status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+                status_OUT.add_message( status_message )
             
             #-- END check to see if already cleaned up. --#
         
@@ -1278,11 +1587,12 @@ class DTNB( LoggingHelper ):
         
             # no article, can't clean.
             status_message = "In " + me + ": no article passed in, so can't clean up author information."
-            status_list_OUT.append( status_message )
+            status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.add_message( status_message )
             
         #-- END check to see if article. --#
         
-        return status_list_OUT
+        return status_OUT
         
     #-- END method clean_up_author_info() --#
                                 
@@ -1396,6 +1706,59 @@ class DTNB( LoggingHelper ):
     #-- END method fix_author_info() --#
 
 
+    def remove_affiliation_from_author_string( self, author_string_IN, *args, **kwargs ):
+
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        author_string = ""
+        author_string_affiliation = ""
+        author_string_work = None
+
+        # got an author_string_IN?
+        if ( ( author_string_IN is not None ) and ( author_string_IN != "" ) ):
+            
+            author_string = author_string_IN
+            
+            # look for known affiliations in string passed in.
+            author_string_affiliation = self.find_affiliation_in_string( author_string )
+            if ( ( author_string_affiliation is not None )
+                and ( author_string_affiliation != "" ) ):
+                        
+                # author affiliation is in the author_string.                      
+                
+                # Remove author_string_affiliation from author_string...
+                author_string_work = author_string.replace( author_string_affiliation, "" )
+
+                # ...also remove any semi-colons...
+                author_string_work = author_string_work.replace( ";", "" )
+
+                # ...and remove white space.
+                author_string_work = author_string_work.strip()
+                
+                # return this.
+                value_OUT = author_string_work
+                
+            else:
+            
+                # no affiliations found.  return what was passed in.
+                value_OUT = author_string
+            
+            #-- END check to see if affiliation in author_string --#
+            
+        else:
+        
+            # nothing passed in.  Return it.
+            value_OUT = author_string_IN
+        
+        #-- END check to see if author_string passed in. --#
+        
+        return value_OUT
+
+    #-- END method remove_affiliation_from_author_string() --#
+
+    
     def reset_analysis_variables( self ):
         
         # clear out article count variables.

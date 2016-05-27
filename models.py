@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2015 Jonathan Morgan
+Copyright 2010-2016 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -2956,7 +2956,136 @@ class Article( models.Model ):
     
     #-- END method get_article_data_for_coder() --#
     
-    
+
+    def rebuild_author_string( self, *args, **kwargs ):
+        
+        '''
+        author_string and author_varchar should just follow pattern:
+        
+            <author_name(s)> / <author_affiliation>
+            
+        If no author_name, just use author_affiliation.
+        
+        Stores the rebuilt author string value in the instance, but does not
+            save, so to persist the new value to the database, the instance will
+            need to be saved.
+        
+        Returns the rebuilt author string.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        me = "rebuild_author_string"
+        my_author_name = ""
+        my_author_affiliation = ""
+        
+        # get author name and affiliation.
+        my_author_name = self.author_name
+        my_author_affiliation = self.author_affiliation
+        
+        # got an author name?
+        if ( ( my_author_name is not None ) and ( my_author_name != "" ) ):
+        
+            # we have an author name.  start with it.
+            value_OUT = my_author_name
+            
+            # got an affiliation?
+            if ( ( my_author_affiliation is not None ) and ( my_author_affiliation != "" ) ):
+            
+                # we do.  add it on.
+                value_OUT += " " + self.AUTHOR_STRING_DIVIDER + " " + my_author_affiliation
+            
+            #-- END check to see if also have affiliation --#
+        
+        else:
+        
+            # no author name.  Just have affiliation?
+            if ( ( my_author_affiliation is not None ) and ( my_author_affiliation != "" ) ):
+            
+                # just affiliation.  Use that.
+                value_OUT = my_author_affiliation
+            
+            #-- END check to see if just affiliation --#
+        
+        #-- END check to see if author_name. --#
+        
+        # place the contents of value_OUT in author_string and author_varchar.
+        self.author_string = value_OUT
+        self.author_varchar = value_OUT
+        
+        return value_OUT
+        
+    #-- END method rebuild_author_string() --#
+
+
+    def set_author_affiliation( self, value_IN, do_rebuild_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a value to be placed in author_affiliation.  Places that value
+            in the "author_name" instance variable, then if do_rebuild_IN ==
+            True, calls rebuild_author_string().
+        Preconditions: None at this time.
+        Postconditions: Article instance is updated, but not saved.  Current
+            author_affiliation is returned.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_author_affiliation"
+        
+        # set author_affiliation
+        self.author_affiliation = value_IN
+        
+        # do we rebuild?
+        if ( do_rebuild_IN == True ):
+        
+            # yes.  Do.
+            self.rebuild_author_string()
+            
+        #-- END check to see if we rebuild. --#
+        
+        return value_OUT
+
+    #-- END method set_author_affiliation() --#
+
+
+    def set_author_name( self, value_IN, do_rebuild_IN = True, *args, **kwargs ):
+        
+        '''
+        Accepts a value to be placed in author_name.  Places that value in
+            the "author_name" instance variable, then if do_rebuild_IN == True,
+            calls rebuild_author_string().
+        Preconditions: None at this time.
+        Postconditions: Article instance is updated, but not saved.  Current
+            author_name is returned.
+        '''
+        
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_author_name"
+        
+        # set author_name
+        self.author_name = value_IN
+        
+        # do we rebuild?
+        if ( do_rebuild_IN == True ):
+        
+            # yes.  Do.
+            self.rebuild_author_string()
+            
+        #-- END check to see if we rebuild. --#
+        
+        return value_OUT
+
+    #-- END method set_author_name() --#
+
+
     def set_notes( self, text_IN = "", do_save_IN = True, do_append_to_content_IN = True, *args, **kwargs ):
         
         '''

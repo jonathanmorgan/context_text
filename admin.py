@@ -1,5 +1,5 @@
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-present (currently 2016) Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
