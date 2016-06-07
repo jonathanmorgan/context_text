@@ -56,6 +56,9 @@ from sourcenet.models import Article_Subject_Quotation
 from sourcenet.models import Article_Text
 from sourcenet.models import Person
 
+# person details
+from sourcenet.shared.person_details import PersonDetails
+
 # parent abstract class.
 from sourcenet.article_coding.article_coder import ArticleCoder
 
@@ -116,6 +119,7 @@ class ManualArticleCoder( ArticleCoder ):
     DATA_STORE_PROP_PERSON_ARRAY = "person_array"
     DATA_STORE_PROP_PERSON_TYPE = ArticleCoder.PARAM_PERSON_TYPE # "person_type"
     DATA_STORE_PROP_PERSON_NAME = ArticleCoder.PARAM_PERSON_NAME # "person_name"
+    DATA_STORE_PROP_FIXED_PERSON_NAME = ArticleCoder.PARAM_FIXED_PERSON_NAME # "fixed_person_name"
     DATA_STORE_PROP_TITLE = ArticleCoder.PARAM_TITLE             # "title"
     DATA_STORE_PROP_PERSON_ORGANIZATION = ArticleCoder.PARAM_PERSON_ORGANIZATION # "person_organization"
     DATA_STORE_PROP_QUOTE_TEXT = ArticleCoder.PARAM_QUOTE_TEXT   # "quote_text"
@@ -649,6 +653,7 @@ class ManualArticleCoder( ArticleCoder ):
         # declare variables - get current person's information.
         person_type = ""
         person_name = ""
+        fixed_person_name = ""
         title = ""
         person_organization = ""
         quote_text = ""
@@ -819,13 +824,14 @@ class ManualArticleCoder( ArticleCoder ):
                                         # retrieve person information.
                                         person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
                                         person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                        fixed_person_name = current_person.get( self.DATA_STORE_PROP_FIXED_PERSON_NAME )
                                         title = current_person.get( self.DATA_STORE_PROP_TITLE )
                                         person_organization = current_person.get( self.DATA_STORE_PROP_PERSON_ORGANIZATION )
                                         quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
                                         person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
         
                                         # set up person details
-                                        person_details = {}
+                                        person_details = PersonDetails()
                                         
                                         # store all fields from current_person.
                                         person_details.update( current_person )

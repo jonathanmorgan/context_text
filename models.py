@@ -5947,6 +5947,8 @@ class Article_Person( Abstract_Person_Parent ):
     original_person = models.ForeignKey( Person, blank = True, null = True, related_name="%(app_label)s_%(class)s_original_person_set")
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
     name = models.CharField( max_length = 255, blank = True, null = True )
+    verbatim_name = models.CharField( max_length = 255, blank = True, null = True )
+    lookup_name = models.CharField( max_length = 255, blank = True, null = True )
 
     # details on automated matching, if attempted.
     # capture match confidence - start with 1 or 0, but leave room for

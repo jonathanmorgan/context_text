@@ -337,9 +337,10 @@ Once the database tables are created, you'll want to make a django admin user at
 
     - If you are using virtualenv:
     
-        - import the `site` package in the imports at the top:
+        - import the `six` and `site` packages in the imports at the top:
         
                 import site
+                import six
                 
         - Just after the code where you added your project's path to the PYTHONPATH, add the `site-packages` of the desired virtualenv:
                 
@@ -351,55 +352,201 @@ Once the database tables are created, you'll want to make a django admin user at
             - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
             - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
 
-        - Then, just after the line where the `DJANGO_SETTINGS_MODULE` environment variable is set, activate your virtualenv:
+        - Then, just after the line where the `DJANGO_SETTINGS_MODULE` environment variable is set, activate your virtualenv.  First, get the path to your activate_this.py file:
         
                 # Activate your virtualenv
-                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/bin/activate_this.py" )
-                execfile( activate_env, dict( __file__ = activate_env ) )
-        
+                
+                # First get path to activate_this.py
+                activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/bin/activate_this.py" )
+
             WHERE (again):
 
             - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
             - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
 
-        - assuming you named your virtualenv "sourcenet" and your django project "research", here's how it all should look:
-    
-                """
-                WSGI config for research project.
-                
-                It exposes the WSGI callable as a module-level variable named ``application``.
-                
-                For more information on this file, see
-                https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
-                """
-                
-                # imports
-                import os
-                import sys
-                import site
-                from django.core.wsgi import get_wsgi_application
-                                
-                # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
-                
-                # Add the app's directory to the PYTHONPATH
-                sys.path.append( '<path_to_django_project_parent>/research' )
-                
-                # Set DJANGO_SETTINGS_MODULE
-                os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
-                
-                # Activate your virtualenv
-                activate_env = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
-                execfile( activate_env, dict( __file__ = activate_env ) )
-                
-                # load django application
-                application = get_wsgi_application()
-                
-            again, make sure to replace:
+            Then, execute the code in that file:
             
-            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper `.virtualenvs` folder lives (usually your user's home directory).
-            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
+            - Python 2:
+        
+                    execfile( activate_env, dict( __file__ = activate_env ) )
+        
+            - Python 3:
+            
+                    # open and execute file manually... cuz Python 3.
+                    with open( activate_this ) as activate_this_file:
+                        
+                        # compile code
+                        activate_code = compile( activate_this_file.read(), activate_this, 'exec')
+                        
+                        # run the code
+                        exec( activate_code, dict( __file__ = activate_this ) )
+                    
+                    #-- END open( activate_this ) --#
 
+        - assuming you named your virtualenv "sourcenet" and your django project "research", below are examples of how it all should look.
+        
+            - for Python 2:
+            
+                    """
+                    WSGI config for research project.
+                    
+                    It exposes the WSGI callable as a module-level variable named ``application``.
+                    
+                    For more information on this file, see
+                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                    """
+                    
+                    '''
+                    # Uncomment this and comment out the rest of the file when getting:
+                    #    "RuntimeError: populate() isn't reentrant"
+                    import os
+                    def application(environ, start_response):
+                        if environ['mod_wsgi.process_group'] != '': 
+                            import signal
+                            os.kill(os.getpid(), signal.SIGINT)
+                        return ["killed"]
+                    '''
+                    
+                    # import
+                    import os
+                    import sys
+                    import site
+                    
+                    # Add the site-packages of the desired virtualenv
+                    site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                    
+                    # Add the app's directory to the PYTHONPATH
+                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    
+                    # Set DJANGO_SETTINGS_MODULE
+                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
+
+                    # Activate your virtualenv
+                    activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                    execfile( activate_this, dict( __file__ = activate_this ) )
+                    
+                    from django.core.wsgi import get_wsgi_application
+                    application = get_wsgi_application()
+            
+            - for Python 3:
+
+                    """
+                    WSGI config for research project.
+                    
+                    It exposes the WSGI callable as a module-level variable named ``application``.
+                    
+                    For more information on this file, see
+                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                    """
+                    
+                    '''
+                    # Uncomment this and comment out the rest of the file when getting:
+                    #    "RuntimeError: populate() isn't reentrant"
+                    import os
+                    def application(environ, start_response):
+                        if environ['mod_wsgi.process_group'] != '': 
+                            import signal
+                            os.kill(os.getpid(), signal.SIGINT)
+                        return ["killed"]
+                    '''
+                    
+                    # import
+                    import os
+                    import sys
+                    import site
+                    
+                    # Add the site-packages of the desired virtualenv
+                    site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/lib/python3.5/site-packages' )
+                    
+                    # Add the app's directory to the PYTHONPATH
+                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    
+                    # Set DJANGO_SETTINGS_MODULE
+                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
+
+                    # Activate your virtualenv
+                    activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+
+                    # open and execute file manually... cuz Python 3.
+                    with open( activate_this ) as activate_this_file:
+                        
+                        # compile code
+                        activate_code = compile( activate_this_file.read(), activate_this, 'exec')
+                        
+                        # run the code
+                        exec( activate_code, dict( __file__ = activate_this ) )
+                    
+                    #-- END open( activate_this ) --#
+                    
+                    from django.core.wsgi import get_wsgi_application
+                    application = get_wsgi_application()
+            
+            - and a bonus one that works with both Pythons 2 and 3 (the package `six` must be installed in your system's Python, not just in a virtualenv):
+        
+                    """
+                    WSGI config for research project.
+                    
+                    It exposes the WSGI callable as a module-level variable named ``application``.
+                    
+                    For more information on this file, see
+                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                    """
+                    
+                    # imports
+                    import os
+                    import sys
+                    import site
+                    import six
+                    from django.core.wsgi import get_wsgi_application
+                                    
+                    # Add the app's directory to the PYTHONPATH
+                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    
+                    # Set DJANGO_SETTINGS_MODULE
+                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
+                    
+                    # Activate your virtualenv - controlled by which mod_wsgi is
+                    #     installed - compiled for Python 2 or for Python 3.
+                    if ( six.PY2 == True ):
+                    
+                        # Add the site-packages of the desired virtualenv
+                        site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet-dev/local/lib/python2.7/site-packages' )
+                    
+                        # Activate your virtualenv
+                        activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet-dev/bin/activate_this.py" )
+                    
+                        # in Python 2, just use execfile()
+                        execfile( activate_this, dict( __file__ = activate_this ) )
+                        
+                    elif ( six.PY3 == True ):
+                    
+                        # Add the site-packages of the desired virtualenv
+                        site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet3/lib/python3.5/site-packages' )
+                    
+                        # Activate your virtualenv
+                        activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet3/bin/activate_this.py" )
+                    
+                        # open and execute file manually... cuz Python 3.
+                        with open( activate_this ) as activate_this_file:
+                            
+                            # compile code
+                            activate_code = compile( activate_this_file.read(), activate_this, 'exec')
+                            
+                            # run the code
+                            exec( activate_code, dict( __file__ = activate_this ) )
+                        
+                        #-- END open( activate_this ) --#
+                        
+                    #-- END code to deal with execfile() being removed from python 2 --#
+                    
+                    # load django application
+                    application = get_wsgi_application()
+
+            If you use any of these samples, make sure to replace:
+
+            - <.virtualenvs_parent_dir> with the full path to the directory in which your virtualenvwrapper .virtualenvs folder lives (usually your user's home directory).
+            - <path_to_django_project_parent> with the full path to the directory in which you installed your django project.
+                    
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
         WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages 

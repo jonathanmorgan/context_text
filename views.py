@@ -10,6 +10,11 @@ sourcenet is free software: you can redistribute it and/or modify it under the t
 sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+
+Configuration properties for it are stored in django's admins, in the
+   django_config application.  The properties for the article_code view are stored in Application
+   "sourcenet-UI-article-code":
+   - include_fix_person_name - boolean flag, if true outputs additional field to correct name text from article.
 '''
 
 #===============================================================================
@@ -54,6 +59,25 @@ from django.shortcuts import render
 
 # import django code for csrf security stuff.
 from django.template.context_processors import csrf
+
+# django config, for pulling in any configuration from database.
+
+# import basic django configuration application.
+from django_config.models import Config_Property
+
+'''   
+Example of getting properties from django_config:
+
+# get settings from django_config.
+email_smtp_server_host = Config_Property.get_property_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_SMTP_HOST )
+email_smtp_server_port = Config_Property.get_property_int_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_SMTP_PORT, -1 )
+email_smtp_server_username = Config_Property.get_property_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_SMTP_USERNAME, "" )
+email_smtp_server_password = Config_Property.get_property_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_SMTP_PASSWORD, "" )
+use_SSL = Config_Property.get_property_boolean_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_SMTP_USE_SSL, False )
+email_from_address = Config_Property.get_property_value( Issue.CONFIG_APPLICATION, Issue.CONFIG_PROP_FROM_EMAIL )
+
+'''
+
 
 # python_utilities - django view helper
 from python_utilities.django_utils.django_view_helper import DjangoViewHelper
@@ -100,6 +124,17 @@ from sourcenet.article_coding.manual_coding.manual_article_coder import ManualAr
 #================================================================================
 # ! ==> Shared variables and functions
 #================================================================================
+
+# configuration properties
+# article_code view
+CONFIG_APPLICATION_ARTICLE_CODE = "sourcenet-UI-article-code"
+    
+# article_code config property names.
+CONFIG_PROP_DO_OUTPUT_TABLE_HTML = "do_output_table_html"
+CONFIG_PROP_INCLUDE_FIX_PERSON_NAME = "include_fix_person_name"
+CONFIG_PROP_INCLUDE_TITLE_FIELD = "include_title_field"
+CONFIG_PROP_INCLUDE_ORGANIZATION_FIELD = "include_organization_field"
+CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT = "include_find_in_article_text"
 
 # Form input names
 INPUT_NAME_ARTICLE_ID = "article_id"
@@ -495,6 +530,13 @@ def article_code( request_IN ):
     logger_name = ""
     debug_message = ""
     
+    # declare variables - config properties
+    config_do_output_table_html = False
+    config_include_fix_person_name = False
+    config_include_title_field = False
+    config_include_organization_field = False
+    config_include_find_in_article_text = False
+    
     # declare variables - exception handling
     exception_message = ""
     is_exception = False
@@ -551,6 +593,13 @@ def article_code( request_IN ):
 
     # set logger_name
     logger_name = "sourcenet.views." + me
+    
+    # ! load configuration
+    config_do_output_table_html = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_DO_OUTPUT_TABLE_HTML, False )
+    config_include_fix_person_name = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_INCLUDE_FIX_PERSON_NAME, False )
+    config_include_title_field = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_INCLUDE_TITLE_FIELD, False )
+    config_include_organization_field = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_INCLUDE_ORGANIZATION_FIELD, True )
+    config_include_find_in_article_text = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT, False )
 
     # initialize response dictionary
     response_dictionary = {}
@@ -566,7 +615,7 @@ def article_code( request_IN ):
     # response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
     response_dictionary[ 'existing_data_store_json' ] = ""
     response_dictionary[ 'page_status_message_list' ] = page_status_message_list
-
+    
     # create article coder and place in response so we can access constants-ish.
     manual_article_coder = ManualArticleCoder()
     response_dictionary[ 'manual_article_coder' ] = manual_article_coder
@@ -959,11 +1008,13 @@ def article_code( request_IN ):
                     response_dictionary[ 'person_lookup_form' ] = person_lookup_form
                     response_dictionary[ 'coding_submit_form' ] = coding_submit_form
                     response_dictionary[ 'base_include_django_ajax_selects' ] = True
-                    response_dictionary[ 'do_output_table_html' ] = False
-                    response_dictionary[ 'include_fix_person_name' ] = False
-                    response_dictionary[ 'include_title_field' ] = False
-                    response_dictionary[ 'include_organization_field' ] = True
-                    response_dictionary[ 'include_find_in_article_text' ] = False
+                    
+                    # loaded from config
+                    response_dictionary[ 'do_output_table_html' ] = config_do_output_table_html
+                    response_dictionary[ 'include_fix_person_name' ] = config_include_fix_person_name
+                    response_dictionary[ 'include_title_field' ] = config_include_title_field
+                    response_dictionary[ 'include_organization_field' ] = config_include_organization_field
+                    response_dictionary[ 'include_find_in_article_text' ] = config_include_find_in_article_text
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()

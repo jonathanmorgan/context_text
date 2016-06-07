@@ -37,6 +37,7 @@ from sourcenet.models import Article
 from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
+from sourcenet.shared.person_details import PersonDetails
 from sourcenet.tests.test_helper import TestHelper
 
 
@@ -100,7 +101,7 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_person_name = ""
         lookup_title = ""
         lookup_organization_string = ""
-        test_person_details = {}
+        test_person_details = None
         test_article_author = None
         test_article_subject = None
         test_person = None
@@ -122,7 +123,8 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_title = "Hancock Preparatory School principal, DPS"
         
         # set up person details
-        test_person_details = {}
+        test_person_details = PersonDetails()
+        test_person_details[ ArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
         test_person_details[ ArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
         test_person_details[ ArticleCoder.PARAM_TITLE ] = lookup_title
                 
@@ -175,7 +177,8 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_organization_string = "test_org"
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
         person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
         #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
@@ -234,7 +237,8 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_organization_string = "test_org"
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
         person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
         #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
@@ -287,7 +291,8 @@ class ArticleCoderTest( django.test.TestCase ):
         lookup_organization_string = "test_org"
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
         person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
         #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
@@ -345,7 +350,7 @@ class ArticleCoderTest( django.test.TestCase ):
         debug_string = ""
         error_message = ""
         test_author_string = ""
-        test_author_info = {}
+        test_author_info = None
         test_author_name_string = ""
         test_author_name_list = []
         test_author_affiliation = ""
@@ -484,7 +489,7 @@ class ArticleCoderTest( django.test.TestCase ):
         title = ""
         lookup_organization_string = ""
         person_id = -1
-        person_details = {}
+        person_details = None
         test_article_author = None
         test_person = None
         test_person_id = -1
@@ -524,7 +529,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         person_details[ ManualArticleCoder.PARAM_TITLE ] = title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
@@ -582,7 +588,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         person_details[ ManualArticleCoder.PARAM_TITLE ] = title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
@@ -654,7 +661,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         person_details[ ManualArticleCoder.PARAM_TITLE ] = title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
@@ -724,7 +732,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = -1
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         person_details[ ManualArticleCoder.PARAM_TITLE ] = title
         person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
@@ -1029,7 +1038,7 @@ class ArticleCoderTest( django.test.TestCase ):
         person_name = ""
         title = ""
         person_id = -1
-        person_details = {}
+        person_details = None
         test_article_subject = None
         test_person = None
         test_person_id = -1
@@ -1068,7 +1077,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         
         # got a title?
@@ -1138,7 +1148,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         
         # got a title?
@@ -1215,7 +1226,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = 1031
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         
         # got a title?
@@ -1290,7 +1302,8 @@ class ArticleCoderTest( django.test.TestCase ):
         person_id = -1
 
         # set up person details
-        person_details = {}
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = person_name
         person_details[ ManualArticleCoder.PARAM_NEWSPAPER_INSTANCE ] = test_article.newspaper
         
         # got a title?

@@ -55,6 +55,9 @@ from sourcenet.models import Article_Subject_Quotation
 from sourcenet.models import Article_Text
 from sourcenet.models import Person
 
+# person details
+from sourcenet.shared.person_details import PersonDetails
+
 # parent abstract class.
 from sourcenet.article_coding.article_coder import ArticleCoder
 
@@ -987,17 +990,6 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         current_oc_URI = None
         current_person_json = None
         
-        # person processing variables.
-        person_counter = -1
-        person_URI = ""
-        person_json = None
-        person_name = ""
-        person_details_dict = {}
-        source_person = None
-        article_source_set = None
-        article_source_qs = None
-        article_source_count = -1
-
         # get logger
         my_logger = self.get_logger()
         
@@ -1639,7 +1631,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         # declare variables - person lookup
         person_name = ""
         article_subject = None
-        person_details_dict = {}
+        my_person_details = None
         subject_person = None
         
         # mention processing variables.
@@ -1700,16 +1692,17 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                 # try looking up source just like we look up authors.
     
                 # prepare person details.
-                person_details_dict = {}
-                person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
-                person_details_dict[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
-                person_details_dict[ self.PARAM_EXTERNAL_UUID ] = person_URI
-                person_details_dict[ self.PARAM_EXTERNAL_UUID_SOURCE ] = my_coder_type
-                person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_coder_type
+                my_person_details = PersonDetails()
+                my_person_details[ self.PARAM_PERSON_NAME ] = person_name
+                my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
+                my_person_details[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
+                my_person_details[ self.PARAM_EXTERNAL_UUID ] = person_URI
+                my_person_details[ self.PARAM_EXTERNAL_UUID_SOURCE ] = my_coder_type
+                my_person_details[ self.PARAM_CAPTURE_METHOD ] = my_coder_type
                 
                 # call process_subject_name() - returns person, confidence
                 #    score, and match status inside Article_Subject instance.
-                article_subject = self.process_subject_name( article_data_IN, person_name, person_details_IN = person_details_dict )
+                article_subject = self.process_subject_name( article_data_IN, person_name, person_details_IN = my_person_details )
 
                 # get results from article_subject
                 subject_person = article_subject.person

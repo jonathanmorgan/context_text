@@ -61,6 +61,7 @@ from sourcenet.models import Article_Text
 from sourcenet.models import Person
 from sourcenet.models import Person_External_UUID
 from sourcenet.models import Person_Newspaper
+from sourcenet.shared.person_details import PersonDetails
 from sourcenet.shared.sourcenet_base import SourcenetBase
 
 #================================================================================
@@ -111,21 +112,22 @@ class ArticleCoder( BasicRateLimited ):
     REGEX_CONTAINS_AND = re.compile( r'\s+AND\s+', re.IGNORECASE )
     
     # PARAMS for update_person()
-    PARAM_PERSON_ID = "person_id"
-    PARAM_PERSON_NAME = "person_name"
-    PARAM_PERSON_TYPE = "person_type"
-    PARAM_TITLE = "title"
-    PARAM_PERSON_ORGANIZATION = "person_organization"
-    PARAM_QUOTE_TEXT = "quote_text"
-    PARAM_NEWSPAPER_INSTANCE = "newspaper_instance"
-    PARAM_NEWSPAPER_NOTES = "newspaper_notes"
-    PARAM_EXTERNAL_UUID_NAME = "external_uuid_name"
-    PARAM_EXTERNAL_UUID = "external_uuid"
-    PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
-    PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
-    PARAM_CAPTURE_METHOD = "capture_method"
-    PARAM_SUBJECT_TYPE = "subject_type"
-    PARAM_CODER_TYPE = "coder_type"
+    PARAM_PERSON_ID = PersonDetails.PROP_NAME_PERSON_ID
+    PARAM_PERSON_NAME = PersonDetails.PROP_NAME_PERSON_NAME
+    PARAM_FIXED_PERSON_NAME = PersonDetails.PROP_NAME_FIXED_PERSON_NAME
+    PARAM_PERSON_TYPE = PersonDetails.PROP_NAME_PERSON_TYPE
+    PARAM_TITLE = PersonDetails.PROP_NAME_TITLE
+    PARAM_PERSON_ORGANIZATION = PersonDetails.PROP_NAME_PERSON_ORGANIZATION
+    PARAM_QUOTE_TEXT = PersonDetails.PROP_NAME_QUOTE_TEXT
+    PARAM_NEWSPAPER_INSTANCE = PersonDetails.PROP_NAME_NEWSPAPER_INSTANCE
+    PARAM_NEWSPAPER_NOTES = PersonDetails.PROP_NAME_NEWSPAPER_NOTES
+    PARAM_EXTERNAL_UUID_NAME = PersonDetails.PROP_NAME_EXTERNAL_UUID_NAME
+    PARAM_EXTERNAL_UUID = PersonDetails.PROP_NAME_EXTERNAL_UUID
+    PARAM_EXTERNAL_UUID_SOURCE = PersonDetails.PROP_NAME_EXTERNAL_UUID_SOURCE
+    PARAM_EXTERNAL_UUID_NOTES = PersonDetails.PROP_NAME_EXTERNAL_UUID_NOTES
+    PARAM_CAPTURE_METHOD = PersonDetails.PROP_NAME_CAPTURE_METHOD
+    PARAM_SUBJECT_TYPE = PersonDetails.PROP_NAME_SUBJECT_TYPE
+    PARAM_CODER_TYPE = PersonDetails.PROP_NAME_CODER_TYPE
 
     # author info properties
     AUTHOR_INFO_AUTHOR_NAME_STRING = "author_name_string"
@@ -751,7 +753,7 @@ class ArticleCoder( BasicRateLimited ):
     def lookup_article_data( self, article_IN, user_IN, article_data_id_IN = None ):
         
         '''
-        Accepts article and user optional Article_Data ID.  Tries to retrieve
+        Accepts article, user and optional Article_Data ID.  Tries to retrieve
             Article_Data for article-user pair.  If multiple found and ID passed
             in, then tried to filter on that ID to get a single match.
            
@@ -973,6 +975,7 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables.
         me = "lookup_calc_confidence"
+        my_person_details = None
         newspaper_IN = None
         uuid_IN = ""
         person_id = -1
@@ -989,9 +992,12 @@ class ArticleCoder( BasicRateLimited ):
         # got a person?
         if ( person_IN is not None ):
         
+            # make sure we have PersonDetails instance.
+            my_person_details = PersonDetails.get_instance( person_details_IN )
+        
             # load up incoming things we care about here.
-            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
-            uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
+            newspaper_IN = my_person_details.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            uuid_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, None )
             person_id = person_IN.id
         
             # start confidence at 1
@@ -1095,7 +1101,7 @@ class ArticleCoder( BasicRateLimited ):
                        full_name_IN,
                        create_if_no_match_IN = True,
                        update_person_IN = True,
-                       person_details_IN = {},
+                       person_details_IN = PersonDetails(),
                        on_multiple_match_try_exact_lookup_IN = False,
                        on_multiple_create_new_person_IN = True,
                        *args,
@@ -1152,6 +1158,7 @@ class ArticleCoder( BasicRateLimited ):
         uuid_IN = ""
         person_id = -1
         person_instance = None
+        my_person_details = None
         lookup_status = ""
         standardized_full_name = ""
         full_name_qs = None
@@ -1190,10 +1197,33 @@ class ArticleCoder( BasicRateLimited ):
         # got a return reference?
         if ( article_person_IN is not None ):
 
+            # prepare person details.  Got a dictionary passed in?
+            if ( ( person_details_IN is not None )
+                 and ( isinstance( person_details_IN, dict ) == True )
+                 and ( len( person_details_IN ) > 0 ) ):
+                 
+                # details passed in - use them.
+                
+                # make sure we have PersonDetails instance, not just a dict(ionary).
+                my_person_details = PersonDetails.get_instance( person_details_IN )
+
+                debug_message = "--- In " + me + ": processing \"" + full_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
+                self.output_debug( debug_message )
+    
+            else:
+            
+                # nothing passed in - create new dictionary.
+                my_person_details = PersonDetails()
+            
+                debug_message = "--- In " + me + ": processing \"" + full_name_IN + "\", NO person_details_IN."
+                self.output_debug( debug_message )
+    
+            #-- END check to see if dictionary passed in. --#
+
             # load up incoming things we care about here.
-            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
-            uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
-            person_id = person_details_IN.get( self.PARAM_PERSON_ID, -1 )
+            newspaper_IN = my_person_details.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            uuid_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, None )
+            person_id = my_person_details.get( self.PARAM_PERSON_ID, -1 )
         
             # and we'll use the instance passed in as the return reference.
             instance_OUT = article_person_IN
@@ -1613,7 +1643,7 @@ class ArticleCoder( BasicRateLimited ):
                 elif ( match_status == self.MATCH_STATUS_SINGLE ):
                 
                     #  use method to calculate confidence
-                    confidence_level = self.lookup_calc_confidence( person_instance, person_details_IN )
+                    confidence_level = self.lookup_calc_confidence( person_instance, my_person_details )
                 
                 else:
                 
@@ -1640,10 +1670,10 @@ class ArticleCoder( BasicRateLimited ):
                     if ( create_if_no_match_IN == True ):
                 
                         # ! INSERT new person
-                        self.output_debug( "INSERT PERSON - person_details_IN: " + str( person_details_IN ), me, "========>" )
+                        self.output_debug( "INSERT PERSON - person_details_IN: " + str( my_person_details ), me, "========>" )
     
                         # no ID.  See if there is a capture_method.
-                        capture_method = person_details_IN.get( self.PARAM_CAPTURE_METHOD, None )
+                        capture_method = my_person_details.get( self.PARAM_CAPTURE_METHOD, None )
                         if ( ( capture_method is not None ) and ( capture_method != "" ) ):
                         
                             # got a capture method.  Add it to person instance.
@@ -1656,7 +1686,7 @@ class ArticleCoder( BasicRateLimited ):
 
                         # call update_person() to set title, organization,
                         #     related records.
-                        person_instance = self.update_person( person_instance, person_details_IN, allow_empty_IN = True )
+                        person_instance = self.update_person( person_instance, my_person_details, allow_empty_IN = True )
                                                 
                         self.output_debug( "saved new person - " + str( person_instance ), me, "========>" )
                         
@@ -1672,10 +1702,10 @@ class ArticleCoder( BasicRateLimited ):
                     if ( ( update_person_IN is not None ) and ( update_person_IN == True ) ):
                     
                         # ! UPDATE existing person
-                        self.output_debug( "UPDATE PERSON - person_details_IN: " + str( person_details_IN ), me, "========>" )
+                        self.output_debug( "UPDATE PERSON - my_person_details: " + str( my_person_details ), me, "========>" )
     
                         # yes.
-                        person_instance = self.update_person( person_instance, person_details_IN )
+                        person_instance = self.update_person( person_instance, my_person_details )
     
                     #-- END check to see if we update person --#
                     
@@ -1827,8 +1857,10 @@ class ArticleCoder( BasicRateLimited ):
         my_logger = None
         debug_message = ""
         author_name = ""
+        corrected_author_name = ""
+        verbatim_author_name = ""
         author_organization = ""
-        person_details_dict = {}
+        my_person_details = None
         author_person = None
         author_person_match_list = []
         article_author_count = -1
@@ -1844,25 +1876,45 @@ class ArticleCoder( BasicRateLimited ):
         # get logger
         my_logger = self.get_logger()
         
+        # initialize author_name variables.
+        author_name = author_name_IN
+        corrected_author_name = author_name
+        verbatim_author_name = author_name
+
         # prepare person details.  Got a dictionary passed in?
         if ( ( person_details_IN is not None )
              and ( isinstance( person_details_IN, dict ) == True )
              and ( len( person_details_IN ) > 0 ) ):
              
             # details passed in - use them.
-            person_details_dict = person_details_IN
+            
+            # make sure we have PersonDetails instance, not just a dict(ionary).
+            my_person_details = PersonDetails.get_instance( person_details_IN )
             
             # got person details.  Retrieve input values.
-            author_organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
-            author_person_id_IN = person_details_dict.get( self.PARAM_PERSON_ID, None )
+            author_organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
+            author_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
+            
+            # see if corrected_author_name different from author name passed in.
+            corrected_author_name = my_person_details.get_corrected_person_name()
+            if ( ( corrected_author_name is not None ) and ( corrected_author_name != "" ) and ( corrected_author_name != author_name ) ):
+            
+                # there is a corrected author name.  Use it.
+                verbatim_author_name = author_name
+                author_name = corrected_author_name
+
+                debug_message = "--- In " + me + ": processing \"" + str( author_name_IN ) + "\", FOUND corrected author name ( \"" + str( corrected_author_name ) + "\" ) in person_details_IN: " + str( my_person_details )
+                my_logger.debug( debug_message )
+
+            #-- END check to see if corrected author name we aren't using. --#
         
-            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", FOUND person_details_IN: " + str( person_details_dict )
+            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
             my_logger.debug( debug_message )
 
         else:
         
             # nothing passed in - create new dictionary.
-            person_details_dict = {}
+            my_person_details = PersonDetails()
         
             debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", NO person_details_IN."
             my_logger.debug( debug_message )
@@ -1875,9 +1927,6 @@ class ArticleCoder( BasicRateLimited ):
         # got Article_Data instance?
         if ( article_data_IN is not None ):
         
-            # get author_name
-            author_name = author_name_IN
-
             # got an author name or author person ID?
             if ( ( ( author_name is not None ) and ( author_name != "" ) )
                 or ( ( author_person_id_IN is not None ) and ( author_person_id_IN != "" ) and ( author_person_id_IN > 0 ) ) ):
@@ -1895,18 +1944,18 @@ class ArticleCoder( BasicRateLimited ):
                 # prepare person details.
                 
                 # newspaper instance - only add if key not already in dictionary.
-                if self.PARAM_NEWSPAPER_INSTANCE not in person_details_dict:
+                if self.PARAM_NEWSPAPER_INSTANCE not in my_person_details:
                 
                     # not there - add it.
-                    person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+                    my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
                     
                 #-- END check to see if newspaper instance already in dict --#
 
                 # capture method - only add if key not already in dictionary.
-                if self.PARAM_CAPTURE_METHOD not in person_details_dict:
+                if self.PARAM_CAPTURE_METHOD not in my_person_details:
                 
                     # not there - add it.
-                    person_details_dict[ self.PARAM_CAPTURE_METHOD ] = my_capture_method
+                    my_person_details[ self.PARAM_CAPTURE_METHOD ] = my_capture_method
                     
                 #-- END check to see if capture method already in dict --#
                 
@@ -1932,19 +1981,22 @@ class ArticleCoder( BasicRateLimited ):
                                                      author_name,
                                                      create_if_no_match_IN = True,
                                                      update_person_IN = True,
-                                                     person_details_IN = person_details_dict )
+                                                     person_details_IN = my_person_details )
 
                 # retrieve information from Article_Author
                 author_person = article_author.person
                 author_person_match_list = article_author.person_match_list  # list of Person instances
 
                 # got a person?
-                if ( author_person ):
+                if ( author_person is not None ):
                 
                     # Now, we need to deal with Article_Author instance.
                     #    First, see if there already is one for this
                     #    name.  If so, do nothing.  If not, make one.
-                    article_author_qs = article_data_IN.article_author_set.filter( person = author_person )
+                    
+                    # get authors
+                    article_author_qs = article_data_IN.article_author_set.all()
+                    article_author_qs = article_author_qs.filter( person = author_person )
                     
                     # got anything?
                     article_author_count = article_author_qs.count()
@@ -1953,14 +2005,22 @@ class ArticleCoder( BasicRateLimited ):
                         # ! INSERT new Article_Author
                         # no - add - including organization string.
 
-                        # use article_author already created above.
+                        # use article_author already created above for call to
+                        #     lookup_person().
                         #article_author = Article_Author()
+
+                        # populate Article_Author instance
                         article_author.article_data = article_data_IN
                         article_author.person = author_person
                         article_author.set_organization_string( author_organization, do_save_IN = False )
                         article_author.capture_method = my_capture_method
                         article_author.name = author_name
-                        
+                        article_author.verbatim_name = verbatim_author_name
+                        article_author.lookup_name = author_name
+
+                        # confidence level set in lookup_person() method.
+                        #article_subject.match_confidence_level = 1.0
+                                
                         # save, and as part of save, record alternate matches.
                         article_author.save()
                         
@@ -1985,6 +2045,8 @@ class ArticleCoder( BasicRateLimited ):
                         
                             # they are different.  Replace.
                             article_author.name = author_name
+                            article_author.verbatim_name = verbatim_author_name
+                            article_author.lookup_name = author_name
                         
                             # we need to save.
                             do_save_updates = True
@@ -2766,7 +2828,8 @@ class ArticleCoder( BasicRateLimited ):
                     for author_name in author_name_list:
                         
                         # call process_author_name() to deal with author.
-                        person_details = {}
+                        person_details = PersonDetails()
+                        person_details[ self.PARAM_PERSON_NAME ] = author_name
                         person_details[ self.PARAM_PERSON_ORGANIZATION ] = author_organization
                         person_details[ self.PARAM_TITLE ] = author_organization
                         article_author_instance = self.process_author_name( article_data_IN, author_name, person_details_IN = person_details )
@@ -3244,10 +3307,12 @@ class ArticleCoder( BasicRateLimited ):
         debug_message = ""
         article_subject = None
         person_name = ""
+        corrected_person_name = ""
+        verbatim_person_name = ""
         my_capture_method = ""
 
         # declare variable - set up person details
-        person_details_dict = {}
+        my_person_details = None
         current_key = ""
         current_value = ""
 
@@ -3268,34 +3333,60 @@ class ArticleCoder( BasicRateLimited ):
         current_article_subject_mention = None
         my_article = None
         
+        # get logger
+        my_logger = self.get_logger()
+        
+        # initialize subject name variables
+        person_name = subject_name_IN
+        corrected_person_name = person_name
+        verbatim_person_name = person_name
+
         # person details - Got a dictionary passed in?
         if ( ( person_details_IN is not None )
              and ( isinstance( person_details_IN, dict ) == True )
              and ( len( person_details_IN ) > 0 ) ):
              
             # details passed in - use them.
-            person_details_dict = person_details_IN
+            
+            # Make sure we have PersonDetails instance, not just a dict(ionary).
+            my_person_details = PersonDetails.get_instance( person_details_IN )
             
             # got person details.  Retrieve input values.
-            title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
-            organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
-            subject_UUID_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID, "" )
-            subject_UUID_name_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
-            subject_UUID_source_IN = person_details_dict.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
-            coder_type_IN = person_details_dict.get( self.PARAM_CAPTURE_METHOD, "" )
-            subject_person_id_IN = person_details_dict.get( self.PARAM_PERSON_ID, None )
-            subject_type_IN = person_details_dict.get( self.PARAM_SUBJECT_TYPE, None )
+            title_IN = my_person_details.get( self.PARAM_TITLE, "" )
+            organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
+            subject_UUID_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, "" )
+            subject_UUID_name_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
+            subject_UUID_source_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
+            coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, "" )
+            subject_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
+            subject_type_IN = my_person_details.get( self.PARAM_SUBJECT_TYPE, None )
             
+            # see if corrected_person_name different from subject name passed in.
+            corrected_person_name = my_person_details.get_corrected_person_name()
+            if ( ( corrected_person_name is not None ) and ( corrected_person_name != "" ) and ( corrected_person_name != person_name ) ):
+            
+                # there is a corrected subject name.  Use it.
+                verbatim_person_name = person_name
+                person_name = corrected_person_name
+
+                debug_message = "--- In " + me + ": processing \"" + str( subject_name_IN ) + "\", FOUND corrected subject name ( \"" + str( corrected_person_name)  + "\" ) in person_details_IN: " + str( my_person_details )
+                my_logger.debug( debug_message )
+
+            #-- END check to see if corrected author name we aren't using. --#
+        
+            debug_message = "--- In " + me + ": processing \"" + subject_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
+            my_logger.debug( debug_message )
+
         else:
         
-            # nothing passed in - create new dictionary.
-            person_details_dict = {}
+            # nothing passed in - create new PersonDetails.
+            my_person_details = PersonDetails()
             
+            debug_message = "--- In " + me + ": processing \"" + subject_name_IN + "\", NO person_details_IN."
+            my_logger.debug( debug_message )
+
         #-- END check to see if dictionary passed in. --#
                 
-        # get logger
-        my_logger = self.get_logger()
-        
         # make empty article subject to work with.
         article_subject = Article_Subject()
         article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
@@ -3306,9 +3397,6 @@ class ArticleCoder( BasicRateLimited ):
             # get article
             my_article = article_data_IN.article
             
-            # get subject name
-            person_name = subject_name_IN
-
             # got a subject name or subject person ID?
             if ( ( ( person_name is not None )
                    and ( person_name != "" ) )
@@ -3335,26 +3423,26 @@ class ArticleCoder( BasicRateLimited ):
                 # ! person details
                 #--------------------------------------------------------------#
                 
-                # prepare person_details_dict
+                # prepare my_person_details
 
                 # newspaper instance - only add if key not already in dictionary.
-                if self.PARAM_NEWSPAPER_INSTANCE not in person_details_dict:
+                if self.PARAM_NEWSPAPER_INSTANCE not in my_person_details:
                 
                     # not there - add it.
-                    person_details_dict[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+                    my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
                     
                 #-- END check to see if newspaper instance already in dict --#
                 
                 # capture method - only add if key not already in dictionary.
                 current_key = self.PARAM_CAPTURE_METHOD
                 current_value = my_capture_method
-                if current_key not in person_details_dict:
+                if current_key not in my_person_details:
                 
                     # not there - got a value?
                     if ( ( current_value is not None ) and ( current_value != "" ) ):
                 
                         # got a value - add it.
-                        person_details_dict[ current_key ] = current_value
+                        my_person_details[ current_key ] = current_value
                         
                     #-- END check to see if we have a value --#
                     
@@ -3370,7 +3458,7 @@ class ArticleCoder( BasicRateLimited ):
                                                       person_name,
                                                       create_if_no_match_IN = True,
                                                       update_person_IN = True,
-                                                      person_details_IN = person_details_dict )
+                                                      person_details_IN = my_person_details )
 
                 # get results from Article_Subject
                 subject_person = article_subject.person
@@ -3389,9 +3477,9 @@ class ArticleCoder( BasicRateLimited ):
                     # get sources
                     article_subject_qs = article_data_IN.article_subject_set.all()
                     article_subject_qs = article_subject_qs.filter( person = subject_person )
-                    article_subject_count = article_subject_qs.count()
                     
                     # got existing Article_Subject?
+                    article_subject_count = article_subject_qs.count()
                     if ( article_subject_count == 0 ):
                                                  
                         # ! INSERT new Article_Subject
@@ -3401,9 +3489,12 @@ class ArticleCoder( BasicRateLimited ):
                         #    lookup_person().
                         #article_source = Article_Subject()
                     
+                        # populate Article_Subject instance
                         article_subject.article_data = article_data_IN
                         article_subject.person = subject_person
                         article_subject.name = person_name
+                        article_subject.verbatim_name = verbatim_person_name
+                        article_subject.lookup_name = person_name
                         
                         # confidence level set in lookup_person() method.
                         #article_subject.match_confidence_level = 1.0
@@ -3411,7 +3502,7 @@ class ArticleCoder( BasicRateLimited ):
                         article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
                         
                         # see if there is a title.
-                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+                        title_IN = my_person_details.get( self.PARAM_TITLE, "" )
                         if ( ( title_IN is not None ) and ( title_IN != "" ) ):
             
                             # there is a title - set it.
@@ -3420,7 +3511,7 @@ class ArticleCoder( BasicRateLimited ):
                         #-- END check to see if we have a title --#
                         
                         # organization string?
-                        organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
+                        organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
                         if ( ( organization_string_IN is not None ) and ( organization_string_IN != "" ) ):
             
                             # there is a title - set it.
@@ -3444,14 +3535,15 @@ class ArticleCoder( BasicRateLimited ):
                         # create mention for name?
                         if ( do_create_name_mention_IN == True ):
                             
-                            # add name mention to Article_Subject.
-                            current_article_subject_mention = self.process_mention( my_article, article_subject, person_name )
+                            # add name mention to Article_Subject.  Use verbatim
+                            #     name, not corrected name.
+                            current_article_subject_mention = self.process_mention( my_article, article_subject, verbatim_person_name )
                             
                             # error?
                             if ( current_article_subject_mention is None ):
 
                                 # yup - output debug message.
-                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
+                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + verbatim_person_name + "\" ( lookup name = \"" + person_name + "\" ).  See log for more details."
                                 self.output_debug( debug_message, me )
 
                             #-- END check to see if error processing quotation --#
@@ -3476,8 +3568,10 @@ class ArticleCoder( BasicRateLimited ):
                         existing_subject_name = article_subject.name
                         if ( person_name != existing_subject_name ):
                         
-                            # replace, and save.
+                            # replace name values, and save.
                             article_subject.name = person_name
+                            article_subject.verbatim_name = verbatim_person_name
+                            article_subject.lookup_name = person_name
 
                             # we need to save.
                             do_save_updates = True
@@ -3488,7 +3582,7 @@ class ArticleCoder( BasicRateLimited ):
                         # ==> title
 
                         # has title changed?
-                        title_IN = person_details_dict.get( self.PARAM_TITLE, "" )
+                        title_IN = my_person_details.get( self.PARAM_TITLE, "" )
                         existing_title = article_subject.title
                         if ( title_IN != existing_title ):
 
@@ -3504,7 +3598,7 @@ class ArticleCoder( BasicRateLimited ):
                         # ==> organization_string
 
                         # has organization string changed?
-                        organization_string_IN = person_details_dict.get( self.PARAM_PERSON_ORGANIZATION, "" )
+                        organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
                         existing_organization_string = article_subject.organization_string
                         if ( organization_string_IN != existing_organization_string ):
 
@@ -3565,14 +3659,15 @@ class ArticleCoder( BasicRateLimited ):
                         # create mention for name?
                         if ( do_create_name_mention_IN == True ):
                             
-                            # add name mention to Article_Subject.
-                            current_article_subject_mention = self.process_mention( my_article, article_subject, person_name )
+                            # add name mention to Article_Subject.  Use verbatim
+                            #     name, not corrected name.
+                            current_article_subject_mention = self.process_mention( my_article, article_subject, verbatim_person_name )
                             
                             # error?
                             if ( current_article_subject_mention is None ):
 
                                 # yup - output debug message.
-                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + person_name + "\".  See log for more details."
+                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + verbatim_person_name + "\" ( lookup name = \"" + person_name + "\" ).  See log for more details."
                                 self.output_debug( debug_message, me )
 
                             #-- END check to see if error processing quotation --#
@@ -3704,7 +3799,7 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method update_config_properties() --#
     
 
-    def update_person( self, person_IN, person_details_IN = {}, allow_empty_IN = False, *args, **kwargs ):
+    def update_person( self, person_IN, person_details_IN = PersonDetails(), allow_empty_IN = False, *args, **kwargs ):
         
         '''
         Accepts person instance, and then accepts dictionary of all the stuff you
@@ -3742,6 +3837,7 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables.
         me = "update_person"
+        my_person_details = None
         do_save = False
         newspaper_IN = None
         newspaper_notes_IN = ""
@@ -3765,15 +3861,18 @@ class ArticleCoder( BasicRateLimited ):
             # initialize do_save flag to False.
             do_save = False
         
-            # get values from person_details_IN
-            newspaper_IN = person_details_IN.get( self.PARAM_NEWSPAPER_INSTANCE, None )
-            newspaper_notes_IN = person_details_IN.get( self.PARAM_NEWSPAPER_NOTES, None )
-            external_uuid_name_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NAME, None )
-            external_uuid_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID, None )
-            external_uuid_source_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_SOURCE, None )
-            external_uuid_notes_IN = person_details_IN.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
-            title_IN = person_details_IN.get( self.PARAM_TITLE, "" )
-            organization_string_IN = person_details_IN.get( self.PARAM_PERSON_ORGANIZATION, "" )
+            # make sure we have PersonDetails instance.
+            my_person_details = PersonDetails.get_instance( person_details_IN )
+        
+            # get values from my_person_details
+            newspaper_IN = my_person_details.get( self.PARAM_NEWSPAPER_INSTANCE, None )
+            newspaper_notes_IN = my_person_details.get( self.PARAM_NEWSPAPER_NOTES, None )
+            external_uuid_name_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NAME, None )
+            external_uuid_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, None )
+            external_uuid_source_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_SOURCE, None )
+            external_uuid_notes_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
+            title_IN = my_person_details.get( self.PARAM_TITLE, "" )
+            organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
             
             #------------------------------------------------------#
             # ==> newspaper
