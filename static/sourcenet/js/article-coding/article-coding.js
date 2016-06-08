@@ -776,6 +776,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     var person_index = -1;
     var current_person_type = "";
     var current_person_name = "";
+    var current_fixed_person_name = "";
     var current_title = "";
     var current_person_organization = "";
     var current_quote_text = "";
@@ -829,6 +830,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             // get values
             current_person_type = current_person_data[ "person_type" ];
             current_person_name = current_person_data[ "person_name" ];
+            current_fixed_person_name = current_person_data[ "fixed_person_name" ];
             current_title = current_person_data[ "title" ];
             current_person_organization = current_person_data[ "person_organization" ];
             current_quote_text = current_person_data[ "quote_text" ];
@@ -838,7 +840,27 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             // create and populate Person instance.
             current_person = new SOURCENET.Person();
             current_person.person_type = current_person_type;
-            current_person.person_name = current_person_name;
+            
+            // person name - are verbatim and name different?
+            if ( ( current_fixed_person_name != null )
+                && ( current_fixed_person_name != "" )
+                && ( current_fixed_person_name != current_person_name ) )
+            {
+                
+                // they are different - store each in their appropriate field.
+                current_person.person_name = current_person_name;
+                current_person.fixed_person_name = current_fixed_person_name;
+                
+            }
+            else
+            {
+                
+                // nothing fancy, just resting a bit.
+                current_person.person_name = current_person_name;
+                current_person.fixed_person_name = "";
+
+            } //-- END check to see if name was fixed --//
+            
             current_person.title = current_title;
             current_person.person_organization = current_person_organization;
             current_person.quote_text = current_quote_text;

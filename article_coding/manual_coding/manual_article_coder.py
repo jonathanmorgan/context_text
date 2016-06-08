@@ -283,8 +283,9 @@ class ManualArticleCoder( ArticleCoder ):
                 # ==> person_type
                 current_person_type = cls.PERSON_TYPE_AUTHOR
                 
-                # ==> person_name
+                # ==> person_name and fixed_person_name
                 current_person_name = JSONHelper.escape_json_value( current_author.name )
+                current_person_verbatim_name = JSONHelper.escape_json_value( current_author.verbatim_name )
                 
                 # ==> organization_string
                 current_organization_string = JSONHelper.escape_json_value( current_author.organization_string )
@@ -301,7 +302,27 @@ class ManualArticleCoder( ArticleCoder ):
                 # create person dictionary
                 current_person_dict = {}
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
-                current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                
+                # is verbatim name different from name?
+                if ( ( current_person_verbatim_name is not None )
+                    and ( current_person_verbatim_name != "" )
+                    and ( current_person_verbatim_name != current_person_name ) ):
+                    
+                    # there was a correction of the verbatim name text.
+                    #     "person_name" is the "verbatim_name",
+                    #     "fixed_person_name" is the "lookup_name" (or just
+                    #     "name").
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_verbatim_name
+                    current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_name
+
+                else:
+                
+                    # no fix to name.  Just pass it as we used to. 
+                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                    current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = ""
+                    
+                #-- END check to see if fixed name. --#    
+                
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_ORGANIZATION ] = current_organization_string
                 current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                 current_person_dict[ cls.DATA_STORE_PROP_QUOTE_TEXT ] = current_quote_text
@@ -343,8 +364,9 @@ class ManualArticleCoder( ArticleCoder ):
                     current_subject_type = current_subject.subject_type
                     current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
                     
-                    # ==> name
+                    # ==> person_name and fixed_person_name
                     current_person_name = JSONHelper.escape_json_value( current_subject.name )
+                    current_person_verbatim_name = JSONHelper.escape_json_value( current_subject.verbatim_name )
                     
                     # ==> organization_string
                     current_organization_string = JSONHelper.escape_json_value( current_subject.organization_string )
@@ -374,7 +396,27 @@ class ManualArticleCoder( ArticleCoder ):
                     # create person dictionary
                     current_person_dict = {}
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
-                    current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+
+                    # is verbatim name different from name?
+                    if ( ( current_person_verbatim_name is not None )
+                        and ( current_person_verbatim_name != "" )
+                        and ( current_person_verbatim_name != current_person_name ) ):
+                        
+                        # there was a correction of the verbatim name text.
+                        #     "person_name" is the "verbatim_name",
+                        #     "fixed_person_name" is the "lookup_name" (or just
+                        #     "name").
+                        current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_verbatim_name
+                        current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_name
+    
+                    else:
+                    
+                        # no fix to name.  Just pass it as we used to. 
+                        current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_name
+                        current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = ""
+                        
+                    #-- END check to see if fixed name. --#    
+                    
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ORGANIZATION ] = current_organization_string
                     current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id

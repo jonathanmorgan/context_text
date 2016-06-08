@@ -1228,6 +1228,7 @@ class ArticleCoder( BasicRateLimited ):
             # and we'll use the instance passed in as the return reference.
             instance_OUT = article_person_IN
             
+            # ! TODO - figure out what to do when person ID, but name has changed.
             if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
             
                 # yes.  Try to just get that person.
@@ -3372,7 +3373,7 @@ class ArticleCoder( BasicRateLimited ):
                 debug_message = "--- In " + me + ": processing \"" + str( subject_name_IN ) + "\", FOUND corrected subject name ( \"" + str( corrected_person_name)  + "\" ) in person_details_IN: " + str( my_person_details )
                 my_logger.debug( debug_message )
 
-            #-- END check to see if corrected author name we aren't using. --#
+            #-- END check to see if corrected subject name. --#
         
             debug_message = "--- In " + me + ": processing \"" + subject_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
             my_logger.debug( debug_message )

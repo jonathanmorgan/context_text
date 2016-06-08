@@ -186,12 +186,28 @@ class ArticleAuthorInline( admin.StackedInline ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in sourcenet.ajax-select-lookups.py
-    form = make_ajax_form( Article_Author, dict( person = 'person' ) )
+    form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
 
     model = Article_Author
     extra = 2
     fk_name = 'article_data'
     
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'article_data', 'author_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+    ]
+
 #-- END class ArticleAuthorInline --#
 
 #class Source_OrganizationInline( admin.TabularInline ):
@@ -216,13 +232,13 @@ class ArticleSubjectInline( admin.StackedInline ):
         (
             None,
             {
-                'fields' : [ 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'document', 'source_contact_type', 'source_capacity', 'localness' ]
+                'fields' : [ 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
-            "Notes (Optional)",
+            "More Detail",
             {
-                'fields' : [ 'notes' ],
+                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -328,13 +344,13 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'title', 'organization', 'more_title', 'document', 'source_contact_type', 'source_capacity', 'localness' ]
+                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
-            "Notes (Optional)",
+            "More Detail",
             {
-                'fields' : [ 'notes' ],
+                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -344,9 +360,9 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'person', 'subject_type', 'organization', 'article_data' )
-    #list_display_links = ( 'headline', )
-    list_filter = [ 'person', 'subject_type', 'organization', 'article_data' ]
+    list_display = ( 'id', 'subject_type', 'person', 'article_data' )
+    list_display_links = ( 'id', 'person', )
+    list_filter = [ 'subject_type', 'person', 'article_data', ]
     #search_fields = [ 'article', 'person', 'organization' ]
     #date_hierarchy = 'pub_date'
 
@@ -366,12 +382,21 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in sourcenet.ajax-select-lookups.py
-    form = make_ajax_form( Article_Author, dict( person = 'person' ) )
+    form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
 
     fieldsets = [
         (
             None,
-            { 'fields' : [ 'article_data', 'author_type', 'person' ] }
+            {
+                'fields' : [ 'article_data', 'author_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
+                'classes' : ( "collapse", )
+            }
         ),
     ]
 

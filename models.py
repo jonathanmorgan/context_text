@@ -411,6 +411,29 @@ class Topic( models.Model ):
 #= End Topic Model =========================================================
 
 
+# Orgnization model
+@python_2_unicode_compatible
+class Organization( models.Model ):
+
+    name = models.CharField( max_length = 255 )
+    description = models.TextField( blank = True )
+    location = models.ForeignKey( Location, blank = True, null = True )
+
+    # Meta-data for this class.
+    class Meta:
+        ordering = [ 'name', 'location' ]
+
+    #----------------------------------------------------------------------
+    # methods
+    #----------------------------------------------------------------------
+
+    def __str__( self ):
+        string_OUT = self.name
+        return string_OUT
+
+#= End Organization Model ======================================================
+
+
 # Abstract_Person_Parent model
 @python_2_unicode_compatible
 class Abstract_Person_Parent( models.Model ):
@@ -422,8 +445,10 @@ class Abstract_Person_Parent( models.Model ):
     # moving title up from Article_Person
     title = models.CharField( max_length = 255, blank = True, null = True )
     more_title = models.TextField( blank = True, null = True )
+    organization = models.ForeignKey( Organization, blank = True, null = True )
     organization_string = models.CharField( max_length = 255, blank = True, null = True )
     more_organization = models.TextField( blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
     
     #----------------------------------------------------------------------
     # Meta
@@ -735,7 +760,8 @@ class Abstract_Person( Abstract_Person_Parent ):
     gender = models.CharField( max_length = 6, choices = GENDER_CHOICES, blank = True, null = True )
     nameparser_pickled = models.TextField( blank = True, null = True )
     is_ambiguous = models.BooleanField( default = False )
-    notes = models.TextField( blank = True, null = True )
+    # moved up to parent
+    #notes = models.TextField( blank = True, null = True )
     
     # field to store how source was captured.
     capture_method = models.CharField( max_length = 255, blank = True, null = True )
@@ -2031,29 +2057,6 @@ class Alternate_Name( Abstract_Person ):
     
 
 #== END Alternate_Name Model ===========================================================#
-
-
-# Orgnization model
-@python_2_unicode_compatible
-class Organization( models.Model ):
-
-    name = models.CharField( max_length = 255 )
-    description = models.TextField( blank = True )
-    location = models.ForeignKey( Location, blank = True, null = True )
-
-    # Meta-data for this class.
-    class Meta:
-        ordering = [ 'name', 'location' ]
-
-    #----------------------------------------------------------------------
-    # methods
-    #----------------------------------------------------------------------
-
-    def __str__( self ):
-        string_OUT = self.name
-        return string_OUT
-
-#= End Organization Model ======================================================
 
 
 # Person_Organization model
@@ -5853,6 +5856,25 @@ class Article_Data( models.Model ):
     #-- END method set_status() --#
     
 
+    def short_str( self ):
+
+        # return reference
+        string_OUT = ""
+
+        # got an ID?
+        if ( self.id ):
+        
+            string_OUT = str( self.id )
+            
+        #-- END check to see if there is an ID. --#
+        
+        string_OUT += " -- Article: " + str( self.article.id )
+        
+        return string_OUT
+
+    #-- END method short_str() --#
+
+
 #= End Article_Data Model =======================================================
 
 
@@ -6470,7 +6492,6 @@ class Article_Subject( Article_Person ):
     # moved up to Article_Person (so also over to Article_Author).
     #title = models.CharField( max_length = 255, blank = True, null = True )
     #more_title = models.TextField( blank = True, null = True )
-    organization = models.ForeignKey( Organization, blank = True, null = True )
     document = models.ForeignKey( Document, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True )
     source_contact_type = models.CharField( max_length = 255, choices = SOURCE_CONTACT_TYPE_CHOICES, blank = True, null = True )
@@ -6481,7 +6502,9 @@ class Article_Subject( Article_Person ):
     #count_spoke_at_event = models.IntegerField( "Count quotes from public appearances", default = 0 )
     #count_other_use_of_source = models.IntegerField( "Count other uses of source", default = 0 )
     localness = models.CharField( max_length = 255, choices = LOCALNESS_CHOICES, blank = True, null = True )
-    notes = models.TextField( blank = True, null = True )
+    
+    # moved up to parent
+    #notes = models.TextField( blank = True, null = True )
     
     # fields to track locations of data this coding was based on within
     #    article.  References are based on results of ParsedArticle.parse().
