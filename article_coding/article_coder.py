@@ -54,6 +54,7 @@ from python_utilities.strings.string_helper import StringHelper
 from sourcenet.models import Article
 from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
+from sourcenet.models import Article_Person
 from sourcenet.models import Article_Subject
 from sourcenet.models import Article_Subject_Mention
 from sourcenet.models import Article_Subject_Quotation
@@ -116,6 +117,7 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_PERSON_NAME = PersonDetails.PROP_NAME_PERSON_NAME
     PARAM_FIXED_PERSON_NAME = PersonDetails.PROP_NAME_FIXED_PERSON_NAME
     PARAM_PERSON_TYPE = PersonDetails.PROP_NAME_PERSON_TYPE
+    PARAM_ARTICLE_PERSON_ID = PersonDetails.PROP_NAME_ARTICLE_PERSON_ID
     PARAM_TITLE = PersonDetails.PROP_NAME_TITLE
     PARAM_PERSON_ORGANIZATION = PersonDetails.PROP_NAME_PERSON_ORGANIZATION
     PARAM_QUOTE_TEXT = PersonDetails.PROP_NAME_QUOTE_TEXT
@@ -152,15 +154,12 @@ class ArticleCoder( BasicRateLimited ):
     PROP_EXCEPTION = "exception"
     
     # person types
-    PERSON_TYPE_SUBJECT = "subject"
-    PERSON_TYPE_SOURCE = "source"
-    PERSON_TYPE_AUTHOR = "author"
+    PERSON_TYPE_SUBJECT = PersonDetails.PERSON_TYPE_SUBJECT
+    PERSON_TYPE_SOURCE = PersonDetails.PERSON_TYPE_SOURCE
+    PERSON_TYPE_AUTHOR = PersonDetails.PERSON_TYPE_AUTHOR
 
     # subject_type to person type dictionary
-    SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
-    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
-    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
-
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP = PersonDetails.SUBJECT_TYPE_TO_PERSON_TYPE_MAP
 
 
     #----------------------------------------------------------------------------
@@ -1099,6 +1098,7 @@ class ArticleCoder( BasicRateLimited ):
     def lookup_person( self,
                        article_person_IN,
                        full_name_IN,
+                       lookup_id_if_present_IN = True,
                        create_if_no_match_IN = True,
                        update_person_IN = True,
                        person_details_IN = PersonDetails(),
@@ -1111,6 +1111,7 @@ class ArticleCoder( BasicRateLimited ):
         Accepts:
            - article_person_IN - Article_Person child instance (Article_Author or Article_Subject)
            - full_name_IN - full name of person we're looking up.
+           - use_id_before_name_IN - optional boolean that indicates whether an ID being present in the details should override names in the details.  Defaults to True.
            - create_if_no_match_IN - optional boolean that indicates whether we want to create a new person if not found
            - update_person_IN - optional boolean that indicates whether we want to update the person based on stuff in person_details_IN if person found.
            - person_details_IN - optional dictionary of person details for the current person.  Includes:
@@ -1156,7 +1157,7 @@ class ArticleCoder( BasicRateLimited ):
         me = "lookup_person"
         newspaper_IN = None
         uuid_IN = ""
-        person_id = -1
+        person_id_IN = -1
         person_instance = None
         my_person_details = None
         lookup_status = ""
@@ -1223,38 +1224,43 @@ class ArticleCoder( BasicRateLimited ):
             # load up incoming things we care about here.
             newspaper_IN = my_person_details.get( self.PARAM_NEWSPAPER_INSTANCE, None )
             uuid_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, None )
-            person_id = my_person_details.get( self.PARAM_PERSON_ID, -1 )
+            person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, -1 )
         
             # and we'll use the instance passed in as the return reference.
             instance_OUT = article_person_IN
             
-            # ! TODO - figure out what to do when person ID, but name has changed.
-            if ( ( person_id is not None ) and ( person_id != "" ) and ( person_id > 0 ) ):
+            # Was there a person ID in the details instance?
+            if ( ( person_id_IN is not None ) and ( person_id_IN != "" ) and ( person_id_IN > 0 ) ):
             
-                # yes.  Try to just get that person.
-                try:
-                
-                    person_instance = Person.objects.get( pk = person_id )
-                
-                except Person.DoesNotExist as dne:
-                
-                    # Not found.
-                    self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but DoesNotExist." )
-                    person_instance = None
+                # Do we privilege ID over name?
+                if ( lookup_id_if_present_IN == True ):
+            
+                    # yes.  Try to just get that person.
+                    try:
                     
-                except Person.MultipleObjectsReturned as more:
-                
-                    # multiple found.  Big error.
-                    self.output_debug( "ERROR - In " + me + ": person_id passed in ( " + str( person_id ) + " ), but MultipleObjectsReturned." )
-                    person_instance = None
+                        person_instance = Person.objects.get( pk = person_id_IN )
                     
-                except Exception as e:
-                
-                    # Unexpected exception.
-                    self.output_debug( "In " + me + ": person_id passed in ( " + str( person_id ) + " ), unexpected Exception caught trying to look up in database: " + str( e ) )
-                    person_instance = None
+                    except Person.DoesNotExist as dne:
                     
-                #-- END try-except to look up person based on ID. --#
+                        # Not found.
+                        self.output_debug( "ERROR - In " + me + ": person_id_IN passed in ( " + str( person_id_IN ) + " ), but DoesNotExist." )
+                        person_instance = None
+                        
+                    except Person.MultipleObjectsReturned as more:
+                    
+                        # multiple found.  Big error.
+                        self.output_debug( "ERROR - In " + me + ": person_id_IN passed in ( " + str( person_id_IN ) + " ), but MultipleObjectsReturned." )
+                        person_instance = None
+                        
+                    except Exception as e:
+                    
+                        # Unexpected exception.
+                        self.output_debug( "In " + me + ": person_id_IN passed in ( " + str( person_id_IN ) + " ), unexpected Exception caught trying to look up in database: " + str( e ) )
+                        person_instance = None
+                        
+                    #-- END try-except to look up person based on ID. --#
+                    
+                #-- END check to see if we should just get the person. --#
             
             #-- END check to see if person ID present. --#
         
@@ -1825,320 +1831,47 @@ class ArticleCoder( BasicRateLimited ):
                              person_details_IN = None ):
     
         '''
+        Calls process_person_name() for logic.  See that method's doc for
+            processing details.
         Accepts Article_Data container, string author name, optional string
-           author organization, optional author person ID, and optional person
-           details dictionary.  If ID present, tries to look up person based on
-           ID.  If not, looks up person based name.  If person found, only adds
-           to Article_Data if that person does not already have an
-           Article_Author row.  If person not found, and if person details
-           present, uses details passed in when populating person (see
-           ArticleCoder.lookup_person() doc for values that can be passed in
-           person details).
+            author organization, optional author person ID, and optional person
+            details dictionary.  If ID present, tries to look up person based on
+            ID.  If not, looks up person based name.  If person found, only adds
+            to Article_Data if that person does not already have an
+            Article_Author row.  If person not found, and if person details
+            present, uses details passed in when populating person (see
+            ArticleCoder.lookup_person() doc for values that can be passed in
+            person details).
            
         preconditions: Assumes that there is an associated article.  If not,
-           there will be an exception.
+            there will be an exception.
            
         postconditions: If all goes well, results in Article_Author for author
-           passed in associated with Article_Data passed in, and returns status
-           self.STATUS_SUCCESS.  If error, no Article_Author created, and status
-           message describing the problem returned.  If person lookup works, but
-           person already has an Article_Author row, does nothing.
+            passed in associated with Article_Data passed in, and returns status
+            self.STATUS_SUCCESS.  If error, no Article_Author created, and
+            status message describing the problem returned.  If person lookup
+            works, but person already has an Article_Author row, updates that
+            record with any changes present in PersonDetails.
         '''
         
         # return reference
         article_author_OUT = None
-        status_OUT = self.STATUS_SUCCESS
-        
-        # declare variables - input parameters, from person_details
-        author_organization_string_IN = "",
-        author_person_id_IN = None,
         
         # declare variables.
         me = "process_author_name"
         my_logger = None
         debug_message = ""
-        author_name = ""
-        corrected_author_name = ""
-        verbatim_author_name = ""
-        author_organization = ""
-        my_person_details = None
-        author_person = None
-        author_person_match_list = []
-        article_author_count = -1
-        article_author = None
-        article_author_qs = None
-        my_capture_method = ""
         
-        # declare variables - update processing.
-        do_save_updates = False
-        existing_org_string = ""
-        existing_author_name = ""
-
-        # get logger
-        my_logger = self.get_logger()
-        
-        # initialize author_name variables.
-        author_name = author_name_IN
-        corrected_author_name = author_name
-        verbatim_author_name = author_name
-
-        # prepare person details.  Got a dictionary passed in?
-        if ( ( person_details_IN is not None )
-             and ( isinstance( person_details_IN, dict ) == True )
-             and ( len( person_details_IN ) > 0 ) ):
-             
-            # details passed in - use them.
-            
-            # make sure we have PersonDetails instance, not just a dict(ionary).
-            my_person_details = PersonDetails.get_instance( person_details_IN )
-            
-            # got person details.  Retrieve input values.
-            author_organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
-            author_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
-            
-            # see if corrected_author_name different from author name passed in.
-            corrected_author_name = my_person_details.get_corrected_person_name()
-            if ( ( corrected_author_name is not None ) and ( corrected_author_name != "" ) and ( corrected_author_name != author_name ) ):
-            
-                # there is a corrected author name.  Use it.
-                verbatim_author_name = author_name
-                author_name = corrected_author_name
-
-                debug_message = "--- In " + me + ": processing \"" + str( author_name_IN ) + "\", FOUND corrected author name ( \"" + str( corrected_author_name ) + "\" ) in person_details_IN: " + str( my_person_details )
-                my_logger.debug( debug_message )
-
-            #-- END check to see if corrected author name we aren't using. --#
-        
-            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
-            my_logger.debug( debug_message )
-
-        else:
-        
-            # nothing passed in - create new dictionary.
-            my_person_details = PersonDetails()
-        
-            debug_message = "--- In " + me + ": processing \"" + author_name_IN + "\", NO person_details_IN."
-            my_logger.debug( debug_message )
-
-        #-- END check to see if dictionary passed in. --#
-        
-        # make empty Article_Author to work with.
-        article_author = Article_Author()
-            
-        # got Article_Data instance?
-        if ( article_data_IN is not None ):
-        
-            # got an author name or author person ID?
-            if ( ( ( author_name is not None ) and ( author_name != "" ) )
-                or ( ( author_person_id_IN is not None ) and ( author_person_id_IN != "" ) and ( author_person_id_IN > 0 ) ) ):
-            
-                # get capture method
-                my_capture_method = article_data_IN.coder_type
-        
-                debug_message = "--- In " + me + ": Processing author name: \"" + author_name + "\" ( id: " + str( author_person_id_IN ) + " )"
-                my_logger.debug( debug_message )
+        # do any author-specific post-processing updates here.
                 
-                #--------------------------------------------------------------#
-                # ! person details
-                #--------------------------------------------------------------#
+        # ! call process_person_name()
+        article_author_OUT = self.process_person_name( article_data_IN,
+                                                       author_name_IN,
+                                                       person_details_IN = person_details_IN,
+                                                       article_person_class_IN = Article_Author )
+                                                       
+        # do any author-specific post-processing updates here.
                 
-                # prepare person details.
-                
-                # newspaper instance - only add if key not already in dictionary.
-                if self.PARAM_NEWSPAPER_INSTANCE not in my_person_details:
-                
-                    # not there - add it.
-                    my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
-                    
-                #-- END check to see if newspaper instance already in dict --#
-
-                # capture method - only add if key not already in dictionary.
-                if self.PARAM_CAPTURE_METHOD not in my_person_details:
-                
-                    # not there - add it.
-                    my_person_details[ self.PARAM_CAPTURE_METHOD ] = my_capture_method
-                    
-                #-- END check to see if capture method already in dict --#
-                
-                #--------------------------------------------------------------#
-                #-- Set author_organization. --#
-                #--------------------------------------------------------------#
-
-                # got one passed in?
-                if ( ( author_organization_string_IN is not None ) and ( author_organization_string_IN != "" ) ):
-                
-                    # got one passed in.  Use it.
-                    author_organization = author_organization_string_IN
-                    
-                #-- END setting author_organization --#
-    
-                #--------------------------------------------------------------#
-                # ! do lookup
-                #--------------------------------------------------------------#
-
-                # lookup person - returns person and confidence score inside
-                #    Article_Author instance.
-                article_author = self.lookup_person( article_author, 
-                                                     author_name,
-                                                     create_if_no_match_IN = True,
-                                                     update_person_IN = True,
-                                                     person_details_IN = my_person_details )
-
-                # retrieve information from Article_Author
-                author_person = article_author.person
-                author_person_match_list = article_author.person_match_list  # list of Person instances
-
-                # got a person?
-                if ( author_person is not None ):
-                
-                    # Now, we need to deal with Article_Author instance.
-                    #    First, see if there already is one for this
-                    #    name.  If so, do nothing.  If not, make one.
-                    
-                    # get authors
-                    article_author_qs = article_data_IN.article_author_set.all()
-                    article_author_qs = article_author_qs.filter( person = author_person )
-                    
-                    # got anything?
-                    article_author_count = article_author_qs.count()
-                    if ( article_author_count == 0 ):
-                                                 
-                        # ! INSERT new Article_Author
-                        # no - add - including organization string.
-
-                        # use article_author already created above for call to
-                        #     lookup_person().
-                        #article_author = Article_Author()
-
-                        # populate Article_Author instance
-                        article_author.article_data = article_data_IN
-                        article_author.person = author_person
-                        article_author.set_organization_string( author_organization, do_save_IN = False )
-                        article_author.capture_method = my_capture_method
-                        article_author.name = author_name
-                        article_author.verbatim_name = verbatim_author_name
-                        article_author.lookup_name = author_name
-
-                        # confidence level set in lookup_person() method.
-                        #article_subject.match_confidence_level = 1.0
-                                
-                        # save, and as part of save, record alternate matches.
-                        article_author.save()
-                        
-                        my_logger.debug( "In " + me + ": adding Article_Author instance for " + str( author_person ) + "." )
-
-                    elif ( article_author_count == 1 ):
-                    
-                        my_logger.debug( "In " + me + ": Article_Author instance already exists for " + str( author_person ) + "." )
-                        
-                        # retrieve article author from query set.
-                        article_author = article_author_qs.get()
-                        
-                        # ! UPDATE existing Article_Author
-                        
-                        #------------------------------------------------------#
-                        # ==> name
-
-                        existing_author_name = article_author.name
-                        
-                        # has name string changed?
-                        if ( author_name != existing_author_name ):
-                        
-                            # they are different.  Replace.
-                            article_author.name = author_name
-                            article_author.verbatim_name = verbatim_author_name
-                            article_author.lookup_name = author_name
-                        
-                            # we need to save.
-                            do_save_updates = True
-                            
-                        #-- END check to see if updated author name. --#
-
-                        #------------------------------------------------------#
-                        # ==> organization string
-
-                        existing_org_string = article_author.organization_string
-
-                        # has organization changed?
-                        if ( existing_org_string != author_organization ):
-                        
-                            # yes.  Replace.
-                            article_author.organization_string = ""
-                            article_author.set_organization_string( author_organization, do_save_IN = False, do_append_IN = True )
-
-                            # we need to save.
-                            do_save_updates = True
-                            
-                        #-- END check to see if new value. --#
-                        
-                        #------------------------------------------------------#
-                        # ! UPDATE alternate matches
-
-                        # Were there alternate matches?
-                        if ( len( author_person_match_list ) > 0 ):
-                        
-                            # yes - store the list of alternate matches in the
-                            #    Article_Author instance variable
-                            #    "person_match_list".
-                            article_author.person_match_list = author_person_match_list
-                            
-                            # save calls process_alternate_matches().
-                            do_save_updates = True
-                            
-                            # call method to process alternate matches.
-                            my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Author found for person, calling process_alternate_matches." )
-                            # article_author.process_alternate_matches()
-                            
-                        #-- END check to see if there were alternate matches --#
-                        
-                        #------------------------------------------------------#
-                        # do we need to save?
-
-                        if ( do_save_updates == True ):
-                        
-                            # we do.
-                            article_author.save()
-                        
-                        #-- END check to see if we need to save --#
-                        
-                    else:
-                    
-                        # neither 0 or 1 authors - either invalid or multiple,
-                        #    either is not right.
-                        my_logger.debug( "In " + me + ": Article_Author count for " + str( author_person ) + " = " + str( article_author_count ) + ".  What to do?" )
-                        
-                        # definitely no article_author.
-                        article_author = None  
-
-                    #-- END check if need new Article_Author instance --#
-
-                else:
-                
-                    # No Person Found.
-                    status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no matching person found - must have been a problem looking up name \"" + author_name + "\""            
-                
-                    my_logger.debug( status_OUT )
-
-                #-- END check to see if person found. --#
-                    
-            else:
-            
-                # No author string - error.
-                status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no author string, so nothing to do."
-            
-            #-- END check to see if author name. --#
-            
-        else:
-        
-            # No Article_Data instance.
-            status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no Article_Data instance, so no place to store author data."            
-        
-        #-- END check to see if article data instance. --#
-        
-        article_author_OUT = article_author
-        article_author_OUT.match_status = status_OUT
-        article_author_OUT.save()
-        
         return article_author_OUT
     
     #-- END method process_author_name() --#
@@ -2882,6 +2615,490 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method process_newsbank_grpress_author_string() --#
 
 
+    def process_person_name( self,
+                             article_data_IN,
+                             person_name_IN,
+                             person_details_IN = None,
+                             article_person_class_IN = None ):
+
+        '''
+        Accepts Article_Data container, string person name, class of the
+            child class of Article_Person to store the results in (defaults to
+            None, which will cause an exception if not changed), and an optional
+            (but effectively required) PersonDetails instance with more details
+            on the person we are processing.
+            
+        If ID is present, tries to look up person based on ID.  If not, looks up
+            person based on name.  If person found, only adds to Article_Data if
+            that person does not already have an Article_Person child row 
+            (Article_Subject or Article_Author, depending on the class passed in
+            article_person_class_IN) already.  If person details present, uses
+            details passed in when populating or updating person (see
+            ArticleCoder.lookup_person() doc for values that can be passed in
+            person details) and Article_Person child instance.
+           
+        preconditions: Assumes that there is an associated article in
+            article_data_IN.  If not, there will be an exception.
+           
+        postconditions: If all goes well, results in Article_Person child
+            instance for person passed in associated with Article_Data passed
+            in, and returns the Article_Person child instance with status stored
+            in "match_status" field.  If error, empty Article_Person child is
+            created and returned with no ID, and match_status message describing
+            the problem.  If person lookup works, but person already has an
+            Article_Person child row, updates row to reflect any changes in
+            person details since the row was originally created.
+        '''
+        
+        # return reference
+        article_person_OUT = None
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables - input parameters, from person_details
+        person_name_IN = ""
+        fixed_person_name_IN = ""
+        title_IN = ""
+        organization_string_IN = ""
+        coder_type_IN = ""
+        person_id_IN = None
+        article_person_id_IN = None
+        
+        # declare variables.
+        me = "process_person_name"
+        my_logger = None
+        debug_message = ""
+        
+        # declare variables - person information
+        article_person_instance = None
+        person_name = ""
+        person_verbatim_name = ""
+        person_lookup_name = ""
+        person_organization = None
+        my_person_details = None
+        my_capture_method = ""
+        current_key = ""
+        current_value = ""
+        
+        # declare variables - person lookup
+        person_instance = None
+        person_match_list = []
+        article_person_qs = None
+        article_person_count = -1
+        article_person_instance = None
+        
+        # declare variables - update processing.
+        do_save_updates = False
+        existing_name = ""
+        existing_lookup_name = ""
+        existing_title = ""
+        existing_org_string = ""
+
+        # get logger
+        my_logger = self.get_logger()
+        
+        # got an Article_Person descendent in article_person_class_IN?
+        if ( article_person_class_IN is not None ):
+        
+            # make empty Article_Person descendent instance to work with, using
+            #     class passed in.
+            article_person_instance = article_person_class_IN()
+                
+            # is it an Article_Person decendent?
+            if ( isinstance( article_person_instance, Article_Person ) == True ):
+        
+                debug_message = "--- In " + me + ": Article_Person class: \"" + str( article_person_class_IN ) + "\""
+                my_logger.debug( debug_message )
+        
+                # initialize person_name variables.
+                person_name = person_name_IN
+                person_verbatim_name = person_name
+                person_lookup_name = person_name
+        
+                # ! got PersonDetails?
+                if ( ( person_details_IN is not None )
+                     and ( isinstance( person_details_IN, dict ) == True )
+                     and ( len( person_details_IN ) > 0 ) ):
+                     
+                    # details passed in - use them.
+                    
+                    # make sure we have PersonDetails instance, not just a dict(ionary).
+                    my_person_details = PersonDetails.get_instance( person_details_IN )
+                    
+                    debug_message = "--- In " + me + ": processing \"" + person_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
+                    my_logger.debug( debug_message )
+                        
+                else:
+                
+                    # nothing passed in - create new PersonDetails instance.
+                    my_person_details = PersonDetails()
+                
+                    debug_message = "--- In " + me + ": processing \"" + person_name_IN + "\", NO person_details_IN."
+                    my_logger.debug( debug_message )
+        
+                #-- END check to see if dictionary passed in. --#
+                
+                # got or made person details.  Retrieve input values.
+                person_name_IN = my_person_details.get( self.PARAM_PERSON_NAME, "" )
+                fixed_person_name_IN = my_person_details.get( self.PARAM_FIXED_PERSON_NAME, "" )
+                title_IN = my_person_details.get( self.PARAM_TITLE, None )
+                organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, None )
+                coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, None )
+                person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
+                article_person_id_IN = my_person_details.get( self.PARAM_ARTICLE_PERSON_ID, None )
+                
+                # if person name is populated in person details, it and fixed person
+                #     name take precedence over any name passed in.  If not, just
+                #     use the name passed in.
+                if ( ( person_name_IN is not None ) and ( person_name_IN != "" ) ):
+    
+                    # we have a person name.  Set person_name, person_verbatim_name
+                    #     to this value (person_name should always be the actual
+                    #     verbatim mention of the person).
+                    person_name = person_name_IN
+                    person_verbatim_name = person_name
+    
+                    # what do we use to lookup?  If fixed_person_name, uses that, if
+                    #     not, uses person_name.
+                    person_lookup_name = my_person_details.get_lookup_name()
+    
+                #-- END check to see if person name passed in details --#
+
+                debug_message = "--- In " + me + ": processing \"" + str( person_name_IN ) + "\", LOOKUP NAME = \"" + str( person_lookup_name)  + "\" (from person_details_IN)"
+                my_logger.debug( debug_message )
+        
+                # got Article_Data instance?
+                if ( article_data_IN is not None ):
+                
+                    # place Article_Data instance in article_person_instance.
+                    article_person_instance.article_data = article_data_IN
+                    
+                    # got an person name or person ID?
+                    if ( ( ( person_lookup_name is not None ) and ( person_lookup_name != "" ) )
+                        or ( ( person_id_IN is not None ) and ( person_id_IN != "" ) and ( person_id_IN > 0 ) ) ):
+                    
+                        # get capture method
+                        if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
+                        
+                            my_capture_method = coder_type_IN
+                            
+                        else:
+                        
+                            # no coder type passed in, use coder_type from Article_Data.
+                            my_capture_method = article_data_IN.coder_type
+                            
+                        #-- END check for coder_type_IN --#
+                
+                        debug_message = "--- In " + me + ": Processing person name: \"" + person_lookup_name + "\" ( id: " + str( person_id_IN ) + " )"
+                        my_logger.debug( debug_message )
+                        
+                        #--------------------------------------------------------------#
+                        # ! update person details
+                        #--------------------------------------------------------------#
+                        
+                        # prepare person details.
+                        
+                        # newspaper instance - only add if key not already in dictionary.
+                        if self.PARAM_NEWSPAPER_INSTANCE not in my_person_details:
+                        
+                            # not there - add it.
+                            my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
+                            
+                        #-- END check to see if newspaper instance already in dict --#
+        
+                        # capture method - only add if key not already in dictionary.
+                        current_key = self.PARAM_CAPTURE_METHOD
+                        current_value = my_capture_method
+                        if current_key not in my_person_details:
+                        
+                            # not there - got a value?
+                            if ( ( current_value is not None ) and ( current_value != "" ) ):
+                        
+                                # got a value - add it.
+                                my_person_details[ current_key ] = current_value
+                                
+                            #-- END check to see if we have a value --#
+                            
+                        #-- END check to see if capture method already in dict --#
+                        
+                        #--------------------------------------------------------------#
+                        #-- Set person_organization. --#
+                        #--------------------------------------------------------------#
+        
+                        # got one passed in?
+                        if ( organization_string_IN is not None ):
+                        
+                            # got one passed in.  Use it.
+                            person_organization = organization_string_IN
+                            
+                        #-- END setting person_organization --#
+            
+                        #--------------------------------------------------------------#
+                        # ! do lookup
+                        #--------------------------------------------------------------#
+        
+                        # lookup person - returns person and confidence score inside
+                        #    Article_Person descendent instance.
+                        article_person_instance = self.lookup_person( article_person_instance, 
+                                                                      person_lookup_name,
+                                                                      create_if_no_match_IN = True,
+                                                                      update_person_IN = True,
+                                                                      person_details_IN = my_person_details )
+        
+                        # retrieve information from Article_Person
+                        person_instance = article_person_instance.person
+                        person_match_list = article_person_instance.person_match_list  # list of Person instances
+        
+                        # got a person?
+                        if ( person_instance is not None ):
+                        
+                            # Now, we need to deal with Article_Person descendent
+                            #     instance.  Try to see if there is an existing
+                            #     record we should update.
+                            
+                            # start with all records for class passed in...
+                            article_person_qs = article_person_class_IN.objects.all()
+
+                            # ...limit to those associated with the current
+                            #     Article_Data...
+                            article_person_qs = article_person_qs.filter( article_data = article_data_IN )
+
+                            # See if there was the ID of an Article_Person child
+                            #     record stored in the PersonDetails passed in.
+                            
+                            # got an article_person_id?
+                            if ( article_person_id_IN is not None ):
+                            
+                                # there is an ID.  Try to retrieve the specified
+                                #     record.
+                                article_person_qs = article_person_qs.filter( pk = article_person_id_IN )
+                                
+                            else:
+                            
+                                # no ID - see if there is already an instance for 
+                                #     the person we looked up.
+
+                                # ...limit to the person we've looked up.
+                                article_person_qs = article_person_qs.filter( person = person_instance )
+                                
+                            #-- END attempt to retrieve existing Article_Person instance --#
+                            
+                            # got anything?
+                            article_person_count = article_person_qs.count()
+                            if ( article_person_count == 0 ):
+                                                         
+                                # ! INSERT new Article_Person child instance.
+                                # no - add - including organization string.
+        
+                                # use instance already created above for call to
+                                #     lookup_person().
+                                #article_person_instance = article_person_class_IN()
+        
+                                # populate instance
+                                article_person_instance.article_data = article_data_IN
+                                article_person_instance.person = person_instance
+                                article_person_instance.capture_method = my_capture_method
+                                article_person_instance.name = person_name
+                                article_person_instance.verbatim_name = person_verbatim_name
+                                article_person_instance.lookup_name = person_lookup_name
+                                article_person_instance.notes = ""
+    
+                                # see if there is a title.
+                                if ( title_IN is not None ):
+                    
+                                    # there is a title - set it.
+                                    article_person_instance.set_title( title_IN, do_save_IN = False )
+        
+                                #-- END check to see if we have a title --#
+                                
+                                # organization string?
+                                if ( organization_string_IN is not None ):
+                    
+                                    # there is an organization string - set it.
+                                    article_person_instance.set_organization_string( organization_string_IN, do_save_IN = False )
+        
+                                #-- END check to see if we have an organization --#
+                           
+                                article_person_instance.organization = None # models.ForeignKey( Organization, blank = True, null = True )
+        
+                                # ! TODO - current
+        
+                                # confidence level set in lookup_person() method.
+                                #article_subject.match_confidence_level = 1.0
+                                        
+                                # save, and as part of save, record alternate matches.
+                                article_person_instance.save()
+                                
+                                my_logger.debug( "In " + me + ": adding " + str( article_person_class_IN ) + " instance for " + str( person_instance ) + "." )
+        
+                            elif ( article_person_count == 1 ):
+                            
+                                my_logger.debug( "In " + me + ": " + str( article_person_class_IN ) + " instance already exists for " + str( person_instance ) + "." )
+                                
+                                # retrieve article author from query set.
+                                article_person_instance = article_person_qs.get()
+                                
+                                # ! UPDATE existing Article_Person child
+                                
+                                #------------------------------------------------------#
+                                # ==> name
+        
+                                existing_name = article_person_instance.name
+                                
+                                # has lookup_name string changed?
+                                if ( person_name != existing_name ):
+                                
+                                    # they are different.  Replace.
+                                    article_person_instance.name = person_name
+                                    article_person_instance.verbatim_name = person_verbatim_name
+                                    article_person_instance.lookup_name = person_lookup_name
+                                
+                                    # we need to save.
+                                    do_save_updates = True
+                                    
+                                #-- END check to see if updated name. --#
+        
+                                #------------------------------------------------------#
+                                # ==> lookup_name
+        
+                                existing_lookup_name = article_person_instance.lookup_name
+                                
+                                # has lookup name string changed?
+                                if ( person_lookup_name != existing_lookup_name ):
+                                
+                                    # they are different.  Replace.
+                                    article_person_instance.lookup_name = person_lookup_name
+                                
+                                    # we need to save.
+                                    do_save_updates = True
+                                    
+                                #-- END check to see if updated lookup_name. --#
+        
+                                #------------------------------------------------------#
+                                # ==> title
+        
+                                # has title changed?
+                                existing_title = article_person_instance.title
+                                if ( ( title_IN is not None ) and ( title_IN != existing_title ) ):
+        
+                                    # yes.  Update title.
+                                    article_person_instance.set_title( title_IN, do_save_IN = False, do_append_IN = True )
+        
+                                    # we need to save.
+                                    do_save_updates = True
+        
+                                #-- END check to see if title changed --#
+        
+                                #------------------------------------------------------#
+                                # ==> organization string
+        
+                                existing_org_string = article_person_instance.organization_string
+        
+                                # has organization changed?
+                                if ( ( organization_string_IN is not None ) and ( existing_org_string != organization_string_IN ) ):
+                                
+                                    # yes.  Replace.
+                                    article_person_instance.organization_string = ""
+                                    article_person_instance.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
+        
+                                    # we need to save.
+                                    do_save_updates = True
+                                    
+                                #-- END check to see if new value. --#
+                                
+                                #------------------------------------------------------#
+                                # ! UPDATE alternate matches
+        
+                                # Were there alternate matches?
+                                if ( len( person_match_list ) > 0 ):
+                                
+                                    # yes - store the list of alternate matches in the
+                                    #    Article_Person child instance variable
+                                    #    "person_match_list".
+                                    article_person_instance.person_match_list = person_match_list
+                                    
+                                    # save calls process_alternate_matches().
+                                    do_save_updates = True
+                                    
+                                    # call method to process alternate matches.
+                                    my_logger.debug( "In " + me + ": @@@@@@@@ Existing " + str( article_person_class_IN ) + " found for person, calling process_alternate_matches as part of save()." )
+                                    # article_person_instance.process_alternate_matches()
+                                    
+                                #-- END check to see if there were alternate matches --#
+                                
+                                #------------------------------------------------------#
+                                # do we need to save?
+        
+                                if ( do_save_updates == True ):
+                                
+                                    # we do.
+                                    article_person_instance.save()
+                                
+                                #-- END check to see if we need to save --#
+                                
+                            else:
+                            
+                                # neither 0 or 1 person records - either invalid or
+                                #     multiple, either is not right.
+                                my_logger.debug( "In " + me + ": " + str( article_person_class_IN ) + " count ( person instance = " + str( person_instance ) + "; article_person_id_IN = " + str( article_person_id_IN ) + " ) is " + str( article_person_count ) + ".  What to do?" )
+                                
+                                # definitely no article_author.
+                                article_person_instance = None  
+        
+                            #-- END check if need new Article_Author instance --#
+        
+                        else:
+                        
+                            # No Person Found.
+                            status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no matching person found - must have been a problem looking up name \"" + person_name + "\""            
+                        
+                            my_logger.debug( status_OUT )
+        
+                        #-- END check to see if person found. --#
+                            
+                    else:
+                    
+                        # No person string - error.
+                        status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no person string, so nothing to do."
+                    
+                    #-- END check to see if person name. --#
+                    
+                    # since we have an article data, store status and save.
+                    article_person_instance.match_status = status_OUT
+                    article_person_instance.save()
+
+                else:
+                
+                    # No Article_Data instance.
+                    status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no Article_Data instance, so no place to store author data."            
+                
+                    # no article data, store status but don't save.
+                    article_person_instance.match_status = status_OUT
+                    #article_person_instance.save()
+                
+                #-- END check to see if article data instance. --#
+                                
+            else:
+            
+                debug_message = "--- In " + me + ": Class " + str( article_person_class_IN ) + " does not inherit from Article_Person class."
+                my_logger.debug( debug_message )
+                    
+            #-- END check to see if instance of class passed in is an instance of Article_Person --#
+            
+        else:
+        
+            debug_message = "--- In " + me + ": No Article_Person class found."
+            my_logger.debug( debug_message )
+        
+        #-- END check to see if class passed in is an Article_Person descendent --#
+        
+        # store article_person_instance in return reference.
+        article_person_OUT = article_person_instance
+        
+        return article_person_OUT
+    
+    #-- END method process_person_name() --#
+
+
     def process_quotation( self, article_IN, article_subject_IN, quotation_string_IN, quotation_uuid_IN = "", quotation_uuid_type_IN = "" ):
     
         '''
@@ -3251,7 +3468,7 @@ class ArticleCoder( BasicRateLimited ):
     
     def process_subject_name( self,
                               article_data_IN,
-                              subject_name_IN,
+                              subject_name_IN = None,
                               person_details_IN = None,
                               do_create_name_mention_IN = True ):
     
@@ -3260,14 +3477,14 @@ class ArticleCoder( BasicRateLimited ):
             - article_data_IN - Article_Data container for this set of coding.
             - subject_name_IN - name of subject we are processing.
             - person_details_IN - optional dictionary of pre-populated person information.  Defaults to None.  If None, just uses an empty one.
-            - subject_person_id_IN - optional ID of person to use for this subject, rather than looking up based on name.
+            - do_create_name_mention_IN - optional boolean, if True, tries to find name in article and capture its location in an Article_Mention, if False, does not.
         
         From person_details_IN, retrieves:
             - subject_UUID_IN - optional external Universal Unique IDentifier for subject.
             - subject_UUID_name_IN - optional name of the type of UUID passed in.
             - subject_UUID_source_IN - optional description of source of UUID.
             - coder_type_IN - optional coder type of coder who detected this subject.  If empty, uses coder type of article_data_IN.
-
+            - subject_person_id_IN - optional ID of person to use for this subject, rather than looking up based on name.
         
         If ID is present, tries to look up person based on ID.  If not, looks up
             person based name.  If person found, only adds to Article_Data if
@@ -3292,92 +3509,53 @@ class ArticleCoder( BasicRateLimited ):
         article_subject_OUT = None
         status_OUT = self.STATUS_SUCCESS
         
-        # input variables from person_dict
+        # input variables from PersonDetails
+        person_name_IN = ""
+        fixed_person_name_IN = ""
         title_IN = ""
         organization_string_IN = ""
         subject_UUID_IN = ""
         subject_UUID_name_IN = ""
         subject_UUID_source_IN = ""
         coder_type_IN = ""
-        subject_person_id_IN = None
+        subject_person_id_IN = None    # ID of Person previously associated with this name.
         subject_type_IN = ""
+        article_person_id_IN = None    # ID of Article_Person descendent associated with this person, if one already created.
 
         # declare variables.
         me = "process_subject_name"
         my_logger = None
         debug_message = ""
         article_subject = None
-        person_name = ""
-        corrected_person_name = ""
-        verbatim_person_name = ""
         my_capture_method = ""
 
         # declare variable - set up person details
         my_person_details = None
-        current_key = ""
-        current_value = ""
 
-        # declare variables - lookup person for name
-        subject_person = None        
-        subject_person_match_list = []
-        
-        # declare variables - see if existing record for person.
-        article_subject_qs = None
-        article_subject_count = -1
-        
         # declare variables - update existing Article_Subject
-        do_save_updates = False
-        existing_subject_name = ""
-        existing_title = ""
-        existing_organization_string = ""
         existing_subject_type = ""
-        current_article_subject_mention = None
         my_article = None
+        
+        # declare variables - post-processing.
+        person_verbatim_name = ""
+        person_lookup_name = ""
         
         # get logger
         my_logger = self.get_logger()
         
-        # initialize subject name variables
-        person_name = subject_name_IN
-        corrected_person_name = person_name
-        verbatim_person_name = person_name
-
-        # person details - Got a dictionary passed in?
+        # ! got PersonDetails?
         if ( ( person_details_IN is not None )
-             and ( isinstance( person_details_IN, dict ) == True )
-             and ( len( person_details_IN ) > 0 ) ):
+            and ( isinstance( person_details_IN, dict ) == True )
+            and ( len( person_details_IN ) > 0 ) ):
              
             # details passed in - use them.
             
             # Make sure we have PersonDetails instance, not just a dict(ionary).
             my_person_details = PersonDetails.get_instance( person_details_IN )
             
-            # got person details.  Retrieve input values.
-            title_IN = my_person_details.get( self.PARAM_TITLE, "" )
-            organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
-            subject_UUID_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, "" )
-            subject_UUID_name_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
-            subject_UUID_source_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
-            coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, "" )
-            subject_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
-            subject_type_IN = my_person_details.get( self.PARAM_SUBJECT_TYPE, None )
-            
-            # see if corrected_person_name different from subject name passed in.
-            corrected_person_name = my_person_details.get_corrected_person_name()
-            if ( ( corrected_person_name is not None ) and ( corrected_person_name != "" ) and ( corrected_person_name != person_name ) ):
-            
-                # there is a corrected subject name.  Use it.
-                verbatim_person_name = person_name
-                person_name = corrected_person_name
-
-                debug_message = "--- In " + me + ": processing \"" + str( subject_name_IN ) + "\", FOUND corrected subject name ( \"" + str( corrected_person_name)  + "\" ) in person_details_IN: " + str( my_person_details )
-                my_logger.debug( debug_message )
-
-            #-- END check to see if corrected subject name. --#
-        
             debug_message = "--- In " + me + ": processing \"" + subject_name_IN + "\", FOUND person_details_IN: " + str( my_person_details )
             my_logger.debug( debug_message )
-
+            
         else:
         
             # nothing passed in - create new PersonDetails.
@@ -3387,332 +3565,100 @@ class ArticleCoder( BasicRateLimited ):
             my_logger.debug( debug_message )
 
         #-- END check to see if dictionary passed in. --#
-                
-        # make empty article subject to work with.
-        article_subject = Article_Subject()
-        article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
-            
+
+        # got or made person details.  Retrieve input values.
+        person_name_IN = my_person_details.get( self.PARAM_PERSON_NAME, "" )
+        fixed_person_name_IN = my_person_details.get( self.PARAM_FIXED_PERSON_NAME, "" )
+        title_IN = my_person_details.get( self.PARAM_TITLE, "" )
+        organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
+        subject_UUID_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID, "" )
+        subject_UUID_name_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NAME, "" )
+        subject_UUID_source_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
+        coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, "" )
+        subject_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
+        subject_type_IN = my_person_details.get( self.PARAM_SUBJECT_TYPE, None )
+        article_person_id_IN = my_person_details.get( self.PARAM_ARTICLE_PERSON_ID, None )
+
         # got Article_Data instance?
         if ( article_data_IN is not None ):
         
-            # get article
-            my_article = article_data_IN.article
+            # ! call process_person_name()
+            article_subject_OUT = self.process_person_name( article_data_IN,
+                                                            person_name_IN,
+                                                            person_details_IN = my_person_details,
+                                                            article_person_class_IN = Article_Subject )
+                                                           
             
-            # got a subject name or subject person ID?
-            if ( ( ( person_name is not None )
-                   and ( person_name != "" ) )
-                 or ( ( subject_person_id_IN is not None )
-                      and ( subject_person_id_IN != "" )
-                      and ( subject_person_id_IN > 0 ) ) ):
+                    
+            # make sure we got an Article_Subject back.
+            if ( article_subject_OUT is not None ):
             
-                # get capture method
-                if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
-                
-                    my_capture_method = coder_type_IN
-                    
-                else:
-                
-                    # no coder type passed in, use coder_type from Article_Data.
-                    my_capture_method = article_data_IN.coder_type
-                    
-                #-- END check for coder_type_IN --#
-        
-                debug_message = "--- In " + me + ": Processing subject name: \"" + person_name + "\" ( id: " + str( subject_person_id_IN ) + " )"
-                my_logger.debug( debug_message )
-                
-                #--------------------------------------------------------------#
-                # ! person details
-                #--------------------------------------------------------------#
-                
-                # prepare my_person_details
-
-                # newspaper instance - only add if key not already in dictionary.
-                if self.PARAM_NEWSPAPER_INSTANCE not in my_person_details:
-                
-                    # not there - add it.
-                    my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_data_IN.article.newspaper
-                    
-                #-- END check to see if newspaper instance already in dict --#
-                
-                # capture method - only add if key not already in dictionary.
-                current_key = self.PARAM_CAPTURE_METHOD
-                current_value = my_capture_method
-                if current_key not in my_person_details:
-                
-                    # not there - got a value?
-                    if ( ( current_value is not None ) and ( current_value != "" ) ):
-                
-                        # got a value - add it.
-                        my_person_details[ current_key ] = current_value
-                        
-                    #-- END check to see if we have a value --#
-                    
-                #-- END check to see if capture method already in dict --#
-    
-                #--------------------------------------------------------------#
-                # ! do lookup
-                #--------------------------------------------------------------#
-
-                # lookup person - returns person and confidence score inside
-                #    Article_Subject instance.
-                article_subject = self.lookup_person( article_subject, 
-                                                      person_name,
-                                                      create_if_no_match_IN = True,
-                                                      update_person_IN = True,
-                                                      person_details_IN = my_person_details )
-
-                # get results from Article_Subject
-                subject_person = article_subject.person
-                subject_person_match_list = article_subject.person_match_list  # list of Person instances
-                                        
-                # got a person?
-                if ( subject_person is not None ):
-
-                    # One Article_Subject per person, and then have a new thing to
-                    #    hold mentions and quotations that hangs off that.
-                    
-                    # Now, we need to deal with Article_Subject instance.  First, see
-                    #    if there already is one for this name.  If so, do nothing.
-                    #    If not, make one.
-    
-                    # get sources
-                    article_subject_qs = article_data_IN.article_subject_set.all()
-                    article_subject_qs = article_subject_qs.filter( person = subject_person )
-                    
-                    # got existing Article_Subject?
-                    article_subject_count = article_subject_qs.count()
-                    if ( article_subject_count == 0 ):
-                                                 
-                        # ! INSERT new Article_Subject
-                        # no - add - more stuff to set.  Need to see what we can get.
-                        
-                        # use the source Article_Subject created for call to
-                        #    lookup_person().
-                        #article_source = Article_Subject()
-                    
-                        # populate Article_Subject instance
-                        article_subject.article_data = article_data_IN
-                        article_subject.person = subject_person
-                        article_subject.name = person_name
-                        article_subject.verbatim_name = verbatim_person_name
-                        article_subject.lookup_name = person_name
-                        
-                        # confidence level set in lookup_person() method.
-                        #article_subject.match_confidence_level = 1.0
-        
-                        article_subject.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
-                        
-                        # see if there is a title.
-                        title_IN = my_person_details.get( self.PARAM_TITLE, "" )
-                        if ( ( title_IN is not None ) and ( title_IN != "" ) ):
+                # initialize subject to "mentioned".
+                article_subject_OUT.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
             
-                            # there is a title - set it.
-                            article_subject.set_title( title_IN, do_save_IN = False )
-
-                        #-- END check to see if we have a title --#
-                        
-                        # organization string?
-                        organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
-                        if ( ( organization_string_IN is not None ) and ( organization_string_IN != "" ) ):
-            
-                            # there is a title - set it.
-                            article_subject.set_organization_string( organization_string_IN, do_save_IN = False )
-
-                        #-- END check to see if we have an organization --#
-                       
-                        article_subject.organization = None # models.ForeignKey( Organization, blank = True, null = True )
-                        #article_subject.document = None
-                        article_subject.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
-                        #article_subject.source_capacity = None
-                        #article_subject.localness = None
-                        article_subject.notes = ""
-        
-                        # field to store how source was captured.
-                        article_subject.capture_method = my_capture_method
-                    
-                        # save, and as part of save, record alternate matches.
-                        article_subject.save()
-                        
-                        # create mention for name?
-                        if ( do_create_name_mention_IN == True ):
-                            
-                            # add name mention to Article_Subject.  Use verbatim
-                            #     name, not corrected name.
-                            current_article_subject_mention = self.process_mention( my_article, article_subject, verbatim_person_name )
-                            
-                            # error?
-                            if ( current_article_subject_mention is None ):
-
-                                # yup - output debug message.
-                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + verbatim_person_name + "\" ( lookup name = \"" + person_name + "\" ).  See log for more details."
-                                self.output_debug( debug_message, me )
-
-                            #-- END check to see if error processing quotation --#
-
-                        #-- END check to see if we create name mention. --#
-                        
-                        my_logger.debug( "In " + me + ": adding Article_Subject instance for " + str( subject_person ) + "." )
-        
-                    elif ( article_subject_count == 1 ):
-                    
-                        my_logger.debug( "In " + me + ": Article_Subject instance already exists for " + str( subject_person ) + "." )
-                        
-                        # retrieve article source from query set.
-                        article_subject = article_subject_qs.get()
-                        
-                        # !UPDATE existing Article_Subject
-                        
-                        #------------------------------------------------------#
-                        # ==> name
-                        
-                        # has name string changed?
-                        existing_subject_name = article_subject.name
-                        if ( person_name != existing_subject_name ):
-                        
-                            # replace name values, and save.
-                            article_subject.name = person_name
-                            article_subject.verbatim_name = verbatim_person_name
-                            article_subject.lookup_name = person_name
-
-                            # we need to save.
-                            do_save_updates = True
-
-                        #-- END check to see if name string changed --#
-
-                        #------------------------------------------------------#
-                        # ==> title
-
-                        # has title changed?
-                        title_IN = my_person_details.get( self.PARAM_TITLE, "" )
-                        existing_title = article_subject.title
-                        if ( title_IN != existing_title ):
-
-                            # yes.  Update title.
-                            article_subject.set_title( title_IN, do_save_IN = False, do_append_IN = True )
-
-                            # we need to save.
-                            do_save_updates = True
-
-                        #-- END check to see if title changed --#
-
-                        #------------------------------------------------------#
-                        # ==> organization_string
-
-                        # has organization string changed?
-                        organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
-                        existing_organization_string = article_subject.organization_string
-                        if ( organization_string_IN != existing_organization_string ):
-
-                            # yes.  Update organization string.
-                            article_subject.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
-
-                            # we need to save.
-                            do_save_updates = True
-
-                        #-- END check to see if organization_string changed --#
-
-                        #------------------------------------------------------#
-                        # ==> subject_type
-                        
-                        # has subject type changed?
-                        existing_subject_type = article_subject.subject_type
-                        if ( subject_type_IN != existing_subject_type ):
-                        
-                            # replace, and save.
-                            article_subject.subject_type = subject_type_IN
-
-                            # we need to save.
-                            do_save_updates = True
-
-                        #-- END check to see if subject_type string changed --#
-                        
-                        #------------------------------------------------------#
-                        # !UPDATE alternate matches
-
-                        # Were there alternate matches?
-
-                        if ( len( subject_person_match_list ) > 0 ):
-                        
-                            # yes - store the list of alternate matches in the
-                            #    Article_Subject instance variable
-                            #    "person_match_list".
-                            article_subject.person_match_list = subject_person_match_list
-                            
-                            # save calls process_alternate_matches().
-                            do_save_updates = True
-                            
-                            # call method to process alternate matches.
-                            my_logger.debug( "In " + me + ": @@@@@@@@ Existing Article_Subject found for person, calling process_alternate_matches." )
-                            #article_subject.process_alternate_matches()
-
-                        #-- END check to see if there were alternate matches --#
-                        
-                        #------------------------------------------------------#
-                        # save?
-
-                        if ( do_save_updates == True ):
-                        
-                            # yes.
-                            article_subject.save()
-                            
-                        #-- END check to see if we save updates --#
-
-                        # create mention for name?
-                        if ( do_create_name_mention_IN == True ):
-                            
-                            # add name mention to Article_Subject.  Use verbatim
-                            #     name, not corrected name.
-                            current_article_subject_mention = self.process_mention( my_article, article_subject, verbatim_person_name )
-                            
-                            # error?
-                            if ( current_article_subject_mention is None ):
-
-                                # yup - output debug message.
-                                debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + verbatim_person_name + "\" ( lookup name = \"" + person_name + "\" ).  See log for more details."
-                                self.output_debug( debug_message, me )
-
-                            #-- END check to see if error processing quotation --#
-
-                        #-- END check to see if we create name mention. --#
-                        
-                    else:
-                    
-                        # neither 0 or 1 subjects - either invalid or multiple,
-                        #    either is not right.
-                        my_logger.debug( "In " + me + ": Article_Subject count for " + str( subject_person ) + " = " + str( article_subject_count ) + ".  What to do?" )
-                        
-                        # make sure we don't go any further.
-                        article_subject = None
-                                            
-                    #-- END check if need new Article_Subject instance --#
-
-                else:
+                # get information from Article_Subject instance.
+                my_article = article_data_IN.article
+                person_lookup_name = article_subject_OUT.lookup_name
+                person_verbatim_name = article_subject_OUT.verbatim_name
                 
-                    # error - no person found for name.
-                    status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no matching person found - must have been a problem looking up name \"" + person_name + "\""            
-                
-                    my_logger.debug( status_OUT )
-
-                #-- END check to see if person found. --#
+                # name mention?  Same for INSERT or UPDATE
+                if ( do_create_name_mention_IN == True ):
                     
-            else:
-            
-                # No person name - error.
-                status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no subject name passed in, so nothing to do."
-            
-            #-- END check to see if subject name. --#
+                    # add name mention to Article_Subject.  Use verbatim
+                    #     name.
+                    current_article_subject_mention = self.process_mention( my_article, article_subject_OUT, person_verbatim_name )
+                    
+                    # error?
+                    if ( current_article_subject_mention is None ):
+
+                        # yup - output debug message.
+                        debug_message = "ERROR: Article_Coder.process_mention() returned None - problem processing name mention \"" + str( person_verbatim_name ) + "\" ( lookup name = \"" + str( person_lookup_name ) + "\" ).  See log for more details."
+                        self.output_debug( debug_message, me )
+
+                    #-- END check to see if error processing quotation --#
+
+                #-- END check to see if we create name mention. --#
+
+                # NEW - set to source type of individual.
+                article_subject_OUT.source_type = Article_Subject.SOURCE_TYPE_INDIVIDUAL
+
+                #article_subject_OUT.document = None
+                article_subject_OUT.source_contact_type = Article_Subject.SOURCE_CONTACT_TYPE_OTHER
+                #article_subject_OUT.source_capacity = None
+                #article_subject_OUT.localness = None
+
+                #------------------------------------------------------#
+                # ==> subject_type
+                
+                # has subject type changed?
+                existing_subject_type = article_subject_OUT.subject_type
+                if ( subject_type_IN != existing_subject_type ):
+                
+                    # replace, and save.
+                    article_subject_OUT.subject_type = subject_type_IN
+
+                    # we need to save.
+                    do_save_updates = True
+
+                #-- END check to see if subject_type string changed --#
+
+                # save, and as part of save, record alternate matches.
+                article_subject_OUT.save()
+
+            #-- END check to see if process_person_name() was a success --#
             
         else:
         
             # No Article_Data instance.
             status_OUT = self.STATUS_ERROR_PREFIX + " in " + me + ": no Article_Data instance, so no place to store subject data."            
         
+            article_subject_OUT.match_status = status_OUT
+            
+            # can't save() without Article_Data.
+            # article_subject_OUT.save()
+
         #-- END check to see if Article_Data instance. --#
-        
-        article_subject_OUT = article_subject
-        article_subject_OUT.match_status = status_OUT
-        article_subject_OUT.save()
-        
+                
         return article_subject_OUT
     
     #-- END method process_subject_name() --#

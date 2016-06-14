@@ -6609,7 +6609,7 @@ class Article_Subject( Article_Person ):
         
         #-- END check to see what type of source --#
 
-        string_OUT = string_OUT + " (" + self.subject_type + "; " + self.source_type + ")"
+        string_OUT = string_OUT + " (" + str( self.subject_type ) + "; " + str( self.source_type ) + ")"
 
         return string_OUT
 

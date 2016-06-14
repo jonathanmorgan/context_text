@@ -19,6 +19,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 # six - python 2 + 3
 import six
 
+# sourcenet imports
+from sourcenet.models import Article_Subject
+
 #================================================================================
 # Shared variables and functions
 #================================================================================
@@ -39,6 +42,7 @@ class PersonDetails( dict ):
     PROP_NAME_PERSON_NAME = "person_name"
     PROP_NAME_FIXED_PERSON_NAME = "fixed_person_name"
     PROP_NAME_PERSON_TYPE = "person_type"
+    PROP_NAME_ARTICLE_PERSON_ID = "article_person_id"
     PROP_NAME_TITLE = "title"
     PROP_NAME_PERSON_ORGANIZATION = "person_organization"
     PROP_NAME_QUOTE_TEXT = "quote_text"
@@ -51,6 +55,16 @@ class PersonDetails( dict ):
     PROP_NAME_CAPTURE_METHOD = "capture_method"
     PROP_NAME_SUBJECT_TYPE = "subject_type"
     PROP_NAME_CODER_TYPE = "coder_type"
+
+    # person types
+    PERSON_TYPE_SUBJECT = "subject"
+    PERSON_TYPE_SOURCE = "source"
+    PERSON_TYPE_AUTHOR = "author"
+
+    # subject_type to person type dictionary
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
 
     #---------------------------------------------------------------------------
     # ! ==> class methods, in alphabetical order
@@ -133,6 +147,9 @@ class PersonDetails( dict ):
     def __init__( self, *args, **kwargs ):
         
         super( PersonDetails, self ).__init__( *args, **kwargs )
+        
+        # declare variables
+        self.do_lookup_id_before_name = False
 
     #-- END overridden __init__() that calls parent __init__(). --#
     
@@ -185,6 +202,43 @@ class PersonDetails( dict ):
         return value_OUT
         
     #-- END method get_corrected_person_name() --#
+    
+
+    def get_lookup_name( self, *args, **kwargs ):
+        
+        '''
+        Looks to see if there is a property named "fixed_person_name".  If so,
+            and if it is not empty or None, returns that.  If not, returns
+            whatever is in "person_name".  Actual implementation is to call
+            get_corrected_person_name().
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # call get_corrected_person_name()
+        value_OUT = self.get_corrected_person_name()
+        
+        return value_OUT
+        
+    #-- END method get_lookup_name() --#
+    
+
+    def get_verbatim_name( self, *args, **kwargs ):
+        
+        '''
+        To start, always returns person_name.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # call get_corrected_person_name()
+        value_OUT = self.get( self.PROP_NAME_PERSON_NAME, None )
+        
+        return value_OUT
+        
+    #-- END method get_verbatim_name() --#
     
 
     def init_from_dict( self, dict_IN = None, *args, **kwargs ):

@@ -37,6 +37,9 @@ import sys
 # mess with python 3 support
 import six
 
+# django imports
+from django.core.exceptions import MultipleObjectsReturned
+
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.json.json_helper import JSONHelper
@@ -48,6 +51,7 @@ from python_utilities.sequences.sequence_helper import SequenceHelper
 
 # models
 from sourcenet.models import Alternate_Subject_Match
+from sourcenet.models import Article_Author
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Data_Notes
 from sourcenet.models import Article_Subject
@@ -118,6 +122,7 @@ class ManualArticleCoder( ArticleCoder ):
     # person store JSON property names
     DATA_STORE_PROP_PERSON_ARRAY = "person_array"
     DATA_STORE_PROP_PERSON_TYPE = ArticleCoder.PARAM_PERSON_TYPE # "person_type"
+    DATA_STORE_PROP_ARTICLE_PERSON_ID = ArticleCoder.PARAM_ARTICLE_PERSON_ID # article_person_id
     DATA_STORE_PROP_PERSON_NAME = ArticleCoder.PARAM_PERSON_NAME # "person_name"
     DATA_STORE_PROP_FIXED_PERSON_NAME = ArticleCoder.PARAM_FIXED_PERSON_NAME # "fixed_person_name"
     DATA_STORE_PROP_TITLE = ArticleCoder.PARAM_TITLE             # "title"
@@ -137,6 +142,7 @@ class ManualArticleCoder( ArticleCoder ):
 
     DIV_ID_PERSON_CODING = "person-coding"
     INPUT_ID_MATCHED_PERSON_ID = "matched-person-id"
+    INPUT_ID_ARTICLE_PERSON_ID = "article-person-id"
     INPUT_ID_DATA_STORE_PERSON_INDEX = "data-store-person-index"
     INPUT_ID_PERSON_NAME = "person-name"
     INPUT_ID_FIXED_PERSON_NAME = "fixed-person-name"
@@ -235,9 +241,12 @@ class ManualArticleCoder( ArticleCoder ):
         # declare variables - processing Article_Data's child records.
         current_author = None
         current_subject = None
+        current_article_person_id = -1
         current_person = None
         current_person_type = ""
         current_person_name = ""
+        current_person_verbatim_name = ""
+        current_person_lookup_name = ""
         current_organization_string = ""
         current_title = ""
         current_quote_text = ""
@@ -262,7 +271,7 @@ class ManualArticleCoder( ArticleCoder ):
             # we do.  First get list of Article_Authors.
             article_author_qs = article_data_IN.article_author_set.all()
 
-            # loop
+            # ! author loop
             for current_author in article_author_qs:
             
                 debug_message = "author: " + str( current_author )
@@ -271,6 +280,9 @@ class ManualArticleCoder( ArticleCoder ):
                 # increment index values
                 current_index += 1
                 next_index += 1
+                
+                # retrieve Article_Author ID:
+                current_article_person_id = current_author.id
 
                 # get current person
                 current_person = current_author.person
@@ -286,6 +298,7 @@ class ManualArticleCoder( ArticleCoder ):
                 # ==> person_name and fixed_person_name
                 current_person_name = JSONHelper.escape_json_value( current_author.name )
                 current_person_verbatim_name = JSONHelper.escape_json_value( current_author.verbatim_name )
+                current_person_lookup_name = JSONHelper.escape_json_value( current_author.lookup_name )
                 
                 # ==> organization_string
                 current_organization_string = JSONHelper.escape_json_value( current_author.organization_string )
@@ -303,17 +316,19 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person_dict = {}
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
                 
-                # is verbatim name different from name?
-                if ( ( current_person_verbatim_name is not None )
-                    and ( current_person_verbatim_name != "" )
-                    and ( current_person_verbatim_name != current_person_name ) ):
+                # add article_person_id
+                current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
+                
+                # is lookup name different from verbatim name?
+                if ( ( ( current_person_verbatim_name is not None ) and ( current_person_verbatim_name != "" ) )
+                    and ( ( current_person_lookup_name is not None ) and ( current_person_lookup_name != "" ) )
+                    and ( current_person_verbatim_name != current_person_lookup_name ) ):
                     
                     # there was a correction of the verbatim name text.
                     #     "person_name" is the "verbatim_name",
-                    #     "fixed_person_name" is the "lookup_name" (or just
-                    #     "name").
+                    #     "fixed_person_name" is the "lookup_name".
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_verbatim_name
-                    current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_name
+                    current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_lookup_name
 
                 else:
                 
@@ -339,7 +354,7 @@ class ManualArticleCoder( ArticleCoder ):
             # then get list of Article_Subjects.
             article_subject_qs = article_data_IN.article_subject_set.all()
 
-            # loop
+            # ! subject loop
             for current_subject in article_subject_qs:
 
                 debug_message = "subject: " + str( current_subject )
@@ -360,13 +375,20 @@ class ManualArticleCoder( ArticleCoder ):
     
                     # set values for person from instance.
     
+                    # ==> article_person_id - retrieve Article_Subject ID:
+                    current_article_person_id = current_subject.id
+
                     # ==> person_type
                     current_subject_type = current_subject.subject_type
                     current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
                     
+                    # add article_person_id
+                    current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
+                    
                     # ==> person_name and fixed_person_name
                     current_person_name = JSONHelper.escape_json_value( current_subject.name )
                     current_person_verbatim_name = JSONHelper.escape_json_value( current_subject.verbatim_name )
+                    current_person_lookup_name = JSONHelper.escape_json_value( current_subject.lookup_name )
                     
                     # ==> organization_string
                     current_organization_string = JSONHelper.escape_json_value( current_subject.organization_string )
@@ -397,17 +419,19 @@ class ManualArticleCoder( ArticleCoder ):
                     current_person_dict = {}
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
 
-                    # is verbatim name different from name?
-                    if ( ( current_person_verbatim_name is not None )
-                        and ( current_person_verbatim_name != "" )
-                        and ( current_person_verbatim_name != current_person_name ) ):
+                    # add article_person_id
+                    current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
+                        
+                    # is lookup name different from verbatim name?
+                    if ( ( ( current_person_verbatim_name is not None ) and ( current_person_verbatim_name != "" ) )
+                        and ( ( current_person_lookup_name is not None ) and ( current_person_lookup_name != "" ) )
+                        and ( current_person_verbatim_name != current_person_lookup_name ) ):
                         
                         # there was a correction of the verbatim name text.
                         #     "person_name" is the "verbatim_name",
-                        #     "fixed_person_name" is the "lookup_name" (or just
-                        #     "name").
+                        #     "fixed_person_name" is the "lookup_name".
                         current_person_dict[ cls.DATA_STORE_PROP_PERSON_NAME ] = current_person_verbatim_name
-                        current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_name
+                        current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = current_person_lookup_name
     
                     else:
                     
@@ -416,7 +440,7 @@ class ManualArticleCoder( ArticleCoder ):
                         current_person_dict[ cls.DATA_STORE_PROP_FIXED_PERSON_NAME ] = ""
                         
                     #-- END check to see if fixed name. --#    
-                    
+                                    
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ORGANIZATION ] = current_organization_string
                     current_person_dict[ cls.DATA_STORE_PROP_TITLE ] = current_title
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_ID ] = current_person_id
@@ -684,14 +708,36 @@ class ManualArticleCoder( ArticleCoder ):
         person_count = -1
         person_counter = -1
         
-        # declare variables - structures to help check for removal.
+        # declare variables - OLD - structures to help check for removal.
+        article_author_set_qs = None
+        person_id_to_article_author_map = {}
+        person_name_to_article_author_map = {}
+        current_author_id = -1
+        article_subject_set_qs = None
+        person_name_to_article_subject_map = {}
+        current_subject_id = -1
+        current_person_instance = None
+        current_person_id = -1
+        
+        # declare variables - remove obsolete - NEW - lists of IDs of Article_Person children
+        #     (Authors and Subjects) that we started with, and then that were
+        #     looked up in processing, so we can remove any we started with that
+        #     weren't referenced in the current run.
+        original_article_author_id_list = []
+        processed_article_author_id_list = []
+        deleted_article_author_list = []
+        original_article_subject_id_list = []
+        processed_article_subject_id_list = []
+        deleted_article_subject_list = []
+        
+        # declare variables - remove obsolete - OLD - maps of ids and names to
+        #     their corresponding Article_Person instances.  Didn't work.
+        #.    Keeping them around since they might be interesting.
         person_id_to_article_author_map = {}
         person_name_to_article_author_map = {}
         person_id_to_article_subject_map = {}
         person_name_to_article_subject_map = {}
-        current_person_instance = None
-        current_person_id = -1
-        
+
         # declare variables - get current person's information.
         person_type = ""
         person_name = ""
@@ -700,6 +746,7 @@ class ManualArticleCoder( ArticleCoder ):
         person_organization = ""
         quote_text = ""
         person_id = -1
+        article_person_id = -1
         
         # declare variables - for processing person.
         current_article_subject = None
@@ -831,6 +878,16 @@ class ManualArticleCoder( ArticleCoder ):
                         # got article data?
                         if ( current_article_data is not None ):
                         
+                            # make list of Article_Subject and Article_Author
+                            #     instances associated before processing.
+                            article_author_set_qs = current_article_data.article_author_set.all()
+                            original_article_author_id_list = list( article_author_set_qs.values_list( "id", flat = True ).order_by( "id" ) )
+                            article_subject_set_qs = current_article_data.article_subject_set.all()
+                            original_article_subject_id_list = list( article_subject_set_qs.values_list( "id", flat = True ).order_by( "id" ) )
+                        
+                            debug_message = "original_article_author_id_list = " + str( original_article_author_id_list ) + "; original_article_subject_id_list = " + str( original_article_subject_id_list )
+                            self.output_debug( debug_message, me, "@@@@@@@@>" )                                        
+        
                             # yes - store JSON in an Article_Data_Note.
                             json_article_data_note = Article_Data_Notes()
                             json_article_data_note.article_data = current_article_data
@@ -863,21 +920,25 @@ class ManualArticleCoder( ArticleCoder ):
                                     #    when a person is removed during coding).
                                     if ( current_person is not None ):
                                 
-                                        # retrieve person information.
-                                        person_type = current_person.get( self.DATA_STORE_PROP_PERSON_TYPE )
-                                        person_name = current_person.get( self.DATA_STORE_PROP_PERSON_NAME )
-                                        fixed_person_name = current_person.get( self.DATA_STORE_PROP_FIXED_PERSON_NAME )
-                                        title = current_person.get( self.DATA_STORE_PROP_TITLE )
-                                        person_organization = current_person.get( self.DATA_STORE_PROP_PERSON_ORGANIZATION )
-                                        quote_text = current_person.get( self.DATA_STORE_PROP_QUOTE_TEXT )
-                                        person_id = current_person.get( self.DATA_STORE_PROP_PERSON_ID )
-        
                                         # set up person details
                                         person_details = PersonDetails()
                                         
                                         # store all fields from current_person.
                                         person_details.update( current_person )
                                         
+                                        # retrieve person information.
+                                        person_type = person_details.get( self.DATA_STORE_PROP_PERSON_TYPE )
+                                        person_name = person_details.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                        fixed_person_name = person_details.get( self.DATA_STORE_PROP_FIXED_PERSON_NAME )
+                                        title = person_details.get( self.DATA_STORE_PROP_TITLE )
+                                        person_organization = person_details.get( self.DATA_STORE_PROP_PERSON_ORGANIZATION )
+                                        quote_text = person_details.get( self.DATA_STORE_PROP_QUOTE_TEXT )
+                                        person_id = person_details.get( self.DATA_STORE_PROP_PERSON_ID )
+                                        article_person_id = person_details.get( self.DATA_STORE_PROP_ARTICLE_PERSON_ID )
+        
+                                        #debug_message = "article_person_id = " + str( article_person_id )
+                                        #self.output_debug( debug_message, me, "@@@@@@@@>" )                                        
+        
                                         # also add in the article's newspaper.
                                         person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                                         
@@ -939,15 +1000,18 @@ class ManualArticleCoder( ArticleCoder ):
                                             # save source updates - should not need save.
                                             current_article_subject.save()
                                             
-                                            # ! update subject dicts for removal processing.
+                                            # ! update subject data for removal processing.
                                             current_person_instance = current_article_subject.person
                                             current_person_id = current_person_instance.id
                                             person_id_to_article_subject_map[ current_person_id ] = current_article_subject
                                             person_name_to_article_subject_map[ person_name ] = current_article_subject
         
+                                            # Add ID of this Article_Subject to the processed list.
+                                            processed_article_subject_id_list.append( current_article_subject.id )
+                                                    
                                             # store Article_Subject instance in Article_Person reference.
                                             current_article_person = current_article_subject
-        
+                                            
                                         elif ( person_type == self.PERSON_TYPE_AUTHOR ):
                                         
                                             # ! Article_Author
@@ -955,15 +1019,18 @@ class ManualArticleCoder( ArticleCoder ):
                                                                                                person_name,
                                                                                                person_details_IN = person_details )
                             
-                                            # store Article_Author instance in Article_Person reference.
-                                            current_article_person = current_article_author
-        
-                                            # ! update author dicts for removal processing.
+                                            # ! update author data for removal processing.
                                             current_person_instance = current_article_author.person
                                             current_person_id = current_person_instance.id
                                             person_id_to_article_author_map[ current_person_id ] = current_article_author
                                             person_name_to_article_author_map[ person_name ] = current_article_author
     
+                                            # Add ID of this Article_Author to the processed list.
+                                            processed_article_author_id_list.append( current_article_author.id )
+                                                    
+                                            # store Article_Author instance in Article_Person reference.
+                                            current_article_person = current_article_author
+        
                                         #-- END check to see person type --#
         
                                         # set name
@@ -998,12 +1065,26 @@ class ManualArticleCoder( ArticleCoder ):
     
                                 #-- END loop over persons --#
                                 
-                                # ! removal check
-                                # Always loop over all the authors, then subjects in
-                                #    current Article_Data, if any are present in
-                                #    databse, but not in map dictionaires, remove
-                                #    them from database.
-    
+                                # ! TODO - removal check
+                                # Remove any Article_Author or Article_Subject
+                                #     whose ID is in the original list but not
+                                #     in the processed list.
+                                
+                                # ! removals - Article_Author
+                                deleted_article_author_list = self.winnow_orphaned_records(
+                                        original_article_author_id_list,
+                                        processed_article_author_id_list,
+                                        Article_Author
+                                    )
+                                
+                                # ! removals - Article_Subject
+                                deleted_article_subject_list = self.winnow_orphaned_records(
+                                        original_article_subject_id_list,
+                                        processed_article_subject_id_list,
+                                        Article_Subject
+                                    )
+
+                                '''                                    
                                 # authors
                                 for current_article_author in current_article_data.article_author_set.all():
                                 
@@ -1026,7 +1107,7 @@ class ManualArticleCoder( ArticleCoder ):
                                 
                                 #-- END loop over related Article_Author instances --#
                                 
-                                # authors
+                                # subjects
                                 for current_article_subject in current_article_data.article_subject_set.all():
                                 
                                     # get person ID and full name.
@@ -1047,6 +1128,7 @@ class ManualArticleCoder( ArticleCoder ):
                                     #-- END look for subject in processed dictionaries --#
                                 
                                 #-- END loop over related Article_Subject instances --#
+                                '''
                                 
                             #-- END check to see if there are any persons. --#
                             
@@ -1128,6 +1210,137 @@ class ManualArticleCoder( ArticleCoder ):
         return article_data_OUT
     
     #-- END function process_data_store_json() --#
+    
+    def winnow_orphaned_records( self, original_ID_list_IN, updated_ID_list_IN, class_IN, *args, **kwargs ):
+        
+        '''
+        For objects of a given class (class_IN), accepts list of IDs originally
+            associated with an entity, an updated list of IDs that are currently
+            associated with that entity, and the class of the object we are
+            winnowing.  For each ID in the original list, checks to see if it is
+            in the updated list.  If not, looks up the instance by the ID using
+            class_IN, then delete()'s the instance.  Returns list of instances
+            that were deleted, post-delete.
+            
+        Postconditions: Records whose IDs are in the original list and not in
+            the updated list will be permanently deleted after this routine is
+            invoked.  Returns list of instances that were deleted.
+        '''
 
+        # return reference
+        deleted_instances_list_OUT = []
+        
+        # declare variables
+        me = "winnow_orphaned_records"
+        original_id_count = -1
+        original_id_counter = -1
+        current_ID = None
+        instance_qs = None
+        current_instance = None
+        deleted_id_list = []
+        deleted_instance_list = []
+        debug_message = ""
+        
+        debug_message = "Winnowing class " + str( class_IN ) + "\n- original_id_list_IN = " + str( original_ID_list_IN ) + "\n- updated_ID_list_IN = " + str( updated_ID_list_IN )
+        self.output_debug( debug_message, me, "~~~~" )
+        
+        # got an original list?
+        if ( original_ID_list_IN is not None ):
+            
+            # is it a list?
+            if ( isinstance( original_ID_list_IN, list ) == True ):
+                
+                # does it have anything in it?
+                original_id_count = len( original_ID_list_IN )
+                if ( original_id_count > 0 ):
+                
+                    # yes - For each item, check to see if the ID stored in the list is
+                    #     in the updated_ID_list_IN.
+                    original_id_counter = 0
+                    for current_ID in original_ID_list_IN:
+                        
+                        # increment counter
+                        original_id_counter += 1
+        
+                        debug_message = "Original ID #" + str( original_id_counter ) + " = " + str( current_ID )
+                        # self.output_debug( debug_message, me, "~~~~~~~~" )
+                    
+                        # check to see if it is in updated list.
+                        if ( current_ID not in updated_ID_list_IN ):
+                        
+                            debug_message += " NOT IN updated_ID_list_IN ( " + str( updated_ID_list_IN ) + " )"
+                            self.output_debug( debug_message, me, "~~~~~~~~" )
+                    
+                            # wrap in try, in case problem with class, or record DNE.
+                            try:
+                            
+                                # it is not in the list.  Look up the instance...
+                                instance_qs = class_IN.objects.all()                    
+                                current_instance = instance_qs.get( pk = current_ID )
+                                
+                                # ...delete it...
+                                current_instance.delete()
+                                
+                                # ...and add it to the deleted lists.
+                                deleted_id_list.append( current_ID )
+                                deleted_instance_list.append( current_instance )
+                                
+                                debug_message = "Deleted record with ID " + str( current_ID ) + " in class " + str( class_IN )
+                                self.output_debug( debug_message, me, "~~~~~~~~~~~~" )
+        
+                            except MultipleObjectsReturned as mor_exception:
+                            
+                                debug_message = "Multiple matches for ID " + str( current_ID ) + " in class " + str( class_IN )
+                                self.output_debug( debug_message, me, "~~~~~~~~~~~~" )
+        
+                            except class_IN.DoesNotExist as dne_exception:
+        
+                                debug_message = "No match for ID " + str( current_ID ) + " in class " + str( class_IN )
+                                self.output_debug( debug_message, me, "~~~~~~~~~~~~" )
+        
+                            except Exception as e:
+                                
+                                debug_message = "Unexpected exception caught: " + str( e ) + " processing ID " + str( current_ID ) + " and class " + str( class_IN )
+                                self.output_debug( debug_message, me, "~~~~~~~~~~~~" )
+                                
+                            #-- END try...except around lookup of instance, and then delete() --#
+                            
+                        else:
+                            
+                            debug_message += " IN updated_ID_list_IN ( " + str( updated_ID_list_IN ) + " ) - moving on."
+                            self.output_debug( debug_message, me, "~~~~~~~~" )
+        
+                        #-- END check to see if current original ID is in updated list --#
+        
+                    #-- END loop over IDs in original list. --#
+
+                else:
+                    
+                    debug_message = "updated_ID_list_IN ( " + str( updated_ID_list_IN ) + " ) has nothing in it ( " + str( original_id_count ) + " )."
+                    self.output_debug( debug_message, me, "~~~~" )            
+                    
+                #-- END check to see if there is anything in "original" list --#
+                    
+            else:
+                
+                debug_message = "updated_ID_list_IN ( " + str( updated_ID_list_IN ) + " ) is not a list ( type = " + str( type( updated_ID_list_IN ) ) + " )."
+                self.output_debug( debug_message, me, "~~~~" )            
+                
+            #-- END check to see if the "original" list is of type list --#
+            
+        else:
+            
+            debug_message = "updated_ID_list_IN ( " + str( updated_ID_list_IN ) + " ) is None."
+            self.output_debug( debug_message, me, "~~~~" )            
+            
+        #-- END check to see if there is an "original" list --#
+        
+        # return instance list
+        deleted_instances_list_OUT = deleted_instance_list
+
+        return deleted_instances_list_OUT
+        
+    #-- END method winnow_orphaned_records() --#
+    
 
 #-- END class ManualArticleCoder --#

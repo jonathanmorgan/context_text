@@ -23,7 +23,7 @@ SOURCENET.article_data_id = -1;
 SOURCENET.data_store = null;
 
 // DEBUG!
-SOURCENET.debug_flag = false;
+SOURCENET.debug_flag = true;
 
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
@@ -42,6 +42,7 @@ SOURCENET.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
 SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
 SOURCENET.INPUT_ID_PERSON_NAME = "person-name";
 SOURCENET.INPUT_ID_PERSON_TYPE = "person-type";
+SOURCENET.INPUT_ID_ARTICLE_PERSON_ID = "article-person-id";
 SOURCENET.INPUT_ID_TITLE = "person-title";
 SOURCENET.INPUT_ID_ORGANIZATION = "person-organization";
 SOURCENET.INPUT_ID_QUOTE_TEXT = "source-quote-text";
@@ -775,6 +776,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     var person_count = -1;
     var person_index = -1;
     var current_person_type = "";
+    var current_article_person_id = "";
     var current_person_name = "";
     var current_fixed_person_name = "";
     var current_title = "";
@@ -818,17 +820,20 @@ SOURCENET.DataStore.prototype.load_from_json = function()
         // how many we got?
         person_count = my_person_array.length;
 
-        // it is null.  Person already removed at this index.
         SOURCENET.log_message( "In " + me + "(): person_count = " + person_count );
 
+        // ! person loop
         for ( person_index = 0; person_index < person_count; person_index++ )
         {
+
+            SOURCENET.log_message( "In " + me + "(): person_index = " + person_index );
 
             // get person at current index
             current_person_data = my_person_array[ person_index ];
 
             // get values
             current_person_type = current_person_data[ "person_type" ];
+            current_article_person_id = current_person_data[ "article_person_id" ];
             current_person_name = current_person_data[ "person_name" ];
             current_fixed_person_name = current_person_data[ "fixed_person_name" ];
             current_title = current_person_data[ "title" ];
@@ -836,10 +841,16 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             current_quote_text = current_person_data[ "quote_text" ];
             current_person_id = current_person_data[ "person_id" ];
             current_person_index = current_person_data[ "person_index" ];
+            current_article_person_id = current_person_data[ "article_person_id" ];
 
             // create and populate Person instance.
             current_person = new SOURCENET.Person();
             current_person.person_type = current_person_type;
+
+            // ID for Article_Person descendent instance, based on person_type:
+            //     Article_Subject ID if source or subject, Article_Author ID if
+            //     this person is an author.
+            current_person.article_person_id = current_article_person_id
             
             // person name - are verbatim and name different?
             if ( ( current_fixed_person_name != null )
@@ -859,7 +870,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
                 current_person.person_name = current_person_name;
                 current_person.fixed_person_name = "";
 
-            } //-- END check to see if name was fixed --//
+            } //-- END check to see if name has been fixed --//
             
             current_person.title = current_title;
             current_person.person_organization = current_person_organization;
@@ -1394,6 +1405,7 @@ SOURCENET.Person = function()
     this.person_organization = "";
     this.quote_text = "";
     this.person_id = null;
+    this.article_person_id = -1;
     //this.location_of_name = "";
 } //-- END SOURCENET.Person constructor --//
 
@@ -1416,17 +1428,24 @@ SOURCENET.Person.prototype.populate_form = function()
     var my_person_name = "";
     var my_fixed_person_name = "";
     var my_person_type = "";
+    var my_article_person_id = "";
     var my_title = "";
     var my_person_organization = "";
     var my_quote_text = "";
     var my_person_id = null;
     var is_value_OK = false;
     
+    // declare variables for building HTML output.
+    temp_html = "";
+    temp_ul = null;
+    temp_li = null;
+    
     // retrieve values from instance.
     my_person_index = this.person_index;
     my_person_name = this.person_name;
     my_fixed_person_name = this.fixed_person_name;
     my_person_type = this.person_type;
+    my_article_person_id = this.article_person_id;
     my_title = this.title;
     my_person_organization = this.person_organization;
     my_quote_text = this.quote_text;
@@ -1560,12 +1579,33 @@ SOURCENET.Person.prototype.populate_form = function()
         temp_element.val( "" );
     } //-- END check to see if we have value --//
         
+
+    //------------------------------------------------------------------------//
+    // article_person_id
+    temp_value = my_article_person_id
+    
+    // get <input> element
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ARTICLE_PERSON_ID );
+    is_value_OK = SOURCENET.is_integer_OK( temp_value, 1 )
+    if ( is_value_OK == true )
+    {
+        // store value in element
+        temp_element.val( temp_value );
+    }
+    else
+    {
+        // no value in instance, so set to -1.
+        temp_element.val( -1 );
+    } //-- END check to see if we have value --//
+
+    
     //------------------------------------------------------------------------//
     // person_id
     temp_value = my_person_id;
 
     // get <input> element
     temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+    temp_input = null
     is_value_OK = SOURCENET.is_integer_OK( temp_value, 1 )
     if ( is_value_OK == true )
     {
@@ -1578,8 +1618,22 @@ SOURCENET.Person.prototype.populate_form = function()
         // empty it.
         temp_element.empty();
         
-        // place text in it.
-        temp_element.text( "Selected Person ID is " + temp_value );
+        // create <li>
+        temp_li = $( "<li></li>" );
+        
+        // place text in <li>.
+        temp_li.text( "Selected Person ID is " + temp_value + ". " );
+        
+        // add button to clear existing ID.
+        temp_html = $( "<input type=\"button\" id=\"clear-matched-id\" name=\"clear-matched-id\" value=\"<== Remove\" onclick=\"SOURCENET.clear_matched_person_id( '' )\" />" );
+        temp_li.append( temp_html );
+
+        // make a <ul> and add the <li> to it.
+        temp_ul = $( "<ul></ul>" );
+        temp_ul.append( temp_li );        
+
+        // append it all to the HTML element in question.        
+        temp_element.append( temp_ul );
     }
     else
     {
@@ -1619,6 +1673,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var my_person_name = "";
     var my_fixed_person_name = "";
     var my_person_type = "";
+    var my_article_person_id = ""
     var my_title = "";
     var my_organization = "";
     var my_quote_text = "";
@@ -1651,10 +1706,17 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     my_fixed_person_name = temp_element.val();
     this.fixed_person_name = my_fixed_person_name;
     
+    //------------------------------------------------------------------------//
     // person-type
     temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE );
     my_person_type = temp_value;    
     this.person_type = my_person_type;
+
+    //------------------------------------------------------------------------//
+    // article-person-id
+    temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_ARTICLE_PERSON_ID );
+    my_article_person_id = temp_value;    
+    this.article_person_id = my_article_person_id;
 
     //------------------------------------------------------------------------//
     // person-title
@@ -1985,10 +2047,6 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     // clear the coding form.
     SOURCENET.log_message( "Top of " + me );
         
-    // matched-person-id
-    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
-    temp_element.val( -1 );
-    
     // data-store-person-index
     temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
     temp_element.val( -1 );
@@ -2019,39 +2077,25 @@ SOURCENET.clear_coding_form = function( status_message_IN )
     temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
     temp_element.val( "" );
     
-    // id_person
-    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
-    temp_element.val( "" );
+    // clear out the person lookup form
+    SOURCENET.clear_person_lookup_form( false )
     
-    // id_person_text
-    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
-    temp_element.val( "" );
-    
-    // clear out <div> inside <div id="id_person_on_deck">.
-    
-    // get on-deck <div>.
-    on_deck_person_element = $( '#' + SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK );
-    
-    // remove anonymous <div> inside.
-    on_deck_person_element.find( 'div' ).remove();
-    
-    // add a new empty div.
-    temp_element = $( '<div></div>' );
-    on_deck_person_element.append( temp_element );
-    
-    // if populated, clear out the "lookup-person-existing-id" <div>
-    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
-    temp_element.text( "" );
+    // clear out the matched person ID
+    SOURCENET.clear_matched_person_id()
     
     // clear any find-in-article-text matches, and clear find text entry field.
     SOURCENET.clear_find_in_text();
     
-    // make status message array (empty message will clear status area).
-    status_message_array = [];
-    status_message_array.push( status_message_IN );
-    
-    // output it.
-    SOURCENET.output_status_messages( status_message_array );
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
     
 } //-- END function SOURCENET.clear_coding_form() --//
 
@@ -2150,6 +2194,113 @@ SOURCENET.clear_fixed_person_name = function()
     input_element.val( "" );
     
 } //-- END function SOURCENET.clear_fixed_person_name() --//
+
+
+/**
+ * Clears out coding form and status message area, and optionally displays a
+ *    status message if one passed in.
+ *
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
+ *    initialized and at least one person added to it.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_matched_person_id = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_matched_person_id";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // matched-person-id
+    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+    temp_element.val( -1 );
+    
+    // get <div> inside person lookup area where we display that there is an ID.
+    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+    temp_element.empty();
+
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_matched_person_id() --//
+
+
+/**
+ * Clears out coding form and status message area, and optionally displays a
+ *    status message if one passed in.
+ *
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
+ *    initialized and at least one person added to it.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_person_lookup_form = function( do_clear_matched_id_IN, status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_person_lookup_form";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // id_person
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
+    temp_element.val( "" );
+    
+    // id_person_text
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
+    temp_element.val( "" );
+    
+    // clear out <div> inside <div id="id_person_on_deck">.
+    
+    // get on-deck <div>.
+    on_deck_person_element = $( '#' + SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK );
+    
+    // remove anonymous <div> inside.
+    on_deck_person_element.find( 'div' ).remove();
+    
+    // add a new empty div.
+    temp_element = $( '<div></div>' );
+    on_deck_person_element.append( temp_element );
+    
+    // do we clear out any matched person ID?
+    if ( do_clear_matched_id_IN == true )
+    {
+        
+        // yes, clear it out.
+        SOURCENET.clear_matched_person_id()
+        
+    }
+    
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_person_lookup_form() --//
 
 
 /**
@@ -4057,7 +4208,7 @@ $( document ).ready(
                 var source_text = "";
                 var person_lookup = "";
     
-                // get id_person_text_element text field,  place value, then
+                // get id_person_text_element text field, place value, then
                 //    fire lookup event.
                 id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT )
                 id_person_text_element.val( "" );

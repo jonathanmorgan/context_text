@@ -122,6 +122,24 @@ hr.lookupPersonRule
 }
 */
 
+#fix-person-name-link
+{
+    margin-left: 10px;
+    padding: 5px;
+    border-left: 1px solid #d6cfcf;
+    border-bottom: 1px solid #d6cfcf;
+    border-right: 1px solid #d6cfcf;
+}
+
+#fix-person-name
+{
+    margin-left: 10px;
+    padding: 5px;
+    border-left: 1px solid #d6cfcf;
+    border-bottom: 1px solid #d6cfcf;
+    border-right: 1px solid #d6cfcf;
+}
+
 .statusMessageArea
 {
 	width: 280px; /* smaller than sidebar */
@@ -157,6 +175,7 @@ div.lookupPersonExistingId
 {
     font-style: italic;
 	font-size: 90%;
+	margin-bottom: 10px;
 }
 
 table.personListTable

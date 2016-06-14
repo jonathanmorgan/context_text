@@ -832,8 +832,9 @@ class ManualArticleCoderTest( django.test.TestCase ):
             
             # test Article_Author title
             test_value = test_article_author.title
-            error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; test Article_Author title is \"" + str( test_value ) + "\", should be None"
-            self.assertIsNone( test_value, error_string )
+            should_be = "The Grand Rapids Press"
+            error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; test Article_Author title is \"" + str( test_value ) + "\", should be " + str( should_be ) + "\""
+            self.assertEqual( test_value, should_be, error_string )
     
             #----------------------------------------------------------------------#
             # ! Source "Rick DeGraaf"

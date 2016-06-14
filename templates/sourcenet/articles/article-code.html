@@ -113,6 +113,7 @@
             <!-- <form name="person-coding" id="person-coding"> -->
             <div name="person-coding" id="person-coding">
                 <input type="hidden" name="{{ manual_article_coder.INPUT_ID_MATCHED_PERSON_ID }}" id="{{ manual_article_coder.INPUT_ID_MATCHED_PERSON_ID }}" />
+                <input type="hidden" name="{{ manual_article_coder.INPUT_ID_ARTICLE_PERSON_ID }}" id="{{ manual_article_coder.INPUT_ID_ARTICLE_PERSON_ID }}" />
                 <input type="hidden" name="{{ manual_article_coder.INPUT_ID_DATA_STORE_PERSON_INDEX }}" id="{{ manual_article_coder.INPUT_ID_DATA_STORE_PERSON_INDEX }}" />
 <!--
                 <input type="button" id="select-text" value="Get selected text" />:
@@ -125,10 +126,10 @@
                 </p>
                 {% if include_fix_person_name %}
                     <p class="inputContainer" id="fix-person-name-link" name="fix-person-name-link">
-                        <a href="#" onclick="SOURCENET.fix_person_name(); return false;">--> Fix Person Name</a>
+                        <a href="#" onclick="SOURCENET.fix_person_name(); return false;">--> Fix Name</a>
                     </p>
                     <p class="inputContainer hidden" id="fix-person-name" name="fix-person-name">
-                        <a href="#" onclick="SOURCENET.cancel_fix_person_name(); return false;"><-- Cancel Fix Person Name</a>
+                        <a href="#" onclick="SOURCENET.cancel_fix_person_name(); return false;"><-- Cancel Fix Name</a>
                         <br />
                         <input type="button" id="fix-name" name="fix-name" value="==> Fix Name" />: <textarea id="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}" name="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}"></textarea>
                     </p>
@@ -181,6 +182,14 @@
                 <hr class="fieldSeparator" />
                 <p class="inputContainer" id="process-person-container">
                     <input type="button" id="process-person" name="process-person" value="Process Person" onclick="SOURCENET.process_person_coding()" />&nbsp;&nbsp;|&nbsp;&nbsp;<input type="button" id="clear-person-coding" name="clear-person-coding" value="Clear Person Coding" onclick="SOURCENET.clear_coding_form( 'Person Coding Cleared' )" />
+                    <!--
+                    <br />
+                    <input type="button" id="clear-person-lookup" name="clear-person-lookup" value="Clear Person Lookup" onclick="SOURCENET.clear_person_lookup_form( false, 'Person Lookup Form Cleared, matched ID remains.' )" />
+                    <br />
+                    <input type="button" id="clear-matched-id" name="clear-matched-id" value="Clear Previous Person Match" onclick="SOURCENET.clear_matched_person_id( '' )" />
+                    <br />
+                    <input type="button" id="clear-person-lookup-and-matched-id" name="clear-person-lookup-and-matched-id" value="Clear Person Lookup and Matched ID" onclick="SOURCENET.clear_person_lookup_form( true, 'Person Lookup Form and Matched ID Cleared.' )" />
+                    -->
                 </p>
             </div>
             <!-- </form> -->
