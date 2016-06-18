@@ -3,7 +3,7 @@
 //============================================================================//
 
 //----------------------------------------------------------------------------//
-// !==> namespace!
+// !====> namespace!
 //----------------------------------------------------------------------------//
 
 
@@ -11,7 +11,7 @@ var SOURCENET = SOURCENET || {};
 
 
 //----------------------------------------------------------------------------//
-// !==> namespaced variables
+// !====> namespaced variables
 //----------------------------------------------------------------------------//
 
 
@@ -36,16 +36,18 @@ SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT = "Please wait..."
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding"
 SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!"
 
-// HTML element IDs
+// ! HTML element IDs
 SOURCENET.DIV_ID_PERSON_CODING = "person-coding";
-SOURCENET.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
-SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
 SOURCENET.INPUT_ID_PERSON_NAME = "person-name";
+// see SOURCENET.INPUT_ID_FIXED_PERSON_NAME below.
 SOURCENET.INPUT_ID_PERSON_TYPE = "person-type";
-SOURCENET.INPUT_ID_ARTICLE_PERSON_ID = "article-person-id";
 SOURCENET.INPUT_ID_TITLE = "person-title";
 SOURCENET.INPUT_ID_ORGANIZATION = "person-organization";
 SOURCENET.INPUT_ID_QUOTE_TEXT = "source-quote-text";
+SOURCENET.INPUT_ID_PERSON_INDEX = "data-store-person-index";
+SOURCENET.INPUT_ID_MATCHED_PERSON_ID = "matched-person-id";
+SOURCENET.INPUT_ID_ORIGINAL_PERSON_TYPE = "original-person-type";
+SOURCENET.INPUT_ID_ARTICLE_PERSON_ID = "article-person-id";
 SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID = "lookup-person-existing-id";
 
 // HTML elements - fix person name
@@ -76,12 +78,2464 @@ SOURCENET.HTML_SPAN_CLOSE = "</span>";
 
 
 //----------------------------------------------------------------------------//
-// !==> object definitions
+// !====> function definitions
+//----------------------------------------------------------------------------//
+
+
+SOURCENET.decode_html = function( html_IN )
+{
+    // from: http://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
+
+    // return reference
+    text_OUT = "";
+
+    // declare variables
+    var txt = null;
+
+    // create textarea
+    txt = document.createElement("textarea");
+
+    // store HTML inside
+    txt.innerHTML = html_IN;
+
+    // get value back out.
+    text_OUT = txt.value
+    
+    return text_OUT;
+}
+
+
+/**
+ * Opposite of SOURCENET.fix_person_name() - show()s link to fix person name, 
+ *     hides form input and buttons to fix person name, removes current value
+ *     from "fixed-person-name" <input>.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: show()s link to fix person name, hides form input and buttons
+ *     to fix person name, removes current value from "fixed-person-name"
+ *     <input>.
+ */
+SOURCENET.cancel_fix_person_name = function()
+{
+    // declare variables
+    var me = "SOURCENET.cancel_fix_person_name";
+    var fix_link_div_id = "";
+    var fix_link_div = null;
+    var fix_area_div_id = "";
+    var fix_area_div = null;
+    var input_element = null;
+    
+    // get div that contains actual fix area and hide() it.
+    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
+    fix_area_div = $( '#' + fix_area_div_id );
+    fix_area_div.hide();
+
+    // clear fixed-person-name <input>.
+    SOURCENET.clear_fixed_person_name();
+    
+    // get div that contains link and show() it.
+    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
+    fix_link_div = $( '#' + fix_link_div_id );
+    fix_link_div.show();
+    
+} //-- END function SOURCENET.cancel_fix_person_name() --//
+
+
+/**
+ * Clears out hidden input used to hold the Article_Person ID for the current
+ *     person (Article_Author or Article_Source, depending on the type).
+ *
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
+ *     initialized and at least one person added to it, and you must have loaded
+ *     existing coding - new coding won't have these IDs.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_article_person_id = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_article_person_id";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // article-person-id
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ARTICLE_PERSON_ID );
+    temp_element.val( -1 );
+        
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_article_person_id() --//
+
+
+/**
+ * Clears out coding form and status message area, and optionally displays a
+ *    status message if one passed in.
+ *
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
+ *    initialized and at least one person added to it.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_coding_form = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_coding_form";
+    var person_property_list = null;
+    var person_property_info = null;
+    var current_index = -1;
+    var property_count = -1;
+    var current_property_name = "";
+    var current_property_info = null;
+    var clear_form_function = null;
+    var input_id = "";
+    var default_value = "";
+    var temp_element = null;
+    
+    // declare variables - outputting status messages.
+    var is_status_message_OK = false;
+    var status_message_array = [];
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+
+    // get property info.
+    person_property_list = SOURCENET.Person_property_name_list;
+    person_property_info = SOURCENET.Person_property_name_to_info_map;
+        
+    // loop over properties
+    property_count = person_property_list.length;
+    for ( current_index = 0; current_index < property_count; current_index++ )
+    {
+        
+        // get current property name.
+        current_property_name = person_property_list[ current_index ];
+        
+        // retrieve the property info.
+        current_property_info = person_property_info[ current_property_name ];
+        
+        // clear the field.
+        current_property_info.clear_value();
+        
+    } //-- END loop over Person properties --//
+    
+    // clear any find-in-article-text matches, and clear find text entry field.
+    SOURCENET.clear_find_in_text();
+    
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_coding_form() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.  Also clears out the
+ *     field where text to be found is entered.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so none are assigned
+ *     "foundInText".  Wipes input with id "text-to-find-in-article".
+ */
+SOURCENET.clear_find_in_text = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.clear_find_in_text";
+    var article_paragraphs = null;
+    
+    // clear find in text matches
+    SOURCENET.clear_find_in_text_matches();
+                
+    // get text-to-find-in-article text field, set value to "".
+    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
+    input_element.val( "" );
+
+} //-- END function SOURCENET.clear_find_in_text() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so none are assigned
+ *     "foundInText".
+ */
+SOURCENET.clear_find_in_text_matches = function(  )
+{
+    
+    // declare variables
+    var me = "SOURCENET.clear_find_in_text_matches";
+    var article_paragraphs = null;
+    
+    // get article <p> tags.
+    article_paragraphs = SOURCENET.get_article_paragraphs();
+    
+    // remove class "foundInText" from all.
+    article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false )
+    
+    // set all paragraphs' html() back to their text()...
+    article_paragraphs.each( function()
+        {
+            // declare variables.
+            var jquery_p_element = null;
+            var paragraph_html = "";
+            var paragraph_text = "";
+            var span_index = -1;
+            
+            // get paragraph text
+            jquery_p_element = $( this );
+            paragraph_html = jquery_p_element.html();
+            paragraph_text = jquery_p_element.text();
+            
+            // is there a matched words span present in html?
+            span_index = paragraph_html.indexOf( SOURCENET.HTML_SPAN_MATCHED_WORDS );
+            
+            // if found, update store plain text .
+            if ( span_index > -1 )
+            {
+                
+                // store plain text in <p>.html() to remove any HTML.
+                jquery_p_element.html( paragraph_text );
+                                    
+            } //-- END check to see if <span> found --//
+        } //-- END anonymous function called on each paragraph --//
+    );
+
+} //-- END function SOURCENET.clear_find_in_text_matches() --//
+
+
+/**
+ * Loads current person_name value into field where it can be manually fixed.
+ */
+SOURCENET.clear_fixed_person_name = function()
+{
+    
+    // declare variables
+    var input_element = null;
+
+    // get fixed_person_name text field,  place value there.
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element.val( "" );
+    
+} //-- END function SOURCENET.clear_fixed_person_name() --//
+
+
+/**
+ * Clears out matched person ID hidden input, then also clears out the <div>
+ *     where the existing matched person ID is displayed.
+ *
+ * Preconditions: None
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_matched_person_id = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_matched_person_id";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // matched-person-id
+    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+    temp_element.val( -1 );
+    
+    // get <div> inside person lookup area where we display that there is an ID.
+    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+    temp_element.empty();
+
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_matched_person_id() --//
+
+
+/**
+ * Clears out hidden input used to hold the original person type value when we
+ *     update existing coding.
+ *
+ * Preconditions: None.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_original_person_type = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_original_person_type";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // original-person-type
+    temp_element = $( '#' + SOURCENET.INPUT_ID_ORIGINAL_PERSON_TYPE );
+    temp_element.val( "" );
+        
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_original_person_type() --//
+
+
+/**
+ * Clears out and resets all fields related to choosing a person ID for the
+ *     current person.  This includes the AJAX lookup fields and fields and
+ *     <div>s used to hold a previously selected person ID.
+ *
+ * Preconditions: None.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_person_id = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_person_id";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // clear out the person lookup form
+    SOURCENET.clear_person_lookup_form( false )
+    
+    // clear out the matched person ID
+    SOURCENET.clear_matched_person_id( null )
+    
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_original_person_type() --//
+
+
+/**
+ * Clears out all inputs and divs related to the AJAX person looker-upper.  This
+ *     includes the input where the name is stored, the div that holds selected
+ *     matches, and optionally any matched person id, as well.
+ *
+ * Preconditions: None
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_person_lookup_form = function( do_clear_matched_id_IN, status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_person_lookup_form";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // id_person
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
+    temp_element.val( "" );
+    
+    // id_person_text
+    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
+    temp_element.val( "" );
+    
+    // clear out <div> inside <div id="id_person_on_deck">.
+    
+    // get on-deck <div>.
+    on_deck_person_element = $( '#' + SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK );
+    
+    // remove anonymous <div> inside.
+    on_deck_person_element.find( 'div' ).remove();
+    
+    // add a new empty div.
+    temp_element = $( '<div></div>' );
+    on_deck_person_element.append( temp_element );
+    
+    // do we clear out any matched person ID?
+    if ( do_clear_matched_id_IN == true )
+    {
+        
+        // yes, clear it out.
+        SOURCENET.clear_matched_person_id()
+        
+    }
+    
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_person_lookup_form() --//
+
+
+/**
+ * Clears out person type field, then calls a function to reset the form for the
+ *     default (empty, so non-subject) person type.
+ *
+ * Preconditions: None.
+ *
+ * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
+ */
+SOURCENET.clear_person_type = function( status_message_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.clear_person_type";
+    var status_message_array = [];
+    var temp_element = null;
+    var on_deck_person_element = null;
+    
+    // clear the coding form.
+    SOURCENET.log_message( "Top of " + me );
+        
+    // person-type
+    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_TYPE );
+    temp_element.val( "" );
+    
+    // call SOURCENET.process_selected_person_type();
+    SOURCENET.process_selected_person_type();
+        
+    // got a status message?
+    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
+    {
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( status_message_IN );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+    }
+    
+} //-- END function SOURCENET.clear_person_type() --//
+
+
+/**
+ * Repaints the area where coded persons are displayed.
+ *
+ * Preconditions: for anything to appear, SOURCENET.data_store must have been
+ *    initialized and at least one person added to it.
+ */
+SOURCENET.display_persons = function()
+{
+    
+    // declare variables.
+    var me = "SOURCENET.display_persons";
+    var row_id_prefix = "";
+    var my_data_store = null;
+    var person_list_element = null;
+    var person_index = -1;
+    var person_count = -1;
+    var current_person = null;
+    var current_row_id = "";
+    var current_row_selector = "";
+    var current_row_element = null;
+    var current_row_element_count = -1;
+    var got_person = false;
+    var person_string = "";
+    var got_row= false;
+    var do_create_row = false;
+    var do_update_row = false;
+    var do_remove_row = false;
+    var row_contents = "";
+    var button_element = null;
+    
+    // declare variables - make form to submit list.
+    var active_person_count = -1;
+    var div_person_list_element = null;
+    var form_element = null;
+    
+    // initialize variables
+    row_id_prefix = "person-";
+    
+    // get person store
+    my_data_store = SOURCENET.get_data_store();
+    
+    // for now, display by SOURCENET.log_message()-ing JSON string.
+    //SOURCENET.log_message( "In " + me + "(): DataStore = " + JSON.stringify( my_data_store ) );
+    
+    // get <table id="person-list-table" class="personListTable">
+    person_list_element = $( '#person-list-table' );
+    
+    // loop over the persons in the list.
+    person_count = my_data_store.person_array.length;
+    SOURCENET.log_message( "In " + me + "(): Person Count = " + person_count );
+    
+    // check to see if one or more persons.
+    if ( person_count > 0 )
+    {
+
+        // at least 1 - loop.
+        active_person_count = 0;
+        for( person_index = 0; person_index < person_count; person_index++ )
+        {
+            
+            // initialize variables.
+            got_person = false;
+            got_row = false;
+            do_create_row = false;
+            do_update_row = false;
+            do_remove_row = false;
+            button_element = null;
+            
+            // get person.
+            current_person = my_data_store.get_person_at_index( person_index );
+    
+            // got person?
+            if ( current_person != null )
+            {
+                // yes - set flag, update person_string.
+                got_person = true;
+                active_person_count += 1;
+                person_string = current_person.to_table_cell_html();
+                
+            }
+            else
+            {
+    
+                // SOURCENET.log_message( "In " + me + "(): no person for index " + person_index );
+                person_string = "null";
+    
+            } //-- END check to see if person --//
+            
+            SOURCENET.log_message( "In " + me + "(): Person " + person_index + ": " + person_string );
+            
+            // try to get <tr> for that index.
+            current_row_id = row_id_prefix + person_index;
+            current_row_selector = "#" + current_row_id;
+            current_row_element = person_list_element.find( current_row_selector );
+            current_row_element_count = current_row_element.length;
+            //SOURCENET.log_message( "DEBUG: row element: " + current_row_element + "; length = " + current_row_element_count );
+            
+            // matching row found?
+            if ( current_row_element_count > 0 )
+            {
+                
+                // yes - set flag.
+                got_row = true;
+    
+            } //-- END check to see if row --//
+            
+            // based on person and row, what do we do?
+            if ( got_row == true )
+            {
+                
+                //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
+                // got person?
+                if ( got_person == true )
+                {
+                    
+                    // yes.  convert to string and replace value, in case there have
+                    //    been changes.
+                    do_create_row = false;
+                    do_update_row = true;
+                    do_remove_row = false;
+                    
+                }
+                else
+                {
+                    
+                    // no person - remove row
+                    do_create_row = false;
+                    do_update_row = false;
+                    do_remove_row = true;                
+                    
+                }
+                
+            }
+            else //-- no row --//
+            {
+                
+                //SOURCENET.log_message( "In " + me + "(): NO row for " + current_row_id );
+                // got person?
+                if ( got_person == true )
+                {
+                    
+                    // yes.  convert to string and replace value, in case there have
+                    //    been changes.
+                    do_create_row = true;
+                    do_update_row = true;
+                    do_remove_row = false;
+                    
+                }
+                else
+                {
+                    
+                    // no person - nothing to do.
+                    do_create_row = false;
+                    do_update_row = false;
+                    do_remove_row = false;                
+                    
+                }
+    
+            } //-- END check to see if row for current person. --//
+            
+            // Do stuff!
+            
+            SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_row = " + do_create_row + "; do_update_row = " + do_update_row + "; do_remove_row = " + do_remove_row );
+            
+            // crate new row?
+            if ( do_create_row == true )
+            {
+                
+                // create row with id = row_id_prefix + person_index, store in
+                //    current_row_element.
+                current_row_element = $( '<tr></tr>' );
+                current_row_element.attr( "id", row_id_prefix + person_index );
+                
+                // prepend it to the person_list_element
+                person_list_element.prepend( current_row_element );
+                
+            } //-- END check to see if do_create_li --//
+            
+            // update contents of <tr>?
+            if ( do_update_row == true )
+            {
+                
+                // for now, just place person string in a <td>.
+                row_contents = person_string;
+                
+                // (and other stuff needed for that to work.)
+                row_contents += '<td><input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" /></td>';
+                
+                current_row_element.html( row_contents );
+                
+            } //-- END check to see if do_update_li --//
+            
+            // delete <tr>?
+            if ( do_remove_row == true )
+            {
+                
+                // delete <li>.
+                current_row_element.remove();
+                
+            } //-- END check to see if do_delete_li --//
+            
+        } //-- END loop over persons in list --//
+        
+        // try to find the form element.
+        form_element = $( '#submit-article-coding' );
+        
+        // got active people?
+        if ( active_person_count > 0 )
+        {
+            
+            // make sure form is visible.
+            SOURCENET.log_message( "In " + me + "(): active people, show coding submit <form>." );
+            form_element.show()
+                        
+        }
+        else //-- no active people. --//
+        {
+            
+            // no active people, hide form.
+            SOURCENET.log_message( "In " + me + "(): no people, hide coding submit <form>." );
+            form_element.hide()
+                    
+        } //-- END check to see if active people. --//
+        
+    }
+    else
+    {
+        
+        // nothing in list.  Move on, but output log since I'm not sure why we
+        //    got here.
+        SOURCENET.log_message( "In " + me + "(): Nothing in person_array.  Moving on." );
+        
+    } //-- END check to see if at least 1 item in list. --//
+    
+} //-- END function SOURCENET.display_persons() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, loops over each.
+ *     In each, searches for the text in "find_text_IN".  If it finds it,
+ *     Updates classes on article <p> tags so any that contain text passed in
+ *     are assigned "foundInText", and wraps the matched text in a span so it
+ *     stands out.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain text
+ *     passed in are assigned "foundInText".
+ */
+SOURCENET.find_in_article_text = function( find_text_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.find_in_article_text";
+    var is_text_OK = false;
+    var article_paragraphs = null;
+    //var contains_selector = "";
+    //var match_paragraphs = null;
+    
+    // clear any previous matches
+    SOURCENET.clear_find_in_text_matches()
+
+    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
+    
+    // is text passed in OK?
+    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
+    if ( is_text_OK == true )
+    {
+        
+        // get article <p> tags.
+        article_paragraphs = SOURCENET.get_article_paragraphs();
+        
+        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
+        
+        article_paragraphs.each( function()
+            {
+                // declare variables.
+                var jquery_p_element = null;
+                var find_text_list = [];
+               
+                // get paragraph text
+                jquery_p_element = $( this );
+                
+                // set up list of items to look for (just find_text_IN).
+                find_text_list.push( find_text_IN );
+                
+                // call function to find in <p> tag
+                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
+            } //-- END anonymous function called on each paragraph --//
+        );
+    
+        // look for those that contain the text passed in.
+        //contains_selector = "p:contains( '" + find_text_IN + "' )";
+        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
+        //match_paragraphs = article_paragraphs.find( contains_selector );
+        
+        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
+    
+        // For matches, add class "foundInText".
+        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
+
+    } //-- END to make sure we have text. --//
+
+} //-- END function SOURCENET.find_in_article_text() --//
+
+
+/**
+ * Accepts jquery <p> element instance and list of strings to look for inside.
+ *     for each item in the list, checks to see if the string is in the text.
+ *     If it finds it, updates classes on <p> tag to assign "foundInText",
+ *     and wraps the matched text in a span so it stands out.
+ *
+ * Preconditions: Must have found paragraph tag you want to process and have it
+ *     in a jquery instance.  Must also have broken out list of search text
+ *     items as you want (split on spaces, or don't, etc.).
+ *
+ * Postconditions: if match found, will update the <p> in the jquery instance
+ *     passed in.
+ */
+SOURCENET.find_in_p_tag = function( p_tag_jquery_IN, find_text_list_IN )
+{
+
+    // declare variables.
+    var me = "SOURCENET.find_in_p_tag";
+    var jquery_p_element = null;
+    var paragraph_text = "";
+    var find_text_item_count = -1;
+    var current_index = -1;
+    var current_find_text = "";
+    var found_index = -1;
+    var text_around_match_list = null;
+    var match_html = "";
+    var current_text_index = -1;
+    var new_html = "";
+    
+    // get paragraph text
+    jquery_p_element = p_tag_jquery_IN;
+    paragraph_text = jquery_p_element.text();
+    SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; paragraph text = " + paragraph_text );
+    
+    // split find_text_IN on spaces.
+    find_text_item_count = find_text_list_IN.length;
+    
+    // loop over words
+    for ( current_index = 0; current_index < find_text_item_count; current_index++ )
+    {
+        
+        // get current find item.
+        current_find_text = find_text_list_IN[ current_index ];
+        
+        // is find text inside the paragraph?
+        found_index = paragraph_text.indexOf( current_find_text );
+        
+        // if found, update class.
+        if ( found_index > -1 )
+        {
+            
+            // For matches, add class "foundInText".
+            jquery_p_element.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true );
+            
+            // split on the text we matched.
+            text_around_match_list = paragraph_text.split( current_find_text );
+            
+            // add a span around the matched words.
+            matched_words_html = SOURCENET.HTML_SPAN_MATCHED_WORDS + current_find_text + SOURCENET.HTML_SPAN_CLOSE;
+    
+            // put together again, but with <span>-ed matched words
+            //     rather than just the words themselves.
+            new_html = text_around_match_list.join( matched_words_html );
+            
+            // store new HTML in <p>.
+            jquery_p_element.html( new_html );
+                                
+        } //-- END check to see if text found --//
+
+    } //-- END loop over find text items --//
+
+} //-- END function SOURCENET.find_in_p_tag --//
+
+
+/**
+ * Retrieves current person's last name, then looks for it in article text.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain
+ *     current last name are assigned "foundInText".
+ */
+SOURCENET.find_last_name_in_article_text = function( find_text_IN )
+{
+    // declare variables
+    var me = "SOURCENET.find_last_name_in_article_text";
+    var last_name_text = "";
+    var input_element = null;
+    
+    // get last name
+    last_name_text = SOURCENET.get_person_last_name_value();
+    //SOURCENET.log_message( "In " + me + "(): last name text : " + last_name_text );
+
+    // get text-to-find-in-article text field, place value.
+    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
+    input_element.val( last_name_text );
+    
+    // find in text.
+    SOURCENET.find_in_article_text( last_name_text );
+    
+} //-- END function SOURCENET.find_last_name_in_article_text() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, loops over each.
+ *     In each, searches for each word (space-delimited) in the text in
+ *     "find_text_IN".  If it finds it, updates classes on article <p> tags so
+ *     any that contain a word from text passed in are assigned "foundInText",
+ *     and wraps the matched text in a span so it stands out.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so any that contain text
+ *     passed in are assigned "foundInText".
+ */
+SOURCENET.find_words_in_article_text = function( find_text_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.find_words_in_article_text";
+    var is_text_OK = false;
+    var article_paragraphs = null;
+    //var contains_selector = "";
+    //var match_paragraphs = null;
+    
+    // clear any previous matches
+    SOURCENET.clear_find_in_text_matches()
+
+    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
+    
+    // is text passed in OK?
+    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
+    if ( is_text_OK == true )
+    {
+        
+        // get article <p> tags.
+        article_paragraphs = SOURCENET.get_article_paragraphs();
+        
+        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
+        
+        article_paragraphs.each( function()
+            {
+                // declare variables.
+                var jquery_p_element = null;
+                var find_text_list = [];
+               
+                // get paragraph text
+                jquery_p_element = $( this );
+                
+                // set up list of items to look for (split find_text_IN on " ").
+                find_text_list = find_text_IN.split( " " );
+                
+                // call function to find in <p> tag
+                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
+            } //-- END anonymous function called on each paragraph --//
+        );
+    
+        // look for those that contain the text passed in.
+        //contains_selector = "p:contains( '" + find_text_IN + "' )";
+        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
+        //match_paragraphs = article_paragraphs.find( contains_selector );
+        
+        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
+    
+        // For matches, add class "foundInText".
+        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
+
+    } //-- END to make sure we have text. --//
+
+} //-- END function SOURCENET.find_words_in_article_text() --//
+
+
+/**
+ * Hides link to fix person name, reveals form input and buttons to fix person
+ *     name, places current name in "fixed-person-name" <input>.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Hides link to fix person name, reveals form input and buttons
+ *     to fix person name, places current name in "fixed-person-name" <input>.
+ */
+SOURCENET.fix_person_name = function()
+{
+    // declare variables
+    var me = "SOURCENET.fix_person_name";
+    var fix_link_div_id = "";
+    var fix_link_div = null;
+    var fix_area_div_id = "";
+    var fix_area_div = null;
+    var input_element = null;
+    
+    // get div that contains link and hide() it.
+    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
+    fix_link_div = $( '#' + fix_link_div_id );
+    fix_link_div.hide();
+    
+    // load name into fixed-person-name <input>.
+    SOURCENET.load_person_name_to_fix();
+    
+    // get div that contains actual fix area and show() it.
+    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
+    fix_area_div = $( '#' + fix_area_div_id );
+    fix_area_div.show();
+
+} //-- END function SOURCENET.fix_person_name() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, returns them in a
+ *     list.  If none found, returns empty list.  If error, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ */
+SOURCENET.get_article_paragraphs = function()
+{
+    
+    // return reference
+    var grafs_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_article_paragraphs";
+    var article_view_div_id = "";
+    var article_view_div = null;
+    
+    // retrieve <div> that contains article text (id/name = "article_view").
+    article_view_div_id = "article_view";
+    article_view_div = $( '#' + article_view_div_id );
+    
+    // find all <p> tags.
+    grafs_OUT = article_view_div.find( "p" );
+
+    return grafs_OUT;
+    
+} //-- END function SOURCENET.get_article_paragraphs() --//
+
+
+/**
+ * checks to see if DataStore instance already around.  If so, returns it.
+ *    If not, creates one, stores it, then returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: If DataStore instance not already present in
+ *    SOURCENET.data_store, one is created and stored there before it is
+ *    returned.
+ */
+SOURCENET.get_data_store = function()
+{
+    
+    // return reference
+    var instance_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_data_store";
+    var my_data_store = null;
+    
+    // see if there is already a person store.
+    my_data_store = SOURCENET.data_store;
+    if ( my_data_store == null )
+    {
+        
+        // nope.  Make one, store it, then recurse.
+        my_data_store = new SOURCENET.DataStore();
+        SOURCENET.data_store = my_data_store;
+        instance_OUT = SOURCENET.get_data_store();
+        
+    }
+    else
+    {
+        
+        instance_OUT = my_data_store;
+        
+    }
+    
+    return instance_OUT;
+    
+} //-- END function SOURCENET.get_data_store() --//
+
+
+/**
+ * Retrieves value in fixed_person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_fixed_person_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_fixed_person_name_value";
+    var name_input_name = "";
+    
+    // get name of input for name from SOURCENET.
+    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
+
+    // get value for that name.
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_FIXED_PERSON_NAME, null )
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_fixed_person_name_value() --//
+
+
+/**
+ * Looks for person ID in the AJAX person lookup.  If an ID is found there,
+ *     returns that.  If not, then looks for a previous matched-person-id, which
+ *     is returned if found.  If neither is found, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_id_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_id_value";
+    var is_person_id_ok = false;
+    var ajax_person_id_element = null;
+    var my_person_id = -1;
+    var matched_person_id_element = null;
+    
+    var person_type_prop_name = "";
+    var person_type_prop_info = null;
+    var quote_text_prop_name = "";
+    var quote_text_prop_info = null;
+    var person_type = "";
+    var quote_text = "";
+    
+    // init 
+    
+    // get element from AJAX person lookup that would hold selected ID.
+    ajax_person_id_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
+    
+    // element found?
+    if ( ajax_person_id_element.length > 0 )
+    {    
+    
+        // get person ID from element.
+        my_person_id = ajax_person_id_element.val();
+        
+        // is it an OK string?
+        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
+        if ( is_person_id_ok == true )
+        {
+
+            // looks OK (non-empty).  Convert to int and store it.
+            my_person_id = parseInt( my_person_id, 10 );
+            value_OUT = my_person_id;
+
+        } //-- END check to see if person_id value present. --//
+    
+    } //-- END check to see if id_person element present in HTML. --//
+    
+    //------------------------------------------------------------------------//
+    // got a person ID?
+    is_person_id_ok = SOURCENET.is_integer_OK( value_OUT, 1 )
+    if ( is_person_id_ok == false )
+    {
+        
+        // no ID.  Try to retrieve from hidden "matched-person-id" input.
+        matched_person_id_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
+        my_person_id = matched_person_id_element.val()
+        
+        // is it an OK string?
+        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
+        if ( is_person_id_ok == true )
+        {
+            
+            // there is a value from a previous match.  Convert to int, store.
+            my_person_id = parseInt( my_person_id, 10 );
+            value_OUT = my_person_id;
+
+        } //-- END check to see if previous match person ID present. --//
+        
+    } //-- END check to see if person ID set from ajax lookup form --//
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_id_value() --//
+
+
+/**
+ * Retrieves value in person_name input.  If one found, parses on spaces and
+ *     returns the last token in the list ("last name"). If nothing present,
+ *     returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_last_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_last_name_value";
+    var current_person_name = "";
+    var is_name_OK = false;
+    var name_part_list = null;
+    var name_part_count = -1;
+    
+    // get person name.
+    current_person_name = SOURCENET.get_person_name();
+
+    // is name OK?
+    is_name_OK = SOURCENET.is_string_OK( current_person_name );
+    if ( is_name_OK == true )
+    {
+        
+        // got name. split into a list of tokens on space.
+        name_part_list = current_person_name.split( " " )
+        
+        // got anything?
+        if ( name_part_list != null )
+        {
+            
+            // how many matches?
+            name_part_count = name_part_list.length;
+            if ( name_part_count > 0 )
+            {
+                
+                // more than one.  Take last one in the list.
+                value_OUT = name_part_list[ name_part_count - 1 ];
+                
+            }
+            else
+            {
+                
+                // nothing in list.  return null.
+                value_OUT = null;
+                
+            } //-- END check to see if name parts exist. --//
+    
+        }
+        else
+        {
+            
+            // no list?  eek... return null.
+            value_OUT = null;
+            
+        } //-- END check to see if list returned. --//
+        
+    }
+    else
+    {
+        
+        // not OK.  Return null.
+        value_OUT = null;
+        
+    } //-- END check to see if name is OK. --//
+
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_last_name_value() --//
+
+
+/**
+ * Retrieves value in person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_name = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_name";
+    var fixed_name = "";
+    var is_fixed_name_OK = false;
+    
+    // first, try to get fixed_person_name.
+    fixed_name = SOURCENET.get_fixed_person_name_value();
+    is_fixed_name_OK = SOURCENET.is_string_OK( fixed_name );
+    if ( is_fixed_name_OK == false )
+    {
+        
+        // no fixed name.  get person_name.
+        value_OUT = SOURCENET.get_person_name_value();
+        
+    }
+    else
+    {
+        
+        // looks like there is a fixed name.  Use it.
+        value_OUT = fixed_name;
+        
+    }
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_name() --//
+
+
+/**
+ * Retrieves value in person_name input.  If none present, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_person_name_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_person_name_value";
+    var name_input_name = "";
+    
+    // get name of input for name from SOURCENET.
+    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
+
+    // get value for that name.
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_PERSON_NAME, null )
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_person_name_value() --//
+
+
+/**
+ * Retrieves value in quote_text input.  If none present, returns default value.
+ *     If current person_type is not source, also returns empty value (no quote
+ *     text for authors or subjects - they should be sources).
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None
+ */
+SOURCENET.get_quote_text_value = function()
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_quote_text_value";
+    var person_type_prop_name = "";
+    var person_type_prop_info = null;
+    var quote_text_prop_name = "";
+    var quote_text_prop_info = null;
+    var person_type = "";
+    var quote_text = "";
+    
+    // get property info for person_type...
+    person_type_prop_name = SOURCENET.PersonProperty_names.PERSON_TYPE;
+    person_type_prop_info = SOURCENET.Person_property_name_to_info_map[ person_type_prop_name ];
+        
+    // ...and quote_text.
+    quote_text_prop_name = SOURCENET.PersonProperty_names.QUOTE_TEXT;
+    quote_text_prop_info = SOURCENET.Person_property_name_to_info_map[ quote_text_prop_name ];
+    
+    // get quote_text from form (so avoid recursive calls to this function).
+    quote_text = quote_text_prop_info.get_value_from_form()
+    
+    // get person_type
+    person_type = person_type_prop_info.get_value()
+    
+    // only return quote text if person type is "source".
+    if ( person_type == SOURCENET.PERSON_TYPE_SOURCE )
+    {
+        
+        // it is a source - save quote text.
+        value_OUT = quote_text;
+
+    } //-- END check to see if person is "source". --//
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_quote_text_value() --//
+
+
+/**
+ * Accepts id of select whose selected value we want to retrieve.  After making
+ *    sure we have an OK ID, looks for select with that ID.  If one found, finds
+ *    selectedIndex, retrieves option at that index, and retrieves value from
+ *    that option.  Returns the selected value.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} select_id_IN - HTML id attribute value for select whose selected value we want to retrieve.
+ * @returns {string} - selected value of select matching ID passed in, else null if error.
+ */
+SOURCENET.get_selected_value_for_id = function( select_id_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_selected_value_for_id";
+    
+    // just call get_value_for_id()
+    value_OUT = SOURCENET.get_value_for_id( select_id_IN, null );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_selected_value_for_id() --//
+
+
+/**
+ * Accepts id of input whose value we want to retrieve.  After making sure we
+ *     have an OK ID, looks for input with that ID.  If one found, gets value
+ *     from that input and returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} id_IN - HTML id attribute value for input whose value we want to retrieve.
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.get_value_for_id = function( id_IN, default_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.get_input_value_for_id";
+    var is_id_OK = false;
+    var element = null;
+    var value = "";
+    
+    // is ID passed in OK?
+    is_id_OK = SOURCENET.is_string_OK( id_IN );
+    if ( is_id_OK == true )
+    {
+            
+        // get select element.
+        element = $( '#' + id_IN );
+        
+        // get selected value
+        value = element.val();
+        
+        // return it.
+        value_OUT = value;
+        
+    }
+    else
+    {
+    
+        // select ID is empty.  Return default.
+        value_OUT = default_IN;
+        
+    }
+    
+    SOURCENET.log_message( "In " + me + "(): element ID = " + id_IN + "; value = " + value_OUT );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.get_value_for_id() --//
+
+
+/**
+ * Accepts integer variable.  Checks to see if it is OK.  If undefined, null, or
+ *    less than min value, returns false.  Otherwise, returns true.
+ *
+ * @param {int} integer_IN - Integer value to check for OK-ness.
+ * @param {int} min_value_IN - minimum OK value.
+ * @returns {boolean} - if string is undefined, null, or "", returns false.  Otherwise returns true.
+ */
+SOURCENET.is_integer_OK = function( integer_IN, min_value_IN )
+{
+    
+    // return reference
+    var is_OK_OUT = true;
+    
+    // declare variables.
+    var min_value = 0;
+    
+    // if nothing passed in for min_value, default to 0
+    if ( ( min_value_IN !== undefined ) && ( min_value_IN != null ) )
+    {
+        
+        // default passed in.  Use it.
+        min_value = min_value_IN;
+        
+    }
+    else
+    {
+        
+        // nothing passed in.  Default to 0.
+        min_value = 0;
+        
+    }
+    
+    if ( ( integer_IN !== undefined ) && ( integer_IN != null ) && ( integer_IN >= min_value ) )
+    {
+        
+        // OK!
+        is_OK_OUT = true;
+        
+    }
+    else
+    {
+        
+        // not OK.
+        is_OK_OUT = false;
+        
+    }
+    
+    return is_OK_OUT;
+    
+} //-- END function SOURCENET.is_integer_OK() --//
+
+
+/**
+ * Accepts string variable.  Checks to see if it is OK.  If undefined, null, or
+ *    "", returns false.  Otherwise, returns true.
+ *
+ * @param {string} string_IN - String value to check for OK-ness.
+ * @returns {boolean} - if string is undefined, null, or "", returns false.  Otherwise returns true.
+ */
+SOURCENET.is_string_OK = function( string_IN )
+{
+    
+    // return reference
+    var is_OK_OUT = true;
+    
+    if ( ( string_IN !== undefined ) && ( string_IN != null ) && ( string_IN != "" ) )
+    {
+        
+        // OK!
+        is_OK_OUT = true;
+        
+    }
+    else
+    {
+        
+        // not OK.
+        is_OK_OUT = false;
+        
+    }
+    
+    return is_OK_OUT;
+    
+} //-- END function SOURCENET.is_string_OK() --//
+
+
+/**
+ * Accepts index to person in DataStore.person_array.  Retrieves person instance
+ *     at the index passed in.  If not null, calls Person.populate_form() to
+ *     put its values into the form.
+ */
+SOURCENET.load_person_into_form = function( person_index_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.load_person_into_form";
+    var is_index_OK = false;
+    var my_data_store = null;
+    var my_person_instance = null;
+    var status_message_array = [];
+    
+    SOURCENET.log_message( "In " + me + "(): person_index_IN = " + person_index_IN );
+    
+    // see if index is OK.
+    is_index_OK = SOURCENET.is_integer_OK( person_index_IN );
+    if ( is_index_OK == true )
+    {
+        
+        // retrieve data store.
+        my_data_store = SOURCENET.get_data_store();
+        
+        // get person at index passed in.
+        my_person_instance = my_data_store.get_person_at_index( person_index_IN );
+        
+        // call populate_form()
+        my_person_instance.populate_form()
+        
+        // place last name in text-to-find-in-article <input>, then try to find
+        //     in text.
+        SOURCENET.find_last_name_in_article_text()
+    }
+    else
+    {
+       
+        // make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( "Could not load person data - invalid index ( \"" + person_index_IN + "\" )" );
+    
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+ 
+    }
+    
+} //-- END function SOURCENET.load_person_into_form() --//
+ 
+ 
+/**
+ * Loads current person_name value into field where it can be manually fixed.
+ */
+SOURCENET.load_person_name_to_fix = function()
+{
+    
+    // declare variables
+    var name_text = "";
+    var input_element = null;
+
+    // get selection
+    name_text = SOURCENET.get_person_name_value();
+    //SOURCENET.log_message( "source text : " + source_text );
+
+    // get fixed_person_name text field,  place value there.
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element.val( name_text );
+    
+} //-- END function SOURCENET.load_person_name_to_fix() --//
+
+
+/**
+ * Gets fixed_person_name value.  If not empty, enables the fix_person_name
+ *     part of the form, then places value there.  If empty, puts default in
+ *     <input>, but does not enable the field by default.
+ */
+SOURCENET.load_value_fixed_person_name = function( person_IN )
+{
+    // declare variables
+    var me = "SOURCENET.load_fixed_person_name_value";
+    var fixed_person_name_property_name = null;
+    var fixed_person_name_property_info = null;
+    var input_id = "";
+    var fixed_person_name = "";
+    var value_to_load = "";
+
+    // get property info for fixed-person-name.
+    fixed_person_name_property_name = SOURCENET.PersonProperty_names.FIXED_PERSON_NAME;
+    fixed_person_name_property_info = SOURCENET.Person_property_name_to_info_map[ fixed_person_name_property_name ];
+    
+    // and get input_id of input for this field.
+    input_id = fixed_person_name_property_info.input_id;
+    default_value = fixed_person_name_property_info.default_value;
+
+    // get fixed-person-name value
+    fixed_person_name = person_IN.fixed_person_name;
+
+    // got a value?
+    if ( ( fixed_person_name != null ) && ( fixed_person_name != "" ) )
+    {
+        // yes - reveal field to fix person name if present.
+        SOURCENET.fix_person_name();
+        
+        // store value in element
+        value_to_load = fixed_person_name;
+    }
+    else
+    {
+        // no value in instance, so set to default.
+        value_to_load = default_value;
+    } //-- END check to see if we have value --//
+    
+    // place value_to_load in input.
+    SOURCENET.set_value_for_id( input_id, value_to_load );
+    
+} //-- END function SOURCENET.load_value_fixed_person_name() --//
+
+
+
+/**
+ * Gets fixed_person_name value.  If not empty, enables the fix_person_name
+ *     part of the form, then places value there.  If empty, puts default in
+ *     <input>, but does not enable the field by default.
+ */
+SOURCENET.load_value_person_id = function( person_IN )
+{
+    // declare variables
+    var me = "SOURCENET.load_value_person_id";
+    var person_id_property_name = null;
+    var person_id_property_info = null;
+    var input_id = "";
+    var person_id = "";
+    var value_to_load = "";
+    var is_value_ok = false;
+    
+    // declare variables - additional HTML updates.
+    var temp_element = null;
+    var temp_li = null;
+    var temp_html = "";
+    var temp_ul = null;
+
+    // get property info for person_id.
+    person_id_property_name = SOURCENET.PersonProperty_names.PERSON_ID;
+    person_id_property_info = SOURCENET.Person_property_name_to_info_map[ person_id_property_name ];
+    
+    // and get input_id of input for this field.
+    input_id = person_id_property_info.input_id;
+    default_value = person_id_property_info.default_value;
+
+    // get fixed-person-name value
+    person_id = person_IN.person_id;
+    
+    // is it OK?
+    is_value_OK = SOURCENET.is_integer_OK( person_id, 1 );
+    if ( is_value_OK == true )
+    {
+        // store value in element
+        value_to_load = person_id;
+        SOURCENET.set_value_for_id( input_id, value_to_load );
+
+        // get <div> inside person lookup area where we display that there is an ID.
+        temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+        
+        // empty it.
+        temp_element.empty();
+        
+        // create <li>
+        temp_li = $( "<li></li>" );
+        
+        // place text in <li>.
+        temp_li.text( "Selected Person ID is " + value_to_load + ". " );
+        
+        // add button to clear existing ID.
+        temp_html = $( "<input type=\"button\" id=\"clear-matched-id\" name=\"clear-matched-id\" value=\"<== Remove\" onclick=\"SOURCENET.clear_matched_person_id( '' )\" />" );
+        temp_li.append( temp_html );
+
+        // make a <ul> and add the <li> to it.
+        temp_ul = $( "<ul></ul>" );
+        temp_ul.append( temp_li );        
+
+        // append it all to the HTML element in question.        
+        temp_element.append( temp_ul );
+    }
+    else
+    {
+        // no value in instance, so set to default value.
+        value_to_load = default_value;
+        SOURCENET.set_value_for_id( input_id, value_to_load );
+    } //-- END check to see if we have value --//
+
+} //-- END function SOURCENET.load_value_person_id() --//
+
+
+
+/**
+ * Gets person_type value.  If not empty, enables the fix_person_name
+ *     part of the form, then places value there.  If empty, puts default in
+ *     <input>, but does not enable the field by default.
+ */
+SOURCENET.load_value_person_type = function( person_IN )
+{
+    // declare variables
+    var me = "SOURCENET.load_value_person_type";
+    var person_type_property_name = null;
+    var person_type_property_info = null;
+    var input_id = "";
+    var person_type = "";
+    var value_to_load = "";
+    var temp_value = "";
+
+    // get property info for fixed-person-name.
+    person_type_property_name = SOURCENET.PersonProperty_names.PERSON_TYPE;
+    person_type_property_info = SOURCENET.Person_property_name_to_info_map[ person_type_property_name ];
+    
+    // and get input_id of input for this field.
+    input_id = person_type_property_info.input_id;
+    default_value = person_type_property_info.default_value;
+
+    // get person_type
+    person_type = person_IN.person_type;
+
+    // got a value?
+    if ( ( person_type != null ) && ( person_type != "" ) )
+    {
+        // yes - store value in element
+        value_to_load = person_type;
+    }
+    else
+    {
+        // no value in instance, so set to default.
+        value_to_load = default_value;
+    } //-- END check to see if we have value --//
+    
+    // place value_to_load in input.
+    temp_value = SOURCENET.set_selected_value_for_id( input_id, value_to_load );
+    
+    // process the selected person type:
+    SOURCENET.process_selected_person_type()
+    
+    // sanity check
+    if ( temp_value != person_type )
+    {
+        
+        // the value of the select is not what we passed to it.
+        SOURCENET.log_message( "In " + me + "(): value for select with ID = " + input_id + " is \"" + temp_value + "\"; should be = \"" + person_type + "\"" );
+        
+    }
+    
+} //-- END function SOURCENET.load_value_person_type() --//
+
+
+/**
+ * Accepts a message.  If console.log() is available, calls that.  If not, does
+ *    nothing.
+ */
+SOURCENET.log_message = function( message_IN )
+{
+    
+    // declare variables
+    var output_flag = true;
+    
+    // set to SOURCENET.debug_flag
+    output_flag = SOURCENET.debug_flag;
+    
+    // check to see if we have console.log() present.
+    if ( ( window.console ) && ( window.console.log ) && ( output_flag == true ) )
+    {
+
+        // console is available
+        console.log( message_IN );
+        
+    } //-- END check to see if console.log() present. --//
+    
+} //-- END function SOURCENET.log_message() --//
+
+
+/**
+ * Clears out coding form and status message area, and optionally displays a
+ *    status message if one passed in.
+ *
+ * @param {Array:string} status_message_array_IN - array of messages to place in status area.  If undefined, null, or [], no messages output and message area is cleared and hidden.
+ */
+SOURCENET.output_status_messages = function( status_message_array_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.output_status_messages";
+    var message_area_div_element = null;
+    var message_area_ul_id = "";
+    var message_area_ul_class = "";
+    var message_area_ul_empty_html = "";
+    var message_area_ul = null;
+    var message_count = -1;
+    var message_index = -1;
+    var current_message = "";
+    var message_li_element = null;
+    
+    // set variables
+    message_area_ul_id = "status-message-list";
+    message_area_ul_class = "statusMessageList";
+    message_area_ul_empty_html = '<ul id="' + message_area_ul_id + '" class="' + message_area_ul_class + '"></ul>';
+
+    // get <div id="status-message-area" class="statusMessageArea">
+    message_area_div_element = $( '#status-message-area' );
+    
+    // get <ul id="status-message-list" class="statusMessageList">
+    message_area_ul_element = message_area_div_element.find( '#status-message-list' );
+    
+    // got message array?
+    if ( ( status_message_array_IN !== undefined ) && ( status_message_array_IN != null ) && ( status_message_array_IN.length > 0 ) )
+    {
+        
+        // got messages.
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+        // make new <ul>.
+        message_area_ul_element = $( message_area_ul_empty_html );
+        
+        // add it to the <div>.
+        message_area_div_element.append( message_area_ul_element );
+        
+        // loop over messages
+        message_count = status_message_array_IN.length;
+        for( message_index = 0; message_index < message_count; message_index++ )
+        {
+            
+            // get message
+            current_message = status_message_array_IN[ message_index ];
+            
+            // create <li>, append to <ul>.
+            message_li_element = $( '<li>' + current_message + '</li>' );
+            message_li_element.attr( "id", "message-" + message_index );
+            
+            // append it to the message_area_ul_element
+            message_area_ul_element.append( message_li_element );
+            
+        } //-- END loop over messages --//
+        
+        // show the <div> if not already.
+        message_area_div_element.show();
+        
+    }
+    else //-- no messages --//
+    {
+        
+        // Hide the <div>.
+        message_area_div_element.hide();
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+    } //-- END check to see if message array is populated.
+    
+} //-- END function SOURCENET.output_status_messages() --//
+
+
+/**
+ * Event function that is called when coder is finished coding a particular
+ *    person and is ready to add him or her to the list of persons in the
+ *    article.
+ *
+ * Preconditions: Person coding form should be filled out as thoroughly as
+ *    possible.  At the least, must have a person name.  If none present, the
+ *    person is invalid, will not be accepted.
+ *
+ * Postconditions: If person accepted, after this function is called, the
+ *    person will be added to the internal structures to list and map persons,
+ *    and will also be added to the list of persons who have been coded so far.
+ */
+SOURCENET.process_selected_person_type = function()
+{
+    // declare variables
+    var me = "SOURCENET.process_selected_person_type";
+    var selected_value = "";
+    var p_source_quote_element = null;
+
+    SOURCENET.log_message( "In " + me + "(): Process Selected Person Type!" );
+    
+    // get select element.
+    selected_value = SOURCENET.get_selected_value_for_id( 'person-type' );
+    
+    // get "textarea-source-quote-text" <p> tag.
+    p_source_quote_element = $( '#textarea-source-quote-text' );
+    
+    // is it "source"?
+    if ( selected_value == SOURCENET.PERSON_TYPE_SOURCE )
+    {
+        
+        // it is "source".  show() the "textarea-source-quote-text" <p> tag.
+        p_source_quote_element.show();
+        
+    }
+    else
+    {
+        
+        // it is not "source".  hide() the "textarea-source-quote-text" <p> tag.
+        p_source_quote_element.hide();
+        
+    } //-- END check to see if person type is "source" or not. --//
+    
+} //-- END function SOURCENET.process_selected_person_type() --#
+
+
+/**
+ * Event function that is called when coder is finished coding a particular
+ *    person and is ready to add him or her to the list of persons in the
+ *    article.
+ *
+ * Preconditions: Person coding form should be filled out as thoroughly as
+ *    possible.  At the least, must have a person type and name.  If either not
+ *    present, the person is invalid, will not be accepted.
+ *
+ * Postconditions: If person accepted, after this function is called, the
+ *    person will be added to the internal structures to list and map persons,
+ *    and will also be added to the list of persons who have been coded so far.
+ */
+SOURCENET.process_person_coding = function()
+{
+    // declare variables
+    var me = "SOURCENET.process_person_coding";
+    var form_element = null;
+    var person_instance = null;
+    var status_message_array = [];
+    var status_message_count = -1;
+    var work_element = null;
+    var existing_person_index = -1;
+    var status_string = "";
+    var data_store = null;
+    var person_message_array = [];
+    var person_error_count = -1;
+
+    SOURCENET.log_message( "In " + me + "(): PROCESS PERSON CODING!!!" );
+    
+    // get form element.
+    form_element = $( '#' + SOURCENET.DIV_ID_PERSON_CODING );
+    
+    // create Person instance.
+    person_instance = new SOURCENET.Person();
+    
+    // populate it from the form.
+    status_message_array = person_instance.populate_from_form( form_element );
+    
+    // valid?
+    status_message_count = status_message_array.length
+    if ( status_message_count == 0 )
+    {
+        
+        // valid.
+        SOURCENET.log_message( "In " + me + "(): Valid person.  Adding to DataStore." );
+        
+        // get person store
+        data_store = SOURCENET.get_data_store();
+        
+        // add person
+        person_message_array = data_store.process_person( person_instance );
+        
+        // errors?
+        person_error_count = person_message_array.length;
+        if ( person_error_count == 0 )
+        {
+            
+            // no errors.
+
+            // output person store
+            SOURCENET.display_persons();
+                    
+            // clear the coding form.
+            SOURCENET.clear_coding_form( "Processed: " + person_instance.to_string() );
+
+        }
+        else
+        {
+            
+            // errors - output messages.
+            SOURCENET.output_status_messages( person_message_array );
+            
+        } //-- END check for errors adding person to DataStore. --//
+        
+    }
+    else
+    {
+        
+        // not valid - for now, add message to overall status message.
+        status_message_array.push( "Person not valid." );
+        
+    }
+    
+    // got any messages?
+    status_message_count = status_message_array.length;
+    if ( status_message_count > 0 )
+    {
+        
+        // yes, there are messages.  Output them.
+        SOURCENET.output_status_messages( status_message_array )
+        
+    } //-- END check to see if messages --//    
+    
+} //-- END function SOURCENET.process_person_coding() --#
+
+
+/**
+ * Accepts the index of a person in the DataStore's person_array that one
+ *    wants removed.  Gets the DataStore and calls the
+ *    remove_person_at_index() method on it to remove the person, then calls
+ *    SOURCENET.display_persons() to repaint the list of persons.  If any
+ *    status messages, outputs them at the end using
+ *    SOURCENET.output_status_messages()
+ */
+SOURCENET.remove_person = function( person_index_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.remove_person";
+    var selected_index = -1;
+    var is_index_OK = false;
+    var status_message_array = [];
+    var status_message_count = -1;
+    var data_store = null;
+    var person_remove_message_array = [];
+    var person_remove_error_count = -1;
+
+    // make sure index is an integer.
+    selected_index = parseInt( person_index_IN );
+    
+    // got an index?
+    is_index_OK = SOURCENET.is_integer_OK( selected_index, 0 );
+    if ( is_index_OK == true )
+    {
+        
+        // get person store
+        data_store = SOURCENET.get_data_store();
+        
+        // remove person
+        person_remove_message_array = data_store.remove_person_at_index( selected_index );
+        
+        SOURCENET.log_message( "In " + me + "(): Person Store: " + JSON.stringify( data_store ) );
+        
+        // errors?
+        person_remove_error_count = person_remove_message_array.length;
+        if ( person_remove_error_count == 0 )
+        {
+            
+            // no errors.
+
+            // output person store
+            SOURCENET.display_persons();
+            
+            // add status message.
+            status_message_array.push( "Removed person at index " + selected_index );
+            
+        }
+        else
+        {
+            
+            // errors - append to status_message_array.
+            status_message_array = status_message_array.concat( person_remove_message_array );
+            
+        } //-- END check for errors removing person from DataStore. --//
+        
+    }
+    else
+    {
+        
+        // not valid - for now, output message(s).
+        status_message_array.push( "Index value of " + selected_index + " is not valid.  Can't remove person." );
+        
+    }
+    
+    // got any messages?
+    status_message_count = status_message_array.length;
+    if ( status_message_count > 0 )
+    {
+        
+        // yes, there are messages.  Output them.
+        SOURCENET.output_status_messages( status_message_array )
+        
+    } //-- END check to see if messages --//
+        
+} //-- END function SOURCENET.remove_person --//
+
+
+/**
+ * Creates basic form with a submit button whose onsubmit event calls
+ *    SOURCENET.render_coding_form_inputs.  On submit, that method pulls the
+ *    data needed to submit together and places it in hidden <inputs> associated
+ *    with this form, and if no problems, returns true so form submits.  Returns
+ *    <form> jquery element, suitable for adding to an element on the page.
+ *
+ * Postconditions: none.
+ */
+SOURCENET.render_coding_form = function()
+{
+
+    // return reference
+    form_element_OUT = true;
+    
+    // declare variables
+    form_HTML_string = "";
+    
+    // build form HTML string.
+    form_HTML_string += '<form method="post" name="submit-article-coding" id="submit-article-coding">';
+    form_HTML_string += '<input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id=input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />';
+    form_HTML_string += '</form>';
+    
+    // render into JQuery element.
+    form_element_OUT = $( form_HTML_string );
+    
+    return form_element_OUT;
+   
+} //-- END function to render form to submit coding.
+
+
+/**
+ * Accepts <form> jquery instance.  Adds inputs to the form to hold serialized
+ *    JSON object of the DataStore, the results of the coding.  Designed to
+ *    be used as a <form>'s onsubmit event handler.
+ *
+ * Postconditions: Will return false, causing submit to abort, if errors or
+ *    warnings.  If returns false, also outputs messages of why using
+ *    output_status_messages().
+ *
+ * References:
+ *    - http://stackoverflow.com/questions/6099301/dynamically-adding-html-form-field-using-jquery
+ *    - http://www.w3schools.com/js/js_popup.asp
+ *
+ * @param {jquery:element} form_IN - <form> we are going to append inputs to.
+ */
+SOURCENET.render_coding_form_inputs = function( form_IN )
+{
+
+    // return reference
+    do_submit_OUT = true;
+    
+    // declare variables
+    me = "SOURCENET.render_coding_form_inputs";
+    form_element = null;
+    my_data_store = null;
+    author_count = -1;
+    is_author_count_valid = false;
+    source_count = -1;
+    is_source_count_valid = false;
+    do_confirm_submit = true;
+    ok_to_submit = false;
+    data_store_json = "";
+    data_store_json_input_element = null;
+    submit_button_element = null;
+        
+    // convert form DOM element to JQuery object.
+    //form_element = $( form_IN )
+    
+    // get person store
+    my_data_store = SOURCENET.get_data_store();
+    
+    //------------------------------------------------------------------------//
+    // validation
+    //------------------------------------------------------------------------//
+
+    // Is there at least one author?
+    author_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_AUTHOR );
+    if ( author_count <= 0 )
+    {
+        
+        // no author - see if that is correct.
+        is_author_count_valid = confirm( "No authors coded.  Is this correct?" );
+        if ( is_author_count_valid == false )
+        {
+            
+            // oops - forgot to code author.  Back to form.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): forgot to code author - back to form!" );
+            
+        } //-- END check to see if no authors --//
+        
+    } //-- END check to see if author count is 0 --//
+    
+    // canceled?
+    if ( do_submit_OUT == true )
+    {
+        
+        // not canceled yet, keep checking...
+        
+        // Is there at least one source?
+        source_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
+        if ( source_count <= 0 )
+        {
+            
+            // no sources - see if that is correct.
+            is_source_count_valid = confirm( "No sources coded.  Is this correct?" );
+            if ( is_source_count_valid == false )
+            {
+                
+                // oops - forgot to code sources.  Back to form.
+                do_submit_OUT = false;
+                SOURCENET.log_message( "In " + me + "(): forgot to code sources - back to form!" );
+                
+            } //-- END check to see if no sources --//
+            
+        } //-- END check to see if source count is 0 --//
+
+    } //-- END check to see if we are already canceled, so don't need to keep checking --//
+    
+    // !TODO - check for sources that don't have quote selected?
+    
+    // canceled?
+    if ( do_submit_OUT == true )
+    {
+        
+        // not canceled yet, keep checking...
+        
+        // confirm submit?
+        if ( do_confirm_submit == true )
+        {
+            
+            // We are confirming submit - ask for confirmation.
+            ok_to_submit = confirm( "OK to submit coding?" );
+            if ( ok_to_submit == false )
+            {
+                
+                // Not ready to submit just yet.  Back to form.
+                do_submit_OUT = false;
+                SOURCENET.log_message( "In " + me + "(): User not ready to submit.  Back to the form!" );
+                
+            } //-- END check to see if ready to submit --//
+            
+        } //-- END check to see if we are confirming submission --//
+        
+    } //-- END check to see if we are already canceled, so don't need to keep checking --//
+    
+    // no sense doing anything more if we aren't submitting.
+    if ( do_submit_OUT == true )
+    {
+        
+        // need JSON of DataStore.
+        data_store_json = JSON.stringify( my_data_store );
+        
+        // add it to the hidden input:
+        // <input id="id_data_store_json" name="data_store_json" type="hidden">
+        
+        // get <input> element
+        input_id_string = "#" + SOURCENET.INPUT_ID_DATA_STORE_JSON;
+        data_store_json_input_element = $( input_id_string );
+
+        // make sure we found the element.
+        if ( data_store_json_input_element.length > 0 )
+        {
+            
+            // got it.  Place JSON in it.
+            data_store_json_input_element.val( data_store_json );
+            
+            // explicitly set to true.
+            do_submit_OUT = true;
+
+            // do_submit_OUT = false;
+            if ( do_submit_OUT == false )
+            {
+                
+                SOURCENET.log_message( "In " + me + "(): Placed the following JSON in \"" + input_id_string + "\"" );
+                SOURCENET.log_message( "In " + me + "(): " + data_store_json );            
+
+            } //-- END check to see if we output debug.
+            
+        }
+        else
+        {
+            
+            // did not find <input> element.  Log message, don't submit.
+            do_submit_OUT = false;
+            SOURCENET.log_message( "In " + me + "(): Could not find input for selector: \"" + input_id_string + "\".  No place to put JSON.  Back to form!" );
+            
+        } //-- END check to see if we found input element. --//
+        
+    } //-- END check to see if validation was OK before we actually populate inputs. --//
+    
+    // are we allowing submit?
+    if ( do_submit_OUT == true )
+    {
+        
+        // we are.  Retrieve submit button, disable it, and then change text
+        //    to say "Please wait...".
+        submit_button_element = $( "#" + SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING );
+        submit_button_element.prop( 'disabled', true );
+        submit_button_element.val( SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT );
+        
+    } //-- END check to see if we are submitting. --//
+    
+    return do_submit_OUT;
+   
+} //-- END function to render form to submit coding.
+
+
+/**
+ * Accepts id of select whose selected value we want to set, and value we want
+ *    to be selected.  After making sure we have an OK ID, looks for select with
+ *    that ID.  If one found, sets to the value passed in.  Returns the selected
+ *    value.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} select_id_IN - HTML id attribute value for select whose selected value we want to retrieve.
+ * @returns {string} - selected value of select matching ID passed in, else null if error.
+ */
+SOURCENET.set_selected_value_for_id = function( select_id_IN, select_value_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.set_selected_value_for_id";
+    var is_select_id_OK = false;
+    var select_element = null;
+    
+    // just call SOURCENET.set_value_for_id()
+    value_OUT = SOURCENET.set_value_for_id( select_id_IN, select_value_IN );
+    
+    SOURCENET.log_message( "In " + me + "(): <select> ID = " + select_id_IN + "; value = " + value_OUT );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.set_selected_value_for_id() --//
+
+
+/**
+ * Accepts id of element whose value we want to set, and value we want
+ *    to be set.  After making sure we have an OK ID, looks for element with
+ *    that ID.  If one found, sets to the value passed in.  Returns the value.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} element_id_IN - HTML id attribute value for element whose value we want to set.
+ * @returns {string} - value of element matching ID passed in, else null if error.
+ */
+SOURCENET.set_value_for_id = function( element_id_IN, value_IN )
+{
+    
+    // return reference
+    var value_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.set_value_for_id";
+    var is_element_id_OK = false;
+    var element = null;
+    
+    // select ID passed in OK?
+    is_element_id_OK = SOURCENET.is_string_OK( element_id_IN );
+    if ( is_element_id_OK == true )
+    {
+        
+        // get element.
+        element = $( '#' + element_id_IN );
+        
+        // set value
+        element.val( value_IN );
+        
+        // get value.
+        value_OUT = SOURCENET.get_value_for_id( element_id_IN );
+    
+    }
+    else
+    {
+    
+        // element ID is empty.  Return null.
+        value_OUT = null;
+        
+    }
+    
+    SOURCENET.log_message( "In " + me + "(): HTML element ID = " + element_id_IN + "; value = " + value_OUT );
+    
+    return value_OUT;
+    
+} //-- END function SOURCENET.set_value_for_id() --//
+
+
+//----------------------------------------------------------------------------//
+// !====> object definitions
 //----------------------------------------------------------------------------//
 
 
 //=====================//
-// !----> DataStore
+// !--> DataStore
 //=====================//
 
 // DataStore constructor
@@ -776,6 +3230,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
     var person_count = -1;
     var person_index = -1;
     var current_person_type = "";
+    var current_original_person_type = "";
     var current_article_person_id = "";
     var current_person_name = "";
     var current_fixed_person_name = "";
@@ -822,7 +3277,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
 
         SOURCENET.log_message( "In " + me + "(): person_count = " + person_count );
 
-        // ! person loop
+        // !---- person loop
         for ( person_index = 0; person_index < person_count; person_index++ )
         {
 
@@ -833,6 +3288,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
 
             // get values
             current_person_type = current_person_data[ "person_type" ];
+            current_original_person_type = current_person_data[ "original_person_type" ];
             current_article_person_id = current_person_data[ "article_person_id" ];
             current_person_name = current_person_data[ "person_name" ];
             current_fixed_person_name = current_person_data[ "fixed_person_name" ];
@@ -845,7 +3301,10 @@ SOURCENET.DataStore.prototype.load_from_json = function()
 
             // create and populate Person instance.
             current_person = new SOURCENET.Person();
+            
+            // person type
             current_person.person_type = current_person_type;
+            current_person.original_person_type = current_original_person_type;
 
             // ID for Article_Person descendent instance, based on person_type:
             //     Article_Subject ID if source or subject, Article_Author ID if
@@ -1384,9 +3843,532 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
 //=====================//
 
 
+//=======================//
+// !--> PersonProperty
+//=======================//
+
+// PersonProperty Property Names
+SOURCENET.PersonProperty_names = {};
+SOURCENET.PersonProperty_names[ "PERSON_NAME" ] = "person_name";
+SOURCENET.PersonProperty_names[ "FIXED_PERSON_NAME" ] = "fixed_person_name";
+SOURCENET.PersonProperty_names[ "PERSON_TYPE" ] = "person_type";
+SOURCENET.PersonProperty_names[ "TITLE" ] = "title";
+SOURCENET.PersonProperty_names[ "PERSON_ORGANIZATION" ] = "person_organization";
+SOURCENET.PersonProperty_names[ "QUOTE_TEXT" ] = "quote_text";
+SOURCENET.PersonProperty_names[ "PERSON_INDEX" ] = "person_index";
+SOURCENET.PersonProperty_names[ "PERSON_ID" ] = "person_id";
+SOURCENET.PersonProperty_names[ "ORIGINAL_PERSON_TYPE" ] = "original_person_type";
+SOURCENET.PersonProperty_names[ "ARTICLE_PERSON_ID" ] = "article_person_id";
+
+// PersonProperty Property Types
+SOURCENET.PersonProperty_data_types = {};
+SOURCENET.PersonProperty_data_types[ "INTEGER" ] = "integer";
+SOURCENET.PersonProperty_data_types[ "STRING" ] = "string";
+
+// PersonProperty Property Input Types
+SOURCENET.PersonProperty_input_types = {};
+SOURCENET.PersonProperty_input_types[ "TEXT" ] = "text";
+SOURCENET.PersonProperty_input_types[ "TEXTAREA" ] = "textarea";
+SOURCENET.PersonProperty_input_types[ "HIDDEN" ] = "hidden";
+SOURCENET.PersonProperty_input_types[ "SELECT" ] = "select";
+
+// PersonProperty constructor
+
+/**
+ * Represents one of the pieces of information about a person stored in the
+ *     Person object.
+ * @constructor
+ */
+SOURCENET.PersonProperty = function()
+{   
+    // names of properties
+    this.prop_names = SOURCENET.PersonProperty_names;
+    
+    // item types
+    this.prop_data_types = SOURCENET.PersonProperty_data_types;
+
+    // input types
+    this.input_types = SOURCENET.PersonProperty_input_types;
+            
+    // instance variables
+    this.name = null;
+    this.type = null;
+    this.default_value = null;
+    this.min_value = null;
+    this.default_value = null;
+    this.input_id = null;
+    this.input_type = null;
+    this.function_load_form = null;
+    this.function_get_value = null;
+    this.function_clear_form = null;
+} //-- END SOURCENET.PersonProperty constructor --//
+
+// PersonProperty methods
+
+
+/**
+ * For property defined in current instance, checks to see if there is a clear
+ *     function specified.  If so, calls it.  If not, looks up the input ID
+ *     for the property and places the default value in that input.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ */
+SOURCENET.PersonProperty.prototype.clear_value = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.PersonProperty.prototype.clear_value";
+    var clear_form_function = "";
+    var input_id = "";
+    var default_value = "";
+
+    // got a function for clearing form?
+    clear_form_function = this.function_clear_form;
+    if ( clear_form_function != null )
+    {
+        
+        // there is a function to call for clearing.  Call it.
+        clear_form_function();
+        
+    }
+    else
+    {
+        
+        // no function.  Use <input> ID and default value to clear by
+        //     resetting the <input> to the default value.
+        input_id = this.input_id;
+        default_value = this.default_value;
+        
+        // call SOURCENET.set_value_for_id()
+        SOURCENET.set_value_for_id( input_id, default_value );
+        
+    } //-- END check to see if we have a clear function to call --//
+    
+} //-- END method SOURCENET.PersonProperty.prototype.clear_value --//
+        
+
+/**
+ * Checks to see if there is a "get_value" function referenced in this instance.
+ *     If so, calls it.  If not, calls get_value_from_form() on this instance to
+ *     retrieve the value from the form in the standard way.  Returns value,
+ *     regardless of how it was found, returns null if not found or error.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.PersonProperty.prototype.get_value = function()
+{
+    // return reference
+    var value_OUT = null;
+
+    // declare variables
+    var me = "SOURCENET.PersonProperty.prototype.get_value"
+    
+    // declare variables - processing person properties.
+    var get_value_function = null;
+    
+    // retrieve info on current property.
+    get_value_function = this.function_get_value;
+    
+    // got a function for getting property value?
+    if ( get_value_function != null )
+    {
+        
+        // there is a function to call for retrieving value..  Call it.
+        value_OUT = get_value_function();
+        
+    }
+    else
+    {
+        
+        // no fancy function - get value from form.
+        value_OUT = this.get_value_from_form()
+        
+    } //-- END check to see if we have a clear function to call --//
+
+    return value_OUT;
+    
+} //-- END PersonProperty method get_value() --#
+
+
+/**
+ * Gets id of input whose value we want to retrieve from current instance. Looks
+ *     for input with that ID.  If one found, gets value from that input and
+ *     returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.PersonProperty.prototype.get_value_from_form = function()
+{
+    // return reference
+    var value_OUT = [];
+
+    // declare variables
+    var me = "SOURCENET.PersonProperty.prototype.get_value_from_form"
+    
+    // declare variables - processing person properties.
+    var data_type = "";
+    var default_value = "";
+    var input_id = -1;
+    var input_type = "";
+    var select_input_type = "";
+    var integer_data_type = "";
+    
+    // initialize values
+    select_input_type = SOURCENET.PersonProperty_input_types[ "SELECT" ];
+    integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ]
+        
+    // retrieve info on current property.
+    data_type = this.type;
+    default_value = this.default_value;
+    input_id = this.input_id;
+    input_type = this.input_type;
+    
+    // see how we retrieve value based on input type - there are
+    //     separate functions for <select> and <input> (though they work
+    //     the same at this point).
+    if ( input_type == select_input_type )
+    {
+        
+        // <select> - use SOURCENET.get_selected_value_for_id().
+        value_OUT = SOURCENET.get_selected_value_for_id( input_id );
+        
+    }
+    else
+    {
+    
+        // if not select, treat all the rest the same - call
+        //     SOURCENET.get_value_for_id().
+        value_OUT = SOURCENET.get_value_for_id( input_id, default_value );
+        
+    }
+
+    // based on data type, see if we need to do anything to the value.
+    if ( data_type == integer_data_type )
+    {
+        
+        // integer - cast potentially string value to be an integer.
+        value_OUT = parseInt( value_OUT, 10 );
+        
+    }
+
+    return value_OUT;
+    
+} //-- END PersonProperty method get_value_from_form() --#
+
+
+/**
+ * Checks to see if there is a "load_form" function referenced in this instance.
+ *     If so, calls it.  If not, calls put_value_into_form() on this instance to
+ *     retrieve the value from the form in the standard way.  Returns value,
+ *     regardless of how it was found, returns null if not found or error.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.PersonProperty.prototype.put_value = function( person_IN )
+{
+    // return reference
+    var value_OUT = null;
+
+    // declare variables
+    var me = "SOURCENET.PersonProperty.prototype.put_value"
+    
+    // declare variables - processing person properties.
+    var load_form_function = null;
+    
+    // retrieve info on current property.
+    load_form_function = this.function_load_form;
+    
+    // got a function for loading property value into form?
+    if ( load_form_function != null )
+    {
+        
+        // there is a function to call for retrieving value..  Call it.
+        value_OUT = load_form_function( person_IN );
+        
+    }
+    else
+    {
+        
+        // no fancy function - get value place into form.
+        value_OUT = this.put_value_into_form( person_IN );
+        
+    } //-- END check to see if we have a clear function to call --//
+
+    return value_OUT;
+    
+} //-- END PersonProperty method put_value() --#
+
+
+/**
+ * Accepts person instance whose value we want to put into form.  After making
+ *     sure we
+ *     have an OK ID, looks for input with that ID.  If one found, gets value
+ *     from that input and returns it.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ *
+ * @param {string} id_IN - HTML id attribute value for input whose value we want to retrieve.
+ * @returns {string} - value of input matching ID passed in, else null if error.
+ */
+SOURCENET.PersonProperty.prototype.put_value_into_form = function( person_IN )
+{
+    // return reference
+    var value_OUT = [];
+
+    // declare variables
+    var me = "SOURCENET.PersonProperty.prototype.put_value_into_form"
+    var property_element = null;
+        
+    // declare variables - processing person properties.
+    var property_name = "";
+    var data_type = "";
+    var default_value = "";
+    var input_id = -1;
+    var input_type = "";
+    var select_input_type = "";
+    var integer_data_type = "";
+    var my_value = null;
+    var is_value_OK = false;
+    
+    // got a person?
+    if ( person_IN != null )
+    {
+        
+        // initialize values
+        select_input_type = SOURCENET.PersonProperty_input_types[ "SELECT" ];
+        integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ]
+            
+        // retrieve info on current property.
+        property_name = this.name;
+        data_type = this.type;
+        default_value = this.default_value;
+        input_id = this.input_id;
+        input_type = this.input_type;
+        
+        // get the property value.
+        my_value = person_IN[ property_name ];
+        
+        // if integer data type, see if the integer is valid.
+        if ( data_type == integer_data_type )
+        {
+            
+            // it is an integer.  Is it OK?
+            is_value_OK = SOURCENET.is_integer_OK( my_value, 0 );
+            
+        }
+        else
+        {
+            
+            // not integer.  Check as string.
+            is_value_OK = SOURCENET.is_string_OK( my_value )
+            
+        }
+        
+        // Is the value OK?
+        if ( is_value_OK == false )
+        {
+            
+            // no.  Use default.
+            my_value = default_value;
+            
+        }
+        
+        // see how we put in form value based on input type - there are
+        //     separate functions for <select> and <input> (though they work
+        //     the same at this point).
+        if ( input_type == select_input_type )
+        {
+            
+            // <select> - use SOURCENET.set_selected_value_for_id().
+            value_OUT = SOURCENET.set_selected_value_for_id( input_id, my_value );
+            
+        }
+        else
+        {
+        
+            // if not select, treat all the rest the same - call
+            //     SOURCENET.set_value_for_id().
+            value_OUT = SOURCENET.set_value_for_id( input_id, my_value );
+            
+        } //-- END check to see if the input we are messing with is a <select>. --//
+    
+    } //-- END check to make sure person_IN is not null --//
+
+    return value_OUT;
+    
+} //-- END PersonProperty method put_value_into_form() --#
+
+
 //=====================//
-// !----> Person
+// !--> Person
 //=====================//
+
+// !---- Person properties
+
+// declare a variable
+var temp_property = null;
+
+// make list of properties, map names to info.
+SOURCENET.Person_property_name_list = [];
+SOURCENET.Person_property_name_to_info_map = {};
+
+// person_name
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.PERSON_NAME;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_PERSON_NAME;
+temp_property.input_type = temp_property.input_types.TEXTAREA;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = null;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// fixed_person_name
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.FIXED_PERSON_NAME;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_FIXED_PERSON_NAME;
+temp_property.input_type = temp_property.input_types.TEXTAREA;
+temp_property.function_load_form = SOURCENET.load_value_fixed_person_name;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = SOURCENET.cancel_fix_person_name;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// person_type
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.PERSON_TYPE;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_PERSON_TYPE;
+temp_property.input_type = temp_property.input_types.SELECT;
+temp_property.function_load_form = SOURCENET.load_value_person_type;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = SOURCENET.clear_person_type;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// title
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.TITLE;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_TITLE;
+temp_property.input_type = temp_property.input_types.TEXTAREA;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = null;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// person_organization
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.PERSON_ORGANIZATION;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_ORGANIZATION;
+temp_property.input_type = temp_property.input_types.TEXTAREA;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = null;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// quote_text
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.QUOTE_TEXT;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_QUOTE_TEXT;
+temp_property.input_type = temp_property.input_types.TEXTAREA;
+temp_property.function_load_form = null;
+temp_property.function_get_value = SOURCENET.get_quote_text_value;
+temp_property.function_clear_form = null;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// person_index
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.PERSON_INDEX;
+temp_property.type = temp_property.prop_data_types.INTEGER;
+temp_property.default_value = -1;
+temp_property.min_value = 0;
+temp_property.input_id = SOURCENET.INPUT_ID_PERSON_INDEX;
+temp_property.input_type = temp_property.input_types.HIDDEN;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = null;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// person_id
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.PERSON_ID;
+temp_property.type = temp_property.prop_data_types.INTEGER;
+temp_property.default_value = -1;
+temp_property.min_value = 1;
+temp_property.input_id = SOURCENET.INPUT_ID_MATCHED_PERSON_ID;
+temp_property.input_type = temp_property.input_types.TEXT;
+temp_property.function_load_form = SOURCENET.load_value_person_id;
+temp_property.function_get_value = SOURCENET.get_person_id_value;
+temp_property.function_clear_form = SOURCENET.clear_person_id;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// original_person_type
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.ORIGINAL_PERSON_TYPE;
+temp_property.type = temp_property.prop_data_types.STRING;
+temp_property.default_value = "";
+temp_property.min_value = null;
+temp_property.input_id = SOURCENET.INPUT_ID_ORIGINAL_PERSON_TYPE;
+temp_property.input_type = temp_property.input_types.HIDDEN;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = SOURCENET.clear_original_person_type;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+// article_person_id
+temp_property = new SOURCENET.PersonProperty();
+temp_property.name = temp_property.prop_names.ARTICLE_PERSON_ID;
+temp_property.type = temp_property.prop_data_types.INTEGER;
+temp_property.default_value = -1;
+temp_property.min_value = 1;
+temp_property.input_id = SOURCENET.INPUT_ID_ARTICLE_PERSON_ID;
+temp_property.input_type = temp_property.input_types.HIDDEN;
+temp_property.function_load_form = null;
+temp_property.function_get_value = null;
+temp_property.function_clear_form = SOURCENET.clear_article_person_id;
+SOURCENET.Person_property_name_to_info_map[ temp_property.name ] = temp_property;
+SOURCENET.Person_property_name_list.push( temp_property.name );
+
+SOURCENET.log_message( "Property names: " + SOURCENET.Person_property_name_list );
 
 // Person constructor
 
@@ -1395,21 +4377,30 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
  * @constructor
  */
 SOURCENET.Person = function()
-{    
+{   
+    // declare variables
+    var me = "SOURCENET.Person() constructor"
+    var property = null;
+    
     // instance variables
-    this.person_index = -1;
     this.person_name = "";
     this.fixed_person_name = "";
     this.person_type = "";
     this.title = "";
     this.person_organization = "";
     this.quote_text = "";
+    this.person_index = -1;
     this.person_id = null;
+    this.original_person_type = ""
     this.article_person_id = -1;
-    //this.location_of_name = "";
+    
+    // make list of properties, map names to info.
+    this.property_name_list = SOURCENET.Person_property_name_list;
+    this.property_name_to_info_map = SOURCENET.Person_property_name_to_info_map;
+
 } //-- END SOURCENET.Person constructor --//
 
-// Person methods
+// !---- Person methods
 
 /**
  * populates Person entry form inputs from values in this object instance.
@@ -1422,229 +4413,51 @@ SOURCENET.Person.prototype.populate_form = function()
 
     // declare variables
     var me = "SOURCENET.Person.populate_form"
-    var temp_element = null;
-    var temp_value = "";
-    var my_person_index = -1;
+    
+    // declare variables - processing person properties.
     var my_person_name = "";
-    var my_fixed_person_name = "";
-    var my_person_type = "";
-    var my_article_person_id = "";
-    var my_title = "";
-    var my_person_organization = "";
-    var my_quote_text = "";
-    var my_person_id = null;
-    var is_value_OK = false;
-    
-    // declare variables for building HTML output.
-    temp_html = "";
-    temp_ul = null;
-    temp_li = null;
-    
-    // retrieve values from instance.
-    my_person_index = this.person_index;
-    my_person_name = this.person_name;
-    my_fixed_person_name = this.fixed_person_name;
-    my_person_type = this.person_type;
-    my_article_person_id = this.article_person_id;
-    my_title = this.title;
-    my_person_organization = this.person_organization;
-    my_quote_text = this.quote_text;
-    my_person_id = this.person_id;
-    
+    var person_property_list = null;
+    var person_property_info = null;
+    var property_count = -1;
+    var current_index = -1;
+    var current_property_name = "";
+    var current_property_info = null;
+    var current_value = "";
+    var data_type = "";
+    var default_value = "";
+    var input_id = -1;
+    var input_type = "";
+    var get_value_function = null;
+
     // start by clearing coding form
     SOURCENET.clear_coding_form( "Loaded data for " + my_person_name )
 
-    //------------------------------------------------------------------------//
-    // data-store-person-index
-    temp_value = my_person_index;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
-    is_value_OK = SOURCENET.is_integer_OK( temp_value, 0 )
-    if ( is_value_OK == true )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to -1.
-        temp_element.val( -1 );
-    } //-- END check to see if we have value --//
+    // retrieve values from instance and use to populate the form.
     
-    //------------------------------------------------------------------------//
-    // person-name
-    temp_value = my_person_name;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to empty string.
-        temp_element.val( "" );
-    } //-- END check to see if we have value --//
-    
-    //------------------------------------------------------------------------//
-    // fixed-person-name
-    temp_value = my_fixed_person_name;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) )
-    {
-        // reveal field to fix person name if present.
-        SOURCENET.fix_person_name();
+    // get property info.
+    person_property_list = SOURCENET.Person_property_name_list;
+    person_property_info = SOURCENET.Person_property_name_to_info_map;
         
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to empty string.
-        temp_element.val( "" );
-    } //-- END check to see if we have value --//
-    
-    //------------------------------------------------------------------------//
-    // person-type
-    temp_value = SOURCENET.set_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE, my_person_type );
-    SOURCENET.process_selected_person_type()
-    
-    // sanity check
-    if ( temp_value != my_person_type )
+    // loop over properties
+    property_count = person_property_list.length;
+    for ( current_index = 0; current_index < property_count; current_index++ )
     {
         
-        // the value of the select is not what we passed to it.
-        SOURCENET.log_message( "In " + me + "(): value for select with ID = " + SOURCENET.INPUT_ID_PERSON_TYPE + " is \"" + temp_value + "\"; should be = \"" + my_person_type + "\"" );
+        // get current property name.
+        current_property_name = person_property_list[ current_index ];
         
-    }
-    
-    //------------------------------------------------------------------------//
-    // person-title
-    temp_value = my_title;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to empty string.
-        temp_element.val( "" );
-    } //-- END check to see if we have value --//
-    
-    //------------------------------------------------------------------------//
-    // person-organization
-    temp_value = my_person_organization;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to empty string.
-        temp_element.val( "" );
-    } //-- END check to see if we have value --//
-    
-    //------------------------------------------------------------------------//
-    // source-quote-text
-    temp_value = my_quote_text;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
-    
-    if ( ( temp_value != null ) && ( temp_value != "" ) )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to empty string.
-        temp_element.val( "" );
-    } //-- END check to see if we have value --//
+        // retrieve the property info.
+        current_property_info = person_property_info[ current_property_name ];
         
-
-    //------------------------------------------------------------------------//
-    // article_person_id
-    temp_value = my_article_person_id
-    
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_ARTICLE_PERSON_ID );
-    is_value_OK = SOURCENET.is_integer_OK( temp_value, 1 )
-    if ( is_value_OK == true )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-    }
-    else
-    {
-        // no value in instance, so set to -1.
-        temp_element.val( -1 );
-    } //-- END check to see if we have value --//
-
-    
-    //------------------------------------------------------------------------//
-    // person_id
-    temp_value = my_person_id;
-
-    // get <input> element
-    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
-    temp_input = null
-    is_value_OK = SOURCENET.is_integer_OK( temp_value, 1 )
-    if ( is_value_OK == true )
-    {
-        // store value in element
-        temp_element.val( temp_value );
-
-        // get <div> inside person lookup area where we display that there is an ID.
-        temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
+        // load the value
+        current_value = current_property_info.put_value( this );
         
-        // empty it.
-        temp_element.empty();
-        
-        // create <li>
-        temp_li = $( "<li></li>" );
-        
-        // place text in <li>.
-        temp_li.text( "Selected Person ID is " + temp_value + ". " );
-        
-        // add button to clear existing ID.
-        temp_html = $( "<input type=\"button\" id=\"clear-matched-id\" name=\"clear-matched-id\" value=\"<== Remove\" onclick=\"SOURCENET.clear_matched_person_id( '' )\" />" );
-        temp_li.append( temp_html );
+    } //-- END loop over Person properties --//
 
-        // make a <ul> and add the <li> to it.
-        temp_ul = $( "<ul></ul>" );
-        temp_ul.append( temp_li );        
-
-        // append it all to the HTML element in question.        
-        temp_element.append( temp_ul );
-    }
-    else
-    {
-        // no value in instance, so set to -1.
-        temp_element.val( -1 );
-    } //-- END check to see if we have value --//
-
-    SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
+    SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) );
     
     // validate
-    validate_status_array_OUT = this.validate()
+    validate_status_array_OUT = this.validate();
     
     // SOURCENET.log_message( "validate_status = " + validate_status )
     
@@ -1666,130 +4479,55 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
 
     // declare variables
     var me = "SOURCENET.Person.populate_from_form"
-    var form_element = null;
-    var temp_element = null;
-    var temp_value = "";
-    var my_person_index = -1;
-    var my_person_name = "";
-    var my_fixed_person_name = "";
-    var my_person_type = "";
-    var my_article_person_id = ""
-    var my_title = "";
-    var my_organization = "";
-    var my_quote_text = "";
-    var my_person_id = null;
-    var is_person_id_ok = false;
+    
+    // declare variables - processing person properties.
+    var person_property_list = null;
+    var person_property_info = null;
+    var property_count = -1;
+    var current_index = -1;
+    var current_property_name = "";
+    var current_property_info = null;
+    var current_value = "";
+    var data_type = "";
+    var default_value = "";
+    var input_id = -1;
+    var input_type = "";
+    var get_value_function = null;
+    var select_input_type = "";
+    var integer_data_type = "";
+    
+    // initialize values
+    select_input_type = SOURCENET.PersonProperty_input_types[ "SELECT" ];
+    integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ]
 
     // get form element
     form_element = form_element_IN
     
     // retrieve values from form inputs and store in instance.
     
-    //------------------------------------------------------------------------//
-    // data-store-person-index
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
-    my_person_index = temp_element.val();
-    
-    // Convert to int and store it.
-    my_person_index = parseInt( my_person_index, 10 );
-    this.person_index = my_person_index;
-
-    //------------------------------------------------------------------------//
-    // person-name
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
-    my_person_name = temp_element.val();
-    this.person_name = my_person_name;
-    
-    //------------------------------------------------------------------------//
-    // fixed-person-name
-    temp_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
-    my_fixed_person_name = temp_element.val();
-    this.fixed_person_name = my_fixed_person_name;
-    
-    //------------------------------------------------------------------------//
-    // person-type
-    temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_PERSON_TYPE );
-    my_person_type = temp_value;    
-    this.person_type = my_person_type;
-
-    //------------------------------------------------------------------------//
-    // article-person-id
-    temp_value = SOURCENET.get_selected_value_for_id( SOURCENET.INPUT_ID_ARTICLE_PERSON_ID );
-    my_article_person_id = temp_value;    
-    this.article_person_id = my_article_person_id;
-
-    //------------------------------------------------------------------------//
-    // person-title
-    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
-    my_title = temp_element.val();
-    this.title = my_title;
-    
-    //------------------------------------------------------------------------//
-    // person-organization
-    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
-    my_organization = temp_element.val();
-    this.person_organization = my_organization;
-    
-    //------------------------------------------------------------------------//
-    // source-quote-text
-    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
-    my_quote_text = temp_element.val();
-    
-    // only store quote text if person type us "source".
-    if ( my_person_type == SOURCENET.PERSON_TYPE_SOURCE )
+    // get property info.
+    person_property_list = SOURCENET.Person_property_name_list;
+    person_property_info = SOURCENET.Person_property_name_to_info_map;
+        
+    // loop over properties
+    property_count = person_property_list.length;
+    for ( current_index = 0; current_index < property_count; current_index++ )
     {
         
-        // it is a source - save quote text.
-        this.quote_text = my_quote_text;
-
-    } //-- END check to see if person is "source". --//
-    
-    //------------------------------------------------------------------------//
-    // id_person
-    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
-    
-    // element found?
-    if ( temp_element.length > 0 )
-    {    
-    
-        // get person ID from element.
-        my_person_id = temp_element.val();
+        // get current property name.
+        current_property_name = person_property_list[ current_index ];
         
-        // is it an OK string?
-        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
-        if ( is_person_id_ok == true )
-        {
-
-            // looks OK (non-empty).  Convert to int and store it.
-            my_person_id = parseInt( my_person_id, 10 );
-            this.person_id = my_person_id;
-
-        } //-- END check to see if person_id value present. --//
-    
-    } //-- END check to see if id_person element present in HTML. --//
-    
-    //------------------------------------------------------------------------//
-    // got a person ID?
-    is_person_id_ok = SOURCENET.is_integer_OK( this.person_id, 1 )
-    if ( is_person_id_ok == false )
-    {
+        // retrieve the property info.
+        current_property_info = person_property_info[ current_property_name ];
         
-        // no ID.  Try to retrieve from hidden "matched-person-id" input.
-        temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
-        temp_value = temp_element.val()
+        // get the value
+        current_value = current_property_info.get_value();
         
-        // is it an OK string?
-        is_person_id_ok = SOURCENET.is_string_OK( temp_value )
-        if ( is_person_id_ok == true )
-        {
-            
-            // there is a value from a previous match.  Convert to int, store.
-            my_person_id = parseInt( temp_value, 10 );
-            this.person_id = my_person_id;
+        // place the value in the specified property.
+        property_name = current_property_info.name;
+        this[ property_name ] = current_value;
 
-        } //-- END check to see if previous match person ID present. --//
-        
-    } //-- END check to see if person ID set from ajax lookup form --//
+    } //-- END loop over Person properties --//
 
     SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
     
@@ -1960,1960 +4698,8 @@ SOURCENET.Person.prototype.validate = function()
 // END Person
 //=====================//
 
-
 //----------------------------------------------------------------------------//
-// !==> function definitions
-//----------------------------------------------------------------------------//
-
-SOURCENET.decode_html = function( html_IN )
-{
-    // from: http://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
-
-    // return reference
-    text_OUT = "";
-
-    // declare variables
-    var txt = null;
-
-    // create textarea
-    txt = document.createElement("textarea");
-
-    // store HTML inside
-    txt.innerHTML = html_IN;
-
-    // get value back out.
-    text_OUT = txt.value
-    
-    return text_OUT;
-}
-
-
-/**
- * Opposite of SOURCENET.fix_person_name() - show()s link to fix person name, 
- *     hides form input and buttons to fix person name, removes current value
- *     from "fixed-person-name" <input>.
- *
- * Preconditions: None.
- *
- * Postconditions: show()s link to fix person name, hides form input and buttons
- *     to fix person name, removes current value from "fixed-person-name"
- *     <input>.
- */
-SOURCENET.cancel_fix_person_name = function()
-{
-    // declare variables
-    var me = "SOURCENET.cancel_fix_person_name";
-    var fix_link_div_id = "";
-    var fix_link_div = null;
-    var fix_area_div_id = "";
-    var fix_area_div = null;
-    var input_element = null;
-    
-    // get div that contains actual fix area and hide() it.
-    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
-    fix_area_div = $( '#' + fix_area_div_id );
-    fix_area_div.hide();
-
-    // clear fixed-person-name <input>.
-    SOURCENET.clear_fixed_person_name();
-    
-    // get div that contains link and show() it.
-    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
-    fix_link_div = $( '#' + fix_link_div_id );
-    fix_link_div.show();
-    
-} //-- END function SOURCENET.cancel_fix_person_name() --//
-
-
-/**
- * Clears out coding form and status message area, and optionally displays a
- *    status message if one passed in.
- *
- * Preconditions: for anything to appear, SOURCENET.data_store must have been
- *    initialized and at least one person added to it.
- *
- * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
- */
-SOURCENET.clear_coding_form = function( status_message_IN )
-{
-    
-    // declare variables.
-    var me = "SOURCENET.clear_coding_form";
-    var is_status_message_OK = false;
-    var status_message_array = [];
-    var temp_element = null;
-    var on_deck_person_element = null;
-    
-    // clear the coding form.
-    SOURCENET.log_message( "Top of " + me );
-        
-    // data-store-person-index
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_INDEX );
-    temp_element.val( -1 );
-    
-    // person-name
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_NAME );
-    temp_element.val( "" );
-    
-    // fixed-person-name
-    SOURCENET.cancel_fix_person_name();
-    
-    // person-type
-    temp_element = $( '#' + SOURCENET.INPUT_ID_PERSON_TYPE );
-    temp_element.val( "" );
-    
-    // call SOURCENET.process_selected_person_type();
-    SOURCENET.process_selected_person_type();
-
-    // person-title
-    temp_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
-    temp_element.val( "" );
-    
-    // person-organization
-    temp_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
-    temp_element.val( "" );
-    
-    // source-quote-text
-    temp_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
-    temp_element.val( "" );
-    
-    // clear out the person lookup form
-    SOURCENET.clear_person_lookup_form( false )
-    
-    // clear out the matched person ID
-    SOURCENET.clear_matched_person_id()
-    
-    // clear any find-in-article-text matches, and clear find text entry field.
-    SOURCENET.clear_find_in_text();
-    
-    // got a status message?
-    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
-    {
-        // make status message array (empty message will clear status area).
-        status_message_array = [];
-        status_message_array.push( status_message_IN );
-        
-        // output it.
-        SOURCENET.output_status_messages( status_message_array );
-    }
-    
-} //-- END function SOURCENET.clear_coding_form() --//
-
-
-/**
- * Retrieves all the <p> tags that make up the article text, removes class
- *     "foundInText" from any where that class is present.  Also clears out the
- *     field where text to be found is entered.
- *
- * Preconditions: None.
- *
- * Postconditions: Updates classes on article <p> tags so none are assigned
- *     "foundInText".  Wipes input with id "text-to-find-in-article".
- */
-SOURCENET.clear_find_in_text = function()
-{
-    
-    // declare variables
-    var me = "SOURCENET.clear_find_in_text";
-    var article_paragraphs = null;
-    
-    // clear find in text matches
-    SOURCENET.clear_find_in_text_matches();
-                
-    // get text-to-find-in-article text field, set value to "".
-    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
-    input_element.val( "" );
-
-} //-- END function SOURCENET.clear_find_in_text_matches() --//
-
-
-/**
- * Retrieves all the <p> tags that make up the article text, removes class
- *     "foundInText" from any where that class is present.
- *
- * Preconditions: None.
- *
- * Postconditions: Updates classes on article <p> tags so none are assigned
- *     "foundInText".
- */
-SOURCENET.clear_find_in_text_matches = function(  )
-{
-    
-    // declare variables
-    var me = "SOURCENET.clear_find_in_text_matches";
-    var article_paragraphs = null;
-    
-    // get article <p> tags.
-    article_paragraphs = SOURCENET.get_article_paragraphs();
-    
-    // remove class "foundInText" from all.
-    article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false )
-    
-    // set all paragraphs' html() back to their text()...
-    article_paragraphs.each( function()
-        {
-            // declare variables.
-            var jquery_p_element = null;
-            var paragraph_html = "";
-            var paragraph_text = "";
-            var span_index = -1;
-            
-            // get paragraph text
-            jquery_p_element = $( this );
-            paragraph_html = jquery_p_element.html();
-            paragraph_text = jquery_p_element.text();
-            
-            // is there a matched words span present in html?
-            span_index = paragraph_html.indexOf( SOURCENET.HTML_SPAN_MATCHED_WORDS );
-            
-            // if found, update store plain text .
-            if ( span_index > -1 )
-            {
-                
-                // store plain text in <p>.html() to remove any HTML.
-                jquery_p_element.html( paragraph_text );
-                                    
-            } //-- END check to see if <span> found --//
-        } //-- END anonymous function called on each paragraph --//
-    );
-
-} //-- END function SOURCENET.clear_find_in_text_matches() --//
-
-
-/**
- * Loads current person_name value into field where it can be manually fixed.
- */
-SOURCENET.clear_fixed_person_name = function()
-{
-    
-    // declare variables
-    var input_element = null;
-
-    // get fixed_person_name text field,  place value there.
-    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
-    input_element.val( "" );
-    
-} //-- END function SOURCENET.clear_fixed_person_name() --//
-
-
-/**
- * Clears out coding form and status message area, and optionally displays a
- *    status message if one passed in.
- *
- * Preconditions: for anything to appear, SOURCENET.data_store must have been
- *    initialized and at least one person added to it.
- *
- * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
- */
-SOURCENET.clear_matched_person_id = function( status_message_IN )
-{
-    
-    // declare variables.
-    var me = "SOURCENET.clear_matched_person_id";
-    var status_message_array = [];
-    var temp_element = null;
-    var on_deck_person_element = null;
-    
-    // clear the coding form.
-    SOURCENET.log_message( "Top of " + me );
-        
-    // matched-person-id
-    temp_element = $( '#' + SOURCENET.INPUT_ID_MATCHED_PERSON_ID );
-    temp_element.val( -1 );
-    
-    // get <div> inside person lookup area where we display that there is an ID.
-    temp_element = $( '#' + SOURCENET.DIV_ID_LOOKUP_PERSON_EXISTING_ID );
-    temp_element.empty();
-
-    // got a status message?
-    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
-    {
-        // make status message array (empty message will clear status area).
-        status_message_array = [];
-        status_message_array.push( status_message_IN );
-        
-        // output it.
-        SOURCENET.output_status_messages( status_message_array );
-    }
-    
-} //-- END function SOURCENET.clear_matched_person_id() --//
-
-
-/**
- * Clears out coding form and status message area, and optionally displays a
- *    status message if one passed in.
- *
- * Preconditions: for anything to appear, SOURCENET.data_store must have been
- *    initialized and at least one person added to it.
- *
- * @param {string} status_message_IN - message to place in status area.  If undefined, null, or "", no message output.
- */
-SOURCENET.clear_person_lookup_form = function( do_clear_matched_id_IN, status_message_IN )
-{
-    
-    // declare variables.
-    var me = "SOURCENET.clear_person_lookup_form";
-    var status_message_array = [];
-    var temp_element = null;
-    var on_deck_person_element = null;
-    
-    // clear the coding form.
-    SOURCENET.log_message( "Top of " + me );
-        
-    // id_person
-    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON );
-    temp_element.val( "" );
-    
-    // id_person_text
-    temp_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
-    temp_element.val( "" );
-    
-    // clear out <div> inside <div id="id_person_on_deck">.
-    
-    // get on-deck <div>.
-    on_deck_person_element = $( '#' + SOURCENET.DIV_ID_AJAX_ID_PERSON_ON_DECK );
-    
-    // remove anonymous <div> inside.
-    on_deck_person_element.find( 'div' ).remove();
-    
-    // add a new empty div.
-    temp_element = $( '<div></div>' );
-    on_deck_person_element.append( temp_element );
-    
-    // do we clear out any matched person ID?
-    if ( do_clear_matched_id_IN == true )
-    {
-        
-        // yes, clear it out.
-        SOURCENET.clear_matched_person_id()
-        
-    }
-    
-    // got a status message?
-    if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
-    {
-        // make status message array (empty message will clear status area).
-        status_message_array = [];
-        status_message_array.push( status_message_IN );
-        
-        // output it.
-        SOURCENET.output_status_messages( status_message_array );
-    }
-    
-} //-- END function SOURCENET.clear_person_lookup_form() --//
-
-
-/**
- * Repaints the area where coded persons are displayed.
- *
- * Preconditions: for anything to appear, SOURCENET.data_store must have been
- *    initialized and at least one person added to it.
- */
-SOURCENET.display_persons = function()
-{
-    
-    // declare variables.
-    var me = "SOURCENET.display_persons";
-    var row_id_prefix = "";
-    var my_data_store = null;
-    var person_list_element = null;
-    var person_index = -1;
-    var person_count = -1;
-    var current_person = null;
-    var current_row_id = "";
-    var current_row_selector = "";
-    var current_row_element = null;
-    var current_row_element_count = -1;
-    var got_person = false;
-    var person_string = "";
-    var got_row= false;
-    var do_create_row = false;
-    var do_update_row = false;
-    var do_remove_row = false;
-    var row_contents = "";
-    var button_element = null;
-    
-    // declare variables - make form to submit list.
-    var active_person_count = -1;
-    var div_person_list_element = null;
-    var form_element = null;
-    
-    // initialize variables
-    row_id_prefix = "person-";
-    
-    // get person store
-    my_data_store = SOURCENET.get_data_store();
-    
-    // for now, display by SOURCENET.log_message()-ing JSON string.
-    //SOURCENET.log_message( "In " + me + "(): DataStore = " + JSON.stringify( my_data_store ) );
-    
-    // get <table id="person-list-table" class="personListTable">
-    person_list_element = $( '#person-list-table' );
-    
-    // loop over the persons in the list.
-    person_count = my_data_store.person_array.length;
-    SOURCENET.log_message( "In " + me + "(): Person Count = " + person_count );
-    
-    // check to see if one or more persons.
-    if ( person_count > 0 )
-    {
-
-        // at least 1 - loop.
-        active_person_count = 0;
-        for( person_index = 0; person_index < person_count; person_index++ )
-        {
-            
-            // initialize variables.
-            got_person = false;
-            got_row = false;
-            do_create_row = false;
-            do_update_row = false;
-            do_remove_row = false;
-            button_element = null;
-            
-            // get person.
-            current_person = my_data_store.get_person_at_index( person_index );
-    
-            // got person?
-            if ( current_person != null )
-            {
-                // yes - set flag, update person_string.
-                got_person = true;
-                active_person_count += 1;
-                person_string = current_person.to_table_cell_html();
-                
-            }
-            else
-            {
-    
-                // SOURCENET.log_message( "In " + me + "(): no person for index " + person_index );
-                person_string = "null";
-    
-            } //-- END check to see if person --//
-            
-            SOURCENET.log_message( "In " + me + "(): Person " + person_index + ": " + person_string );
-            
-            // try to get <tr> for that index.
-            current_row_id = row_id_prefix + person_index;
-            current_row_selector = "#" + current_row_id;
-            current_row_element = person_list_element.find( current_row_selector );
-            current_row_element_count = current_row_element.length;
-            //SOURCENET.log_message( "DEBUG: row element: " + current_row_element + "; length = " + current_row_element_count );
-            
-            // matching row found?
-            if ( current_row_element_count > 0 )
-            {
-                
-                // yes - set flag.
-                got_row = true;
-    
-            } //-- END check to see if row --//
-            
-            // based on person and row, what do we do?
-            if ( got_row == true )
-            {
-                
-                //SOURCENET.log_message( "In " + me + "(): FOUND <li> for " + current_li_id );
-                // got person?
-                if ( got_person == true )
-                {
-                    
-                    // yes.  convert to string and replace value, in case there have
-                    //    been changes.
-                    do_create_row = false;
-                    do_update_row = true;
-                    do_remove_row = false;
-                    
-                }
-                else
-                {
-                    
-                    // no person - remove row
-                    do_create_row = false;
-                    do_update_row = false;
-                    do_remove_row = true;                
-                    
-                }
-                
-            }
-            else //-- no row --//
-            {
-                
-                //SOURCENET.log_message( "In " + me + "(): NO row for " + current_row_id );
-                // got person?
-                if ( got_person == true )
-                {
-                    
-                    // yes.  convert to string and replace value, in case there have
-                    //    been changes.
-                    do_create_row = true;
-                    do_update_row = true;
-                    do_remove_row = false;
-                    
-                }
-                else
-                {
-                    
-                    // no person - nothing to do.
-                    do_create_row = false;
-                    do_update_row = false;
-                    do_remove_row = false;                
-                    
-                }
-    
-            } //-- END check to see if row for current person. --//
-            
-            // Do stuff!
-            
-            SOURCENET.log_message( "In " + me + "(): WHAT TO DO?: do_create_row = " + do_create_row + "; do_update_row = " + do_update_row + "; do_remove_row = " + do_remove_row );
-            
-            // crate new row?
-            if ( do_create_row == true )
-            {
-                
-                // create row with id = row_id_prefix + person_index, store in
-                //    current_row_element.
-                current_row_element = $( '<tr></tr>' );
-                current_row_element.attr( "id", row_id_prefix + person_index );
-                
-                // prepend it to the person_list_element
-                person_list_element.prepend( current_row_element );
-                
-            } //-- END check to see if do_create_li --//
-            
-            // update contents of <tr>?
-            if ( do_update_row == true )
-            {
-                
-                // for now, just place person string in a <td>.
-                row_contents = person_string;
-                
-                // (and other stuff needed for that to work.)
-                row_contents += '<td><input type="button" id="remove-person-' + person_index + '" name="remove-person-' + person_index + '" value="Remove" onclick="SOURCENET.remove_person( ' + person_index + ' )" /></td>';
-                
-                current_row_element.html( row_contents );
-                
-            } //-- END check to see if do_update_li --//
-            
-            // delete <tr>?
-            if ( do_remove_row == true )
-            {
-                
-                // delete <li>.
-                current_row_element.remove();
-                
-            } //-- END check to see if do_delete_li --//
-            
-        } //-- END loop over persons in list --//
-        
-        // try to find the form element.
-        form_element = $( '#submit-article-coding' );
-        
-        // got active people?
-        if ( active_person_count > 0 )
-        {
-            
-            // make sure form is visible.
-            SOURCENET.log_message( "In " + me + "(): active people, show coding submit <form>." );
-            form_element.show()
-                        
-        }
-        else //-- no active people. --//
-        {
-            
-            // no active people, hide form.
-            SOURCENET.log_message( "In " + me + "(): no people, hide coding submit <form>." );
-            form_element.hide()
-                    
-        } //-- END check to see if active people. --//
-        
-    }
-    else
-    {
-        
-        // nothing in list.  Move on, but output log since I'm not sure why we
-        //    got here.
-        SOURCENET.log_message( "In " + me + "(): Nothing in person_array.  Moving on." );
-        
-    } //-- END check to see if at least 1 item in list. --//
-    
-} //-- END function SOURCENET.display_persons() --//
-
-
-/**
- * Retrieves all the <p> tags that make up the article text, loops over each.
- *     In each, searches for the text in "find_text_IN".  If it finds it,
- *     Updates classes on article <p> tags so any that contain text passed in
- *     are assigned "foundInText", and wraps the matched text in a span so it
- *     stands out.
- *
- * Preconditions: None.
- *
- * Postconditions: Updates classes on article <p> tags so any that contain text
- *     passed in are assigned "foundInText".
- */
-SOURCENET.find_in_article_text = function( find_text_IN )
-{
-    
-    // declare variables
-    var me = "SOURCENET.find_in_article_text";
-    var is_text_OK = false;
-    var article_paragraphs = null;
-    //var contains_selector = "";
-    //var match_paragraphs = null;
-    
-    // clear any previous matches
-    SOURCENET.clear_find_in_text_matches()
-
-    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
-    
-    // is text passed in OK?
-    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
-    if ( is_text_OK == true )
-    {
-        
-        // get article <p> tags.
-        article_paragraphs = SOURCENET.get_article_paragraphs();
-        
-        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
-        
-        article_paragraphs.each( function()
-            {
-                // declare variables.
-                var jquery_p_element = null;
-                var find_text_list = [];
-               
-                // get paragraph text
-                jquery_p_element = $( this );
-                
-                // set up list of items to look for (just find_text_IN).
-                find_text_list.push( find_text_IN );
-                
-                // call function to find in <p> tag
-                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
-            } //-- END anonymous function called on each paragraph --//
-        );
-    
-        // look for those that contain the text passed in.
-        //contains_selector = "p:contains( '" + find_text_IN + "' )";
-        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
-        //match_paragraphs = article_paragraphs.find( contains_selector );
-        
-        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
-    
-        // For matches, add class "foundInText".
-        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
-
-    } //-- END to make sure we have text. --//
-
-} //-- END function SOURCENET.find_in_article_text() --//
-
-
-/**
- * Accepts jquery <p> element instance and list of strings to look for inside.
- *     for each item in the list, checks to see if the string is in the text.
- *     If it finds it, updates classes on <p> tag to assign "foundInText",
- *     and wraps the matched text in a span so it stands out.
- *
- * Preconditions: Must have found paragraph tag you want to process and have it
- *     in a jquery instance.  Must also have broken out list of search text
- *     items as you want (split on spaces, or don't, etc.).
- *
- * Postconditions: if match found, will update the <p> in the jquery instance
- *     passed in.
- */
-SOURCENET.find_in_p_tag = function( p_tag_jquery_IN, find_text_list_IN )
-{
-
-    // declare variables.
-    var me = "SOURCENET.find_in_p_tag";
-    var jquery_p_element = null;
-    var paragraph_text = "";
-    var find_text_item_count = -1;
-    var current_index = -1;
-    var current_find_text = "";
-    var found_index = -1;
-    var text_around_match_list = null;
-    var match_html = "";
-    var current_text_index = -1;
-    var new_html = "";
-    
-    // get paragraph text
-    jquery_p_element = p_tag_jquery_IN;
-    paragraph_text = jquery_p_element.text();
-    SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; paragraph text = " + paragraph_text );
-    
-    // split find_text_IN on spaces.
-    find_text_item_count = find_text_list_IN.length;
-    
-    // loop over words
-    for ( current_index = 0; current_index < find_text_item_count; current_index++ )
-    {
-        
-        // get current find item.
-        current_find_text = find_text_list_IN[ current_index ];
-        
-        // is find text inside the paragraph?
-        found_index = paragraph_text.indexOf( current_find_text );
-        
-        // if found, update class.
-        if ( found_index > -1 )
-        {
-            
-            // For matches, add class "foundInText".
-            jquery_p_element.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true );
-            
-            // split on the text we matched.
-            text_around_match_list = paragraph_text.split( current_find_text );
-            
-            // add a span around the matched words.
-            matched_words_html = SOURCENET.HTML_SPAN_MATCHED_WORDS + current_find_text + SOURCENET.HTML_SPAN_CLOSE;
-    
-            // put together again, but with <span>-ed matched words
-            //     rather than just the words themselves.
-            new_html = text_around_match_list.join( matched_words_html );
-            
-            // store new HTML in <p>.
-            jquery_p_element.html( new_html );
-                                
-        } //-- END check to see if text found --//
-
-    } //-- END loop over find text items --//
-
-} //-- END function SOURCENET.find_in_p_tag --//
-
-
-/**
- * Retrieves current person's last name, then looks for it in article text.
- *
- * Preconditions: None.
- *
- * Postconditions: Updates classes on article <p> tags so any that contain
- *     current last name are assigned "foundInText".
- */
-SOURCENET.find_last_name_in_article_text = function( find_text_IN )
-{
-    // declare variables
-    var me = "SOURCENET.find_last_name_in_article_text";
-    var last_name_text = "";
-    var input_element = null;
-    
-    // get last name
-    last_name_text = SOURCENET.get_person_last_name_value();
-    //SOURCENET.log_message( "In " + me + "(): last name text : " + last_name_text );
-
-    // get text-to-find-in-article text field, place value.
-    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
-    input_element.val( last_name_text );
-    
-    // find in text.
-    SOURCENET.find_in_article_text( last_name_text );
-    
-} //-- END function SOURCENET.find_last_name_in_article_text() --//
-
-
-/**
- * Retrieves all the <p> tags that make up the article text, loops over each.
- *     In each, searches for each word (space-delimited) in the text in
- *     "find_text_IN".  If it finds it, updates classes on article <p> tags so
- *     any that contain a word from text passed in are assigned "foundInText",
- *     and wraps the matched text in a span so it stands out.
- *
- * Preconditions: None.
- *
- * Postconditions: Updates classes on article <p> tags so any that contain text
- *     passed in are assigned "foundInText".
- */
-SOURCENET.find_words_in_article_text = function( find_text_IN )
-{
-    
-    // declare variables
-    var me = "SOURCENET.find_words_in_article_text";
-    var is_text_OK = false;
-    var article_paragraphs = null;
-    //var contains_selector = "";
-    //var match_paragraphs = null;
-    
-    // clear any previous matches
-    SOURCENET.clear_find_in_text_matches()
-
-    SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
-    
-    // is text passed in OK?
-    is_text_OK = SOURCENET.is_string_OK( find_text_IN );
-    if ( is_text_OK == true )
-    {
-        
-        // get article <p> tags.
-        article_paragraphs = SOURCENET.get_article_paragraphs();
-        
-        SOURCENET.log_message( "In " + me + "(): paragraph count = " + article_paragraphs.length );
-        
-        article_paragraphs.each( function()
-            {
-                // declare variables.
-                var jquery_p_element = null;
-                var find_text_list = [];
-               
-                // get paragraph text
-                jquery_p_element = $( this );
-                
-                // set up list of items to look for (split find_text_IN on " ").
-                find_text_list = find_text_IN.split( " " );
-                
-                // call function to find in <p> tag
-                SOURCENET.find_in_p_tag( jquery_p_element, find_text_list );
-            } //-- END anonymous function called on each paragraph --//
-        );
-    
-        // look for those that contain the text passed in.
-        //contains_selector = "p:contains( '" + find_text_IN + "' )";
-        //SOURCENET.log_message( "In " + me + "(): contains_selector = " + contains_selector );
-        //match_paragraphs = article_paragraphs.find( contains_selector );
-        
-        //SOURCENET.log_message( "In " + me + "(): match count = " + match_paragraphs.length );
-    
-        // For matches, add class "foundInText".
-        //match_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, true )
-
-    } //-- END to make sure we have text. --//
-
-} //-- END function SOURCENET.find_words_in_article_text() --//
-
-
-/**
- * Hides link to fix person name, reveals form input and buttons to fix person
- *     name, places current name in "fixed-person-name" <input>.
- *
- * Preconditions: None.
- *
- * Postconditions: Hides link to fix person name, reveals form input and buttons
- *     to fix person name, places current name in "fixed-person-name" <input>.
- */
-SOURCENET.fix_person_name = function()
-{
-    // declare variables
-    var me = "SOURCENET.fix_person_name";
-    var fix_link_div_id = "";
-    var fix_link_div = null;
-    var fix_area_div_id = "";
-    var fix_area_div = null;
-    var input_element = null;
-    
-    // get div that contains link and hide() it.
-    fix_link_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME_LINK;
-    fix_link_div = $( '#' + fix_link_div_id );
-    fix_link_div.hide();
-    
-    // load name into fixed-person-name <input>.
-    SOURCENET.load_person_name_to_fix();
-    
-    // get div that contains actual fix area and show() it.
-    fix_area_div_id = SOURCENET.DIV_ID_FIX_PERSON_NAME;
-    fix_area_div = $( '#' + fix_area_div_id );
-    fix_area_div.show();
-
-} //-- END function SOURCENET.fix_person_name() --//
-
-
-/**
- * Retrieves all the <p> tags that make up the article text, returns them in a
- *     list.  If none found, returns empty list.  If error, returns null.
- *
- * Preconditions: None.
- *
- * Postconditions: None.
- */
-SOURCENET.get_article_paragraphs = function()
-{
-    
-    // return reference
-    var grafs_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_article_paragraphs";
-    var article_view_div_id = "";
-    var article_view_div = null;
-    
-    // retrieve <div> that contains article text (id/name = "article_view").
-    article_view_div_id = "article_view";
-    article_view_div = $( '#' + article_view_div_id );
-    
-    // find all <p> tags.
-    grafs_OUT = article_view_div.find( "p" );
-
-    return grafs_OUT;
-    
-} //-- END function SOURCENET.get_article_paragraphs() --//
-
-
-/**
- * checks to see if DataStore instance already around.  If so, returns it.
- *    If not, creates one, stores it, then returns it.
- *
- * Preconditions: None.
- *
- * Postconditions: If DataStore instance not already present in
- *    SOURCENET.data_store, one is created and stored there before it is
- *    returned.
- */
-SOURCENET.get_data_store = function()
-{
-    
-    // return reference
-    var instance_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_data_store";
-    var my_data_store = null;
-    
-    // see if there is already a person store.
-    my_data_store = SOURCENET.data_store;
-    if ( my_data_store == null )
-    {
-        
-        // nope.  Make one, store it, then recurse.
-        my_data_store = new SOURCENET.DataStore();
-        SOURCENET.data_store = my_data_store;
-        instance_OUT = SOURCENET.get_data_store();
-        
-    }
-    else
-    {
-        
-        instance_OUT = my_data_store;
-        
-    }
-    
-    return instance_OUT;
-    
-} //-- END function SOURCENET.get_data_store() --//
-
-
-/**
- * Retrieves value in fixed_person_name input.  If none present, returns null.
- *
- * Preconditions: None.
- *
- * Postconditions: None
- */
-SOURCENET.get_fixed_person_name_value = function()
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_fixed_person_name_value";
-    var name_input_name = "";
-    
-    // get name of input for name from SOURCENET.
-    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
-
-    // get value for that name.
-    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_FIXED_PERSON_NAME, null )
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_fixed_person_name_value() --//
-
-
-/**
- * Retrieves value in person_name input.  If one found, parses on spaces and
- *     returns the last token in the list ("last name"). If nothing present,
- *     returns null.
- *
- * Preconditions: None.
- *
- * Postconditions: None
- */
-SOURCENET.get_person_last_name_value = function()
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_person_last_name_value";
-    var current_person_name = "";
-    var is_name_OK = false;
-    var name_part_list = null;
-    var name_part_count = -1;
-    
-    // get person name.
-    current_person_name = SOURCENET.get_person_name();
-
-    // is name OK?
-    is_name_OK = SOURCENET.is_string_OK( current_person_name );
-    if ( is_name_OK == true )
-    {
-        
-        // got name. split into a list of tokens on space.
-        name_part_list = current_person_name.split( " " )
-        
-        // got anything?
-        if ( name_part_list != null )
-        {
-            
-            // how many matches?
-            name_part_count = name_part_list.length;
-            if ( name_part_count > 0 )
-            {
-                
-                // more than one.  Take last one in the list.
-                value_OUT = name_part_list[ name_part_count - 1 ];
-                
-            }
-            else
-            {
-                
-                // nothing in list.  return null.
-                value_OUT = null;
-                
-            } //-- END check to see if name parts exist. --//
-    
-        }
-        else
-        {
-            
-            // no list?  eek... return null.
-            value_OUT = null;
-            
-        } //-- END check to see if list returned. --//
-        
-    }
-    else
-    {
-        
-        // not OK.  Return null.
-        value_OUT = null;
-        
-    } //-- END check to see if name is OK. --//
-
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_person_last_name_value() --//
-
-
-/**
- * Retrieves value in person_name input.  If none present, returns null.
- *
- * Preconditions: None.
- *
- * Postconditions: None
- */
-SOURCENET.get_person_name = function()
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_person_name";
-    var fixed_name = "";
-    var is_fixed_name_OK = false;
-    
-    // first, try to get fixed_person_name.
-    fixed_name = SOURCENET.get_fixed_person_name_value();
-    is_fixed_name_OK = SOURCENET.is_string_OK( fixed_name );
-    if ( is_fixed_name_OK == false )
-    {
-        
-        // no fixed name.  get person_name.
-        value_OUT = SOURCENET.get_person_name_value();
-        
-    }
-    else
-    {
-        
-        // looks like there is a fixed name.  Use it.
-        value_OUT = fixed_name;
-        
-    }
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_person_name() --//
-
-
-/**
- * Retrieves value in person_name input.  If none present, returns null.
- *
- * Preconditions: None.
- *
- * Postconditions: None
- */
-SOURCENET.get_person_name_value = function()
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_person_name_value";
-    var name_input_name = "";
-    
-    // get name of input for name from SOURCENET.
-    name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
-
-    // get value for that name.
-    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_PERSON_NAME, null )
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_person_name_value() --//
-
-
-/**
- * Accepts id of select whose selected value we want to retrieve.  After making
- *    sure we have an OK ID, looks for select with that ID.  If one found, finds
- *    selectedIndex, retrieves option at that index, and retrieves value from
- *    that option.  Returns the selected value.
- *
- * Preconditions: None.
- *
- * Postconditions: None.
- *
- * @param {string} select_id_IN - HTML id attribute value for select whose selected value we want to retrieve.
- * @returns {string} - selected value of select matching ID passed in, else null if error.
- */
-SOURCENET.get_selected_value_for_id = function( select_id_IN )
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_selected_value_for_id";
-    
-    // just call get_value_for_id()
-    value_OUT = SOURCENET.get_value_for_id( select_id_IN, null );
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_selected_value_for_id() --//
-
-
-/**
- * Accepts id of input whose value we want to retrieve.  After making sure we
- *     have an OK ID, looks for input with that ID.  If one found, gets value
- *     from that input and returns it.
- *
- * Preconditions: None.
- *
- * Postconditions: None.
- *
- * @param {string} id_IN - HTML id attribute value for input whose value we want to retrieve.
- * @returns {string} - value of input matching ID passed in, else null if error.
- */
-SOURCENET.get_value_for_id = function( id_IN, default_IN )
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.get_input_value_for_id";
-    var is_id_OK = false;
-    var element = null;
-    var value = "";
-    
-    // is ID passed in OK?
-    is_id_OK = SOURCENET.is_string_OK( id_IN );
-    if ( is_id_OK == true )
-    {
-            
-        // get select element.
-        element = $( '#' + id_IN );
-        
-        // get selected value
-        value = element.val();
-        
-        // return it.
-        value_OUT = value;
-        
-    }
-    else
-    {
-    
-        // select ID is empty.  Return default.
-        value_OUT = default_IN;
-        
-    }
-    
-    SOURCENET.log_message( "In " + me + "(): element ID = " + id_IN + "; value = " + value_OUT );
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.get_value_for_id() --//
-
-
-/**
- * Accepts integer variable.  Checks to see if it is OK.  If undefined, null, or
- *    less than min value, returns false.  Otherwise, returns true.
- *
- * @param {int} integer_IN - Integer value to check for OK-ness.
- * @param {int} min_value_IN - minimum OK value.
- * @returns {boolean} - if string is undefined, null, or "", returns false.  Otherwise returns true.
- */
-SOURCENET.is_integer_OK = function( integer_IN, min_value_IN )
-{
-    
-    // return reference
-    var is_OK_OUT = true;
-    
-    // declare variables.
-    var min_value = 0;
-    
-    // if nothing passed in for min_value, default to 0
-    if ( ( min_value_IN !== undefined ) && ( min_value_IN != null ) )
-    {
-        
-        // default passed in.  Use it.
-        min_value = min_value_IN;
-        
-    }
-    else
-    {
-        
-        // nothing passed in.  Default to 0.
-        min_value = 0;
-        
-    }
-    
-    if ( ( integer_IN !== undefined ) && ( integer_IN != null ) && ( integer_IN >= min_value ) )
-    {
-        
-        // OK!
-        is_OK_OUT = true;
-        
-    }
-    else
-    {
-        
-        // not OK.
-        is_OK_OUT = false;
-        
-    }
-    
-    return is_OK_OUT;
-    
-} //-- END function SOURCENET.is_integer_OK() --//
-
-
-/**
- * Accepts string variable.  Checks to see if it is OK.  If undefined, null, or
- *    "", returns false.  Otherwise, returns true.
- *
- * @param {string} string_IN - String value to check for OK-ness.
- * @returns {boolean} - if string is undefined, null, or "", returns false.  Otherwise returns true.
- */
-SOURCENET.is_string_OK = function( string_IN )
-{
-    
-    // return reference
-    var is_OK_OUT = true;
-    
-    if ( ( string_IN !== undefined ) && ( string_IN != null ) && ( string_IN != "" ) )
-    {
-        
-        // OK!
-        is_OK_OUT = true;
-        
-    }
-    else
-    {
-        
-        // not OK.
-        is_OK_OUT = false;
-        
-    }
-    
-    return is_OK_OUT;
-    
-} //-- END function SOURCENET.is_string_OK() --//
-
-
-/**
- * Accepts index to person in DataStore.person_array.  Retrieves person instance
- *     at the index passed in.  If not null, calls Person.populate_form() to
- *     put its values into the form.
- */
-SOURCENET.load_person_into_form = function( person_index_IN )
-{
-    
-    // declare variables
-    var me = "SOURCENET.load_person_into_form";
-    var is_index_OK = false;
-    var my_data_store = null;
-    var my_person_instance = null;
-    var status_message_array = [];
-    
-    SOURCENET.log_message( "In " + me + "(): person_index_IN = " + person_index_IN );
-    
-    // see if index is OK.
-    is_index_OK = SOURCENET.is_integer_OK( person_index_IN );
-    if ( is_index_OK == true )
-    {
-        
-        // retrieve data store.
-        my_data_store = SOURCENET.get_data_store();
-        
-        // get person at index passed in.
-        my_person_instance = my_data_store.get_person_at_index( person_index_IN );
-        
-        // call populate_form()
-        my_person_instance.populate_form()
-        
-        // place last name in text-to-find-in-article <input>, then try to find
-        //     in text.
-        SOURCENET.find_last_name_in_article_text()
-    }
-    else
-    {
-       
-        // make status message array (empty message will clear status area).
-        status_message_array = [];
-        status_message_array.push( "Could not load person data - invalid index ( \"" + person_index_IN + "\" )" );
-    
-        // output it.
-        SOURCENET.output_status_messages( status_message_array );
- 
-    }
-    
-} //-- END function SOURCENET.load_person_into_form() --//
- 
- 
-/**
- * Loads current person_name value into field where it can be manually fixed.
- */
-SOURCENET.load_person_name_to_fix = function()
-{
-    
-    // declare variables
-    var name_text = "";
-    var input_element = null;
-
-    // get selection
-    name_text = SOURCENET.get_person_name_value();
-    //SOURCENET.log_message( "source text : " + source_text );
-
-    // get fixed_person_name text field,  place value there.
-    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
-    input_element.val( name_text );
-    
-} //-- END function SOURCENET.load_person_name_to_fix() --//
-
-
-/**
- * Accepts a message.  If console.log() is available, calls that.  If not, does
- *    nothing.
- */
-SOURCENET.log_message = function( message_IN )
-{
-    
-    // declare variables
-    var output_flag = true;
-    
-    // set to SOURCENET.debug_flag
-    output_flag = SOURCENET.debug_flag;
-    
-    // check to see if we have console.log() present.
-    if ( ( window.console ) && ( window.console.log ) && ( output_flag == true ) )
-    {
-
-        // console is available
-        console.log( message_IN );
-        
-    } //-- END check to see if console.log() present. --//
-    
-} //-- END function SOURCENET.log_message() --//
-
-
-/**
- * Clears out coding form and status message area, and optionally displays a
- *    status message if one passed in.
- *
- * @param {Array:string} status_message_array_IN - array of messages to place in status area.  If undefined, null, or [], no messages output and message area is cleared and hidden.
- */
-SOURCENET.output_status_messages = function( status_message_array_IN )
-{
-    
-    // declare variables.
-    var me = "SOURCENET.output_status_messages";
-    var message_area_div_element = null;
-    var message_area_ul_id = "";
-    var message_area_ul_class = "";
-    var message_area_ul_empty_html = "";
-    var message_area_ul = null;
-    var message_count = -1;
-    var message_index = -1;
-    var current_message = "";
-    var message_li_element = null;
-    
-    // set variables
-    message_area_ul_id = "status-message-list";
-    message_area_ul_class = "statusMessageList";
-    message_area_ul_empty_html = '<ul id="' + message_area_ul_id + '" class="' + message_area_ul_class + '"></ul>';
-
-    // get <div id="status-message-area" class="statusMessageArea">
-    message_area_div_element = $( '#status-message-area' );
-    
-    // get <ul id="status-message-list" class="statusMessageList">
-    message_area_ul_element = message_area_div_element.find( '#status-message-list' );
-    
-    // got message array?
-    if ( ( status_message_array_IN !== undefined ) && ( status_message_array_IN != null ) && ( status_message_array_IN.length > 0 ) )
-    {
-        
-        // got messages.
-        
-        // got <ul>?
-        if ( message_area_ul_element.length > 0 )
-        {
-            
-            // remove the <ul>
-            message_area_ul_element.remove();
-            
-        } //-- END check to see if ul inside <div> --//
-        
-        // make new <ul>.
-        message_area_ul_element = $( message_area_ul_empty_html );
-        
-        // add it to the <div>.
-        message_area_div_element.append( message_area_ul_element );
-        
-        // loop over messages
-        message_count = status_message_array_IN.length;
-        for( message_index = 0; message_index < message_count; message_index++ )
-        {
-            
-            // get message
-            current_message = status_message_array_IN[ message_index ];
-            
-            // create <li>, append to <ul>.
-            message_li_element = $( '<li>' + current_message + '</li>' );
-            message_li_element.attr( "id", "message-" + message_index );
-            
-            // append it to the message_area_ul_element
-            message_area_ul_element.append( message_li_element );
-            
-        } //-- END loop over messages --//
-        
-        // show the <div> if not already.
-        message_area_div_element.show();
-        
-    }
-    else //-- no messages --//
-    {
-        
-        // Hide the <div>.
-        message_area_div_element.hide();
-        
-        // got <ul>?
-        if ( message_area_ul_element.length > 0 )
-        {
-            
-            // remove the <ul>
-            message_area_ul_element.remove();
-            
-        } //-- END check to see if ul inside <div> --//
-        
-    } //-- END check to see if message array is populated.
-    
-} //-- END function SOURCENET.output_status_messages() --//
-
-
-/**
- * Event function that is called when coder is finished coding a particular
- *    person and is ready to add him or her to the list of persons in the
- *    article.
- *
- * Preconditions: Person coding form should be filled out as thoroughly as
- *    possible.  At the least, must have a person name.  If none present, the
- *    person is invalid, will not be accepted.
- *
- * Postconditions: If person accepted, after this function is called, the
- *    person will be added to the internal structures to list and map persons,
- *    and will also be added to the list of persons who have been coded so far.
- */
-SOURCENET.process_selected_person_type = function()
-{
-    // declare variables
-    var me = "SOURCENET.process_selected_person_type";
-    var selected_value = "";
-    var p_source_quote_element = null;
-
-    SOURCENET.log_message( "In " + me + "(): Process Selected Person Type!" );
-    
-    // get select element.
-    selected_value = SOURCENET.get_selected_value_for_id( 'person-type' );
-    
-    // get "textarea-source-quote-text" <p> tag.
-    p_source_quote_element = $( '#textarea-source-quote-text' );
-    
-    // is it "source"?
-    if ( selected_value == SOURCENET.PERSON_TYPE_SOURCE )
-    {
-        
-        // it is "source".  show() the "textarea-source-quote-text" <p> tag.
-        p_source_quote_element.show();
-        
-    }
-    else
-    {
-        
-        // it is not "source".  hide() the "textarea-source-quote-text" <p> tag.
-        p_source_quote_element.hide();
-        
-    } //-- END check to see if person type is "source" or not. --//
-    
-} //-- END function SOURCENET.process_selected_person_type() --#
-
-
-/**
- * Event function that is called when coder is finished coding a particular
- *    person and is ready to add him or her to the list of persons in the
- *    article.
- *
- * Preconditions: Person coding form should be filled out as thoroughly as
- *    possible.  At the least, must have a person type and name.  If either not
- *    present, the person is invalid, will not be accepted.
- *
- * Postconditions: If person accepted, after this function is called, the
- *    person will be added to the internal structures to list and map persons,
- *    and will also be added to the list of persons who have been coded so far.
- */
-SOURCENET.process_person_coding = function()
-{
-    // declare variables
-    var me = "SOURCENET.process_person_coding";
-    var form_element = null;
-    var person_instance = null;
-    var status_message_array = [];
-    var status_message_count = -1;
-    var work_element = null;
-    var existing_person_index = -1;
-    var status_string = "";
-    var data_store = null;
-    var person_message_array = [];
-    var person_error_count = -1;
-
-    SOURCENET.log_message( "In " + me + "(): PROCESS PERSON CODING!!!" );
-    
-    // get form element.
-    form_element = $( '#' + SOURCENET.DIV_ID_PERSON_CODING );
-    
-    // create Person instance.
-    person_instance = new SOURCENET.Person();
-    
-    // populate it from the form.
-    status_message_array = person_instance.populate_from_form( form_element );
-    
-    // valid?
-    status_message_count = status_message_array.length
-    if ( status_message_count == 0 )
-    {
-        
-        // valid.
-        SOURCENET.log_message( "In " + me + "(): Valid person.  Adding to DataStore." );
-        
-        // get person store
-        data_store = SOURCENET.get_data_store();
-        
-        // add person
-        person_message_array = data_store.process_person( person_instance );
-        
-        // errors?
-        person_error_count = person_message_array.length;
-        if ( person_error_count == 0 )
-        {
-            
-            // no errors.
-
-            // output person store
-            SOURCENET.display_persons();
-                    
-            // clear the coding form.
-            SOURCENET.clear_coding_form( "Processed: " + person_instance.to_string() );
-
-        }
-        else
-        {
-            
-            // errors - output messages.
-            SOURCENET.output_status_messages( person_message_array );
-            
-        } //-- END check for errors adding person to DataStore. --//
-        
-    }
-    else
-    {
-        
-        // not valid - for now, add message to overall status message.
-        status_message_array.push( "Person not valid." );
-        
-    }
-    
-    // got any messages?
-    status_message_count = status_message_array.length;
-    if ( status_message_count > 0 )
-    {
-        
-        // yes, there are messages.  Output them.
-        SOURCENET.output_status_messages( status_message_array )
-        
-    } //-- END check to see if messages --//    
-    
-} //-- END function SOURCENET.process_person_coding() --#
-
-
-/**
- * Accepts the index of a person in the DataStore's person_array that one
- *    wants removed.  Gets the DataStore and calls the
- *    remove_person_at_index() method on it to remove the person, then calls
- *    SOURCENET.display_persons() to repaint the list of persons.  If any
- *    status messages, outputs them at the end using
- *    SOURCENET.output_status_messages()
- */
-SOURCENET.remove_person = function( person_index_IN )
-{
-    
-    // declare variables
-    var me = "SOURCENET.remove_person";
-    var selected_index = -1;
-    var is_index_OK = false;
-    var status_message_array = [];
-    var status_message_count = -1;
-    var data_store = null;
-    var person_remove_message_array = [];
-    var person_remove_error_count = -1;
-
-    // make sure index is an integer.
-    selected_index = parseInt( person_index_IN );
-    
-    // got an index?
-    is_index_OK = SOURCENET.is_integer_OK( selected_index, 0 );
-    if ( is_index_OK == true )
-    {
-        
-        // get person store
-        data_store = SOURCENET.get_data_store();
-        
-        // remove person
-        person_remove_message_array = data_store.remove_person_at_index( selected_index );
-        
-        SOURCENET.log_message( "In " + me + "(): Person Store: " + JSON.stringify( data_store ) );
-        
-        // errors?
-        person_remove_error_count = person_remove_message_array.length;
-        if ( person_remove_error_count == 0 )
-        {
-            
-            // no errors.
-
-            // output person store
-            SOURCENET.display_persons();
-            
-            // add status message.
-            status_message_array.push( "Removed person at index " + selected_index );
-            
-        }
-        else
-        {
-            
-            // errors - append to status_message_array.
-            status_message_array = status_message_array.concat( person_remove_message_array );
-            
-        } //-- END check for errors removing person from DataStore. --//
-        
-    }
-    else
-    {
-        
-        // not valid - for now, output message(s).
-        status_message_array.push( "Index value of " + selected_index + " is not valid.  Can't remove person." );
-        
-    }
-    
-    // got any messages?
-    status_message_count = status_message_array.length;
-    if ( status_message_count > 0 )
-    {
-        
-        // yes, there are messages.  Output them.
-        SOURCENET.output_status_messages( status_message_array )
-        
-    } //-- END check to see if messages --//
-        
-} //-- END function SOURCENET.remove_person --//
-
-
-/**
- * Creates basic form with a submit button whose onsubmit event calls
- *    SOURCENET.render_coding_form_inputs.  On submit, that method pulls the
- *    data needed to submit together and places it in hidden <inputs> associated
- *    with this form, and if no problems, returns true so form submits.  Returns
- *    <form> jquery element, suitable for adding to an element on the page.
- *
- * Postconditions: none.
- */
-SOURCENET.render_coding_form = function()
-{
-
-    // return reference
-    form_element_OUT = true;
-    
-    // declare variables
-    form_HTML_string = "";
-    
-    // build form HTML string.
-    form_HTML_string += '<form method="post" name="submit-article-coding" id="submit-article-coding">';
-    form_HTML_string += '<input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id=input-submit-article-coding" onsubmit="SOURCENET.render_coding_form_inputs( this )" />';
-    form_HTML_string += '</form>';
-    
-    // render into JQuery element.
-    form_element_OUT = $( form_HTML_string );
-    
-    return form_element_OUT;
-   
-} //-- END function to render form to submit coding.
-
-
-/**
- * Accepts <form> jquery instance.  Adds inputs to the form to hold serialized
- *    JSON object of the DataStore, the results of the coding.  Designed to
- *    be used as a <form>'s onsubmit event handler.
- *
- * Postconditions: Will return false, causing submit to abort, if errors or
- *    warnings.  If returns false, also outputs messages of why using
- *    output_status_messages().
- *
- * References:
- *    - http://stackoverflow.com/questions/6099301/dynamically-adding-html-form-field-using-jquery
- *    - http://www.w3schools.com/js/js_popup.asp
- *
- * @param {jquery:element} form_IN - <form> we are going to append inputs to.
- */
-SOURCENET.render_coding_form_inputs = function( form_IN )
-{
-
-    // return reference
-    do_submit_OUT = true;
-    
-    // declare variables
-    me = "SOURCENET.render_coding_form_inputs";
-    form_element = null;
-    my_data_store = null;
-    author_count = -1;
-    is_author_count_valid = false;
-    source_count = -1;
-    is_source_count_valid = false;
-    do_confirm_submit = true;
-    ok_to_submit = false;
-    data_store_json = "";
-    data_store_json_input_element = null;
-    submit_button_element = null;
-        
-    // convert form DOM element to JQuery object.
-    //form_element = $( form_IN )
-    
-    // get person store
-    my_data_store = SOURCENET.get_data_store();
-    
-    //------------------------------------------------------------------------//
-    // validation
-    //------------------------------------------------------------------------//
-
-    // Is there at least one author?
-    author_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_AUTHOR );
-    if ( author_count <= 0 )
-    {
-        
-        // no author - see if that is correct.
-        is_author_count_valid = confirm( "No authors coded.  Is this correct?" );
-        if ( is_author_count_valid == false )
-        {
-            
-            // oops - forgot to code author.  Back to form.
-            do_submit_OUT = false;
-            SOURCENET.log_message( "In " + me + "(): forgot to code author - back to form!" );
-            
-        } //-- END check to see if no authors --//
-        
-    } //-- END check to see if author count is 0 --//
-    
-    // canceled?
-    if ( do_submit_OUT == true )
-    {
-        
-        // not canceled yet, keep checking...
-        
-        // Is there at least one source?
-        source_count = my_data_store.get_person_count( SOURCENET.PERSON_TYPE_SOURCE );
-        if ( source_count <= 0 )
-        {
-            
-            // no sources - see if that is correct.
-            is_source_count_valid = confirm( "No sources coded.  Is this correct?" );
-            if ( is_source_count_valid == false )
-            {
-                
-                // oops - forgot to code sources.  Back to form.
-                do_submit_OUT = false;
-                SOURCENET.log_message( "In " + me + "(): forgot to code sources - back to form!" );
-                
-            } //-- END check to see if no sources --//
-            
-        } //-- END check to see if source count is 0 --//
-
-    } //-- END check to see if we are already canceled, so don't need to keep checking --//
-    
-    // !TODO - check for sources that don't have quote selected?
-    
-    // canceled?
-    if ( do_submit_OUT == true )
-    {
-        
-        // not canceled yet, keep checking...
-        
-        // confirm submit?
-        if ( do_confirm_submit == true )
-        {
-            
-            // We are confirming submit - ask for confirmation.
-            ok_to_submit = confirm( "OK to submit coding?" );
-            if ( ok_to_submit == false )
-            {
-                
-                // Not ready to submit just yet.  Back to form.
-                do_submit_OUT = false;
-                SOURCENET.log_message( "In " + me + "(): User not ready to submit.  Back to the form!" );
-                
-            } //-- END check to see if ready to submit --//
-            
-        } //-- END check to see if we are confirming submission --//
-        
-    } //-- END check to see if we are already canceled, so don't need to keep checking --//
-    
-    // no sense doing anything more if we aren't submitting.
-    if ( do_submit_OUT == true )
-    {
-        
-        // need JSON of DataStore.
-        data_store_json = JSON.stringify( my_data_store );
-        
-        // add it to the hidden input:
-        // <input id="id_data_store_json" name="data_store_json" type="hidden">
-        
-        // get <input> element
-        input_id_string = "#" + SOURCENET.INPUT_ID_DATA_STORE_JSON;
-        data_store_json_input_element = $( input_id_string );
-
-        // make sure we found the element.
-        if ( data_store_json_input_element.length > 0 )
-        {
-            
-            // got it.  Place JSON in it.
-            data_store_json_input_element.val( data_store_json );
-            
-            // explicitly set to true.
-            do_submit_OUT = true;
-
-            // do_submit_OUT = false;
-            if ( do_submit_OUT == false )
-            {
-                
-                SOURCENET.log_message( "In " + me + "(): Placed the following JSON in \"" + input_id_string + "\"" );
-                SOURCENET.log_message( "In " + me + "(): " + data_store_json );            
-
-            } //-- END check to see if we output debug.
-            
-        }
-        else
-        {
-            
-            // did not find <input> element.  Log message, don't submit.
-            do_submit_OUT = false;
-            SOURCENET.log_message( "In " + me + "(): Could not find input for selector: \"" + input_id_string + "\".  No place to put JSON.  Back to form!" );
-            
-        } //-- END check to see if we found input element. --//
-        
-    } //-- END check to see if validation was OK before we actually populate inputs. --//
-    
-    // are we allowing submit?
-    if ( do_submit_OUT == true )
-    {
-        
-        // we are.  Retrieve submit button, disable it, and then change text
-        //    to say "Please wait...".
-        submit_button_element = $( "#" + SOURCENET.INPUT_ID_SUBMIT_ARTICLE_CODING );
-        submit_button_element.prop( 'disabled', true );
-        submit_button_element.val( SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT );
-        
-    } //-- END check to see if we are submitting. --//
-    
-    return do_submit_OUT;
-   
-} //-- END function to render form to submit coding.
-
-
-/**
- * Accepts id of select whose selected value we want to set, and value we want
- *    to be selected.  After making sure we have an OK ID, looks for select with
- *    that ID.  If one found, sets to the value passed in.  Returns the selected
- *    value.
- *
- * Preconditions: None.
- *
- * Postconditions: None.
- *
- * @param {string} select_id_IN - HTML id attribute value for select whose selected value we want to retrieve.
- * @returns {string} - selected value of select matching ID passed in, else null if error.
- */
-SOURCENET.set_selected_value_for_id = function( select_id_IN, select_value_IN )
-{
-    
-    // return reference
-    var value_OUT = null;
-    
-    // declare variables
-    var me = "SOURCENET.set_selected_value_for_id";
-    var is_select_id_OK = false;
-    var select_element = null;
-    
-    // select ID passed in OK?
-    is_select_id_OK = SOURCENET.is_string_OK( select_id_IN );
-    if ( is_select_id_OK == true )
-    {
-        
-        // get select element.
-        select_element = $( '#' + select_id_IN );
-        
-        // set selected value
-        select_element.val( select_value_IN );
-        
-        // get value.
-        value_OUT = SOURCENET.get_selected_value_for_id( select_id_IN );
-    
-    }
-    else
-    {
-    
-        // select ID is empty.  Return null.
-        value_OUT = null;
-        
-    }
-    
-    SOURCENET.log_message( "In " + me + "(): <select> ID = " + select_id_IN + "; value = " + value_OUT );
-    
-    return value_OUT;
-    
-} //-- END function SOURCENET.set_selected_value_for_id() --//
-
-
-//----------------------------------------------------------------------------//
-// !==> jquery event handlers
+// !====> jquery event handlers
 //----------------------------------------------------------------------------//
 
 

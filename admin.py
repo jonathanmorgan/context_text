@@ -38,6 +38,8 @@ from sourcenet.models import Article_Text
 #from sourcenet.models import Source_Organization
 from sourcenet.models import Article
 from sourcenet.models import Article_Data
+from sourcenet.models import Article_Data_Notes
+
 from django.contrib import admin
 
 admin.site.register( Project )
@@ -49,8 +51,8 @@ admin.site.register( Document )
 admin.site.register( Newspaper )
 #admin.site.register( Article )
 #admin.site.register( Article_Author )
-admin.site.register( Article_Notes )
-admin.site.register( Article_RawData )
+#admin.site.register( Article_Notes )
+#admin.site.register( Article_RawData )
 #admin.site.register( Article_Subject )
 #admin.site.register( Article_Text )
 #admin.site.register( Article_Topic )
@@ -248,10 +250,10 @@ class ArticleSubjectInline( admin.StackedInline ):
 
 
 #-------------------------------------------------------------------------------
-# Article Data admin definition
+# Article_Content abstract class admin definition
 #-------------------------------------------------------------------------------
 
-class Article_TextAdmin( admin.ModelAdmin ):
+class Article_ContentAdmin( admin.ModelAdmin ):
 
     # set up ajax-selects - for make_ajax_form, 1st argument is the model you
     #    are looking to make ajax selects form fields for; 2nd argument is a
@@ -275,12 +277,17 @@ class Article_TextAdmin( admin.ModelAdmin ):
     list_filter = [ 'content_type', 'status' ]
     search_fields = [ 'content', ]
     #date_hierarchy = 'pub_date'
+    
+#-- END admin class Article_ContentAdmin --#
 
-admin.site.register( Article_Text, Article_TextAdmin )
+# ! register all descendents of Article_Content and Unique_Article_Content
+admin.site.register( Article_Text, Article_ContentAdmin )
+admin.site.register( Article_Notes, Article_ContentAdmin )
+admin.site.register( Article_RawData, Article_ContentAdmin )
 
 
 #-------------------------------------------------------------------------------
-# Article Data admin definition
+# Article_Data admin definition
 #-------------------------------------------------------------------------------
 
 class Article_DataAdmin( admin.ModelAdmin ):
@@ -413,3 +420,35 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
 #-- END Article_AuthorAdmin admin model --#
 
 admin.site.register( Article_Author, Article_AuthorAdmin )
+
+
+#-------------------------------------------------------------------------------
+# Article_Data_Notes admin definition
+#-------------------------------------------------------------------------------
+
+class Article_Data_NotesAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'article_data', 'content', 'content_type', 'status' ]
+            }
+        ),
+    ]
+
+    list_display = ( 'id', 'content_type', 'status', 'article_data' )
+    list_display_links = ( 'id', 'article_data', )
+    list_filter = [ 'content_type', 'status' ]
+    search_fields = [ 'content', ]
+    #date_hierarchy = 'pub_date'
+
+admin.site.register( Article_Data_Notes, Article_Data_NotesAdmin )

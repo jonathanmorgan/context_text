@@ -331,11 +331,12 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
                 html_OUT += "<br />==> name: " + subject_name
             #-- END check to see if name captured. --#
             
-            # verbatim name different from name?
+            # lookup name different from verbatim name?
             subject_verbatim_name = article_subject_instance.verbatim_name
-            if ( ( subject_verbatim_name is not None ) and ( subject_verbatim_name != "" ) and ( subject_verbatim_name != subject_name ) ):
+            subject_lookup_name = article_subject_instance.lookup_name
+            if ( ( subject_lookup_name is not None ) and ( subject_lookup_name != "" ) and ( subject_lookup_name != subject_verbatim_name ) ):
                 html_OUT += "<br />====> verbatim name: " + subject_verbatim_name
-                html_OUT += "<br />====> lookup name: " + article_subject_instance.lookup_name
+                html_OUT += "<br />====> lookup name: " + subject_lookup_name
             #-- END check to see if name captured. --#
             
             subject_title = article_subject_instance.title

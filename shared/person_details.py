@@ -42,6 +42,7 @@ class PersonDetails( dict ):
     PROP_NAME_PERSON_NAME = "person_name"
     PROP_NAME_FIXED_PERSON_NAME = "fixed_person_name"
     PROP_NAME_PERSON_TYPE = "person_type"
+    PROP_NAME_ORIGINAL_PERSON_TYPE = "original_person_type"
     PROP_NAME_ARTICLE_PERSON_ID = "article_person_id"
     PROP_NAME_TITLE = "title"
     PROP_NAME_PERSON_ORGANIZATION = "person_organization"

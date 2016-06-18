@@ -117,6 +117,7 @@ class ArticleCoder( BasicRateLimited ):
     PARAM_PERSON_NAME = PersonDetails.PROP_NAME_PERSON_NAME
     PARAM_FIXED_PERSON_NAME = PersonDetails.PROP_NAME_FIXED_PERSON_NAME
     PARAM_PERSON_TYPE = PersonDetails.PROP_NAME_PERSON_TYPE
+    PARAM_ORIGINAL_PERSON_TYPE = PersonDetails.PROP_NAME_ORIGINAL_PERSON_TYPE
     PARAM_ARTICLE_PERSON_ID = PersonDetails.PROP_NAME_ARTICLE_PERSON_ID
     PARAM_TITLE = PersonDetails.PROP_NAME_TITLE
     PARAM_PERSON_ORGANIZATION = PersonDetails.PROP_NAME_PERSON_ORGANIZATION
@@ -2687,6 +2688,7 @@ class ArticleCoder( BasicRateLimited ):
         article_person_instance = None
         
         # declare variables - update processing.
+        article_person_id = -1
         do_save_updates = False
         existing_name = ""
         existing_lookup_name = ""
@@ -2866,11 +2868,14 @@ class ArticleCoder( BasicRateLimited ):
                             #     record stored in the PersonDetails passed in.
                             
                             # got an article_person_id?
-                            if ( article_person_id_IN is not None ):
+                            if ( ( article_person_id_IN is not None )
+                                and ( article_person_id_IN != "" )
+                                and ( int( article_person_id_IN ) > 0 ) ):
                             
                                 # there is an ID.  Try to retrieve the specified
                                 #     record.
-                                article_person_qs = article_person_qs.filter( pk = article_person_id_IN )
+                                article_person_id = int( article_person_id_IN )
+                                article_person_qs = article_person_qs.filter( pk = article_person_id )
                                 
                             else:
                             

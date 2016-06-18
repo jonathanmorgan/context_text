@@ -122,6 +122,7 @@ class ManualArticleCoder( ArticleCoder ):
     # person store JSON property names
     DATA_STORE_PROP_PERSON_ARRAY = "person_array"
     DATA_STORE_PROP_PERSON_TYPE = ArticleCoder.PARAM_PERSON_TYPE # "person_type"
+    DATA_STORE_PROP_ORIGINAL_PERSON_TYPE = ArticleCoder.PARAM_ORIGINAL_PERSON_TYPE # "original_person_type"
     DATA_STORE_PROP_ARTICLE_PERSON_ID = ArticleCoder.PARAM_ARTICLE_PERSON_ID # article_person_id
     DATA_STORE_PROP_PERSON_NAME = ArticleCoder.PARAM_PERSON_NAME # "person_name"
     DATA_STORE_PROP_FIXED_PERSON_NAME = ArticleCoder.PARAM_FIXED_PERSON_NAME # "fixed_person_name"
@@ -143,6 +144,7 @@ class ManualArticleCoder( ArticleCoder ):
     DIV_ID_PERSON_CODING = "person-coding"
     INPUT_ID_MATCHED_PERSON_ID = "matched-person-id"
     INPUT_ID_ARTICLE_PERSON_ID = "article-person-id"
+    INPUT_ID_ORIGINAL_PERSON_TYPE = "original-person-type"
     INPUT_ID_DATA_STORE_PERSON_INDEX = "data-store-person-index"
     INPUT_ID_PERSON_NAME = "person-name"
     INPUT_ID_FIXED_PERSON_NAME = "fixed-person-name"
@@ -282,7 +284,7 @@ class ManualArticleCoder( ArticleCoder ):
                 next_index += 1
                 
                 # retrieve Article_Author ID:
-                current_article_person_id = current_author.id
+                current_article_person_id = int( current_author.id )
 
                 # get current person
                 current_person = current_author.person
@@ -310,11 +312,14 @@ class ManualArticleCoder( ArticleCoder ):
                 current_quote_text = ""
                 
                 # ==> person_id
-                current_person_id = current_person.id
+                current_person_id = int( current_person.id )
 
                 # create person dictionary
                 current_person_dict = {}
+                
+                # store person type.
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
+                current_person_dict[ cls.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE ] = current_person_type
                 
                 # add article_person_id
                 current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
@@ -417,7 +422,10 @@ class ManualArticleCoder( ArticleCoder ):
     
                     # create person dictionary
                     current_person_dict = {}
+                    
+                    # person type
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
+                    current_person_dict[ cls.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE ] = current_person_type
 
                     # add article_person_id
                     current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
@@ -740,6 +748,7 @@ class ManualArticleCoder( ArticleCoder ):
 
         # declare variables - get current person's information.
         person_type = ""
+        original_person_type = ""
         person_name = ""
         fixed_person_name = ""
         title = ""
@@ -747,6 +756,7 @@ class ManualArticleCoder( ArticleCoder ):
         quote_text = ""
         person_id = -1
         article_person_id = -1
+        subject_person_type_list = []
         
         # declare variables - for processing person.
         current_article_subject = None
@@ -928,6 +938,7 @@ class ManualArticleCoder( ArticleCoder ):
                                         
                                         # retrieve person information.
                                         person_type = person_details.get( self.DATA_STORE_PROP_PERSON_TYPE )
+                                        original_person_type = person_details.get( self.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE )
                                         person_name = person_details.get( self.DATA_STORE_PROP_PERSON_NAME )
                                         fixed_person_name = person_details.get( self.DATA_STORE_PROP_FIXED_PERSON_NAME )
                                         title = person_details.get( self.DATA_STORE_PROP_TITLE )
@@ -946,6 +957,31 @@ class ManualArticleCoder( ArticleCoder ):
                                         if ( ( person_type == self.PERSON_TYPE_SUBJECT )
                                              or ( person_type == self.PERSON_TYPE_SOURCE ) ):
         
+                                            # check to see if original person
+                                            #     type was author.
+                                            if ( ( original_person_type is not None )
+                                                and ( original_person_type != "" )
+                                                and ( original_person_type == self.PERSON_TYPE_AUTHOR ) ):
+                                            
+                                                # we have switched from subject
+                                                #     to author.  if article
+                                                #     person ID, remove it.
+                                                if ( ( article_person_id is not None ) 
+                                                    and ( article_person_id != "" )
+                                                    and ( int( article_person_id ) > 0 ) ):
+                                                    
+                                                    # there is an Article_Subject instance
+                                                    #     associated with this person.
+                                                    #     Remove the ID from PersonDetails
+                                                    #     so we don't try to use the
+                                                    #     Article_Author ID in the
+                                                    #     Article_Subject table.
+                                                    person_details[ self.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = None
+                                                    
+                                                #-- END check to see if we need to clear article person id --#
+                                            
+                                            #-- END check to see if we've changed person type --#
+
                                             # translate the person_type value into 
                                             #    subject_type, store in details.
                                             if ( person_type == self.PERSON_TYPE_SUBJECT ):
@@ -1014,6 +1050,32 @@ class ManualArticleCoder( ArticleCoder ):
                                             
                                         elif ( person_type == self.PERSON_TYPE_AUTHOR ):
                                         
+                                            # check to see if original person
+                                            #     type was subject.
+                                            subject_person_type_list = [ self.PERSON_TYPE_SOURCE, self.PERSON_TYPE_SUBJECT ]
+                                            if ( ( original_person_type is not None )
+                                                and ( original_person_type != "" )
+                                                and ( original_person_type in subject_person_type_list ) ):
+                                            
+                                                # we have switched from subject
+                                                #     to author.  if article
+                                                #     person ID, remove it.
+                                                if ( ( article_person_id is not None ) 
+                                                    and ( article_person_id != "" )
+                                                    and ( int( article_person_id ) > 0 ) ):
+                                                    
+                                                    # there is an Article_Subject instance
+                                                    #     associated with this person.
+                                                    #     Remove the ID from PersonDetails
+                                                    #     so we don't try to use the
+                                                    #     Article_Subject ID in the
+                                                    #     Article_Author table.
+                                                    person_details[ self.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = None
+                                                    
+                                                #-- END check to see if we need to clear article person id --#
+                                            
+                                            #-- END check to see if we've changed person type --#
+
                                             # ! Article_Author
                                             current_article_author = self.process_author_name( current_article_data,
                                                                                                person_name,
