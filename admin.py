@@ -445,7 +445,7 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
         ),
     ]
 
-    list_display = ( 'id', 'content_type', 'status', 'article_data' )
+    list_display = ( 'id', 'last_modified', 'content_type', 'status', 'article_data' )
     list_display_links = ( 'id', 'article_data', )
     list_filter = [ 'content_type', 'status' ]
     search_fields = [ 'content', ]

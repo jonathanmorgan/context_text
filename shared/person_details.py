@@ -20,7 +20,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 import six
 
 # sourcenet imports
-from sourcenet.models import Article_Subject
+#from sourcenet.models import Article_Subject
 
 #================================================================================
 # Shared variables and functions
@@ -37,7 +37,7 @@ class PersonDetails( dict ):
     # CONSTANTS-ish
     #---------------------------------------------------------------------------
 
-    # status code values
+    # property names
     PROP_NAME_PERSON_ID = "person_id"
     PROP_NAME_PERSON_NAME = "person_name"
     PROP_NAME_FIXED_PERSON_NAME = "fixed_person_name"
@@ -47,6 +47,13 @@ class PersonDetails( dict ):
     PROP_NAME_TITLE = "title"
     PROP_NAME_PERSON_ORGANIZATION = "person_organization"
     PROP_NAME_QUOTE_TEXT = "quote_text"
+    
+    # Properties that map to Article_Person fields
+    PROP_NAME_ARTICLE_DATA_INSTANCE = "article_data_instance"
+    PROP_NAME_PERSON_INSTANCE = "person_instance"
+    PROP_NAME_VERBATIM_NAME = "verbatim_name"
+    PROP_NAME_LOOKUP_NAME = "lookup_name"
+    PROP_NAME_ORGANIZATION_INSTANCE = "organization_instance"
     PROP_NAME_NEWSPAPER_INSTANCE = "newspaper_instance"
     PROP_NAME_NEWSPAPER_NOTES = "newspaper_notes"
     PROP_NAME_EXTERNAL_UUID_NAME = "external_uuid_name"
@@ -55,17 +62,24 @@ class PersonDetails( dict ):
     PROP_NAME_EXTERNAL_UUID_NOTES = "external_uuid_notes"
     PROP_NAME_CAPTURE_METHOD = "capture_method"
     PROP_NAME_SUBJECT_TYPE = "subject_type"
+    PROP_NAME_MATCH_STATUS = "match_status"
+    PROP_MAME_MATCH_CONFIDENCE_LEVEL = "match_confidence_level"
     PROP_NAME_CODER_TYPE = "coder_type"
+    PROP_NAME_NOTES = "notes"
 
     # person types
     PERSON_TYPE_SUBJECT = "subject"
     PERSON_TYPE_SOURCE = "source"
     PERSON_TYPE_AUTHOR = "author"
+    
+    # subject types
+    SUBJECT_TYPE_MENTIONED = 'mentioned'
+    SUBJECT_TYPE_QUOTED = 'quoted'
 
     # subject_type to person type dictionary
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP = {}
-    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
-    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ Article_Subject.SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ SUBJECT_TYPE_MENTIONED ] = PERSON_TYPE_SUBJECT
+    SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ SUBJECT_TYPE_QUOTED ] = PERSON_TYPE_SOURCE    
 
     #---------------------------------------------------------------------------
     # ! ==> class methods, in alphabetical order
@@ -217,8 +231,22 @@ class PersonDetails( dict ):
         # return reference
         value_OUT = ""
         
-        # call get_corrected_person_name()
-        value_OUT = self.get_corrected_person_name()
+        # declare variables
+        temp_value = ""
+        
+        # is there a lookup_name explicitly set?
+        temp_value = self.get( self.PROP_NAME_LOOKUP_NAME, None )
+        if ( temp_value is None ):
+        
+            # no.  call get_corrected_person_name()
+            value_OUT = self.get_corrected_person_name()
+            
+        else:
+        
+            # yes.  Use it.
+            value_OUT = temp_value
+            
+        #-- END check to see if lookup name is set. --#
         
         return value_OUT
         
@@ -234,8 +262,22 @@ class PersonDetails( dict ):
         # return reference
         value_OUT = ""
         
-        # call get_corrected_person_name()
-        value_OUT = self.get( self.PROP_NAME_PERSON_NAME, None )
+        # declare variables
+        temp_value = ""
+        
+        # is there a verbatim_name explicitly set?
+        temp_value = self.get( self.PROP_NAME_VERBATIM_NAME, None )
+        if ( temp_value is None ):
+        
+            # no.  Just use person name.
+            value_OUT = self.get( self.PROP_NAME_PERSON_NAME, None )
+            
+        else:
+        
+            # yes.  Use it.
+            value_OUT = temp_value
+            
+        #-- END check to see if verbatim name is set. --#
         
         return value_OUT
         

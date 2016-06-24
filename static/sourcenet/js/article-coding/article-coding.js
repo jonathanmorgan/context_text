@@ -4395,8 +4395,8 @@ SOURCENET.Person = function()
     this.article_person_id = -1;
     
     // make list of properties, map names to info.
-    this.property_name_list = SOURCENET.Person_property_name_list;
-    this.property_name_to_info_map = SOURCENET.Person_property_name_to_info_map;
+    //this.property_name_list = SOURCENET.Person_property_name_list;
+    //this.property_name_to_info_map = SOURCENET.Person_property_name_to_info_map;
 
 } //-- END SOURCENET.Person constructor --//
 

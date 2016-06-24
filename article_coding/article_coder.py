@@ -99,7 +99,7 @@ class ArticleCoder( BasicRateLimited ):
     STATUS_OK = "OK!"
 
     # debug
-    DEBUG_FLAG = True
+    DEBUG_FLAG = False
     
     # logging
     LOGGER_NAME = "sourcenet.article_coding.article_coder"
@@ -431,9 +431,13 @@ class ArticleCoder( BasicRateLimited ):
         # load properties
         self.load_config_properties()
         
-        # set logger name (for LoggingHelper parent class: (LoggingHelper -->
-        #    BasicRateLimited --> ArticleCoder).
+        # LoggingHelper parent class: (LoggingHelper --> BasicRateLimited -->
+        #     ArticleCoder
+        # - set logger name
         self.set_logger_name( self.LOGGER_NAME )
+        
+        # - set logger_debug_flag
+        self.logger_debug_flag = self.DEBUG_FLAG
 
     #-- END method __init__() --#
 
@@ -1741,67 +1745,16 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method lookup_person() --#
 
 
-    def output_debug( self, message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
+    def output_debug( self, message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "", do_print_IN = False, resource_string_IN = None  ):
         
         '''
         Accepts message string.  If debug is on, logs it.  If not,
            does nothing for now.
         '''
         
-        # declare variables
-        my_message = ""
-        my_logger = None
-        my_logger_name = ""
-    
-        # got a message?
-        if ( message_IN ):
-        
-            # only print if debug is on.
-            if ( self.DEBUG_FLAG == True ):
-            
-                my_message = message_IN
-            
-                # got a method?
-                if ( method_IN ):
-                
-                    # We do - append to front of message.
-                    my_message = "In " + method_IN + ": " + my_message
-                    
-                #-- END check to see if method passed in --#
-                
-                # indent?
-                if ( indent_with_IN ):
-                    
-                    my_message = indent_with_IN + my_message
-                    
-                #-- END check to see if we indent. --#
-            
-                # debug is on.  Start logging rather than using print().
-                #print( my_message )
-                
-                # got a logger name?
-                if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
-                
-                    # use logger name passed in.
-                    my_logger_name = logger_name_IN
-                    
-                    # get logger
-                    my_logger = LoggingHelper.get_a_logger( my_logger_name )
-                    
-                else:
-                
-                    # no custom logger name - get nested logger.
-                    my_logger = self.get_logger()
-                
-                #-- END check to see if logger name --#
-                    
-                # log debug.
-                my_logger.debug( my_message )
-            
-            #-- END check to see if debug is on --#
-        
-        #-- END check to see if message. --#
-    
+        # just call LoggingHelper.output_debug_message() method.
+        self.output_debug_message( message_IN, method_IN, indent_with_IN, logger_name_IN, do_print_IN, resource_string_IN )
+
     #-- END method output_debug() --#
 
 
@@ -2692,8 +2645,12 @@ class ArticleCoder( BasicRateLimited ):
         do_save_updates = False
         existing_name = ""
         existing_lookup_name = ""
+        existing_person = None
+        existing_person_id = -1
+        new_person_id = -1
         existing_title = ""
         existing_org_string = ""
+        update_status = None
 
         # get logger
         my_logger = self.get_logger()
@@ -2889,129 +2846,27 @@ class ArticleCoder( BasicRateLimited ):
                             
                             # got anything?
                             article_person_count = article_person_qs.count()
-                            if ( article_person_count == 0 ):
-                                                         
-                                # ! INSERT new Article_Person child instance.
-                                # no - add - including organization string.
-        
-                                # use instance already created above for call to
-                                #     lookup_person().
-                                #article_person_instance = article_person_class_IN()
-        
-                                # populate instance
-                                article_person_instance.article_data = article_data_IN
-                                article_person_instance.person = person_instance
-                                article_person_instance.capture_method = my_capture_method
-                                article_person_instance.name = person_name
-                                article_person_instance.verbatim_name = person_verbatim_name
-                                article_person_instance.lookup_name = person_lookup_name
-                                article_person_instance.notes = ""
-    
-                                # see if there is a title.
-                                if ( title_IN is not None ):
-                    
-                                    # there is a title - set it.
-                                    article_person_instance.set_title( title_IN, do_save_IN = False )
-        
-                                #-- END check to see if we have a title --#
-                                
-                                # organization string?
-                                if ( organization_string_IN is not None ):
-                    
-                                    # there is an organization string - set it.
-                                    article_person_instance.set_organization_string( organization_string_IN, do_save_IN = False )
-        
-                                #-- END check to see if we have an organization --#
-                           
-                                article_person_instance.organization = None # models.ForeignKey( Organization, blank = True, null = True )
-        
-                                # ! TODO - current
-        
-                                # confidence level set in lookup_person() method.
-                                #article_subject.match_confidence_level = 1.0
-                                        
-                                # save, and as part of save, record alternate matches.
-                                article_person_instance.save()
-                                
-                                my_logger.debug( "In " + me + ": adding " + str( article_person_class_IN ) + " instance for " + str( person_instance ) + "." )
-        
-                            elif ( article_person_count == 1 ):
-                            
+                            if ( article_person_count == 1 ):
+
+                                # ! UPDATE existing Article_Person child
+                                do_save_updates = False
+
                                 my_logger.debug( "In " + me + ": " + str( article_person_class_IN ) + " instance already exists for " + str( person_instance ) + "." )
                                 
-                                # retrieve article author from query set.
+                                # retrieve article person from query set.
                                 article_person_instance = article_person_qs.get()
+
+                                # add a few things to person_details.
                                 
-                                # ! UPDATE existing Article_Person child
+                                # person instance
+                                my_person_details[ PersonDetails.PROP_NAME_PERSON_INSTANCE ] = person_instance
                                 
-                                #------------------------------------------------------#
-                                # ==> name
-        
-                                existing_name = article_person_instance.name
-                                
-                                # has lookup_name string changed?
-                                if ( person_name != existing_name ):
-                                
-                                    # they are different.  Replace.
-                                    article_person_instance.name = person_name
-                                    article_person_instance.verbatim_name = person_verbatim_name
-                                    article_person_instance.lookup_name = person_lookup_name
-                                
-                                    # we need to save.
-                                    do_save_updates = True
-                                    
-                                #-- END check to see if updated name. --#
-        
-                                #------------------------------------------------------#
-                                # ==> lookup_name
-        
-                                existing_lookup_name = article_person_instance.lookup_name
-                                
-                                # has lookup name string changed?
-                                if ( person_lookup_name != existing_lookup_name ):
-                                
-                                    # they are different.  Replace.
-                                    article_person_instance.lookup_name = person_lookup_name
-                                
-                                    # we need to save.
-                                    do_save_updates = True
-                                    
-                                #-- END check to see if updated lookup_name. --#
-        
-                                #------------------------------------------------------#
-                                # ==> title
-        
-                                # has title changed?
-                                existing_title = article_person_instance.title
-                                if ( ( title_IN is not None ) and ( title_IN != existing_title ) ):
-        
-                                    # yes.  Update title.
-                                    article_person_instance.set_title( title_IN, do_save_IN = False, do_append_IN = True )
-        
-                                    # we need to save.
-                                    do_save_updates = True
-        
-                                #-- END check to see if title changed --#
-        
-                                #------------------------------------------------------#
-                                # ==> organization string
-        
-                                existing_org_string = article_person_instance.organization_string
-        
-                                # has organization changed?
-                                if ( ( organization_string_IN is not None ) and ( existing_org_string != organization_string_IN ) ):
-                                
-                                    # yes.  Replace.
-                                    article_person_instance.organization_string = ""
-                                    article_person_instance.set_organization_string( organization_string_IN, do_save_IN = False, do_append_IN = True )
-        
-                                    # we need to save.
-                                    do_save_updates = True
-                                    
-                                #-- END check to see if new value. --#
+                                # update values in instance, don't save (happens
+                                #    at the end).
+                                article_person_instance.update_from_person_details( my_person_details, do_save_IN = False )
                                 
                                 #------------------------------------------------------#
-                                # ! UPDATE alternate matches
+                                # UPDATE alternate matches
         
                                 # Were there alternate matches?
                                 if ( len( person_match_list ) > 0 ):
@@ -3036,20 +2891,61 @@ class ArticleCoder( BasicRateLimited ):
                                 if ( do_save_updates == True ):
                                 
                                     # we do.
-                                    article_person_instance.save()
+                                    # always saves at the end - article_person_instance.save()
+                                    pass
                                 
                                 #-- END check to see if we need to save --#
                                 
-                            else:
-                            
-                                # neither 0 or 1 person records - either invalid or
-                                #     multiple, either is not right.
-                                my_logger.debug( "In " + me + ": " + str( article_person_class_IN ) + " count ( person instance = " + str( person_instance ) + "; article_person_id_IN = " + str( article_person_id_IN ) + " ) is " + str( article_person_count ) + ".  What to do?" )
-                                
-                                # definitely no article_author.
-                                article_person_instance = None  
+                            # ! either no match, or multiple (!)
+                            elif ( ( article_person_count == 0 ) or ( article_person_count > 1 ) ):
+                                                         
+                                # ! INSERT new Article_Person child instance.
+                                # no - add - including organization string.
         
-                            #-- END check if need new Article_Author instance --#
+                                # use instance already created above for call to
+                                #     lookup_person().
+                                #article_person_instance = article_person_class_IN()
+                                
+                                # add some things to my_person_details
+                                
+                                # Article_Data instance
+                                my_person_details[ PersonDetails.PROP_NAME_ARTICLE_DATA_INSTANCE ] = article_data_IN
+                                
+                                # capture method
+                                my_person_details[ PersonDetails.PROP_NAME_CAPTURE_METHOD ] = my_capture_method
+
+                                # set notes to empty string.
+                                my_person_details[ PersonDetails.PROP_NAME_NOTES ] = ""
+     
+                                # person instance
+                                my_person_details[ PersonDetails.PROP_NAME_PERSON_INSTANCE ] = person_instance
+        
+                                # populate the instance, don't save (happens
+                                #    at the end).
+                                article_person_instance.update_from_person_details( my_person_details, do_save_IN = False )
+        
+                                # confidence level set in lookup_person() method.
+                                #article_subject.match_confidence_level = 1.0
+                                        
+                                # save, and as part of save, record alternate matches.
+                                # always saves at the end - article_person_instance.save()
+                                
+                                my_logger.debug( "In " + me + ": adding " + str( article_person_class_IN ) + " instance for " + str( person_instance ) + "." )
+        
+                                # greater then 1 match?
+                                if ( article_person_count > 1 ):
+                                
+                                    # neither 0 or 1 person records - either invalid
+                                    #     or multiple, and either ain't right.
+                                    debug_message = "In " + me + ": " + str( article_person_class_IN ) + " count ( person instance = " + str( person_instance ) + "; article_person_id_IN = " + str( article_person_id_IN ) + " ) is " + str( article_person_count ) + ".  What to do?"
+                                    my_logger.debug( debug_message )
+                                    
+                                    # update new instance from process_person_name
+                                    status_OUT = self.STATUS_ERROR_PREFIX + " " + debug_message
+                                    
+                                #-- END check to see if more than 1 --#
+            
+                            #-- END check if need new Article_Person child instance --#
         
                         else:
                         

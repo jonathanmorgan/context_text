@@ -114,6 +114,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.sequences.sequence_helper import SequenceHelper
 
 # sourcenet imports
+from sourcenet.shared.person_details import PersonDetails
 from sourcenet.shared.sourcenet_base import SourcenetBase
 
 #================================================================================
@@ -722,6 +723,179 @@ class Abstract_Person_Parent( models.Model ):
         return value_OUT
 
     #-- END method set_title() --#
+
+
+    def update_from_person_details( self, person_details_IN, do_save_IN = True ):
+
+        '''
+        Accepts PersonDetails instance and an optional boolean flag that tells
+            whether we want to save at the end or not.  For PersonDetails that
+            are present in this abstract class (title and organization),
+            retrieves values from person_details, then processes them
+            appropriately.  End result is that this instance is updated, and if
+            the do_save_IN flag is set, the updated values are persisted to the
+            database, as well.
+            
+        Preconditions: Must pass a PersonDetails instance, even if it is empty.
+        
+        Postconditions: Instance is updated, and if do_save_IN is True, any
+            changes are saved to the database.
+           
+        Returns the title.
+        '''
+        
+        # return reference
+        status_OUT = None
+        
+        # declare variables
+        me = "update_from_person_details"
+        my_person_details = None
+        my_id = -1
+        existing_title = ""
+        existing_organization_string = ""
+        existing_organization = None
+        existing_notes = ""
+        title_IN = ""
+        organization_string_IN = ""
+        organization_IN = None
+        notes_IN = ""
+        is_insert = False
+        is_updated = False
+        
+        # get values of interest from this instance.
+        existing_title = self.title
+        existing_organization_string = self.organization_string
+        existing_organization = self.organization
+        existing_notes = self.notes
+        
+        # got person_details?
+        my_person_details = PersonDetails.get_instance( person_details_IN )
+        if ( my_person_details is not None ):
+        
+            # we have PersonDetails.  Get values of interest.
+            title_IN = my_person_details.get( PersonDetails.PROP_NAME_TITLE, None )
+            organization_string_IN = my_person_details.get( PersonDetails.PROP_NAME_PERSON_ORGANIZATION, None )
+            organization_IN = my_person_details.get( PersonDetails.PROP_NAME_ORGANIZATION_INSTANCE, None )
+            notes_IN = my_person_details.get( PersonDetails.PROP_NAME_NOTES, None )
+        
+            # got an ID (check to see if update or insert)?
+            my_id = self.id
+            if ( ( my_id is not None ) and ( int( my_id ) > 0 ) ):
+            
+                # no ID.  Insert.
+                is_insert = True
+                
+            else:
+            
+                # there is an id.  Not an insert.
+                is_insert = False
+                
+            #-- END check to see if insert or update --#
+            
+            #------------------------------------------------------#
+            # ==> title
+
+            # value passed in?
+            if ( title_IN is not None ):
+            
+                # yes.  has title changed?
+                if ( existing_title != title_IN ):
+
+                    # yes.  Update title.
+                    self.set_title( title_IN, do_save_IN = do_save_IN, do_append_IN = True )
+    
+                    # we need to save.
+                    is_updated = True
+    
+                #-- END check to see if title changed --#
+                
+            #-- END check to see if title value passed in. --#
+
+            #------------------------------------------------------#
+            # ==> organization string
+
+            # value passed in?
+            if ( organization_string_IN is not None ):
+
+                # has organization changed?
+                if ( existing_organization_string != organization_string_IN ):
+                
+                    # yes.  Replace.
+                    self.organization_string = ""
+                    self.set_organization_string( organization_string_IN, do_save_IN = do_save_IN, do_append_IN = True )
+    
+                    # we need to save.
+                    is_updated = True
+                    
+                #-- END check to see if new value. --#
+                
+            #-- END check to see if organization string value passed in --#
+            
+            #------------------------------------------------------#
+            # ==> organization instance
+
+            # value passed in?
+            if ( organization_IN is not None ):
+
+                # store it.
+                self.organization = organization_IN
+
+                # we need to save.
+                is_updated = True
+                
+            #-- END check to see if organization instance passed in --#
+                
+            #------------------------------------------------------#
+            # ==> notes
+
+            # value passed in?
+            if ( notes_IN is not None ):
+
+                # notes already?
+                if ( existing_notes is not None ):
+                
+                    # other than empty?
+                    if ( existing_notes != "" ):
+                    
+                        # not empty. Add a semi-colon and a space.
+                        self.notes += "; "
+                        
+                    #-- END check to see if empty --#
+                    
+                    # Append.
+                    self.notes += notes_IN
+                
+                else:
+                
+                    # no.  Just store.
+                    self.notes = notes_IN
+                
+                #-- END check to see if new value. --#
+
+                # we need to save.
+                is_updated = True
+                
+            #-- END check to see if organization string value passed in --#
+                
+            # updated?
+            if ( is_updated == True ):
+                
+                # yes.  Do we save?
+                if ( do_save_IN == True ):
+                    
+                    # yes.  Save.
+                    self.save()
+                    
+                #-- END check to see if we save or not. --#
+                
+            #-- END check to see if changes made --#
+            
+        #-- END check to see anything passed in. --#
+        
+        return status_OUT
+
+    #-- END method update_from_person_details() --#
+
 
 #== END abstract Abstract_Person_Parent Model =================================#
 
@@ -6190,7 +6364,278 @@ class Article_Person( Abstract_Person_Parent ):
     #-- END method save() --#
 
 
-#= END Article_Person Model ======================================================
+    def update_from_person_details( self, person_details_IN, do_save_IN = True, *args, **kwargs ):
+
+        '''
+        Accepts PersonDetails instance and an optional boolean flag that tells
+            whether we want to save at the end or not.  For PersonDetails that
+            are present in this abstract class (title and organization),
+            retrieves values from person_details, then processes them
+            appropriately.  End result is that this instance is updated, and if
+            the do_save_IN flag is set, the updated values are persisted to the
+            database, as well.
+            
+        Preconditions: Must pass a PersonDetails instance, even if it is empty.
+        
+        Postconditions: Instance is updated, and if do_save_IN is True, any
+            changes are saved to the database.
+           
+        Returns the title.
+        '''
+        
+        # return reference
+        status_OUT = "Success!"
+        
+        # declare variables
+        me = "update_from_person_details"
+        parent_status = None
+        my_person_details = None
+        my_id = -1
+        is_insert = False
+        existing_article_data = ""
+        existing_person_instance = None
+        existing_name = ""
+        existing_verbatim_name = ""
+        existing_lookup_name = ""
+        existing_match_confidence_level = -1
+        existing_match_status = ""
+        existing_capture_method = ""
+        article_data_IN = ""
+        person_instance_IN = None
+        name_IN = ""
+        verbatim_name_IN = ""
+        lookup_name_IN = ""
+        match_confidence_level_IN = -1
+        match_status_IN = ""
+        capture_method_IN = ""
+        is_updated = False
+
+        # declare variables - person instance
+        existing_person_id = -1
+        new_person_id = -1
+        
+        # call parent method.
+        parent_status = super( Article_Person, self ).update_from_person_details( person_details_IN, do_save_IN = do_save_IN, *args, **kwargs )
+        if ( parent_status is None ):
+        
+            # status of None = success.  Carry on.
+
+            # get values of interest from this instance.
+            existing_article_data_instance = self.article_data
+            existing_person_instance = self.person
+            existing_name = self.name
+            existing_verbatim_name = self.verbatim_name
+            existing_lookup_name = self.lookup_name
+            existing_match_confidence_level = self.match_confidence_level
+            existing_match_status = self.match_status
+            existing_capture_method = self.capture_method
+            
+            # got person_details?
+            my_person_details = PersonDetails.get_instance( person_details_IN )
+            if ( my_person_details is not None ):
+            
+                # we have PersonDetails.  Get values of interest.
+                article_data_instance_IN = my_person_details.get( PersonDetails.PROP_NAME_ARTICLE_DATA_INSTANCE, None )
+                person_instance_IN = my_person_details.get( PersonDetails.PROP_NAME_PERSON_INSTANCE, None )
+                name_IN = my_person_details.get( PersonDetails.PROP_NAME_PERSON_NAME, None )
+                verbatim_name_IN = my_person_details.get_verbatim_name()
+                lookup_name_IN = my_person_details.get_lookup_name()
+                match_confidence_level_IN = my_person_details.get( PersonDetails.PROP_MAME_MATCH_CONFIDENCE_LEVEL, None )
+                match_status_IN = my_person_details.get( PersonDetails.PROP_NAME_MATCH_STATUS, None )
+                capture_method_IN = my_person_details.get( PersonDetails.PROP_NAME_CAPTURE_METHOD, None )
+            
+                # got an ID (check to see if update or insert)?
+                my_id = self.id
+                if ( ( my_id is not None ) and ( int( my_id ) > 0 ) ):
+                
+                    # no ID.  Insert.
+                    is_insert = True
+                    
+                else:
+                
+                    # there is an id.  Not an insert.
+                    is_insert = False
+                    
+                #-- END check to see if insert or update --#
+                
+                #------------------------------------------------------#
+                # ==> article_data instance
+    
+                # value passed in?
+                if ( article_data_instance_IN is not None ):
+    
+                    # store it.
+                    self.article_data = article_data_instance_IN
+    
+                    # we need to save.
+                    is_updated = True
+                    
+                #-- END check to see if article_data instance passed in --#
+            
+                #------------------------------------------------------#
+                # ==> person instance
+                
+                # instance passed in?
+                if ( person_instance_IN ):
+    
+                    # sanity - was there an existing person?
+                    if ( existing_person_instance is not None ):
+                    
+                        # yes.  Compare IDs.
+                        existing_person_id = existing_person_instance.id
+                        new_person_id = person_instance_IN.id
+
+                        # same IDs?
+                        if ( existing_person_id != new_person_id ):
+                        
+                            # not the same.  Store new person.
+                            self.person = person_instance_IN
+                        
+                            # we need to save.
+                            is_updated = True
+                    
+                        #-- END check to see if IDs are the same --#
+                        
+                    else:
+                    
+                        # no existing person...  This is not right,
+                        #     but we're here and we have a person,
+                        #     so save it.
+                        self.person = person_instance_IN
+                    
+                        # we need to save.
+                        is_updated = True
+                    
+                    #-- END check to see if existing person --#
+                    
+                #-- END check to see if person instance passed in. --#
+
+                #------------------------------------------------------#
+                # ==> name
+                
+                # value passed in?
+                if ( name_IN is not None ):
+
+                    # has name string changed?
+                    if ( name_IN != existing_name ):
+                    
+                        # they are different.  Replace.
+                        self.name = name_IN
+                    
+                        # we need to save.
+                        is_updated = True
+                        
+                    #-- END check to see if updated name. --#
+                    
+                #-- END check to see if name string changed. --#
+
+                #------------------------------------------------------#
+                # ==> verbatim_name
+
+                # value passed in?
+                if ( verbatim_name_IN is not None ):
+
+                    # has verbatim name string changed?
+                    if ( verbatim_name_IN != existing_verbatim_name ):
+                    
+                        # they are different.  Replace.
+                        self.verbatim_name = verbatim_name_IN
+                    
+                        # we need to save.
+                        is_updated = True
+                        
+                    #-- END check to see if updated verbatim_name. --#
+                    
+                #-- END check to see if verbatim name passed in. --#
+
+                #------------------------------------------------------#
+                # ==> lookup_name
+
+                # value passed in?
+                if ( lookup_name_IN is not None ):
+
+                    # has lookup name string changed?
+                    if ( lookup_name_IN != existing_lookup_name ):
+                    
+                        # they are different.  Replace.
+                        self.lookup_name = lookup_name_IN
+                    
+                        # we need to save.
+                        is_updated = True
+                        
+                    #-- END check to see if updated lookup_name. --#
+                    
+                #-- END check to see if lookup name passed in. --#
+
+                #------------------------------------------------------#
+                # ==> match_confidence_level
+
+                # value passed in?
+                if ( match_confidence_level_IN is not None ):
+    
+                    # store it.
+                    self.match_confidence_level = match_confidence_level_IN
+    
+                    # we need to save.
+                    is_updated = True
+                    
+                #-- END check to see if match_confidence_level passed in --#
+            
+                #------------------------------------------------------#
+                # ==> match_status
+
+                # value passed in?
+                if ( match_status_IN is not None ):
+    
+                    # store it.
+                    self.match_status = match_status_IN
+    
+                    # we need to save.
+                    is_updated = True
+                    
+                #-- END check to see if match_status passed in --#
+            
+                #------------------------------------------------------#
+                # ==> capture_method
+
+                # value passed in?
+                if ( capture_method_IN is not None ):
+    
+                    # store it.
+                    self.capture_method = capture_method_IN
+    
+                    # we need to save.
+                    is_updated = True
+                    
+                #-- END check to see if capture_method passed in --#
+
+                # updated?
+                if ( is_updated == True ):
+                    
+                    # yes.  Do we save?
+                    if ( do_save_IN == True ):
+                        
+                        # yes.  Save.
+                        self.save()
+                        
+                    #-- END check to see if we save or not. --#
+                    
+                #-- END check to see if changes made --#
+            
+            #-- END check to see if PersonDetails passed in. --#
+            
+        else:
+        
+            # errors in parent method.  Oh no.
+            status_OUT = "In Article_Person." + me + "(): errors in call to parent method: " + status_OUT
+            
+        #-- END check to see if parent method executed OK --#
+        
+        return status_OUT
+
+    #-- END method update_from_person_details() --#
+
+#= END Article_Person Abstract Model ======================================================
 
 
 # Article_Author model
@@ -6385,8 +6830,8 @@ class Article_Subject( Article_Person ):
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = 'include_source_contact_types'
     
     # subjet types
-    SUBJECT_TYPE_MENTIONED = 'mentioned'
-    SUBJECT_TYPE_QUOTED = 'quoted'
+    SUBJECT_TYPE_MENTIONED = PersonDetails.SUBJECT_TYPE_MENTIONED
+    SUBJECT_TYPE_QUOTED = PersonDetails.SUBJECT_TYPE_QUOTED
 
     SUBJECT_TYPE_CHOICES = (
         ( SUBJECT_TYPE_MENTIONED, "Subject Mentioned" ),

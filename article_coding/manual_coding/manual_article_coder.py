@@ -230,6 +230,7 @@ class ManualArticleCoder( ArticleCoder ):
 
         # declare variables
         me = "convert_article_data_to_data_store_json"
+        local_debug_flag = False
         debug_message = ""
         data_store_dict = None
         article_author_qs = None
@@ -259,6 +260,19 @@ class ManualArticleCoder( ArticleCoder ):
         current_subject_type = ""
         current_quote_qs = None
         quote_count = -1
+        
+        # declare variables - logging
+        my_resource_string = ""
+        
+        # local debug on?
+        if ( local_debug_flag == True ):
+
+            # initialize resource string and add it to the LoggingHelper class-level
+            #     string.
+            my_resource_string = cls.LOGGER_NAME + "." + me
+            LoggingHelper.add_to_class_resource_string( my_resource_string )
+            
+        #-- END check to see if local debug on. --#
 
         # first, make sure we have something in article_data_IN.
         if ( ( article_data_IN is not None ) and ( article_data_IN != "" ) ):
@@ -277,11 +291,14 @@ class ManualArticleCoder( ArticleCoder ):
             for current_author in article_author_qs:
             
                 debug_message = "author: " + str( current_author )
-                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME, resource_string_IN = my_resource_string )
 
-                # increment index values
+                # init - increment index values
                 current_index += 1
                 next_index += 1
+                
+                # init - create person dictionary
+                current_person_dict = {}
                 
                 # retrieve Article_Author ID:
                 current_article_person_id = int( current_author.id )
@@ -290,7 +307,7 @@ class ManualArticleCoder( ArticleCoder ):
                 current_person = current_author.person
 
                 debug_message = "author person: " + str( current_person )
-                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME, resource_string_IN = my_resource_string )
 
                 # set values for person from instance.
 
@@ -314,9 +331,6 @@ class ManualArticleCoder( ArticleCoder ):
                 # ==> person_id
                 current_person_id = int( current_person.id )
 
-                # create person dictionary
-                current_person_dict = {}
-                
                 # store person type.
                 current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
                 current_person_dict[ cls.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE ] = current_person_type
@@ -363,32 +377,32 @@ class ManualArticleCoder( ArticleCoder ):
             for current_subject in article_subject_qs:
 
                 debug_message = "subject: " + str( current_subject )
-                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME )
+                LoggingHelper.output_debug( debug_message, me, indent_with_IN = "====>", logger_name_IN = cls.LOGGER_NAME, resource_string_IN = my_resource_string )
 
-                # get current person
+                # ==> article_person_id - retrieve Article_Subject ID:
+                current_article_person_id = current_subject.id
+
+                # ==> get current person
                 current_person = current_subject.person
                 
                 # got a person?  Could be court records, etc.
                 if ( current_person is not None ):
 
-                    debug_message = "subject person: " + str( current_person )
-                    LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME )
+                    debug_message = "subject " + str( current_article_person_id ) + " person: " + str( current_person )
+                    LoggingHelper.output_debug( debug_message, me, indent_with_IN = "========>", logger_name_IN = cls.LOGGER_NAME, resource_string_IN = my_resource_string )
 
-                    # increment index values
+                    # init - increment index values
                     current_index += 1
                     next_index += 1
     
+                    # init - create fresh person dictionary
+                    current_person_dict = {}
+                    
                     # set values for person from instance.
     
-                    # ==> article_person_id - retrieve Article_Subject ID:
-                    current_article_person_id = current_subject.id
-
                     # ==> person_type
                     current_subject_type = current_subject.subject_type
                     current_person_type = cls.SUBJECT_TYPE_TO_PERSON_TYPE_MAP[ current_subject_type ]
-                    
-                    # add article_person_id
-                    current_person_dict[ cls.DATA_STORE_PROP_ARTICLE_PERSON_ID ] = current_article_person_id
                     
                     # ==> person_name and fixed_person_name
                     current_person_name = JSONHelper.escape_json_value( current_subject.name )
@@ -420,9 +434,6 @@ class ManualArticleCoder( ArticleCoder ):
     
                     #-- END check to see if quotes present. --#
     
-                    # create person dictionary
-                    current_person_dict = {}
-                    
                     # person type
                     current_person_dict[ cls.DATA_STORE_PROP_PERSON_TYPE ] = current_person_type
                     current_person_dict[ cls.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE ] = current_person_type
@@ -488,7 +499,18 @@ class ManualArticleCoder( ArticleCoder ):
             json_OUT = data_store_dict
 
         #-- END check to see if return string or objects. --#
+        
+        debug_message = 'JSON: \n' + str( json_OUT )
+        LoggingHelper.output_debug( debug_message, me, indent_with_IN = '====>', logger_name_IN = cls.LOGGER_NAME, resource_string_IN = my_resource_string )
 
+        # local debug on?
+        if ( local_debug_flag == True ):
+
+            # remove resource string from LoggingHelper instance-level string.
+            LoggingHelper.remove_from_class_resource_string( my_resource_string )
+
+        #-- END check to see if local debug is on. --#
+        
         return json_OUT
 
     #-- END class method convert_article_data_to_json() --#
@@ -666,7 +688,7 @@ class ManualArticleCoder( ArticleCoder ):
            JSON.  If source, looks up quotation in article and stores quote
            along with detailed information on where the quotation is located.
            Returns the Article_Data for the article with all coding saved and
-           referenced from witin.
+           referenced from within.
 
         Preconditions:
            Must already have looked up and loaded the article and coder user
