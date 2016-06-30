@@ -107,6 +107,9 @@ from python_utilities.lists.list_helper import ListHelper
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
 
+# python_utilities - dictionaries
+from python_utilities.dictionaries.dict_helper import DictHelper
+
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
 
@@ -2480,29 +2483,36 @@ class Article( models.Model ):
     #==================
 
     # newspaper filter (expects instance of Newspaper model)
-    PARAM_NEWSPAPER_ID = "newspaper_id"
-    PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
-    PARAM_NEWSPAPER_INSTANCE = "newspaper"
-    PARAM_NEWSPAPER_ID_IN_LIST = "newspaper_id_in_list"
+    PARAM_NEWSPAPER_ID = SourcenetBase.PARAM_NEWSPAPER_ID
+    PARAM_NEWSPAPER_NEWSBANK_CODE = SourcenetBase.PARAM_NEWSPAPER_NEWSBANK_CODE
+    PARAM_NEWSPAPER_INSTANCE = SourcenetBase.PARAM_NEWSPAPER_INSTANCE
+    PARAM_NEWSPAPER_ID_IN_LIST = SourcenetBase.PARAM_NEWSPAPER_ID_IN_LIST
+    PARAM_PUBLICATION_LIST = SourcenetBase.PARAM_PUBLICATION_LIST  # same as newspaper id in list, for compatibility.
 
     # date range filter parameters, for article lookup.
-    PARAM_START_DATE = "start_date"
-    PARAM_END_DATE = "end_date"
-    PARAM_SINGLE_DATE = "single_date"
-    DEFAULT_DATE_FORMAT = "%Y-%m-%d"    
+    PARAM_START_DATE = SourcenetBase.PARAM_START_DATE
+    PARAM_END_DATE = SourcenetBase.PARAM_END_DATE
+    PARAM_SINGLE_DATE = SourcenetBase.PARAM_SINGLE_DATE
+    PARAM_DATE_RANGE = SourcenetBase.PARAM_DATE_RANGE
+    DEFAULT_DATE_FORMAT = SourcenetBase.DEFAULT_DATE_FORMAT   
     
     # section selection parameters.
-    PARAM_SECTION_NAME = "section_name"
-    PARAM_SECTION_NAME_LIST = "section_name_list"
+    PARAM_SECTION_NAME = SourcenetBase.PARAM_SECTION_NAME
+    PARAM_SECTION_NAME_LIST = SourcenetBase.PARAM_SECTION_NAME_LIST
+    PARAM_SECTION_NAME_IN_LIST = PARAM_SECTION_NAME_LIST
+    PARAM_SECTION_LIST = SourcenetBase.PARAM_SECTION_LIST
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
     PARAM_JUST_PROCESS_ALL = "just_process_all" # set to True if just want sum of all sections, not records for each individual section.  If False, processes each section individually, then generates the "all" record.
 
     # filter on tags.
-    PARAM_TAGS_IN_LIST = "tags_in_list_IN"
-    PARAM_TAGS_NOT_IN_LIST = "tags_not_in_list_IN"
-
+    PARAM_TAGS_IN_LIST = SourcenetBase.PARAM_TAGS_IN_LIST
+    PARAM_TAG_LIST = SourcenetBase.PARAM_TAG_LIST
+    PARAM_TAGS_NOT_IN_LIST = SourcenetBase.PARAM_TAGS_NOT_IN_LIST
+    
     # other article parameters.
-    PARAM_CUSTOM_ARTICLE_Q = "custom_article_q"
+    PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
+    PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
+    PARAM_CUSTOM_ARTICLE_Q = SourcenetBase.PARAM_CUSTOM_ARTICLE_Q
     
     # Django queryset parameters
     #===========================
@@ -2713,7 +2723,87 @@ class Article( models.Model ):
 
 
     @classmethod
-    def filter_articles( cls, qs_IN = None, *args, **kwargs ):
+    def create_q_multiple_date_range( cls, date_range_IN = "", *args, **kwargs ):
+    
+        '''
+        Accepts string start and end dates (YYYY-MM-DD format). in the keyword
+           arguments.  Creates a Q() instance that filters dates based on start
+           and end date passed in. If both are missing, does nothing.  If one or
+           other passed in, filters accordingly.
+        Preconditions: Dates must be strings in YYYY-MM-DD format.
+        Postconditions: Returns the Q() instance - to use it, you must pass it
+           to a QuerySet's filter method.  If neither start nor end dates are
+           passed in, returns None.
+        '''
+        
+        # return reference
+        q_OUT = None
+        
+        # declare variables
+        date_range = ""
+        date_range_list = None
+        date_range_q_list = None
+        date_range_pair = None
+        range_start_date = None
+        range_end_date = None
+        date_range_q = None
+        current_query = None
+        
+        # retrieve date range string
+        date_range = date_range_IN
+        if ( ( date_range is None ) or ( date_range == "" ) ):
+
+            # no date range passed in. Check in the kwargs.
+            if ( cls.PARAM_DATE_RANGE in kwargs ):
+        
+                # yup.  Use it.
+                date_range = kwargs[ cls.PARAM_DATE_RANGE ]
+        
+            #-- END check to see if date range in arguments --#
+
+        #-- END check to see if date range passed in. --#
+        
+        # got a date range string?
+        if ( date_range != '' ):
+
+            # first, break up the string into a list of start and end dates.
+            date_range_list = SourcenetBase.parse_multiple_date_range_string( date_range )
+            date_range_q_list = []
+
+            # loop over the date ranges, create a Q for each, and then store
+            #    that Q in our Q list.
+            for date_range_pair in date_range_list:
+
+                # get start and end datetime.date instances.
+                range_start_date = date_range_pair[ 0 ]
+                range_end_date = date_range_pair[ 1 ]
+
+                # make Q
+                date_range_q = Q( pub_date__gte = range_start_date ) & Q( pub_date__lte = range_end_date )
+
+                # add Q to Q list.
+                date_range_q_list.append( date_range_q )
+
+            #-- END loop over date range items. --#
+
+            # see if there is anything in date_range_q_list.
+            if ( len( date_range_q_list ) > 0 ):
+
+                # There is something.  Convert it to one big ORed together
+                #    Q and add that to the list.
+                q_OUT = reduce( operator.__or__, date_range_q_list )
+
+            #-- END check to see if we have any valid date ranges.
+
+        #-- END processing of date range --#
+
+        return q_OUT
+    
+    #-- END method create_q_multiple_date_range() --#
+
+
+    @classmethod
+    def filter_articles( cls, qs_IN = None, params_IN = None, *args, **kwargs ):
         
         '''
         Accepts parameters in kwargs.  Uses arguments to filter a QuerySet of
@@ -2728,11 +2818,14 @@ class Article( models.Model ):
             - cls.PARAM_NEWSPAPER_ID_IN_LIST ("newspaper_id_in_list") - list of IDs of newspapers whose articles we want included in our filtered set.
             - cls.PARAM_START_DATE ("start_date") - date string in "YYYY-MM-DD" format of date on which and after we want articles published.
             - cls.PARAM_END_DATE ("end_date") - date string in "YYYY-MM-DD" format of date up to and including which we want articles published.
-            - cls.PARAM_SECTION_NAME_LIST ("section_name_list") - list of section names an article can have in our filtered article set.
+            - cls.PARAM_DATE_RANGE ("date_range") - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+            - cls.PARAM_SECTION_NAME_IN_LIST ("section_name_list") - list of section names an article can have in our filtered article set.
             - cls.PARAM_TAGS_IN_LIST ("tags_in_list_IN") - tags articles in our set should have.
             - cls.PARAM_TAGS_NOT_IN_LIST ("tags_not_in_list_IN") - tags articles in our set should not have.
+            - cls.PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
+            - cls.PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
             - cls.PARAM_CUSTOM_ARTICLE_Q ("custom_article_q") - Django django.db.models.Q instance to apply to filtered QuerySet.
-           
+        
         Preconditions: None.
         Postconditions: returns the QuerySet passed in with filters added as
             specified by arguments.  If no QuerySet passed in, creates new
@@ -2744,18 +2837,65 @@ class Article( models.Model ):
         
         # declare variables
         me = "filter_articles"
+        my_logger_name = "sourcenet.models.Article"
+        my_logger = None
+        
+        # declare variables - input parameters
+        my_params = None
+        my_dict_helper = None
+        newspaper_instance_IN = None
         newspaper_ID_IN = None
         newspaper_newsbank_code_IN = None
-        newspaper_instance = None
         newspaper_id_in_list_IN = None
-        paper_id_in_list = None
-        q_date_range = None
+        start_date_IN = None
+        end_date_IN = None
+        date_range_IN = None
         section_name_list_IN = None
         tags_in_list_IN = None
-        tags_in_list = None
         tags_not_in_list_IN = None
-        tags_not_in_list = None
+        unique_id_in_list_IN = None
+        article_id_in_list_IN = None
         custom_q_IN = None
+        
+        # declare variables - processing variables
+        current_query = None
+        query_list = None
+        newspaper_instance = None
+        paper_id_in_list = None
+        q_date_range = None
+        tags_in_list = None
+        tags_not_in_list = None
+        unique_id_in_list = None
+        article_id_in_list = None
+        query_item = None
+        
+        #-----------------------------------------------------------------------
+        # ! ==> init
+        #-----------------------------------------------------------------------
+
+        # init - get logger
+        my_logger = LoggingHelper.get_a_logger( logger_name_IN = my_logger_name )
+        
+        # init - query list
+        query_list = []
+        
+        # init - store kwargs in params_IN, and in DictHelper instance.
+        if ( params_IN is not None ):
+        
+            # got params passed in - use them.
+            my_params = params_IN
+            
+            # and append kwargs, just in case.
+            my_params.update( kwargs )
+        
+        else:
+        
+            # use kwargs
+            my_params = kwargs
+            
+        #-- END check to see if params other than kwargs passed in.
+        my_dict_helper = DictHelper()
+        my_dict_helper.set_dictionary( my_params )
 
         # got a query set?
         if ( qs_IN ):
@@ -2773,27 +2913,80 @@ class Article( models.Model ):
             #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
         
         #-- END check to see if query set passed in --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> retrieve parameters
+        #-----------------------------------------------------------------------
 
-        #---------------
-        # ==> newspaper
-        #---------------
+        newspaper_instance_IN = my_dict_helper.get_value( cls.PARAM_NEWSPAPER_INSTANCE, default_IN = None )
+        newspaper_ID_IN = my_dict_helper.get_value_as_int( cls.PARAM_NEWSPAPER_ID, default_IN = -1 )
+        newspaper_newsbank_code_IN = my_dict_helper.get_value_as_str( cls.PARAM_NEWSPAPER_NEWSBANK_CODE, default_IN = None )
+
+        # multiple options for paper ID list
+        newspaper_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_NEWSPAPER_ID_IN_LIST, default_IN = None )
+        
+        # got anything for cls.PARAM_NEWSPAPER_ID_IN_LIST?
+        if ( newspaper_id_in_list_IN is None ):
+        
+            # no.  Try cls.PARAM_PUBLICATION_LIST...
+            newspaper_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_PUBLICATION_LIST, default_IN = None )
+        
+        #-- END check to see if cls.PARAM_NEWSPAPER_ID_IN_LIST present --#
+
+        start_date_IN = my_dict_helper.get_value_as_str( cls.PARAM_START_DATE, default_IN = None )
+        end_date_IN = my_dict_helper.get_value_as_str( cls.PARAM_END_DATE, default_IN = None )
+        date_range_IN = my_dict_helper.get_value_as_str( cls.PARAM_DATE_RANGE, default_IN = None )
+
+        # multiple options for section name list
+        section_name_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_SECTION_NAME_IN_LIST, default_IN = None )
+        
+        # got anything for cls.PARAM_SECTION_NAME_IN_LIST?
+        if ( section_name_list_IN is None ):
+        
+            # no.  Try cls.PARAM_SECTION_LIST...
+            section_name_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_SECTION_LIST, default_IN = None )
+        
+        #-- END check to see if cls.PARAM_SECTION_NAME_IN_LIST present --#
+        
+        # multiple options for tag in list
+        tags_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAGS_IN_LIST, default_IN = None )
+        
+        # got anything for cls.PARAM_TAGS_IN_LIST?
+        if ( tags_in_list_IN is None ):
+        
+            # no.  Try cls.PARAM_TAG_LIST...
+            tags_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAG_LIST, default_IN = None )
+        
+        #-- END check to see if cls.PARAM_TAGS_IN_LIST present --#
+
+        tags_not_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAGS_NOT_IN_LIST, default_IN = None )
+        unique_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_UNIQUE_ID_IN_LIST, default_IN = None )
+        article_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_ARTICLE_ID_IN_LIST, default_IN = None )
+        custom_q_IN = my_dict_helper.get_value( cls.PARAM_CUSTOM_ARTICLE_Q, default_IN = None )
+
+        #-----------------
+        # ! ==> newspaper
+        #-----------------
         
         newspaper_instance = None
 
+        my_logger.debug( "In " + me + "(): newspaper_instance_IN = " + str( newspaper_instance_IN ) )
+
         # selected newspaper instance passed in?
-        if ( cls.PARAM_NEWSPAPER_INSTANCE in kwargs ):
+        if ( newspaper_instance_IN is not None ):
     
             # yup.  Use it.
-            newspaper_instance = kwargs[ cls.PARAM_NEWSPAPER_INSTANCE ]
+            newspaper_instance = newspaper_instance_IN
     
         #-- END check to see if newspaper instance in arguments --#
 
+        my_logger.debug( "In " + me + "(): newspaper_ID_IN = " + str( newspaper_ID_IN ) )
+
         # selected newspaper ID passed in?
-        if ( ( newspaper_instance is None ) and ( cls.PARAM_NEWSPAPER_ID in kwargs ) ):
+        if ( ( newspaper_instance is None )
+            and ( newspaper_ID_IN is not None )
+            and ( int( newspaper_ID_IN ) > 0 ) ):
     
-            # yup.  Got an ID specified.
-            newspaper_ID_IN = kwargs[ cls.PARAM_NEWSPAPER_ID ]
-            
             # Make sure it isn't empty.
             if ( ( newspaper_ID_IN is not None )
                 and ( newspaper_ID_IN != "" )
@@ -2807,12 +3000,11 @@ class Article( models.Model ):
     
         #-- END check to see if newspaper instance in arguments --#
 
+        my_logger.debug( "In " + me + "(): newspaper_newsbank_code_IN = " + str( newspaper_newsbank_code_IN ) )
+
         # selected newspaper code passed in?
-        if ( ( newspaper_instance is None ) and ( cls.PARAM_NEWSPAPER_NEWSBANK_CODE in kwargs ) ):
+        if ( ( newspaper_instance is None ) and ( newspaper_newsbank_code_IN is not None ) ):
     
-            # yup.  Use it.
-            newspaper_newsbank_code_IN = kwargs[ cls.PARAM_NEWSPAPER_NEWSBANK_CODE ]
-            
             # Make sure it isn't empty.
             if ( ( newspaper_newsbank_code_IN is not None )
                 and ( newspaper_newsbank_code_IN != "" ) ):
@@ -2828,66 +3020,104 @@ class Article( models.Model ):
         if ( newspaper_instance is not None ):
 
             # Yes.  Filter.
-            qs_OUT = qs_OUT.filter( newspaper = newspaper_instance )
+            current_query = Q( newspaper = newspaper_instance )
+            query_list.append( current_query )
             
         #-- END check to see if newspaper instance found.
+
+        my_logger.debug( "In " + me + "(): newspaper_id_in_list_IN = " + str( newspaper_id_in_list_IN ) )
         
         # got a newspaper ID IN list?
-        if ( cls.PARAM_NEWSPAPER_ID_IN_LIST in kwargs ):
+        if ( newspaper_id_in_list_IN is not None ):
         
             # get list
-            newspaper_id_in_list_IN = kwargs[ cls.PARAM_NEWSPAPER_ID_IN_LIST ]
             paper_id_in_list = ListHelper.get_value_as_list( newspaper_id_in_list_IN )
             
             # filter?
             if ( len( paper_id_in_list ) > 0 ):
 
                 # something in list - filter.
-                qs_OUT = qs_OUT.filter( newspaper__id__in = paper_id_in_list )
+                current_query = Q( newspaper__id__in = paper_id_in_list )
+                query_list.append( current_query )
                 
             #-- END check to see if anything in list. --#
     
         #-- END check to see if newspaper ID IN list is in arguments --#
 
 
-        #----------------
-        # ==> date range
-        #----------------
+        #-------------------------------
+        # ! ==> start_date and end_date
+        #-------------------------------
+
+        my_logger.debug( "In " + me + "(): start_date_IN = " + str( start_date_IN ) + "; end_date_IN = " + str( end_date_IN ) )
 
         # try to get Q() for start and end dates.
-        q_date_range = cls.create_q_article_date_range( "", "", *args, **kwargs )
+        q_date_range = cls.create_q_article_date_range( start_date_IN, end_date_IN, *args, **kwargs )
 
         # got a Q()?
         if ( q_date_range is not None ):
 
-            # Yes.  Add it to query set.
-            qs_OUT = qs_OUT.filter( q_date_range )
+            # Yes.  Add it to query list.
+            current_query = q_date_range
+            query_list.append( current_query )
 
         #-- END check to see if date range present.
 
-        #--------------
-        # ==> Sections
-        #--------------
+
+        #-------------------------------
+        # ! ==> date_range
+        #-------------------------------
+        
+        my_logger.debug( "In " + me + "(): date_range_IN = " + str( date_range_IN ) )
+
+        # got a date_range value?
+        if ( date_range_IN is not None ):
+
+            # try to get Q() for start and end dates.
+            q_date_range = cls.create_q_multiple_date_range( date_range_IN, *args, **kwargs )
+    
+            # got a Q()?
+            if ( q_date_range is not None ):
+    
+                # Yes.  Add it to query set.
+                current_query = q_date_range
+                query_list.append( current_query )
+                
+            #-- END check to see if anything returned. --#
+
+        #-- END check to see if date range present.
+
+        #----------------
+        # ! ==> sections
+        #----------------
+
+        my_logger.debug( "In " + me + "(): section_name_list_IN = " + str( section_name_list_IN ) )
 
         # try to update QuerySet for selected sections.
-        if ( cls.PARAM_SECTION_NAME_LIST in kwargs ):
+        if ( section_name_list_IN is not None ):
     
-            # yup.  Use it.
-            section_name_list_IN = kwargs[ cls.PARAM_SECTION_NAME_LIST ]
-            qs_OUT = cls.add_section_filter_to_article_qs( section_name_list_IN, qs_OUT )
+            # got a list?
+            if ( ( section_name_list_IN is not None )
+                and ( isinstance( section_name_list_IN, list ) == True )
+                and ( len( section_name_list_IN ) > 0 ) ):
+    
+                # add filter for name being in the list
+               current_query = Q( section__in = section_name_list_IN )
+               query_list.append( current_query )
+                
+            #-- END check to see if list was populated. --#
     
         #-- END check to see if start date in arguments --#
 
-        #------------------
-        # ==> Tags IN list
-        #------------------
+        #--------------------
+        # ! ==> tags IN list
+        #--------------------
+
+        my_logger.debug( "In " + me + "(): tags_in_list_IN = " + str( tags_in_list_IN ) )
 
         # Update QuerySet to only include articles with tags in list?
-        if ( cls.PARAM_TAGS_IN_LIST in kwargs ):
+        if ( tags_in_list_IN is not None ):
     
-            # yup.  Use it.
-            tags_in_list_IN = kwargs[ cls.PARAM_TAGS_IN_LIST ]
-            
             # get the value as a list, whether it is a delimited string or list.
             tags_in_list = ListHelper.get_value_as_list( tags_in_list_IN )
             
@@ -2895,22 +3125,22 @@ class Article( models.Model ):
             if ( len( tags_in_list ) > 0 ):
 
                 # something in list - filter.
-                qs_OUT = qs_OUT.filter( tags__name__in = tags_in_list )
+                current_query = Q( tags__name__in = tags_in_list )
+                query_list.append( current_query )
                 
             #-- END check to see if anything in list. --#
     
         #-- END check to see if tags IN list is in arguments --#
 
-        #----------------------
-        # ==> Tags NOT IN list
-        #----------------------
+        #------------------------
+        # ! ==> tags NOT IN list
+        #------------------------
+
+        my_logger.debug( "In " + me + "(): tags_not_in_list_IN = " + str( tags_not_in_list_IN ) )
 
         # Update QuerySet to exclude articles with tags in list?
-        if ( cls.PARAM_TAGS_NOT_IN_LIST in kwargs ):
+        if ( tags_not_in_list_IN is not None ):
     
-            # yup.  Use it.
-            tags_not_in_list_IN = kwargs[ cls.PARAM_TAGS_NOT_IN_LIST ]
-            
             # get the value as a list, whether it is a delimited string or list.
             tags_not_in_list = ListHelper.get_value_as_list( tags_not_in_list_IN )
             
@@ -2918,32 +3148,97 @@ class Article( models.Model ):
             if ( len( tags_not_in_list ) > 0 ):
 
                 # something in list - filter.
-                qs_OUT = qs_OUT.exclude( tags__name__in = tags_not_in_list )
+                current_query = ~Q( tags__name__in = tags_not_in_list )
+                query_list.append( current_query )
                 
             #-- END check to see if anything in list. --#
     
         #-- END check to see if tags IN list is in arguments --#
 
-        #-----------------------------
-        # ==> Custom-built Q() object
-        #-----------------------------
+        #-------------------------
+        # ! ==> unique ID IN list
+        #-------------------------
+
+        my_logger.debug( "In " + me + "(): unique_id_in_list_IN = " + str( unique_id_in_list_IN ) )
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( unique_id_in_list_IN is not None ):
+    
+            # get the value as a list, whether it is a delimited string or list.
+            unique_id_in_list = ListHelper.get_value_as_list( unique_id_in_list_IN )
+            
+            # filter?
+            if ( len( unique_id_in_list ) > 0 ):
+
+                # set up query instance to look for articles with
+                #    unique_identifier in the list of values passed in.  Not
+                #    quoting, since django should do that.
+                current_query = Q( unique_identifier__in = unique_id_in_list )
+
+                # add it to list of queries
+                query_list.append( current_query )
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #--------------------------
+        # ! ==> article ID IN list
+        #--------------------------
+
+        my_logger.debug( "In " + me + "(): article_id_in_list_IN = " + str( article_id_in_list_IN ) )
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( article_id_in_list_IN is not None ):
+    
+            # get the value as a list, whether it is a delimited string or list.
+            article_id_in_list = ListHelper.get_value_as_list( article_id_in_list_IN )
+            
+            # filter?
+            if ( len( article_id_in_list ) > 0 ):
+
+                # set up query instance to look for articles with
+                #    ID in the list of values passed in.  Not
+                #    quoting, since django should do that.
+                current_query = Q( id__in = article_id_in_list )
+
+                # add it to list of queries
+                query_list.append( current_query )
+
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #-------------------------------
+        # ! ==> custom-built Q() object
+        #-------------------------------
 
         # try to update QuerySet for selected sections.
-        if ( cls.PARAM_CUSTOM_ARTICLE_Q in kwargs ):
-
-            # Get the Q and filter with it.
-            custom_q_IN = kwargs[ cls.PARAM_CUSTOM_ARTICLE_Q ]
+        if ( custom_q_IN is not None ):
 
             # got something in the parameter?
             if ( ( custom_q_IN is not None )
                 and ( isinstance( custom_q_IN, Q ) == True ) ):
 
-                # yes.  Filter.
-                qs_OUT = qs_OUT.filter( custom_q_IN )
+                # yes.  Add to q queue.
+                current_query = custom_q_IN
+                query_list.append( current_query )
 
             #-- END check to see if custom Q() present. --#
 
         #-- END check to see if Custom Q argument present --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> filter with Q() list
+        #-----------------------------------------------------------------------
+
+        # now, add them all to the QuerySet - try a loop
+        for query_item in query_list:
+
+            # append each filter to query set.
+            qs_OUT = qs_OUT.filter( query_item )
+
+        #-- END loop over query set items --#
 
         return qs_OUT
         

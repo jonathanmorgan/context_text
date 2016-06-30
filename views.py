@@ -18,7 +18,7 @@ Configuration properties for it are stored in django's admins, in the
 '''
 
 #===============================================================================
-# imports (in alphabetical order by package, then by name)
+# ! imports (in alphabetical order by package, then by name)
 #===============================================================================
 
 # import Python libraries for CSV output
@@ -94,8 +94,9 @@ from python_utilities.logging.logging_helper import LoggingHelper
 # python_utilities - string helper
 from python_utilities.strings.string_helper import StringHelper
 
-# Import form classes
+# Import Form classes
 from sourcenet.forms import Article_DataSelectForm
+from sourcenet.forms import ArticleCodingArticleFilterForm
 from sourcenet.forms import ArticleCodingForm
 from sourcenet.forms import ArticleCodingListForm
 from sourcenet.forms import ArticleCodingSubmitForm
@@ -103,6 +104,7 @@ from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
 from sourcenet.forms import PersonSelectForm
+from sourcenet.forms import ProcessSelectedArticlesForm
 from sourcenet.forms import NetworkOutputForm
 from sourcenet.forms import RelationSelectForm
 
@@ -2017,6 +2019,164 @@ def article_view_article_data_with_text( request_IN ):
 #-- END view method article_view_article_data_with_text() --#
 
 
+@login_required
+def filter_articles( request_IN ):
+
+    '''
+    This view allows a user to look up a set of articles (first by entering a
+        tag to use to filter articles), and then add tag values to their list of
+        tags.
+    '''
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "apply_article_tags"
+    current_user = None
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    process_selected_articles_form = None
+    article_coding_article_filter_form = None
+    ready_to_act = False
+    article_qs = None
+    article_count = -1
+    article_details_list = []
+    article_counter = -1
+    article_instance = None
+    article_details = {}
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
+    # set my default rendering template
+    default_template = 'sourcenet/articles/article-filter.html'
+    
+    # get current user
+    current_user = request_IN.user
+
+    # do we have input parameters?
+    request_inputs = get_request_data( request_IN )
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create forms
+        article_coding_article_filter_form = ArticleCodingArticleFilterForm( request_inputs )
+        process_selected_articles_form = ProcessSelectedArticlesForm( request_inputs )
+        
+        # we can try an action
+        ready_to_act = True
+
+    else:
+    
+        # no inputs - create empty forms
+        article_coding_article_filter_form = ArticleCodingArticleFilterForm()
+        process_selected_articles_form = ProcessSelectedArticlesForm()
+        
+        # no action without some inputs
+        ready_to_act = False
+
+    #-- END check to see if inputs. --#
+
+    # store forms in response
+    response_dictionary[ 'article_coding_article_filter_form' ] = article_coding_article_filter_form
+    response_dictionary[ 'process_selected_articles_form' ] = process_selected_articles_form
+
+    # form ready?
+    if ( ready_to_act == True ):
+
+        if ( article_coding_article_filter_form.is_valid() == True ):
+
+            # retrieve articles specified by the input parameters, ordered by
+            #     Article ID, then create HTML output of list of articles.  For
+            #     each, output:
+            #     - article string
+            #     - link to code article.  If no existing coding, make it a
+            #         generic link.  If existing coding, make the Article_Data
+            #         string the link.
+            
+            # retrieve QuerySet that contains articles with requested tag(s).
+            article_qs = Article.filter_articles()
+            article_qs = article_qs.order_by( "id" )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # got one or more?
+                if ( article_count >= 1 ):
+                
+                    # yes - initialize list of article_details
+                    article_details_list = []
+                
+                    # loop over articles
+                    article_counter = 0
+                    for article_instance in article_qs:
+                    
+                        # increment article_counter
+                        article_counter += 1
+                    
+                        # new article_details
+                        article_details = {}
+                        
+                        # store index and article
+                        article_details[ "index" ] = article_counter
+                        article_details[ "article_instance" ] = article_instance
+                        
+                        # add details to list.
+                        article_details_list.append( article_details )
+
+                    #-- END loop over articles --#
+                    
+                    # seed response dictionary.
+                    response_dictionary[ 'article_details_list' ] = article_details_list
+                    
+                else:
+                
+                    # error - none or multiple articles found for ID. --#
+                    print( "No article returned for ID passed in." )
+                    response_dictionary[ 'output_string' ] = "No matches for filter criteria."
+                    
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
+                
+            
+            #-- END check to see if query set is None --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'output_string' ] = "ArticleCodingArticleFilterForm is not valid."
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, just use empty instance of form created and stored above.
+        pass
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view function filter_articles() --#
+
+    
 @login_required
 def index( request_IN ):
     

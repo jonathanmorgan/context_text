@@ -45,16 +45,32 @@ class SourcenetBase( BasicRateLimited ):
     STATUS_SUCCESS = "Success!"
     STATUS_ERROR_PREFIX = "Error: "
     
-    # network selection parameters we expect.
+    # defaults
+    DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+    
+    # standard date parameter names
+    PARAM_SINGLE_DATE = 'single_date'
     PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
     PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
     PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
+
+    
+    # network selection parameters we expect.
+    PARAM_NEWSPAPER_ID = "newspaper_id"  # ID of newspaper whose articles we want.
+    PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"  # Newsbank Code of newspaper whose articles we want.
+    PARAM_NEWSPAPER_INSTANCE = "newspaper"  # Newspaper instance whose articles we want.
+    PARAM_NEWSPAPER_ID_IN_LIST = "newspaper_id_in_list"  # list of IDs of Newspapers whose articles we want.
     PARAM_PUBLICATION_LIST = 'publications'   # list of IDs of newspapers you want included.
     PARAM_TOPIC_LIST = 'topics'   # list of IDs of topics whose data you want included.
-    PARAM_SECTION_LIST = 'section_list'   # list of tag values that you want included.
+    PARAM_SECTION_NAME = 'section_name'   # list of tag values that you want included.
+    PARAM_SECTION_NAME_LIST = 'section_name_list'  # list of names of sections you want included articles to be members of.
+    PARAM_SECTION_LIST = 'section_list'   # alternate for list of names of sections you want included articles to be members of.
+    PARAM_TAGS_IN_LIST = "tags_in_list_IN"  # comma-delimited string list of tag values that you want included.
+    PARAM_TAGS_NOT_IN_LIST = "tags_not_in_list_IN"  # comma-delimited string list of tag values that you want excluded.
     PARAM_TAG_LIST = 'tags_list'   # comma-delimited string list of tag values that you want included.
     PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
     PARAM_ARTICLE_ID_LIST = 'article_id_list'   # list of ids of articles whose data you want included.
+    PARAM_CUSTOM_ARTICLE_Q = 'custom_article_q'  # pre-built Q() instance to use to filter articles.  Can be anything you want!
 
     # constants for parsing date range string
     PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
@@ -167,6 +183,86 @@ class SourcenetBase( BasicRateLimited ):
     #-- END class method get_automated_coding_user() --#
     
     
+    @classmethod
+    def parse_multiple_date_range_string( cls, date_range_IN ):
+        
+        """
+            Method: parse_date_range()
+            
+            Purpose: Accepts a date range string, parses it, and returns a list
+               of date ranges that need to be OR-ed together.  The text in date
+               range field can be parsed out into date ranges - semi-colon
+               delimited, " to " between dates that bound a range.  Could add
+               more complexity later.  As soon as we start doing that, need an
+               object for date ranges.  For now, not so much.
+
+            Ex.:
+                2009-12-01 to 2009-12-31;2010-02-01 to 2010-02-28
+                
+            Params:
+            - date_range_IN - date range string we need to parse.
+            
+            Returns:
+            - List of Lists - List of pairs of date instances (two item lists) that are to be OR-ed together.
+        """
+        
+        # return reference
+        date_range_list_OUT = []
+        
+        # declare variables
+        date_range_list = None
+        date_range_string = ''
+        date_range_date_list = ''
+        from_string = ''
+        to_string = ''
+        from_date = None
+        to_date = None
+        date_pair_list = None
+        
+        # got a date range value?
+        if ( ( date_range_IN is not None ) and ( date_range_IN != '' ) ):
+        
+            # got something - break it up on ";"
+            date_range_list = date_range_IN.split( cls.PARAM_DATE_RANGE_ITEM_SEPARATOR )
+
+            # iterate over list, splitting each item on " to " and then if two
+            #    things found, place them in a list and append that list to the
+            #    output list.
+            for date_range_string in date_range_list:
+
+                # split on " to "
+                date_range_date_list = date_range_string.split( cls.PARAM_DATE_RANGE_DATE_SEPARATOR )
+
+                # grab dates
+                from_string = date_range_date_list[ 0 ]
+                to_string = date_range_date_list[ 1 ]
+
+                # make sure we have two values.  If not, do nothing.
+                if ( ( from_string != '' ) and ( to_string != '' ) ):
+
+                    # convert to date instances
+                    from_date = datetime.datetime.strptime( from_string, cls.PARAM_DATE_RANGE_DATE_FORMAT )
+                    from_date = from_date.date()
+                    to_date = datetime.datetime.strptime( to_string, cls.PARAM_DATE_RANGE_DATE_FORMAT )
+                    to_date = to_date.date()
+
+                    # put the date()s in a list.
+                    date_pair_list = [ from_date, to_date ]
+
+                    # add list to output list.
+                    date_range_list_OUT.append( date_pair_list )
+
+                #-- END check to see if we have two values. --#
+
+            #-- END loop over date range strings --#
+        
+        #-- END check to see if date range value set. --#
+        
+        return date_range_list_OUT
+
+    #-- END parse_multiple_date_range_string() --#
+
+
     #---------------------------------------------------------------------------
     # __init__() method
     #---------------------------------------------------------------------------
@@ -363,54 +459,8 @@ class SourcenetBase( BasicRateLimited ):
         # return reference
         date_range_list_OUT = []
         
-        # declare variables
-        date_range_list = None
-        date_range_string = ''
-        date_range_date_list = ''
-        from_string = ''
-        to_string = ''
-        from_date = None
-        to_date = None
-        date_pair_list = None
-        
-        # got a date range value?
-        if ( date_range_IN != '' ):
-        
-            # got something - break it up on ";"
-            date_range_list = date_range_IN.split( self.PARAM_DATE_RANGE_ITEM_SEPARATOR )
-
-            # iterate over list, splitting each item on " to " and then if two
-            #    things found, place them in a list and append that list to the
-            #    output list.
-            for date_range_string in date_range_list:
-
-                # split on " to "
-                date_range_date_list = date_range_string.split( self.PARAM_DATE_RANGE_DATE_SEPARATOR )
-
-                # grab dates
-                from_string = date_range_date_list[ 0 ]
-                to_string = date_range_date_list[ 1 ]
-
-                # make sure we have two values.  If not, do nothing.
-                if ( ( from_string != '' ) and ( to_string != '' ) ):
-
-                    # convert to date instances
-                    from_date = datetime.datetime.strptime( from_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
-                    from_date = from_date.date()
-                    to_date = datetime.datetime.strptime( to_string, self.PARAM_DATE_RANGE_DATE_FORMAT )
-                    to_date = to_date.date()
-
-                    # put the date()s in a list.
-                    date_pair_list = [ from_date, to_date ]
-
-                    # add list to output list.
-                    date_range_list_OUT.append( date_pair_list )
-
-                #-- END check to see if we have two values. --#
-
-            #-- END loop over date range strings --#
-        
-        #-- END check to see if date range value set. --#
+        # call class method.
+        date_range_list_OUT = SourcenetBase.parse_multiple_date_range_string( date_range_IN )
         
         return date_range_list_OUT
 

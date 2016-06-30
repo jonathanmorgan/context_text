@@ -112,6 +112,26 @@ from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
 
+class ProcessSelectedArticlesForm( forms.Form ):
+    
+    '''
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
+    '''
+    
+    # action choices
+    ACTION_CHOICES = (
+        ( "view_matches", "View Matches" ),
+        ( "apply_tags", "Apply Tags" ),
+    )
+    action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
+
+    # apply_tags_list (comma-delimited)
+    apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
+    
+#-- END Form class ProcessSelectedArticlesForm --#
+    
+
 class Article_DataLookupForm( forms.Form ):
 
     '''
@@ -188,6 +208,45 @@ class Article_DataSelectForm( forms.Form ):
     #-- END overridden/extended function __init__() --#
 
 #-- END ArticleLookupForm --#
+
+
+class ArticleCodingArticleFilterForm( forms.Form ):
+    
+    '''
+    create a form to let a user specify the criteria used to limit the articles
+       that are used to create output.
+    '''
+    
+    # what fields do I want?
+
+    # start date
+    start_date = forms.DateField( required = False, label = "Start Date (YYYY-MM-DD)" )
+
+    # end date
+    end_date = forms.DateField( required = False, label = "End Date (YYYY-MM-DD)" )
+
+    # date range - text date range field that can parse out date ranges -
+    #    double-pipe delimited, " to " between dates that bound a range, could
+    #    add more later.
+    # Ex.: "YYY1-M1-D1 to YYY2-M2-D2||YYY3-M3-D3 to YYY4-M4-D4", etc.
+    date_range = forms.CharField( required = False, label = "* Fancy date range" )
+
+    # publication
+    publications = forms.ModelMultipleChoiceField( required = False, queryset = Newspaper.objects.all() )
+
+    # list of unique identifiers to limit to.
+    tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
+    
+    # list of unique identifiers to limit to.
+    unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
+    
+    # list of unique identifiers to limit to.
+    article_id_list = forms.CharField( required = False, label = "Article ID IN List (comma-delimited)" )
+
+    # list of unique identifiers to limit to.
+    section_list = forms.CharField( required = False, label = "String Section Name IN List (comma-delimited)" )
+    
+#-- END ArticleCodingArticleFilterForm ----------------------------------------#
 
 
 class ArticleCodingForm( forms.ModelForm ):

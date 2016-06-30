@@ -385,15 +385,7 @@ class ArticleCoding( SourcenetBase ):
         section_list_IN = None
         unique_id_list_IN = ''
         article_id_list_IN = ''
-        date_range_list = None
-        date_range_pair = None
-        range_start_date = None
-        range_end_date = None
-        date_range_q = None
-        date_range_q_list = None
-        current_item = None
-        current_query = None
-        query_list = []
+        filter_articles_params = {}
         
         # grab a logger.
         my_logger = self.get_logger()
@@ -405,9 +397,9 @@ class ArticleCoding( SourcenetBase ):
         if ( params_IN ):
 
             # retrieve the incoming parameters
-            start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, '' )
-            end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, '' )
-            date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
+            start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, None )
+            end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, None )
+            date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, None )
             publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST, None )
             tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST, None )
             unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST, None )
@@ -416,145 +408,21 @@ class ArticleCoding( SourcenetBase ):
             
             # get all articles to start
             query_set_OUT = Article.objects.all()
-
-            # now filter based on parameters passed in.
             
-            # start date
-            my_logger.debug( "In " + me + "(): start_date_IN = " + str( start_date_IN ) )
-            if ( start_date_IN != '' ):
-
-                # set up query instance
-                current_query = Q( pub_date__gte = start_date_IN )
-
-                # add it to list of queries
-                query_list.append( current_query )
-
-            #-- END processing of start_date --#
-
-            # end date
-            my_logger.debug( "In " + me + "(): end_date_IN = " + str( end_date_IN ) )
-            if ( end_date_IN != '' ):
-
-                # set up query instance
-                current_query = Q( pub_date__lte = end_date_IN )
-
-                # add it to list of queries
-                query_list.append( current_query )
-
-            #-- END processing of end_date --#
-
-            # date range?
-            my_logger.debug( "In " + me + "(): date_range_IN = " + str( date_range_IN ) )
-            if ( date_range_IN != '' ):
-
-                # first, break up the string into a list of start and end dates.
-                date_range_list = self.parse_date_range( date_range_IN )
-                date_range_q_list = []
-
-                # loop over the date ranges, create a Q for each, and then store
-                #    that Q in our Q list.
-                for date_range_pair in date_range_list:
-
-                    # get start and end datetime.date instances.
-                    range_start_date = date_range_pair[ 0 ]
-                    range_end_date = date_range_pair[ 1 ]
-
-                    # make Q
-                    date_range_q = Q( pub_date__gte = range_start_date ) & Q( pub_date__lte = range_end_date )
-
-                    # add Q to Q list.
-                    date_range_q_list.append( date_range_q )
-
-                #-- END loop over date range items. --#
-
-                # see if there is anything in date_range_q_list.
-                if ( len( date_range_q_list ) > 0 ):
-
-                    # There is something.  Convert it to one big ORed together
-                    #    Q and add that to the list.
-                    current_query = reduce( operator.__or__, date_range_q_list )
-
-                    # add this to the query list.
-                    query_list.append( current_query )
-
-                #-- END check to see if we have any valid date ranges.
-
-            #-- END processing of date range --#
-
-            # publications
-            my_logger.debug( "In " + me + "(): publication_list_IN = " + str( publication_list_IN ) )
-            if ( ( publication_list_IN is not None ) and ( len( publication_list_IN ) > 0 ) ):
-
-                # set up query instance
-                current_query = Q( newspaper__id__in = publication_list_IN )
-
-                # add it to the query list
-                query_list.append( current_query )
-
-            #-- END processing of publications --#
-
-            # tags
-            my_logger.debug( "In " + me + "(): tag_list_IN = " + str( tag_list_IN ) )
-            if ( ( tag_list_IN is not None ) and ( len( tag_list_IN ) > 0 ) ):
-
-                # set up query instance
-                current_query = Q( tags__name__in = tag_list_IN )
-
-                # add it to the query list
-                query_list.append( current_query )
-
-            #-- END processing of tags --#
-
-            # unique identifiers IN list
-            my_logger.debug( "In " + me + "(): unique_id_list_IN = " + str( unique_id_list_IN ) )
-            if ( ( unique_id_list_IN is not None ) and ( len( unique_id_list_IN ) > 0 ) ):
-
-                # set up query instance to look for articles with
-                #    unique_identifier in the list of values passed in.  Not
-                #    quoting, since django should do that.
-                current_query = Q( unique_identifier__in = unique_id_list_IN )
-
-                # add it to list of queries
-                query_list.append( current_query )
-
-            #-- END processing of unique_identifiers --#
-
-            # article ID IN list
-            my_logger.debug( "In " + me + "(): article_id_list_IN = " + str( article_id_list_IN ) )
-            if ( ( article_id_list_IN is not None ) and ( len( article_id_list_IN ) > 0 ) ):
-
-                # set up query instance to look for articles with
-                #    ID in the list of values passed in.  Not
-                #    quoting, since django should do that.
-                current_query = Q( id__in = article_id_list_IN )
-
-                # add it to list of queries
-                query_list.append( current_query )
-
-            #-- END processing of article IDs --#
-
-            # section string list
-            my_logger.debug( "In " + me + "(): section_list_IN = " + str( section_list_IN ) )
-            if ( ( section_list_IN is not None ) and ( len( section_list_IN ) > 0 ) ):
-
-                # set up query instance to look for articles with
-                #    ID in the list of values passed in.  Not
-                #    quoting, since django should do that.
-                current_query = Q( section__in = section_list_IN )
-
-                # add it to list of queries
-                query_list.append( current_query )
-
-            #-- END processing of section names --#
-
-            # now, add them all to the QuerySet - try a loop
-            for query_item in query_list:
-
-                # append each filter to query set.
-                query_set_OUT = query_set_OUT.filter( query_item )
-
-            #-- END loop over query set items --#
-
+            # set up dictionary for call to Article.filter_articles()
+            filter_articles_params = {}
+            filter_articles_params[ Article.PARAM_START_DATE ] = start_date_IN
+            filter_articles_params[ Article.PARAM_END_DATE ] = end_date_IN
+            filter_articles_params[ Article.PARAM_DATE_RANGE ] = date_range_IN
+            filter_articles_params[ Article.PARAM_NEWSPAPER_ID_IN_LIST ] = publication_list_IN
+            filter_articles_params[ Article.PARAM_TAGS_IN_LIST ] = tag_list_IN
+            filter_articles_params[ Article.PARAM_UNIQUE_ID_IN_LIST ] = unique_id_list_IN
+            filter_articles_params[ Article.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
+            filter_articles_params[ Article.PARAM_SECTION_NAME_IN_LIST ] = section_list_IN
+            
+            # call Article.filter_articles()
+            query_set_OUT = Article.filter_articles( qs_IN = query_set_OUT, params_IN = filter_article_params )
+            
         else:
         
             # no param container present.  Error.
