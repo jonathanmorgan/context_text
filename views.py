@@ -79,20 +79,16 @@ email_from_address = Config_Property.get_property_value( Issue.CONFIG_APPLICATIO
 '''
 
 
-# python_utilities - django view helper
+# python_utilities
+from python_utilities.dictionaries.dict_helper import DictHelper
 from python_utilities.django_utils.django_view_helper import DjangoViewHelper
-
-# python_utilities - exceptions
 from python_utilities.exceptions.exception_helper import ExceptionHelper
-
-# python_utilities - JSON
 from python_utilities.json.json_helper import JSONHelper
-
-# python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
-
-# python_utilities - string helper
 from python_utilities.strings.string_helper import StringHelper
+
+# sourcenet
+from sourcenet.shared.sourcenet_base import SourcenetBase
 
 # Import Form classes
 from sourcenet.forms import Article_DataSelectForm
@@ -2032,7 +2028,7 @@ def filter_articles( request_IN ):
     response_OUT = None
 
     # declare variables
-    me = "apply_article_tags"
+    me = "filter_articles"
     current_user = None
     response_dictionary = {}
     default_template = ''
@@ -2040,12 +2036,32 @@ def filter_articles( request_IN ):
     process_selected_articles_form = None
     article_coding_article_filter_form = None
     ready_to_act = False
+    is_article_filter_form_empty = True
+    
+    # declare variables - filter articles
     article_qs = None
+    start_date_IN = ""
+    end_date_IN = ""
+    date_range_IN = ""
+    publication_list_IN = []
+    tag_list_IN = ""
+    unique_id_list_IN = ""
+    article_id_list_IN = ""
+    section_list_IN = ""
+    filter_articles_params = {}
     article_count = -1
+    article_filter_summary = ""
     article_details_list = []
     article_counter = -1
     article_instance = None
     article_details = {}
+    
+    # declare variables - article processing
+    action_IN = ""
+    action_summary = ""
+    action_detail_list = []
+    apply_tags_list_IN = []
+    apply_tags_count = -1
     
     # initialize response dictionary
     response_dictionary = {}
@@ -2090,67 +2106,173 @@ def filter_articles( request_IN ):
 
         if ( article_coding_article_filter_form.is_valid() == True ):
 
-            # retrieve articles specified by the input parameters, ordered by
-            #     Article ID, then create HTML output of list of articles.  For
-            #     each, output:
-            #     - article string
-            #     - link to code article.  If no existing coding, make it a
-            #         generic link.  If existing coding, make the Article_Data
-            #         string the link.
+            # is the form empty?  If so, do nothing.
+            is_article_filter_form_empty = article_coding_article_filter_form.am_i_empty()
+            if ( is_article_filter_form_empty == False ):
+
+                # retrieve articles specified by the input parameters, ordered by
+                #     Article ID, then create HTML output of list of articles.  For
+                #     each, output:
+                #     - article string
+                #     - link to code article.  If no existing coding, make it a
+                #         generic link.  If existing coding, make the Article_Data
+                #         string the link.
+                
+                # retrieve the incoming parameters
+                start_date_IN = request_inputs.get( SourcenetBase.PARAM_START_DATE, None )
+                end_date_IN = request_inputs.get( SourcenetBase.PARAM_END_DATE, None )
+                date_range_IN = request_inputs.get( SourcenetBase.PARAM_DATE_RANGE, None )
+                publication_list_IN = request_inputs.getlist( SourcenetBase.PARAM_PUBLICATION_LIST, None )
+                tag_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_TAG_LIST, None )
+                unique_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_UNIQUE_ID_LIST, None )
+                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
+                section_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_SECTION_LIST, None )
             
-            # retrieve QuerySet that contains articles with requested tag(s).
-            article_qs = Article.filter_articles()
-            article_qs = article_qs.order_by( "id" )
-
-            # get count of queryset return items
-            if ( ( article_qs != None ) and ( article_qs != "" ) ):
-
-                # get count of articles
-                article_count = article_qs.count()
+                # get all articles to start
+                article_qs = Article.objects.all()
+                
+                # set up dictionary for call to Article.filter_articles()
+                filter_articles_params = {}
+                filter_articles_params[ Article.PARAM_START_DATE ] = start_date_IN
+                filter_articles_params[ Article.PARAM_END_DATE ] = end_date_IN
+                filter_articles_params[ Article.PARAM_DATE_RANGE ] = date_range_IN
+                filter_articles_params[ Article.PARAM_NEWSPAPER_ID_IN_LIST ] = publication_list_IN
+                filter_articles_params[ Article.PARAM_TAGS_IN_LIST ] = tag_list_IN
+                filter_articles_params[ Article.PARAM_UNIQUE_ID_IN_LIST ] = unique_id_list_IN
+                filter_articles_params[ Article.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
+                filter_articles_params[ Article.PARAM_SECTION_NAME_IN_LIST ] = section_list_IN
+                
+                # call Article.filter_articles() retrieve QuerySet that contains
+                #     articles that match filter criteria.
+                article_qs = Article.filter_articles( qs_IN = article_qs, params_IN = filter_articles_params )
+                
+                # Order by ID.
+                article_qs = article_qs.order_by( "id" )
     
-                # got one or more?
-                if ( article_count >= 1 ):
-                
-                    # yes - initialize list of article_details
-                    article_details_list = []
-                
-                    # loop over articles
-                    article_counter = 0
-                    for article_instance in article_qs:
+                # get count of queryset return items
+                if ( ( article_qs != None ) and ( article_qs != "" ) ):
+    
+                    # get count of articles
+                    article_count = article_qs.count()
+        
+                    # got one or more?
+                    if ( article_count >= 1 ):
                     
-                        # increment article_counter
-                        article_counter += 1
-                    
-                        # new article_details
-                        article_details = {}
+                        # always create and store a summary of articles.
+                        article_filter_summary = "Found " + str( article_count ) + " articles that match your selected filter criteria: " + str( filter_articles_params )
+                        response_dictionary[ 'article_filter_summary' ] = article_filter_summary
                         
-                        # store index and article
-                        article_details[ "index" ] = article_counter
-                        article_details[ "article_instance" ] = article_instance
+                        # ! TODO - use process_selected_articles_form to see
+                        #     what we do now...
                         
-                        # add details to list.
-                        article_details_list.append( article_details )
+                        # is form valid?
+                        if ( process_selected_articles_form.is_valid() == True ):
+                        
+                            # yes - do we have an action?
+                            action_IN = request_inputs.get( "action", None )
+                            if ( action_IN is not None ):
+                                
+                                # add to response.
+                                response_dictionary[ 'action' ] = action_IN
+                            
+                                # is it "view_matches"?
+                                if ( action_IN == "view_matches" ):
 
-                    #-- END loop over articles --#
+                                    # yes - initialize list of article_details
+                                    article_details_list = []
+                                
+                                    # loop over articles
+                                    article_counter = 0
+                                    for article_instance in article_qs:
+                                    
+                                        # increment article_counter
+                                        article_counter += 1
+                                    
+                                        # new article_details
+                                        article_details = {}
+                                        
+                                        # store index and article
+                                        article_details[ "index" ] = article_counter
+                                        article_details[ "article_instance" ] = article_instance
+                                        
+                                        # add details to list.
+                                        article_details_list.append( article_details )
+                
+                                    #-- END loop over articles --#
+                                    
+                                    # seed response dictionary.
+                                    response_dictionary[ 'article_details_list' ] = article_details_list
+            
+                                elif ( action_IN == "apply_tags" ):
+                                
+                                    # retrieve list of tags to apply.
+                                    apply_tags_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_APPLY_TAGS_LIST, None )
+                                    if ( apply_tags_list_IN is not None ):
+                                        
+                                        apply_tags_count = len( apply_tags_list_IN )
+                                
+                                        # Check count of articles retrieved.
+                                        action_summary = "Got " + str( article_count ) + " articles to tag with tags \"" + str( apply_tags_list_IN ) + "\"."
+                                        response_dictionary[ "action_summary" ] = action_summary
+                                        
+                                        # loop over tags
+                                        for current_tag in apply_tags_list_IN:
+                                        
+                                            # output the tags.
+                                            action_detail_list.append( "Adding tag \"" + current_tag + "\" to articles:" )
+
+                                            # loop over articles.
+                                            for current_article in article_qs:
+                                            
+                                                # add tag.
+                                                current_article.tags.add( current_tag )
+                                                
+                                                # output the tags.
+                                                action_detail_list.append( "----> Tags for article " + str( current_article.id ) + " : " + str( current_article.tags.all() ) )
+                                                
+                                            #-- END loop over articles --#
+                                            
+                                        #-- END loop over tags to apply to selected articles. --#
+                                        
+                                        # add variables to response
+                                        response_dictionary[ "action_detail_list" ] = action_detail_list
+                                        
+                                    else:
+                                        
+                                        # no tags to apply.  Output message.
+                                        action_summary = "Got " + str( article_count ) + " articles to tag, but no tags to apply were entered.  Please enter the tags you want to apply to the selected articles."
+                                        response_dictionary[ "action_summary" ] = action_summary
+                                        
+                                    #-- END check to see if any tags specified to be applied. --#
+                                
+                                #-- END check to see what action. --#
+
+                            #-- END check to see if action present. --#
+                            
+                        #-- END check to see if article processing form is valid --#
+                                            
+                    else:
                     
-                    # seed response dictionary.
-                    response_dictionary[ 'article_details_list' ] = article_details_list
-                    
+                        # error - none or multiple articles found for ID. --#
+                        print( "No article returned for ID passed in." )
+                        response_dictionary[ 'output_string' ] = "No matches for filter criteria."
+                        
+                    #-- END check to see if there is one or other than one. --#
+    
                 else:
                 
-                    # error - none or multiple articles found for ID. --#
-                    print( "No article returned for ID passed in." )
-                    response_dictionary[ 'output_string' ] = "No matches for filter criteria."
+                    # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                    response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
                     
-                #-- END check to see if there is one or other than one. --#
-
+                
+                #-- END check to see if query set is None --#
+                
             else:
             
-                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
-                response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
-                
+                # form is empty.
+                response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
             
-            #-- END check to see if query set is None --#
+            #-- END check to see if form is empty --#
 
         else:
 

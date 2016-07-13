@@ -91,15 +91,22 @@ properly passed through to all the things that might use it:
 
 '''
 
+# import six for Python 2 and 3 compatibility.
+import six
+
 # import django form object.
 from django import forms
 
 # import django user authentication User object, for limiting to certain users.
 from django.contrib.auth.models import User
+from django.db.models.query import QuerySet
 
 # import from AJAX selects, for looking up articles.
 from ajax_select.fields import AutoCompleteSelectField
 from ajax_select import make_ajax_field
+
+# python_utilities - logging
+from python_utilities.logging.logging_helper import LoggingHelper
 
 # import stuff from sourcenet
 #from mysite.sourcenet.export.network_output import NetworkOutput
@@ -111,26 +118,6 @@ from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
 from sourcenet.models import Topic
-
-class ProcessSelectedArticlesForm( forms.Form ):
-    
-    '''
-    allows user to specify list of tags they would like to be applied to
-        some taggable entity.
-    '''
-    
-    # action choices
-    ACTION_CHOICES = (
-        ( "view_matches", "View Matches" ),
-        ( "apply_tags", "Apply Tags" ),
-    )
-    action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
-
-    # apply_tags_list (comma-delimited)
-    apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
-    
-#-- END Form class ProcessSelectedArticlesForm --#
-    
 
 class Article_DataLookupForm( forms.Form ):
 
@@ -212,6 +199,9 @@ class Article_DataSelectForm( forms.Form ):
 
 class ArticleCodingArticleFilterForm( forms.Form ):
     
+    # constants-ish
+    IAMEMPTY = "IAMEMPTY"
+    
     '''
     create a form to let a user specify the criteria used to limit the articles
        that are used to create output.
@@ -245,6 +235,120 @@ class ArticleCodingArticleFilterForm( forms.Form ):
 
     # list of unique identifiers to limit to.
     section_list = forms.CharField( required = False, label = "String Section Name IN List (comma-delimited)" )
+    
+    #--------------------------------------------------------------------------#
+    # methods
+    #--------------------------------------------------------------------------#
+    
+    
+    def am_i_empty( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and checks to see if any has been
+            populated.  If not, returns True (it is empty!).  If there is a
+            value in any of them, returns False (not empty).
+        '''
+        
+        # return reference
+        is_empty_OUT = True
+        
+        # declare variables
+        me = "am_i_empty"
+        my_logger_name = "sourcenet.forms.ArticleCodingArticleFilterForm"
+        debug_message = ""
+        my_cleaned_data = None
+        input_counter = -1
+        current_key = None
+        current_value = None
+        
+        # get cleaned data.
+        my_cleaned_data = self.cleaned_data
+        
+        # loop over keys
+        input_counter = 0
+        for current_key in six.iterkeys( my_cleaned_data ):
+        
+            # increment counter
+            input_counter += 1
+
+            # get value.
+            current_value = my_cleaned_data.get( current_key, self.IAMEMPTY )
+            
+            debug_message = "input " + str( input_counter ) + ": key = " + str( current_key ) + "; value = \"" + str( current_value ) + "\" ( class = \"" + str( current_value.__class__ ) + "\" )"
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+            
+            # empty?
+            if ( current_value is not None ):
+                
+                # got a QuerySet?
+                if ( isinstance( current_value, QuerySet ) == True ):
+                    
+                    # yes.  anything in it?
+                    if ( current_value.count() > 0 ):
+                    
+                        is_empty_OUT = False
+                        
+                        debug_message = "QuerySet in key \"" + str( current_key ) + "\" IS NOT empty."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+                
+                    else:
+                    
+                        debug_message = "QuerySet in key \"" + str( current_key ) + "\" is EMPTY."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+                    
+                    #-- END check to see if anything in list. --#
+
+                elif ( isinstance( current_value, list ) == True ):
+                    
+                    # yes.  Is there anything in list?
+                    if ( len( current_value ) > 0 ):
+                            
+                        is_empty_OUT = False
+                            
+                        debug_message = "LIST in key \"" + str( current_key ) + "\" IS NOT empty."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+    
+                    else:
+                            
+                        debug_message = "LIST in key \"" + str( current_key ) + "\" is EMPTY."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+                            
+                    #-- END check to see if anything in list. --#
+                        
+                else:
+                    
+                    # not list - probably a string.
+                    if ( ( current_value != "" ) and ( current_value != self.IAMEMPTY ) ):
+                        
+                        # not an empty string.
+                        is_empty_OUT = False
+                        
+                        debug_message = "STRING in key \"" + str( current_key ) + "\" IS NOT empty."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+
+                    else:
+                        
+                        debug_message = "STRING in key \"" + str( current_key ) + "\" is EMPTY."
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+                        
+                    #-- END check to see if empty string, or set to self.IAMEMPTY --#
+                    
+                #-- END check to see if list. --#
+            
+            else:
+            
+                # empty.
+                debug_message = "key \"" + str( current_key ) + "\" is None, and so EMPTY."
+                LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+            
+            #-- END check to see if empty. --#
+
+        #-- END loop over keys in data dictionary --#
+
+        return is_empty_OUT
+        
+    #-- END method am_i_empty() --#
+
     
 #-- END ArticleCodingArticleFilterForm ----------------------------------------#
 
@@ -371,6 +475,36 @@ class ArticleSelectForm( forms.Form ):
 #-- END ArticleSelectForm -----------------------------------------------------#
 
 
+class NetworkOutputForm( forms.Form ):
+
+    '''
+    NetworkOutputForm lets user specify details about the format and structure
+       of the output that will capture network data - can specify file format,
+       for example, whether to include render details/debug, and other details
+       of the data that will result from examining Article_Data.
+    '''
+
+    # do we want to download result as file?
+    network_download_as_file = forms.ChoiceField( required = False, label = "Download As File?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+
+    # include render details? 
+    network_include_render_details = forms.ChoiceField( required = False, label = "Include Render Details?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+
+    # just contains the format you want the network data outputted as.
+    output_type = forms.ChoiceField( label = "Data Format", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_OUTPUT_TYPE_DEFAULT )
+
+    # data to output - either just network, just node attributes, both with attributes in columns, or both with attributes in rows.
+    network_data_output_type = forms.ChoiceField( label = "Data Output Type", choices = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
+
+    # do we want a label at the top of the network file?
+    network_label = forms.CharField( required = False, label = "Network Label" )
+
+    # do we want to output row and column headers?
+    network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
+
+#-- END NetworkOutputForm -------------------------------------------#
+
+
 # create a form to let a user specify the criteria used to limit the output form
 class PersonSelectForm( forms.Form ):
 
@@ -429,35 +563,26 @@ class PersonSelectForm( forms.Form ):
 #-- end Form model PersonSelectForm -------------------------------------------
 
 
-class NetworkOutputForm( forms.Form ):
-
+class ProcessSelectedArticlesForm( forms.Form ):
+    
     '''
-    NetworkOutputForm lets user specify details about the format and structure
-       of the output that will capture network data - can specify file format,
-       for example, whether to include render details/debug, and other details
-       of the data that will result from examining Article_Data.
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
     '''
+    
+    # action choices
+    ACTION_CHOICES = (
+        ( "match_summary", "Match Summary" ),
+        ( "view_matches", "View Matches" ),
+        ( "apply_tags", "Apply Tags" ),
+    )
+    action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
 
-    # do we want to download result as file?
-    network_download_as_file = forms.ChoiceField( required = False, label = "Download As File?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
-
-    # include render details? 
-    network_include_render_details = forms.ChoiceField( required = False, label = "Include Render Details?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
-
-    # just contains the format you want the network data outputted as.
-    output_type = forms.ChoiceField( label = "Data Format", choices = NetworkOutput.NETWORK_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_OUTPUT_TYPE_DEFAULT )
-
-    # data to output - either just network, just node attributes, both with attributes in columns, or both with attributes in rows.
-    network_data_output_type = forms.ChoiceField( label = "Data Output Type", choices = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST, initial = NetworkOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT )
-
-    # do we want a label at the top of the network file?
-    network_label = forms.CharField( required = False, label = "Network Label" )
-
-    # do we want to output row and column headers?
-    network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
-
-#-- END NetworkOutputForm -------------------------------------------#
-
+    # apply_tags_list (comma-delimited)
+    apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
+    
+#-- END Form class ProcessSelectedArticlesForm --#
+    
 
 class RelationSelectForm( forms.Form ):
     

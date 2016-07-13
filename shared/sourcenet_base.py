@@ -76,6 +76,9 @@ class SourcenetBase( BasicRateLimited ):
     PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
     PARAM_DATE_RANGE_DATE_SEPARATOR = ' to '
     PARAM_DATE_RANGE_DATE_FORMAT = '%Y-%m-%d'
+    
+    # params for processing articles
+    PARAM_APPLY_TAGS_LIST = 'apply_tags_list'
 
     # types of params.
     PARAM_TYPE_INT = ParamContainer.PARAM_TYPE_INT

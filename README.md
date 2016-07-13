@@ -224,7 +224,7 @@ More information:
 
 ### applications
 
-Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', and 'taggit' to your list of INSTALLED\_APPS:
+Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', '`django_messages`', and 'taggit' to your list of INSTALLED\_APPS:
 
         INSTALLED_APPS = [
             'django.contrib.auth',
@@ -239,6 +239,7 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             # 'django.contrib.admindocs',
             'sourcenet',
             'django_config',
+            'django_messages',
             'taggit',
         ]
 
@@ -257,6 +258,7 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             # 'django.contrib.admindocs',
             'sourcenet.apps.SourcenetConfig',
             'django_config.apps.Django_ConfigConfig',
+            'django_messages.apps.DjangoMessagesConfig'
             'taggit',
         ]
 
@@ -825,6 +827,23 @@ Once the database tables are created, you'll want to make a django admin user at
 # Collecting Articles
 
 There is an example application in sourcenet/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
+
+# Filtering and tagging articles:
+
+To filter and tag sets of articles, use the page: 'http://<your_server>/sourcenet/sourcenet/article/filter/'
+
+This page allows you to filter on:
+
+- Start Date (YYYY-MM-DD)
+- End Date (YYYY-MM-DD):	
+- * Fancy date range:	
+- Publications:	
+- Article Tag List (comma-delimited):	
+- Unique Identifier List (comma-delimited):	
+- Article ID IN List (comma-delimited):	
+- String Section Name IN List (comma-delimited):
+
+Then either see a summary of articles that fit your filter, look at details on each matching article, or apply one or more tags to all of the articles matched by your filter criteria.
 
 # Coding articles:
 

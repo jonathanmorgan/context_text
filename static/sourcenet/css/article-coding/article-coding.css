@@ -5,6 +5,7 @@
 }
 */
 
+/* moved to sourcenet.css
 body
 {
 	margin: 0;
@@ -13,6 +14,13 @@ body
 	font-size: 10pt;
 	line-height: 150%;
 	border-top: 8px solid #106870;
+}
+ */
+
+.bodyWrapper
+{
+	margin: 0;
+	padding: 0;
 }
 
 .contentBox
@@ -88,7 +96,7 @@ hr.fieldSeparator
 .scrollingBox
 {
 	width: 300px; /* Replace with the same width as sidebar */
-	height:90%;
+	height: 90%;
 	position: fixed;
 	top: 40px;
 	border: 2px solid black;

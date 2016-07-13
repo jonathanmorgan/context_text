@@ -9,7 +9,7 @@
     {# got an output_string? #}
     {% if output_string %}
     
-        <div id="article_message" name="article_message" style="background-color: yellow; border: 1px solid black;">
+        <div id="article_message" name="article_message" class="pageStatusMessageArea">
             <p>{{ output_string }}</p>
         </div>
     
@@ -24,15 +24,15 @@
                 
             <p>
                 <h2>Article filter criteria</h3>
-                <table>
+                <table class="gridtable">
                     {# output article filter form #}
                     {{ article_coding_article_filter_form.as_table }}
                 </table>
             </p>
-            
+            <hr />
             <p>
                 <h2>What to do with results?</h3>
-                <table>
+                <table class="gridtable">
                     {# output action form #}
                     {{ process_selected_articles_form.as_table }}
                 </table>
@@ -45,45 +45,54 @@
         </form>
         
     </div>
-    
-    {% if article_instance %}
-    
+
+    <p>action = {{ action }}</p>
+    {% if action %}
+
         <hr />
-        <div id="article_view" name="article_view">
-            <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
-            <h4>Fields:</h4>
+        
+        {% if article_filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ article_filter_summary }}</p>
+        {% endif %}
+        
+        {% if action_summary %}
+            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+        {% endif %}
+        
+        {% if article_details_list %}
+            <p><strong>Selected Articles:</strong></p>
+            <table class="gridtable">
+                <tr>
+                    <th>index</th>
+                    <th>ID</th>
+                    <th>tags</th>
+                    <th>paper</th>
+                    <th>headline</th>
+                </tr>
+                {% for current_article in article_details_list %}
+                    <tr>
+                        <td>{{ current_article.index }}</td>
+                        <td>{{ current_article.article_instance.id }}</td>
+                        <td>{{ current_article.article_instance.tags.all }}</td>
+                        <td>{{ current_article.article_instance.newspaper }}</td>
+                        <td>{{ current_article.article_instance.headline }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No articles selected.</td></tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
             <ul>
-                <li><em>Pub-Date:</em> {{ article_instance.pub_date }}</li>
-                <li><em>Section:</em> {{ article_instance.section }}</li>
-                <li><em>Page:</em> {{ article_instance.page }}</li>                
-                <li><em>Edition:</em> {{ article_instance.edition }}</li>                
-                <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
-                <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
-                <li><em>Author:</em> {{ article_instance.author_string }}</li>
-            </ul>
-            <h4>Article Text</h4>
-            {{ article_content|safe }}
-            <!-- 
-            <hr />
-            {{ article_text.get_content|safe }}
-            -->
-            <hr />
-            <h3>Article_Data Record(s)</h3>
-
-            <p><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ article_instance.id }}">View coding alongside article text</a></p>
-
-            <p><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}">View all related Article_Data</a></p>
-            
-            <p><strong>View user coding:</strong></p>
-            <ul>
-                {# loop over article_data #}
-                {% for article_data in article_instance.article_data_set.all %}
-                    <li><a href="{% url 'sourcenet-article_view_article_data' %}?article_id={{ article_instance.id }}&article_data_id_select={{article_data.id}}">{{ article_data }}</a></li>
+                {% for detail_item in action_detail_list %}
+                    <ul>{{ detail_item }}</ul>
+                {% empty %}
+                    <ul>No details returned...</ul>
                 {% endfor %}
             </ul>
-            
-            
-        </div>
+        {% endif %}
 
     {% endif %}
 
