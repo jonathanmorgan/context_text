@@ -3034,7 +3034,7 @@ class Article( models.Model ):
             paper_id_in_list = ListHelper.get_value_as_list( newspaper_id_in_list_IN )
             
             # filter?
-            if ( len( paper_id_in_list ) > 0 ):
+            if ( ( paper_id_in_list is not None ) and ( len( paper_id_in_list ) > 0 ) ):
 
                 # something in list - filter.
                 current_query = Q( newspaper__id__in = paper_id_in_list )
@@ -3102,8 +3102,8 @@ class Article( models.Model ):
                 and ( len( section_name_list_IN ) > 0 ) ):
     
                 # add filter for name being in the list
-               current_query = Q( section__in = section_name_list_IN )
-               query_list.append( current_query )
+                current_query = Q( section__in = section_name_list_IN )
+                query_list.append( current_query )
                 
             #-- END check to see if list was populated. --#
     
@@ -3122,7 +3122,7 @@ class Article( models.Model ):
             tags_in_list = ListHelper.get_value_as_list( tags_in_list_IN )
             
             # filter?
-            if ( len( tags_in_list ) > 0 ):
+            if ( ( tags_in_list is not None ) and ( len( tags_in_list ) > 0 ) ):
 
                 # something in list - filter.
                 current_query = Q( tags__name__in = tags_in_list )
@@ -3145,7 +3145,7 @@ class Article( models.Model ):
             tags_not_in_list = ListHelper.get_value_as_list( tags_not_in_list_IN )
             
             # filter?
-            if ( len( tags_not_in_list ) > 0 ):
+            if ( ( tags_not_in_list is not None ) and ( len( tags_not_in_list ) > 0 ) ):
 
                 # something in list - filter.
                 current_query = ~Q( tags__name__in = tags_not_in_list )
@@ -3168,7 +3168,7 @@ class Article( models.Model ):
             unique_id_in_list = ListHelper.get_value_as_list( unique_id_in_list_IN )
             
             # filter?
-            if ( len( unique_id_in_list ) > 0 ):
+            if ( ( unique_id_in_list is not None ) and ( len( unique_id_in_list ) > 0 ) ):
 
                 # set up query instance to look for articles with
                 #    unique_identifier in the list of values passed in.  Not
@@ -3195,7 +3195,7 @@ class Article( models.Model ):
             article_id_in_list = ListHelper.get_value_as_list( article_id_in_list_IN )
             
             # filter?
-            if ( len( article_id_in_list ) > 0 ):
+            if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
 
                 # set up query instance to look for articles with
                 #    ID in the list of values passed in.  Not

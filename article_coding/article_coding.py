@@ -400,11 +400,13 @@ class ArticleCoding( SourcenetBase ):
             start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, None )
             end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, None )
             date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, None )
-            publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST, None )
-            tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST, None )
-            unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST, None )
-            article_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
-            section_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_SECTION_LIST, None )
+            publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST, [] )
+            tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST, [] )
+            unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST, [] )
+            article_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_ARTICLE_ID_LIST, [] )
+            section_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_SECTION_LIST, [] )
+            
+            my_logger.info( "In " + me + ": unique_id_list_IN = " + str( unique_id_list_IN ) )            
             
             # get all articles to start
             query_set_OUT = Article.objects.all()
@@ -420,8 +422,10 @@ class ArticleCoding( SourcenetBase ):
             filter_articles_params[ Article.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
             filter_articles_params[ Article.PARAM_SECTION_NAME_IN_LIST ] = section_list_IN
             
+            my_logger.info( "In " + me + ": filter_articles_params = " + str( filter_articles_params ) )
+            
             # call Article.filter_articles()
-            query_set_OUT = Article.filter_articles( qs_IN = query_set_OUT, params_IN = filter_article_params )
+            query_set_OUT = Article.filter_articles( qs_IN = query_set_OUT, params_IN = filter_articles_params )
             
         else:
         
