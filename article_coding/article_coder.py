@@ -389,6 +389,7 @@ class ArticleCoder( BasicRateLimited ):
         author_info_OUT[ cls.AUTHOR_INFO_AUTHOR_NAME_LIST ] = author_name_list
         author_info_OUT[ cls.AUTHOR_INFO_AUTHOR_AFFILIATION ] = author_affiliation
         author_info_OUT[ cls.AUTHOR_INFO_STATUS ] = " || ".join( status_message_list )
+        my_logger.debug( "In " + me + ": Author info: " + str( author_info_OUT ) )
     
         return author_info_OUT
     
@@ -2493,13 +2494,19 @@ class ArticleCoder( BasicRateLimited ):
                 # get capture method
                 my_capture_method = article_data_IN.coder_type
                 
+                debug_message = "author string - \"" + author_string + "\""
+                self.output_debug( debug_message, me )
+
                 # parse author string.
                 author_info = self.parse_author_string( author_string )
                 
+                debug_message = "parsed author_info = " + str( author_info )
+                self.output_debug( debug_message, me )
+
                 # retrieve information    
                 author_name_string = author_info[ self.AUTHOR_INFO_AUTHOR_NAME_STRING ]
-                author_organization = author_info[ self.AUTHOR_INFO_AUTHOR_NAME_LIST ]
-                author_name_list = author_info[ self.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+                author_organization = author_info[ self.AUTHOR_INFO_AUTHOR_AFFILIATION ]
+                author_name_list = author_info[ self.AUTHOR_INFO_AUTHOR_NAME_LIST ]
                 status_message = author_info[ self.AUTHOR_INFO_STATUS ]
                 if ( ( status_message is not None ) and ( status_message != "" ) ):
                 
