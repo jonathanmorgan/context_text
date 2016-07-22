@@ -169,6 +169,10 @@ class ArticleCoding( SourcenetBase ):
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
         self.set_logger_name( "sourcenet.article_coding.article_coding" )
         
+        # flag to tell whether we want a single line per article printed.
+        #     Defaults to False.
+        self.do_print_updates = False
+        
     #-- END method __init__() --#
 
 
@@ -212,7 +216,9 @@ class ArticleCoding( SourcenetBase ):
 
         # declare variables
         me = "code_article_data"
+        logging_message = ""
         my_logger = None
+        do_i_print_updates = False
         my_summary_helper = None
         summary_string = ""
         article_coder = None
@@ -232,6 +238,9 @@ class ArticleCoding( SourcenetBase ):
         
         # grab a logger.
         my_logger = self.get_logger()
+        
+        # do I print some status?
+        do_i_print_updates = self.do_print_updates
         
         # initialize summary helper
         my_summary_helper = SummaryHelper()
@@ -279,7 +288,15 @@ class ArticleCoding( SourcenetBase ):
                     #-- END pre-request check for rate-limiting --#
                     
                     # a little debugging to start
-                    my_logger.info( "\n\n============================================================\n==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline )
+                    logging_message = "\n\n============================================================\n==> article " + str( article_counter ) + ": " + str( current_article.id ) + " - " + current_article.headline
+                    my_logger.info( logging_message )
+                    
+                    # print?
+                    if ( do_i_print_updates == True ):
+                    
+                        print( logging_message )
+                        
+                    #-- END check to see if we print a message.
                     
                     # add per-article exception handling, so we can get an idea of how
                     #    many articles cause problems.
@@ -293,7 +310,16 @@ class ArticleCoding( SourcenetBase ):
                         
                             # nope.  Error.
                             error_counter += 1
-                            my_logger.debug( "======> In " + me + "(): ERROR - " + current_status + "; article = " + str( current_article ) )
+                            
+                            logging_message = "======> In " + me + "(): ERROR - " + current_status + "; article = " + str( current_article )
+                            my_logger.debug( logging_message )
+                            
+                            # print?
+                            if ( do_i_print_updates == True ):
+                            
+                                print( logging_message )
+                                
+                            #-- END check to see if we print a message.
                             
                         #-- END check to see if success --#
                         
@@ -309,8 +335,16 @@ class ArticleCoding( SourcenetBase ):
                         exception_message = "Exception caught for article " + str( current_article.id )
                         my_exception_helper.process_exception( e, exception_message )
                         
-                        my_logger.debug( "======> " + exception_message )
+                        logging_message = "======> " + exception_message
+                        my_logger.debug( logging_message )
                         
+                        # print?
+                        if ( do_i_print_updates == True ):
+                        
+                            print( logging_message )
+                            
+                        #-- END check to see if we print a message.
+
                     #-- END exception handling around individual article processing. --#
                 
                     # rate-limited?

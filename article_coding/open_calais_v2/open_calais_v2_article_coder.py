@@ -578,7 +578,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             
         #-- END check to see if we set processing flags by item --#
         
-        my_logger.debug( "Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
+        my_logger.debug( "In " + me + "() - Input flags: process_all = \"" + str( process_all_IN ) + "\"; process_authors = \"" + str( process_authors_IN ) + "\"" )
         
         # get automated_coding_user
         automated_coding_user = coding_user_IN
@@ -597,7 +597,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                 # got article data?
                 if ( article_data is not None ):
                 
-                    self.output_debug( "\n\nIn " + me + ": Article_Data instance id = " + str( article_data.id ) )
+                    self.output_debug( "\n\nArticle_Data instance id = " + str( article_data.id ), me )
                 
                     # wrap in try/except to aim to catch unexpected exceptions,
                     #    so we can set a status in the Article_Data instance.
@@ -1927,7 +1927,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             # "quotationtype" is the type of quote ("Paraphrase" or "Primary").
             quotation_type = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTE_QUOTATION_TYPE, None )
             
-            self.output_debug( "In " + me + ": quotation_string = \"" + quotation_string + "\"" )
+            self.output_debug( "In " + me + ": quotation_string = \"" + str( quotation_string ) + "\"" )
 
             # "persondescription" is the description of the person that
             #    accompanied attribution for the quote.

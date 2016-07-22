@@ -16,11 +16,12 @@ article_id_in_list = []
 params = {}
 
 # declare variables - processing
+do_i_print_updates = True
 my_article_coding = None
 article_qs = None
 article_count = -1
 coding_status = ""
-do_limit_to_one = False
+limit_to = -1
 do_coding = False
 
 # first, get a list of articles to code.
@@ -51,6 +52,7 @@ tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and 
 #article_id_in_list = [ 21653, 21756 ]
 #article_id_in_list = [ 90948 ]
 #article_id_in_list = [ 21627, 21609, 21579 ]
+article_id_in_list = [ 48778, 6065 ]
 
 # filter parameters
 params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date
@@ -67,6 +69,7 @@ params[ ArticleCoding.PARAM_CODER_TYPE ] = ArticleCoding.ARTICLE_CODING_IMPL_OPE
 
 # get instance of ArticleCoding
 my_article_coding = ArticleCoding()
+my_article_coding.do_print_updates = do_i_print_updates
 
 # set params
 my_article_coding.store_parameters( params )
@@ -74,13 +77,13 @@ my_article_coding.store_parameters( params )
 # create query set - ArticleCoding does the filtering for you.
 article_qs = my_article_coding.create_article_query_set()
 
-# limit to one for an initial test?
-if ( do_limit_to_one == True ):
+# limit for an initial test?
+if ( ( limit_to is not None ) and ( isinstance( limit_to, int ) == True ) and ( limit_to > 0 ) ):
 
     # yes.
-    article_qs = article_qs[ : 1 ]
+    article_qs = article_qs[ : limit_to ]
 
-#-- END check to see if limit to one record. --#
+#-- END check to see if limit --#
 
 # get article count
 article_count = article_qs.count()
