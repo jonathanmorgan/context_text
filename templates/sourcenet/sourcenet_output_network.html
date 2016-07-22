@@ -39,19 +39,19 @@
             </tr>
             <tr>
                 <td valign="top" style="border: 1px solid gray;">
-                    <table>
-                        {{ article_select_form }}
+                    <table class="gridtable">
+                        {{ article_select_form.as_table }}
                     </table>
                 </td>
                 <td valign="top" style="border: 1px solid gray;">
-                    <table>
-                        {{ relation_select_form }}
-                        {{ network_output_form }}
+                    <table class="gridtable">
+                        {{ relation_select_form.as_table }}
+                        {{ network_output_form.as_table }}
                     </table>
                 </td>
                 <td valign="top" style="border: 1px solid gray;">
-                    <table>
-                        {{ person_select_form }}
+                    <table class="gridtable">
+                        {{ person_select_form.as_table }}
                     </table>
                 </td>
             </tr>
