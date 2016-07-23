@@ -658,11 +658,13 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         
                             # problem parsing JSON - log body of article, response,
                             #    and exception.
-                            exception_message = "ValueError parsing OpenCalais JSON."
+                            exception_message = "ValueError parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - " + requests_raw_text
+                            print( exception_message )
+                            
+                            # log details
                             my_logger.debug( "\n ! " + exception_message )
                             my_logger.debug( "\n ! article text:\n" + request_data )
                             my_logger.debug( "\n ! response text:\n" + requests_raw_text )
-                            print( "exception parsing Article " + str( article_IN.id ) + " - " + requests_raw_text )
                             my_exception_helper.process_exception( ve, exception_message )
                             
                             # set status on article data to service_error
@@ -670,12 +672,15 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                             # let rest of program know it is not OK to proceed.
                             is_response_OK = False
+                            
+                            # and make sure status returns error.
+                            status_OUT = self.STATUS_ERROR_PREFIX + exception_message
                         
                         except Exception as e:
                         
                             # unknown problem parsing JSON - log body of article,
                             #    response, and exception.
-                            exception_message = "Exception parsing OpenCalais JSON."
+                            exception_message = "Exception ( " + str( e ) + " ) parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - " + requests_raw_text
                             my_logger.debug( "\n ! " + exception_message )
                             my_logger.debug( "\n ! article text:\n" + request_data )
                             my_logger.debug( "\n ! response text:\n" + requests_raw_text )
@@ -686,6 +691,9 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                             # let rest of program know it is not OK to proceed.
                             is_response_OK = False
+                        
+                            # and make sure status returns error.
+                            status_OUT = self.STATUS_ERROR_PREFIX + exception_message
                         
                         #-- END try/except around JSON processing. --#
                         
@@ -714,6 +722,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         self.output_debug( "In " + me + ": after parsing JSON, before processing it." )
             
                         # all parsed - OK to continue?
+                        do_save_data = False
                         if ( is_response_OK == True ):
             
                             # process contents of response.
@@ -780,7 +789,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     except Exception as e:
                     
                         # set status on article data to unknown_error and save().
-                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unexpected exception caught while processing article.  Exception: " + str( e )
+                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unexpected exception caught while processing Article " + str( article_IN.id ) + ".  Exception: " + str( e )
                         article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
                         article_data.save()
                         
@@ -801,15 +810,19 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         
                 else:
                 
-                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance.  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.coder_type + "\""
+                    status_OUT = self.STATUS_ERROR_PREFIX + "Could not retrieve Article_Data instance for Article " + str( article_IN.id ) + ".  Very odd.  Might mean we have multiple data records for coder \"" + automated_coding_user + "\" and coder_type \"" + self.coder_type + "\""
                     
                 #-- END check to see if we found article data into which we'll code.
     
+            else:
+                    
+                status_OUT = self.STATUS_ERROR_PREFIX + "No article passed in.  Nothing to code."
+            
             #-- END check to see if article. --#
             
         else:
         
-            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"automated\".  Can't code articles without a user."
+            status_OUT = self.STATUS_ERROR_PREFIX + "Could not find user with name \"" + str( automated_coding_user ) + "\".  Can't code articles without a user."
             
         #-- END check to make sure we have an automated coding user. --#
         

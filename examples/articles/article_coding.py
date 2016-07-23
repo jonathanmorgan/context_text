@@ -1,5 +1,7 @@
 # imports
 
+import six
+
 # sourcenet imports
 from sourcenet.models import Article
 from sourcenet.article_coding.article_coding import ArticleCoding
@@ -23,6 +25,15 @@ article_count = -1
 coding_status = ""
 limit_to = -1
 do_coding = False
+success_count = -1
+success_list = None
+got_errors = False
+error_count = -1
+error_dictionary = None
+error_article_id = -1
+error_status_list = None
+error_status = ""
+error_status_counter = -1
 
 # first, get a list of articles to code.
 
@@ -99,6 +110,48 @@ if ( do_coding == True ):
     
         # output status
         print( "\n\n==============================\n\nCoding status: \"" + coding_status + "\"" )
+        
+        # get success count
+        success_count = my_article_coding.get_success_count()
+        print( "\n\nCount of articles successfully processed: " + str( success_count ) )    
+        
+        # if successes, list out IDs.
+        if ( success_count > 0 ):
+        
+            # there were successes.
+            success_list = my_article_coding.get_success_list()
+            print( "- list of successfully processed articles: " + str( success_list ) )
+        
+        #-- END check to see if successes. --#
+        
+        # got errors?
+        got_errors = my_article_coding.has_errors()
+        if ( got_errors == True ):
+        
+            # get error dictionary
+            error_dictionary = my_article_coding.get_error_dictionary()
+            
+            # loop...
+            for error_article_id, error_status_list in six.iteritems( error_dictionary ):
+            
+                # output errors for this article.
+                print( "\n\nerrors for article ID " + str( error_article_id ) + ":" )
+                
+                # loop over status messages.
+                error_status_counter = 0
+                for error_status in error_status_list:
+                
+                    # increment status
+                    error_status_counter += 1
+
+                    # print status
+                    print( "- status #" + str( error_status_counter ) + ": " + error_status )
+                    
+                #-- END loop over status messages. --#
+            
+            #-- END loop over articles. --#
+   
+        #-- END check to see if errors --#
     
     #-- END check to see if article count. --#
     

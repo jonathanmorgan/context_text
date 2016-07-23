@@ -173,6 +173,10 @@ class ArticleCoding( SourcenetBase ):
         #     Defaults to False.
         self.do_print_updates = False
         
+        # tracking of success and errors.
+        self.success_article_id_list = []
+        self.error_article_id_to_status_map = {}
+        
     #-- END method __init__() --#
 
 
@@ -305,6 +309,9 @@ class ArticleCoding( SourcenetBase ):
                         # code the article.
                         current_status = article_coder.code_article( current_article )
                         
+                        # record status
+                        self.record_article_status( current_article.id, current_status )
+                        
                         # success?
                         if ( current_status != ArticleCoder.STATUS_SUCCESS ):
                         
@@ -335,7 +342,7 @@ class ArticleCoding( SourcenetBase ):
                         exception_message = "Exception caught for article " + str( current_article.id )
                         my_exception_helper.process_exception( e, exception_message )
                         
-                        logging_message = "======> " + exception_message
+                        logging_message = "======> " + exception_message + " - " + str( e )
                         my_logger.debug( logging_message )
                         
                         # print?
@@ -344,6 +351,9 @@ class ArticleCoding( SourcenetBase ):
                             print( logging_message )
                             
                         #-- END check to see if we print a message.
+                        
+                        # record status
+                        self.record_article_status( current_article.id, logging_message )
 
                     #-- END exception handling around individual article processing. --#
                 
@@ -537,6 +547,59 @@ class ArticleCoding( SourcenetBase ):
     #-- END get_coder_instance() --#
 
 
+    def get_error_count( self ):
+        
+        '''
+        Returns count of things in self.error_article_id_to_status_map.
+        '''
+        
+        # return reference
+        value_OUT = False
+        
+        # declare variables
+        error_map = None
+        error_count = -1
+        
+        # get error map
+        error_map = self.get_error_dictionary()
+        
+        # get error count
+        error_count = len( error_map )
+        
+        return error_count
+        
+    #-- END method get_error_count() --#
+    
+
+    def get_error_dictionary( self ):
+        
+        '''
+        Returns self.error_article_id_to_status_map.
+        '''
+        
+        # return reference
+        value_OUT = False
+        
+        # declare variables
+        error_map = None
+        
+        # get error map
+        error_map = self.error_article_id_to_status_map
+        
+        if ( error_map is None ):
+        
+            self.error_article_id_to_status_map = {}
+            error_map = self.get_error_dictionary()
+        
+        #-- END check to see if error dictionary populated. --#
+        
+        value_OUT = error_map
+        
+        return value_OUT
+        
+    #-- END method get_error_dictionary() --#
+    
+
     def get_exception_helper( self ):
 
         '''
@@ -564,6 +627,181 @@ class ArticleCoding( SourcenetBase ):
     #-- END get_exception_helper() --#
 
 
+    def get_success_count( self ):
+        
+        '''
+        Returns count of articles successfully coded (count of article IDs in
+            self.success_article_id_list).
+        '''
+        
+        # return reference
+        value_OUT = False
+        
+        # declare variables
+        success_list = None
+        success_count = -1
+        
+        # get success list
+        success_list = self.get_success_list()
+        
+        # get success count
+        success_count = len( success_list )
+        
+        value_OUT = success_count
+        
+        return value_OUT
+        
+    #-- END method get_success_count() --#
+    
+
+    def get_success_list( self ):
+        
+        '''
+        Returns self.success_article_id_list.
+        '''
+        
+        # return reference
+        value_OUT = False
+        
+        # declare variables
+        success_list = None
+        
+        # get success list
+        success_list = self.success_article_id_list
+        
+        # got a value?
+        if ( success_list is None ):
+        
+            # no - create a list, store it, then call again to retrieve it.
+            self.success_article_id_list = []
+            success_list = self.get_success_list()
+        
+        #-- END check to see if success list populated. --#
+        
+        value_OUT = success_list
+        
+        return value_OUT
+        
+    #-- END method get_success_list() --#
+    
+
+    def has_errors( self ):
+        
+        '''
+        Returns True if self.error_article_id_to_status_map is not empty, False
+            if empty.
+        '''
+        
+        # return reference
+        has_errors_OUT = False
+        
+        # declare variables
+        error_count = -1
+        
+        # get error count
+        error_count = self.get_error_count()
+        
+        # got errors?
+        if ( error_count > 0 ):
+        
+            # yes.
+            has_errors_OUT = True
+        
+        else:
+        
+            # no
+            has_errors_OUT = False
+        
+        #-- END check to see if errors. --#
+        
+    #-- END method has_errors() --#
+    
+
+    def record_article_status( self, article_id_IN, status_IN ):
+    
+        '''
+        Accepts article ID and status resulting from call to
+            ArticleCoder.code_article().  IF status is success, adds to list of
+            articles successfully processed.  If not, adds to error structure
+            that maps article IDs to a list of the error statuses for each
+            article (in case a given article is run more than once).
+            
+        Returns status, either STATUS_SUCCESS if everything went OK, or status
+            message with error description if not.
+        '''
+        
+        # return reference
+        status_OUT = self.STATUS_SUCCESS
+        
+        # declare variables.
+        me = "record_article_status"
+        success_list = None
+        error_map = None
+        article_status_list = None
+        
+        # check if there is an article ID and status.
+        if ( ( article_id_IN is not None )
+            and ( isinstance( article_id_IN, int ) == True )
+            and ( article_id_IN > 0 ) ):
+            
+            # check to see if status passed in.
+            if ( ( status_IN is not None )
+                and ( status_IN != "" ) ):
+            
+                # retrieve success list and error map.
+                success_list = self.success_article_id_list
+                error_map = self.error_article_id_to_status_map
+            
+                # got a status.  Success?
+                if ( status_IN == self.STATUS_SUCCESS ):
+                
+                    # success.  Add to success list.
+                    success_list.append( article_id_IN )
+                
+                else:
+                
+                    # not success.  See if article already in error map.
+                    if ( article_id_IN in error_map ):
+                    
+                        # already there.  Get list for article ID.
+                        article_status_list = error_map.get( article_id_IN, [] )
+                        
+                        # append the status to that list.
+                        article_status_list.append( status_IN )
+                        
+                        # put it back in the spot for the article ID, out of an
+                        #     overabundance of caution.
+                        error_map[ article_id_IN ] = article_status_list
+                    
+                    else:
+                    
+                        # it is not.  Add it.
+                        article_status_list = []
+                        article_status_list.append( status_IN )
+                        error_map[ article_id_IN ] = article_status_list
+                    
+                    #-- END check to see if article is already in error map --#
+                
+                #-- END check to see if success. --#
+            
+            else:
+            
+                # no status passed in.  No way of knowing success or failure.
+                status_OUT = self.STATUS_ERROR_PREFIX + "No status passed in.  Can't record article status without a status."
+            
+            #-- END check to see if status passed in.
+            
+        else:
+        
+            # no article ID passed in.  Can't do anything.
+            status_OUT = self.STATUS_ERROR_PREFIX + "No article ID passed in.  Can't record article status without an article."
+        
+        #-- END check to see if article ID. --#
+        
+        return status_OUT
+            
+    #-- END method record_article_status() --#        
+    
     def set_exception_helper( self, value_IN ):
 
         '''

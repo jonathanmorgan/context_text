@@ -575,6 +575,7 @@ class ProcessSelectedArticlesForm( forms.Form ):
         ( "match_summary", "Match Summary" ),
         ( "view_matches", "View Matches" ),
         ( "apply_tags", "Apply Tags" ),
+        #( "coder-opencalaisv2", "Code Subjects with OpenCalais v.2")
     )
     action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
 
