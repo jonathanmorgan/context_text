@@ -23,8 +23,10 @@
             {% csrf_token %}
                 
             <p>
-                {# output article lookup form #}
-                {{ article_lookup_form }}
+                <table class="gridtable">
+                    {# output article lookup form #}
+                    {{ article_lookup_form.as_table }}
+                </table>
             </p>
                 
             <p>

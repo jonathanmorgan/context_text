@@ -24,7 +24,9 @@ article_qs = None
 article_count = -1
 coding_status = ""
 limit_to = -1
-do_coding = False
+do_coding = True
+
+# declare variables - results
 success_count = -1
 success_list = None
 got_errors = False
@@ -49,7 +51,8 @@ error_status_counter = -1
 #tag_in_list = "prelim_unit_test_007"
 #tag_in_list = [ "prelim_reliability", "prelim_network" ]
 #tag_in_list = [ "prelim_reliability_test" ] # 60 articles - Grand Rapids only.
-tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and Detroit.
+#tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and Detroit.
+#tag_in_list = [ "prelim_training_001" ]
 
 # ==> IDs of newspapers to include.
 #paper_id_in_list = "1"
@@ -63,7 +66,8 @@ tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and 
 #article_id_in_list = [ 21653, 21756 ]
 #article_id_in_list = [ 90948 ]
 #article_id_in_list = [ 21627, 21609, 21579 ]
-article_id_in_list = [ 48778, 6065 ]
+#article_id_in_list = [ 48778 ]
+#article_id_in_list = [ 6065 ]
 
 # filter parameters
 params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date
@@ -99,8 +103,14 @@ if ( ( limit_to is not None ) and ( isinstance( limit_to, int ) == True ) and ( 
 # get article count
 article_count = article_qs.count()
 
+print( "Query params:" )
+print( params )
+print( "Matching article count: " + str( article_count ) )
+
 # Do coding?
 if ( do_coding == True ):
+
+    print( "do_coding == True - it's on!" )
 
     # yes - make sure we have at least one article:
     if ( article_count > 0 ):
@@ -113,7 +123,7 @@ if ( do_coding == True ):
         
         # get success count
         success_count = my_article_coding.get_success_count()
-        print( "\n\nCount of articles successfully processed: " + str( success_count ) )    
+        print( "\n\n====> Count of articles successfully processed: " + str( success_count ) )    
         
         # if successes, list out IDs.
         if ( success_count > 0 ):
@@ -131,11 +141,15 @@ if ( do_coding == True ):
             # get error dictionary
             error_dictionary = my_article_coding.get_error_dictionary()
             
+            # get error count
+            error_count = len( error_dictionary )
+            print( "\n\n====> Count of articles with errors: " + str( error_count ) )
+            
             # loop...
             for error_article_id, error_status_list in six.iteritems( error_dictionary ):
             
                 # output errors for this article.
-                print( "\n\nerrors for article ID " + str( error_article_id ) + ":" )
+                print( "- errors for article ID " + str( error_article_id ) + ":" )
                 
                 # loop over status messages.
                 error_status_counter = 0
@@ -145,7 +159,7 @@ if ( do_coding == True ):
                     error_status_counter += 1
 
                     # print status
-                    print( "- status #" + str( error_status_counter ) + ": " + error_status )
+                    print( "----> status #" + str( error_status_counter ) + ": " + error_status )
                     
                 #-- END loop over status messages. --#
             
@@ -159,8 +173,5 @@ else:
     
     # output matching article count.
     print( "do_coding == False, so dry run" )
-    print( "- query params:" )
-    print( params )
-    print( "- matching article count: " + str( article_count ) )
     
 #-- END check to see if we do_coding --#

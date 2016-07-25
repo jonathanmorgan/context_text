@@ -4828,7 +4828,7 @@ class Article_Text( Unique_Article_Content ):
     #-- END method find_in_canonical_text() --#
         
         
-    def find_in_paragraph_list( self, string_IN, do_multi_graph_check_IN = True  ):
+    def find_in_paragraph_list( self, string_IN, do_multi_graph_check_IN = True, depth_IN = 0 ):
         
         '''
         Accepts a string we want to locate in one of the paragraphs inside this
@@ -4850,6 +4850,9 @@ class Article_Text( Unique_Article_Content ):
         match_count = -1
         plain_text_index_list = []
         plain_text_count = -1
+        plain_text_match_start_index = -1
+        string_length = -1
+        plain_text_match_end_index = -1
         current_paragraph_list = []
         next_paragraph_list = []
         next_count = -1
@@ -4858,6 +4861,8 @@ class Article_Text( Unique_Article_Content ):
         remaining_word_list = []
         current_word_list = []
         current_string = ""
+        current_string_index_list = None
+        current_string_match_index = -1
         remaining_word_count = -1
         matching_paragraph_list = []
         match_count = -1
@@ -4879,6 +4884,8 @@ class Article_Text( Unique_Article_Content ):
         preceding_paragraph_number = -1
         preceding_paragraph_index = -1
         preceding_paragraph_text = ""
+        
+        output_debug( "====> Top of " + me + ": searching for \"" + string_IN + "\"; depth = " + str( depth_IN ) )
         
         # got a string?
         if ( ( string_IN is not None ) and ( string_IN != "" ) ):
@@ -4912,10 +4919,30 @@ class Article_Text( Unique_Article_Content ):
                 # no.  See if the string is in the plain text.
                 plain_text_index_list = self.find_in_plain_text( string_IN )
                 plain_text_count = len( plain_text_index_list )
+                
                 if ( plain_text_count > 0 ):
                 
-                    output_debug( "In " + me + ": WARNING - string being searched for is in text, likely spans paragraphs." )
-                
+                    # if just one match, get index.
+                    if ( plain_text_count == 1 ):
+                    
+                        # just one matching index - store it.
+                        plain_text_match_start_index = plain_text_index_list[ 0 ]
+                        string_length = len( string_IN )
+                        plain_text_match_end_index = plain_text_match_start_index + ( string_length - 1 )
+
+                        output_debug( "In " + me + ": WARNING - string being searched for ( " + string_IN + " ) is in text ( match index = " + str( plain_text_index_list ) + " ), likely spans paragraphs." )
+                        
+                    else:
+                    
+                        # multiple matches (eek!)
+                        plain_text_match_start_index = -1
+                        string_length = -1
+                        plain_text_match_end_index = -1
+                        
+                        output_debug( "In " + me + ": WARNING - string being searched for ( " + string_IN + " ) is in text multiple times ( match index = " + str( plain_text_index_list ) + " ), likely spans paragraphs, but multiple matches means no way to get single paragraph where the text occurs." )
+
+                    #-- END check to see if one match, for sanity check --#
+                    
                     # split string into words.
                     remaining_word_list = self.convert_string_to_word_list( string_IN )
                     current_word_list = []
@@ -4984,9 +5011,45 @@ class Article_Text( Unique_Article_Content ):
     
                             else:
                             
-                                # only 1 or 0 matches.  At this point we fall
-                                #    out and see what happened.
-                                keep_looping = False
+                                # ! sanity check - if there was a single match
+                                #     for the entire string above, is the
+                                #     position of the current string greater
+                                #     than or equal to the position of the
+                                #     entire string (if not, no match, keep
+                                #     looping)?
+                                if ( plain_text_match_start_index > 0 ):
+                                
+                                    # got an original index.  Where does this 
+                                    #     latest string fall in the document?
+                                    current_string_index_list = self.find_in_plain_text( current_string )
+                                    current_string_match_index = current_string_index_list[ 0 ]
+                                    
+                                    # is current index in bounds of indices for
+                                    #     the whole string match?
+                                    if ( ( current_string_match_index >= plain_text_match_start_index )
+                                        and ( current_string_match_index <= plain_text_match_end_index ) ) :
+                                    
+                                        # Looks like we've got it.
+                                        keep_looping = False
+                                        output_debug( "++++ In " + me + ": loop #" + str( loop_count ) + " - current match index ( " + str( current_string_match_index ) + " ) within overall match ( " + str( plain_text_match_start_index ) + " - " + str( plain_text_match_end_index ) + " ), looks like we found it." )
+                                        
+                                    else:
+                                    
+                                        # current match isn't within the actual
+                                        #     original string.  Keep looping.
+                                        keep_looping = True
+                                        
+                                        output_debug( "++++ In " + me + ": loop #" + str( loop_count ) + " - current match index ( " + str( current_string_match_index ) + " ) NOT WITHIN overall match ( " + str( plain_text_match_start_index ) + " - " + str( plain_text_match_end_index ) + " ).  Keep looking..." )
+                                        
+                                    #-- END check to see if 
+                                
+                                else:
+
+                                    # only 1 or 0 matches.  At this point we fall
+                                    #    out and see what happened.
+                                    keep_looping = False
+                                
+                                #-- END check to see if match found for string. --#
 
                             #-- END check to see if match yet or not --#
                             
@@ -4998,7 +5061,7 @@ class Article_Text( Unique_Article_Content ):
                     #    matching_paragraph_list and get count of matches.
                     matching_paragraph_list = list( current_paragraph_list )
                     match_count = len( matching_paragraph_list )
-
+                    
                     # !find_in_paragraph_list() - spans paragraphs?
                     # check if spans paragraphs.  In case of first word
                     #    in one paragraph, rest of string in another, start
@@ -5038,7 +5101,7 @@ class Article_Text( Unique_Article_Content ):
 
                                 # call this method with reduced string
                                 reduced_string = " ".join( reduced_word_list )
-                                multi_graph_match_list = self.find_in_paragraph_list( reduced_string, False )
+                                multi_graph_match_list = self.find_in_paragraph_list( reduced_string, False, depth_IN = depth_IN + 1 )
                                 
                                 # what we got?
                                 if ( multi_graph_match_list is not None ):
@@ -5105,7 +5168,7 @@ class Article_Text( Unique_Article_Content ):
                                     
                                     # call this method, telling it not to do any
                                     #    multi-paragraph checking.
-                                    removed_string_match_list = self.find_in_paragraph_list( removed_string, False )
+                                    removed_string_match_list = self.find_in_paragraph_list( removed_string, False, depth_IN = depth_IN + 1 )
                                     
                                     # is reduced_match_index - 1 (paragraph
                                     #    before match) in list?
@@ -5185,6 +5248,8 @@ class Article_Text( Unique_Article_Content ):
             list_OUT = None
             
         #-- END check to see if string. --#
+    
+        output_debug( "====> Bottom of " + me + ": searching for \"" + string_IN + "\"; depth = " + str( depth_IN ) + "; list_OUT = " + str( list_OUT ) )
         
         return list_OUT
         
@@ -7587,6 +7652,9 @@ class Alternate_Subject_Match( models.Model ):
         # return reference
         string_OUT = ""
         
+        # declare variables
+        got_last_name = False
+        
         # got id?
         if ( self.id ):
         
@@ -7596,15 +7664,44 @@ class Alternate_Subject_Match( models.Model ):
 
         if ( self.article_subject ):
         
-            string_OUT += str( self.article_subject ) + " alternate = "
+            string_OUT += str( self.article_subject )
         
         #-- END check to see if article_subject. --#
         
         # got associated person?  We'd better...
         if ( self.person ):
         
-            string_OUT += self.person.last_name + ", " + self.person.first_name
+            string_OUT += " alternate = "
+            
+            # got ID?
+            if ( self.person.id ):
+            
+                # yup.  Output it.
+                string_OUT += "person " + str( self.person.id ) + " - "
+            
+            #-- END check to see if ID --#
         
+            # got a last name?
+            if ( ( self.person.last_name is not None ) and ( self.person.last_name != "" ) ):
+            
+                string_OUT += self.person.last_name
+                got_last_name = True
+                
+            #-- END check to see if last name. --#
+            
+            # got a first name?
+            if ( ( self.person.first_name is not None ) and ( self.person.first_name != "" ) ):
+            
+                if ( got_last_name == True ):
+                
+                    string_OUT += ", "
+                    
+                #-- END check to see if last name preceded first name --#
+                
+                string_OUT += self.person.first_name
+                
+            #-- END check to see if first name. --#
+            
         #-- END check to see if we have a person. --#
         
         return string_OUT

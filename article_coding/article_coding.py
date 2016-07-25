@@ -176,6 +176,7 @@ class ArticleCoding( SourcenetBase ):
         # tracking of success and errors.
         self.success_article_id_list = []
         self.error_article_id_to_status_map = {}
+        self.last_article_coder = None
         
     #-- END method __init__() --#
 
@@ -542,6 +543,9 @@ class ArticleCoding( SourcenetBase ):
         
         #-- END check to see if rate-limited. --#
         
+        # store in instance variable
+        self.last_article_coder = coder_instance_OUT
+        
         return coder_instance_OUT
 
     #-- END get_coder_instance() --#
@@ -714,6 +718,8 @@ class ArticleCoding( SourcenetBase ):
         
         #-- END check to see if errors. --#
         
+        return has_errors_OUT
+        
     #-- END method has_errors() --#
     
 
@@ -735,9 +741,13 @@ class ArticleCoding( SourcenetBase ):
         
         # declare variables.
         me = "record_article_status"
+        my_logger = None
         success_list = None
         error_map = None
         article_status_list = None
+        
+        # get logger instance
+        my_logger = self.get_logger()
         
         # check if there is an article ID and status.
         if ( ( article_id_IN is not None )
@@ -747,6 +757,8 @@ class ArticleCoding( SourcenetBase ):
             # check to see if status passed in.
             if ( ( status_IN is not None )
                 and ( status_IN != "" ) ):
+                
+                my_logger.debug( "In " + me + "(): status passed in: " + status_IN )
             
                 # retrieve success list and error map.
                 success_list = self.success_article_id_list
@@ -755,11 +767,15 @@ class ArticleCoding( SourcenetBase ):
                 # got a status.  Success?
                 if ( status_IN == self.STATUS_SUCCESS ):
                 
+                    my_logger.debug( "====> In " + me + "(): SUCCESS!" )
+            
                     # success.  Add to success list.
                     success_list.append( article_id_IN )
                 
                 else:
                 
+                    my_logger.debug( "====> In " + me + "(): ERROR!" )
+
                     # not success.  See if article already in error map.
                     if ( article_id_IN in error_map ):
                     

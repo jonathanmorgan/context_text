@@ -37,6 +37,9 @@ import sys
 # mess with python 3 support
 import six
 
+# requests HTTP package
+import requests
+
 # python utilities
 from python_utilities.django_utils.django_string_helper import DjangoStringHelper
 from python_utilities.json.json_helper import JSONHelper
@@ -167,7 +170,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         
         # rate-limiting
         self.do_manage_time = True
-        self.rate_limit_in_seconds = 0.25
+        #self.rate_limit_in_seconds = 0.25
+        self.rate_limit_in_seconds = 2  # API doc says you can make 4 requests per second, but if you do, you start to get errors about too many concurrent requests.  EVery 2 seconds seems to not result in errors.
         self.rate_limit_daily_limit = 10000
     
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
@@ -186,6 +190,9 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         # map of person URIs to that person's quotations, stored in a dict that
         #    maps Quotation URIs to Quotation JSON.
         self.person_to_quotes_dict = {}
+        
+        # list of articles dinged for concurrent connections.
+        self.concurrent_request_limit_article_list = []
 
     #-- END method __init__() --#
 
@@ -549,6 +556,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         article_body_html = ""
         request_data = ""
         my_http_helper = None
+        my_requests_session = None
         my_content_type = ""
         requests_response = None
         requests_raw_text = ""
@@ -631,6 +639,14 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         # get Http_Helper instance
                         my_http_helper = self.get_http_helper()
                         
+                        '''
+                        # create a new requests Session.
+                        with requests.Session() as my_requests_session:
+                        
+                            # store the session in the Http_Helper instance.
+                            my_http_helper.set_requests_session( my_requests_session )
+                        '''
+
                         # what is the content type?
                         my_content_type = my_http_helper.get_http_header( self.HTTP_HEADER_NAME_CONTENT_TYPE )
                         
@@ -656,9 +672,9 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                         except ValueError as ve:
                         
-                            # problem parsing JSON - log body of article, response,
-                            #    and exception.
-                            exception_message = "ValueError parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - " + requests_raw_text
+                            # ! problem parsing JSON - log body of article,
+                            #     response, and exception.
+                            exception_message = "ValueError parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - raw response body: " + requests_raw_text
                             print( exception_message )
                             
                             # log details
@@ -675,6 +691,15 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                             # and make sure status returns error.
                             status_OUT = self.STATUS_ERROR_PREFIX + exception_message
+                            
+                            # check to see if this is the OpenCalais "concurrent
+                            #     request" error.
+                            if ( "exceeded the concurrent request limit" in requests_raw_text ):
+                            
+                                # yup.  Note the article ID.
+                                self.concurrent_request_limit_article_list.append( article_IN.id )
+                            
+                            #-- END check to see if concurrent request error --#
                         
                         except Exception as e:
                         
@@ -696,6 +721,13 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             status_OUT = self.STATUS_ERROR_PREFIX + exception_message
                         
                         #-- END try/except around JSON processing. --#
+                        
+                        # close the response.
+                        requests_response.close()
+                            
+                        '''
+                        #-- END with requests.Session() as my_session --#
+                        '''
                         
                         # render some of it as a string, for debug.
                         if ( self.DEBUG_FLAG == True ):
@@ -2260,5 +2292,31 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         
     #-- END method set_http_helper() --#
     
+
+    def store_requests_session( self, value_IN ):
+
+        '''
+        Accepts Requests Session instance, stores it in this instance's nested
+            Http_Helper instance.
+            
+        Returns Session.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        my_http_helper = None
+
+        # get Http_Helper instance.
+        my_http_helper = self.get_http_helper()
+        
+        # store the session value in the http helper
+        instance_OUT = my_http_helper.set_requests_session( value_IN )
+
+        return instance_OUT
+
+    #-- END store_requests_session() --#
+
 
 #-- END class OpenCalaisV2ArticleCoder --#

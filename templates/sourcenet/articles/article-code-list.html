@@ -38,8 +38,12 @@
                 {# always include CSRF token #}
                 {% csrf_token %}
                     
-                {# output article lookup form #}
-                {{ article_coding_list_form.as_p }}
+                <p>
+                    <table class="gridtable">
+                        {# output article lookup form #}
+                        {{ article_coding_list_form.as_table }}
+                    </table>
+                </p>
                     
                 <p>
                     <input type="submit" value="Load Articles" />
