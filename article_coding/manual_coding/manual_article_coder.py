@@ -958,6 +958,9 @@ class ManualArticleCoder( ArticleCoder ):
                                         # store all fields from current_person.
                                         person_details.update( current_person )
                                         
+                                        # set capture method to "manual_coding".
+                                        person_details[ self.PARAM_CAPTURE_METHOD ] = self.coder_type
+                                        
                                         # retrieve person information.
                                         person_type = person_details.get( self.DATA_STORE_PROP_PERSON_TYPE )
                                         original_person_type = person_details.get( self.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE )

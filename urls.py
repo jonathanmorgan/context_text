@@ -14,7 +14,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # import djanfgo.conf.urls.defaults stuff.
 #from django.conf.urls.defaults import *
-from django.conf.urls import patterns
 from django.conf.urls import include
 from django.conf.urls import url
 

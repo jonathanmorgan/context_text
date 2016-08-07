@@ -304,7 +304,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article', 'coder', 'projects', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
+                'fields' : [ 'article', 'coder', 'coder_type', 'projects', 'topics', 'article_type', 'is_sourced', 'can_code', 'status' ]
             }
         ),
         (

@@ -45,6 +45,7 @@ from python_utilities.django_utils.django_string_helper import DjangoStringHelpe
 from python_utilities.json.json_helper import JSONHelper
 from python_utilities.network.http_helper import Http_Helper
 from python_utilities.sequences.sequence_helper import SequenceHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # sourcenet classes
 
@@ -1739,6 +1740,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                 # prepare person details.
                 my_person_details = PersonDetails()
                 my_person_details[ self.PARAM_PERSON_NAME ] = person_name
+                my_person_details[ self.PARAM_SUBJECT_TYPE ] = Article_Subject.SUBJECT_TYPE_MENTIONED  # default to "mentioned".
                 my_person_details[ self.PARAM_NEWSPAPER_INSTANCE ] = article_IN.newspaper
                 my_person_details[ self.PARAM_EXTERNAL_UUID_NAME ] = self.OPEN_CALAIS_UUID_NAME
                 my_person_details[ self.PARAM_EXTERNAL_UUID ] = person_URI
@@ -1817,6 +1819,12 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             article_subject.subject_type = Article_Subject.SUBJECT_TYPE_QUOTED
                             article_subject.save()
                             
+                        else:
+                        
+                            # no quotes - set subject-type to mentioned.
+                            article_subject.subject_type = Article_Subject.SUBJECT_TYPE_MENTIONED
+                            article_subject.save()                        
+                        
                         #-- END check to see if quotes present. --#
                         
                         # !TODO - topics?
@@ -1972,7 +1980,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             # "quotationtype" is the type of quote ("Paraphrase" or "Primary").
             quotation_type = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTE_QUOTATION_TYPE, None )
             
-            self.output_debug( "In " + me + ": quotation_string = \"" + str( quotation_string ) + "\"" )
+            self.output_debug( "In " + me + ": quotation_string = \"" + str( StringHelper.encode_string( quotation_string ) ) + "\"" )
 
             # "persondescription" is the description of the person that
             #    accompanied attribution for the quote.

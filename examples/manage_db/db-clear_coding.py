@@ -1,6 +1,9 @@
-# imports
-from sourcenet.models import Article_Data
+# django imports
 from django.contrib.auth.models import User
+
+# sourcenet imports
+from sourcenet.models import Article_Data
+from sourcenet.shared.sourcenet_base import SourcenetBase
 
 # declare variables - filter article data to clear
 selected_username = ""
@@ -24,11 +27,14 @@ article_id_list = []
 article_data_id_list = []
 article_author_id_list = []
 article_source_id_list = []
-do_delete = True
+do_delete = False
 
 # get User with desired name
-selected_username = "jonathanmorgan"
-selected_user = User.objects.filter( username = selected_username ).get()
+#selected_username = "jonathanmorgan"
+#selected_user = User.objects.filter( username = selected_username ).get()
+
+# get automated coder user
+selected_user = SourcenetBase.get_automated_coding_user()
 
 # find all Article_Data for selected user.
 article_data_qs = Article_Data.objects.filter( coder = selected_user )
@@ -37,7 +43,7 @@ article_data_qs = Article_Data.objects.filter( coder = selected_user )
 # FILTER - filter on coder type?
 #------------------------------------------------------------------------------#
 
-#article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v2' ]
+article_data_coder_type_in_list = [ 'OpenCalais_REST_API_v2' ]
 if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_coder_type_in_list ) > 0 ) ):
 
     # filter on coder type.
@@ -51,7 +57,7 @@ if ( ( article_data_coder_type_in_list is not None ) and ( len( article_data_cod
 
 #article_tag_in_list = [ 'prelim_network', 'prelim_reliability' ]
 #article_tag_in_list = []
-#article_tag_in_list = [ 'prelim_reliability' ]
+article_tag_in_list = [ 'prelim_reliability_combined' ]
 if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) ):
 
     # filter on tags
@@ -67,6 +73,7 @@ if ( ( article_tag_in_list is not None ) and ( len( article_tag_in_list ) > 0 ) 
 #article_id_in_list = [ 28598 ]
 # article_id_in_list = [ 21653, 21756 ]
 #article_id_in_list = [ 90948 ]
+#article_id_in_list = [ 2698 ]
 if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
 
     # yes.

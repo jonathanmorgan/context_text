@@ -38,7 +38,7 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 - next, you'll need to update environment variables (assuming linux, for other OS, see documentation at link above).  Add the following to your shell startup file (on ubuntu, .bashrc is invoked by .profile, so I do this in .bashrc):
 
         export WORKON_HOME=$HOME/.virtualenvs
-        export PROJECT_HOME=$HOME/work/virtualenvwrapper-projects
+        export PROJECT_HOME=$HOME/work/vew-projects
         source /usr/local/bin/virtualenvwrapper.sh
 
 - restart your shell so these settings take effect.
@@ -48,8 +48,8 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         # for system python:
         mkvirtualenv sourcenet --no-site-packages
 
-        # if your system python is python 3, and you want to use python 2 (since sourcenet is python 2 at the moment):
-        mkvirtualenv sourcenet --no-site-packages -p /usr/bin/python2.7
+        # if your system python is python 2, and you want to use python 3 (sourcenet supports both, and I am working in 3 now, so it will be more reliabily un-buggy):
+        mkvirtualenv sourcenet --no-site-packages -p /usr/bin/python3
 
 - activate the virtualenv
 
@@ -59,16 +59,33 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 ## Python packages
 
+To start, the only Python package you need to install is django:
+
+- activate your virtualenv if you are using one.
+- install django using pip: `(sudo) pip install django`
+
+As you install the different github projects that make up sourcenet, you'll need to also install the Python packages they require.
+
+The most efficient way to do this is to use the `requirements.txt` file in each project.  For example, inside the sourcenet project, the requirements.txt file is a list of all the Python packages that sourcenet needs to function.  It is the up-to-date list of what you need.  It assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
+
+    - activate your virtualenv if you are using one.
+    - install django using pip: `(sudo) pip install django`
+    - continue on in this guide until you have downloaded and installed sourcenet from github, then:
+    - `(sudo) pip install -r sourcenet/requirements.txt`
+    - you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
+
+For reference, below are some of the main packages sourcenet uses, but this list is not up-to-date, and I'd recommend just using requirements.txt files to install packages, rather than installing them individually.
+
 - required python packages (install with pip):
 
-    - django - `(sudo) pip install django` - 1.9.X - latest 1.4.X, 1.5.X, 1.6.X, 1.7.X, or 1.8.X might work, too, but django moves fast, you'd be wise to try to get to current.  Migrations require 1.7.X or greater - south migrations are no longer being updated.
+    - django - `(sudo) pip install django` - 1.10.X - latest 1.4.X, 1.5.X, 1.6.X, 1.7.X, 1.8.X, or 1.9.X might work, too, but django moves fast, you'd be wise to try to get to current.  Migrations require 1.7.X or greater - south migrations are no longer being updated.
     - nameparser - `(sudo) pip install nameparser`
     - bleach - `(sudo) pip install bleach`
     - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
     - django-ajax-selects - `(sudo) pip install django-ajax-selects`
     - requests - `(sudo) pip install requests`
     - django-taggit - `(sudo) pip install django-taggit`
-    - mechanize - `(sudo) pip install mechanize`
+    - w3lib - `(sudo) pip install w3lib`
     
 - depending on database:
 
@@ -77,24 +94,23 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
         - install the PostgreSQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libpq-dev) ( [source](http://initd.org/psycopg/install/) ).
         - install the psycopg2 python package.  Install using pip (`sudo pip install psycopg2`).  
         
-    - mysql - MySQL-python - Before you can connect to MySQL with this code, you need to do the following:
+    - mysql - mysqlclient - Before you can connect to MySQL with this code, you need to do the following:
     
-        - install the MySQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libmysqlclient-dev) ( [source](http://codeinthehole.com/writing/how-to-set-up-mysql-for-python-on-ubuntu/) ).
-        - install the MySQLdb python package.  To install, you can either install through your operating system's package manager (ubuntu, for example, has package "python-mysqldb") or using pip (`sudo pip install MySQL-python`).
+        - mysqlclient
+
+            - install the MySQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libmysqlclient-dev) ( [source](http://codeinthehole.com/writing/how-to-set-up-mysql-for-python-on-ubuntu/) ).
+            - install the mysqlclient python package using pip (`(sudo) pip install mysqlclient`).
+            
+        - OR pymysql (coming soon)
+        
+            - install the pymysql python package using pip (`(sudo) pip install pymysql`).
 
 
 - python packages that I find helpful:
 
     - ipython - `(sudo) pip install ipython`
 
-- inside the sourcenet project, requirements.txt contains all of these things, assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
-
-    - install django now using pip: `(sudo) pip install django`
-    - continue on in this guide until you have downloaded and installed sourcenet from github, then:
-    - `(sudo) pip install -r sourcenet/requirements.txt`
-    - you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
-    
-- Natural Language Processing (NLP) APIs, if you are building your own thing:
+- Natural Language Processing (NLP) APIs, if you are building your own thing (I don't use Alchemy API right now, and I built my own OpenCalais client):
 
     - To use Alchemy API, clone the `Alchemy_API` python client into your django project's root folder:
     
@@ -122,6 +138,10 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
                 /research
                     settings.py
 
+## Install the actual sourcenet django application, plus dependencies
+
+- sourcenet
+
     - cd into your django project directory, then clone the sourcenet application from github into your django project directory using the git program:
 
             cd research
@@ -133,14 +153,38 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
             - run the following `pip` command to install all packages listed in requirements.txt:
             
                     (sudo) pip install -r requirements.txt
+                    
+            - or just run `(sudo) pip install -r sourcenet/requirements.txt`
 
-    - You'll also need python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
+- python_utilities
+
+    - You'll also need:python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
 
             git clone https://github.com/jonathanmorgan/python_utilities.git
+
+    - install requirements
+
+            (sudo) pip install -r python_utilities/requirements.txt
+
+- django_config
 
     - And you'll need django\_config.  Clone django\_config into the research folder alongside sourcenet:
 
             git clone https://github.com/jonathanmorgan/django_config.git
+
+    - install requirements
+
+            (sudo) pip install -r django_config/requirements.txt
+
+- django_messages
+
+    - And you'll need django\_messages.  Clone django\_messages into the research folder alongside sourcenet:
+
+            git clone https://github.com/jonathanmorgan/django_messages.git
+
+    - install requirements
+
+            (sudo) pip install -r django_messages/requirements.txt
 
 ## settings.py - Configure logging, database, applications:
 
@@ -198,8 +242,28 @@ Edit the research/research/settings.py file and update it with details of your d
 
 In general, for any database other than sqlite3, in your database system of choice you'll need to:
 
-- create a database for django to use.
-- create a database user for django to use that is not an admin.
+- create a database for django to use (I typically use `sourcenet`).
+
+    - postgresql - at the unix command line:
+    
+            # su to the postgres user
+            su - postgres
+            
+            # create the database at the unix shell
+            #createdb <database_name>
+            createdb sourcenet
+
+- create a database user for django to use that is not an admin (I typically use `django_user`).
+
+    - postgresql - at the unix command line:
+    
+            # su to the postgres user
+            su - postgres
+            
+            # create the user at the unix shell
+            #createuser --interactive -P <username>
+            createuser --interactive -P django_user
+
 - give the django database user all privileges on the django database.
 - place connection information for the database - connecting as your django database user to the django database - in settings.py.
 
@@ -224,7 +288,26 @@ More information:
 
 ### applications
 
-Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_config', '`django_messages`', and 'taggit' to your list of INSTALLED\_APPS:
+Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_config`', '`django_messages`', and '`taggit`' to your list of INSTALLED\_APPS using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
+
+    INSTALLED_APPS = [
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.sites',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+        # Uncomment the next line to enable the admin:
+        'django.contrib.admin',
+        # Uncomment the next line to enable admin documentation:
+        # 'django.contrib.admindocs',
+        'sourcenet.apps.SourcenetConfig',
+        'django_config.apps.Django_ConfigConfig',
+        'django_messages.apps.DjangoMessagesConfig',
+        'taggit',
+    ]
+
+- ARCHIVE - the old way, using just the application name:
 
         INSTALLED_APPS = [
             'django.contrib.auth',
@@ -240,25 +323,6 @@ Edit the `research/research/settings.py` file and add 'sourcenet', 'django\_conf
             'sourcenet',
             'django_config',
             'django_messages',
-            'taggit',
-        ]
-
-- you can also add sourcenet and django_config using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
-
-        INSTALLED_APPS = [
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django.contrib.sessions',
-            'django.contrib.sites',
-            'django.contrib.messages',
-            'django.contrib.staticfiles',
-            # Uncomment the next line to enable the admin:
-            'django.contrib.admin',
-            # Uncomment the next line to enable admin documentation:
-            # 'django.contrib.admindocs',
-            'sourcenet.apps.SourcenetConfig',
-            'django_config.apps.Django_ConfigConfig',
-            'django_messages.apps.DjangoMessagesConfig'
             'taggit',
         ]
 
@@ -288,7 +352,7 @@ Once you've made the changes above, save the `settings.py` file, then go into th
 
 First, to test if your database settings are correct, just try listing out pending database migrations:
 
-    python manage.py migrate --list
+    python manage.py showmigrations
 
 If that fails, the error messages should tell you about any database configuration issues you need to address.  Once it succeeds and lists out migrations that need to run, run the migrations to create database tables:
 
@@ -308,10 +372,16 @@ Once the database tables are created, you'll want to make a django admin user at
             (sudo) apt-get install apache2
 
     - configure it so it can run python WSGI applications.  For apache, install mod_wsgi:
+    
+        - for python 2:
 
-            (sudo) apt-get install libapache2-mod-wsgi
+                (sudo) apt-get install libapache2-mod-wsgi
 
-        then enable it:
+        - for python 3:
+
+                (sudo) apt-get install libapache2-mod-wsgi-py3
+
+        then enable it (in recent versions of ubuntu, this might already have been done when it installed):
 
             (sudo) a2enmod wsgi
 
@@ -414,22 +484,42 @@ Once the database tables are created, you'll want to make a django admin user at
                     import sys
                     import site
                     
-                    # Add the site-packages of the desired virtualenv
-                    site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/local/lib/python2.7/site-packages' )
+                    # declare variables
+                    virtualenv_parent_dir = ""
+                    path_to_django_project_parent = ""
+                    virtualenv_python2 = ""
+                    temp_path = ""
+                    
+                    # configure
+                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
+                    path_to_django_project_parent = "<path_to_django_project_parent>"
+                    virtualenv_python2 = "<virtualenv_python2>"
                     
                     # Add the app's directory to the PYTHONPATH
-                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    temp_path = path_to_django_project_parent + "/research"
+                    sys.path.append( temp_path )
                     
                     # Set DJANGO_SETTINGS_MODULE
-                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
-
+                    os.environ.setdefault( "DJANGO_SETTINGS_MODULE", "research.settings" )
+                    
+                    # Add the site-packages of the desired virtualenv
+                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/local/lib/python2.7/site-packages"
+                    site.addsitedir( temp_path )
+                
                     # Activate your virtualenv
-                    activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/bin/activate_this.py"
+                    activate_this = os.path.expanduser( temp_path )
+                
+                    # in Python 2, just use execfile()
                     execfile( activate_this, dict( __file__ = activate_this ) )
                     
+                    # import django stuff - it is installed in your virtualenv, so you must import
+                    #     after activating virtualenv.
                     from django.core.wsgi import get_wsgi_application
+                    
+                    # load django application
                     application = get_wsgi_application()
-            
+
             - for Python 3:
 
                     """
@@ -457,17 +547,31 @@ Once the database tables are created, you'll want to make a django admin user at
                     import sys
                     import site
                     
-                    # Add the site-packages of the desired virtualenv
-                    site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/lib/python3.5/site-packages' )
+                    # declare variables
+                    virtualenv_parent_dir = ""
+                    path_to_django_project_parent = ""
+                    virtualenv_python3 = ""
+                    temp_path = ""
+                    
+                    # configure
+                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
+                    path_to_django_project_parent = "<path_to_django_project_parent>"
+                    virtualenv_python3 = "<virtualenv_python3>"
                     
                     # Add the app's directory to the PYTHONPATH
-                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    temp_path = path_to_django_project_parent + "/research"
+                    sys.path.append( temp_path )
                     
                     # Set DJANGO_SETTINGS_MODULE
                     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
 
+                    # Add the site-packages of the desired virtualenv
+                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/lib/python3.5/site-packages"
+                    site.addsitedir( temp_path )
+                
                     # Activate your virtualenv
-                    activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet/bin/activate_this.py" )
+                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/bin/activate_this.py"
+                    activate_this = os.path.expanduser( temp_path )
 
                     # open and execute file manually... cuz Python 3.
                     with open( activate_this ) as activate_this_file:
@@ -480,9 +584,13 @@ Once the database tables are created, you'll want to make a django admin user at
                     
                     #-- END open( activate_this ) --#
                     
+                    # import django stuff - it is installed in your virtualenv, so you must import
+                    #     after activating virtualenv.
                     from django.core.wsgi import get_wsgi_application
+                    
+                    # load django application
                     application = get_wsgi_application()
-            
+
             - and a bonus one that works with both Pythons 2 and 3 (the package `six` must be installed in your system's Python, not just in a virtualenv):
         
                     """
@@ -491,7 +599,7 @@ Once the database tables are created, you'll want to make a django admin user at
                     It exposes the WSGI callable as a module-level variable named ``application``.
                     
                     For more information on this file, see
-                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
+                    https://docs.djangoproject.com/en/1.10/howto/deployment/wsgi/
                     """
                     
                     # imports
@@ -499,10 +607,23 @@ Once the database tables are created, you'll want to make a django admin user at
                     import sys
                     import site
                     import six
-                    from django.core.wsgi import get_wsgi_application
-                                    
+                    
+                    # declare variables
+                    virtualenv_parent_dir = ""
+                    path_to_django_project_parent = ""
+                    virtualenv_python2 = ""
+                    virtualenv_python3 = ""
+                    temp_path = ""
+                    
+                    # configure
+                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
+                    path_to_django_project_parent = "<path_to_django_project_parent>"
+                    virtualenv_python2 = "<virtualenv_python2>"
+                    virtualenv_python3 = "<virtualenv_python3>"
+                    
                     # Add the app's directory to the PYTHONPATH
-                    sys.path.append( '<path_to_django_project_parent>/research' )
+                    temp_path = path_to_django_project_parent + "/research"
+                    sys.path.append( temp_path )
                     
                     # Set DJANGO_SETTINGS_MODULE
                     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
@@ -512,51 +633,64 @@ Once the database tables are created, you'll want to make a django admin user at
                     if ( six.PY2 == True ):
                     
                         # Add the site-packages of the desired virtualenv
-                        site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet-dev/local/lib/python2.7/site-packages' )
+                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/local/lib/python2.7/site-packages"
+                        site.addsitedir( temp_path )
                     
                         # Activate your virtualenv
-                        activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet-dev/bin/activate_this.py" )
+                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/bin/activate_this.py"
+                        activate_this = os.path.expanduser( temp_path )
                     
                         # in Python 2, just use execfile()
                         execfile( activate_this, dict( __file__ = activate_this ) )
-                        
+                    
                     elif ( six.PY3 == True ):
                     
                         # Add the site-packages of the desired virtualenv
-                        site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/sourcenet3/lib/python3.5/site-packages' )
+                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/lib/python3.5/site-packages"
+                        site.addsitedir( temp_path )
                     
                         # Activate your virtualenv
-                        activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/sourcenet3/bin/activate_this.py" )
+                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/bin/activate_this.py"
+                        activate_this = os.path.expanduser( temp_path )
                     
                         # open and execute file manually... cuz Python 3.
                         with open( activate_this ) as activate_this_file:
-                            
+                    
                             # compile code
                             activate_code = compile( activate_this_file.read(), activate_this, 'exec')
-                            
+                    
                             # run the code
                             exec( activate_code, dict( __file__ = activate_this ) )
-                        
+                    
                         #-- END open( activate_this ) --#
-                        
+                    
                     #-- END code to deal with execfile() being removed from python 2 --#
+                    
+                    # import django stuff - it is installed in your virtualenv, so you must import
+                    #     after activating virtualenv.
+                    from django.core.wsgi import get_wsgi_application
                     
                     # load django application
                     application = get_wsgi_application()
 
             If you use any of these samples, make sure to replace:
 
-            - <.virtualenvs_parent_dir> with the full path to the directory in which your virtualenvwrapper .virtualenvs folder lives (usually your user's home directory).
-            - <path_to_django_project_parent> with the full path to the directory in which you installed your django project.
+            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper .virtualenvs folder lives (usually your user's home directory).
+            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
+            - `<virtualenv_python2>` with the name of your Python 2 virtualenv.
+            - `<virtualenv_python3>` with the name of your Python 3 virtualenv.
                     
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
-        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages 
+        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/lib/python3.5/site-packages 
+
+        # Python 2:
+        #WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages 
 
         # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess sourcenet-1 ... python-path=
         # no virualenv
         # ... python-path=<path_to_django_project_parent>/research
-        # virtualenv (or any other paths, each separated by colons)
+        # using virtualenv (or any other paths, each separated by colons)
         # ... python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages
 
         WSGIProcessGroup sourcenet-1

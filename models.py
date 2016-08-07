@@ -12,43 +12,6 @@ sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WAR
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
 '''
 
-'''
-Code sample:
-
-from nameparser import HumanName
->>> test = HumanName( "Jonathan Scott Morgan" )
->>> test
-<HumanName : [
-        Title: '' 
-        First: 'Jonathan' 
-        Middle: 'Scott' 
-        Last: 'Morgan' 
-        Suffix: ''
-]>
->>> import pickle
->>> test2 = pickle.dumps( test )
->>> test3 = pickle.loads( test2 )
->>> test3.__eq__( test2 )
-False
->>> test3.__eq__( test )
-True
->>> test3.first
-u'Jonathan'
->>> test3.middle
-u'Scott'
->>> test3.last
-u'Morgan'
->>> test3.title
-u''
->>> test3.suffix
-u''
->>> if ( test3 == test ):
-...     print( "True!" )
-... else:
-...     print( "False!" )
-... 
-True!
-'''
 
 #================================================================================
 # Imports
@@ -454,6 +417,9 @@ class Abstract_Person_Parent( models.Model ):
     more_organization = models.TextField( blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
     
+    # field to store how person was captured.
+    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+
     #----------------------------------------------------------------------
     # Meta
     #----------------------------------------------------------------------
@@ -508,6 +474,42 @@ class Abstract_Person_Parent( models.Model ):
 
     #-- END method __str__() --#
 
+
+    def set_capture_method( self, value_IN = "", overwrite_IN = False ):
+    
+        '''
+        Accepts capture method value.  If there is already a value in the
+            capture_method field, does nothing.  If not, stores the value passed
+            in inside the capture_method field.
+            
+        Returns capture_method value.
+        '''
+        
+        # return reference
+        value_OUT = ""
+        
+        # declare variables
+        existing_capture_method = ""
+        
+        # get existing value
+        existing_capture_method = self.capture_method
+        
+        # are we allowed to update (either is empty, or overwrite flag is True).
+        if ( ( ( existing_capture_method is None ) or ( existing_capture_method == "" ) )
+            or ( overwrite_IN == True ) ):
+            
+            # OK to update.
+            self.capture_method = value_IN
+            
+        #-- END check to see if we can update capture_method. --#
+        
+        # retrieve value_OUT from instance variable.
+        value_OUT = self.capture_method
+        
+        return value_OUT
+    
+    #-- END method set_capture_method() --#
+    
 
     def set_organization_string( self, organization_string_IN, do_save_IN = True, do_append_IN = True ):
 
@@ -762,6 +764,7 @@ class Abstract_Person_Parent( models.Model ):
         organization_string_IN = ""
         organization_IN = None
         notes_IN = ""
+        capture_method_IN = ""
         is_insert = False
         is_updated = False
         
@@ -770,6 +773,7 @@ class Abstract_Person_Parent( models.Model ):
         existing_organization_string = self.organization_string
         existing_organization = self.organization
         existing_notes = self.notes
+        existing_capture_method = self.capture_method
         
         # got person_details?
         my_person_details = PersonDetails.get_instance( person_details_IN )
@@ -780,6 +784,7 @@ class Abstract_Person_Parent( models.Model ):
             organization_string_IN = my_person_details.get( PersonDetails.PROP_NAME_PERSON_ORGANIZATION, None )
             organization_IN = my_person_details.get( PersonDetails.PROP_NAME_ORGANIZATION_INSTANCE, None )
             notes_IN = my_person_details.get( PersonDetails.PROP_NAME_NOTES, None )
+            capture_method_IN = my_person_details.get( PersonDetails.PROP_NAME_CAPTURE_METHOD, None )
         
             # got an ID (check to see if update or insert)?
             my_id = self.id
@@ -880,6 +885,20 @@ class Abstract_Person_Parent( models.Model ):
                 
             #-- END check to see if organization string value passed in --#
                 
+            #------------------------------------------------------#
+            # ==> capture_method
+
+            # value passed in?
+            if ( capture_method_IN is not None ):
+
+                # store it.
+                self.set_capture_method( capture_method_IN )
+
+                # we need to save.
+                is_updated = True
+                
+            #-- END check to see if capture_method passed in --#
+
             # updated?
             if ( is_updated == True ):
                 
@@ -906,6 +925,45 @@ class Abstract_Person_Parent( models.Model ):
 # Abstract_Person model
 @python_2_unicode_compatible
 class Abstract_Person( Abstract_Person_Parent ):
+
+    '''
+    HumanName (from package "nameparser" ) code sample:
+    
+    from nameparser import HumanName
+    >>> test = HumanName( "Jonathan Scott Morgan" )
+    >>> test
+    <HumanName : [
+            Title: '' 
+            First: 'Jonathan' 
+            Middle: 'Scott' 
+            Last: 'Morgan' 
+            Suffix: ''
+    ]>
+    >>> import pickle
+    >>> test2 = pickle.dumps( test )
+    >>> test3 = pickle.loads( test2 )
+    >>> test3.__eq__( test2 )
+    False
+    >>> test3.__eq__( test )
+    True
+    >>> test3.first
+    u'Jonathan'
+    >>> test3.middle
+    u'Scott'
+    >>> test3.last
+    u'Morgan'
+    >>> test3.title
+    u''
+    >>> test3.suffix
+    u''
+    >>> if ( test3 == test ):
+    ...     print( "True!" )
+    ... else:
+    ...     print( "False!" )
+    ... 
+    True!
+    '''
+
 
     #----------------------------------------------------------------------
     # constants-ish
@@ -940,8 +998,8 @@ class Abstract_Person( Abstract_Person_Parent ):
     # moved up to parent
     #notes = models.TextField( blank = True, null = True )
     
-    # field to store how source was captured.
-    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    # field to store how source was captured - moved up to parent.
+    # capture_method = models.CharField( max_length = 255, blank = True, null = True )
 
     # time stamps.
     create_date = models.DateTimeField( auto_now_add = True )
@@ -6218,7 +6276,7 @@ class Article_Data( models.Model ):
         # got a coder_type?
         if ( self.coder_type ):
         
-            string_OUT += " ( " + str( self.coder_type ) + " ) "
+            string_OUT += " ( ADCT: " + str( self.coder_type ) + " ) "
             
         else:
         
@@ -6512,8 +6570,8 @@ class Article_Person( Abstract_Person_Parent ):
     match_confidence_level = models.DecimalField( max_digits = 11, decimal_places = 10, blank = True, null = True, default = 0.0 )
     match_status = models.TextField( blank = True, null = True )
 
-    # field to store how person was captured.
-    capture_method = models.CharField( max_length = 255, blank = True, null = True )
+    # field to store how person was captured. - moved to Abstract_Person_Parent.
+    #capture_method = models.CharField( max_length = 255, blank = True, null = True )
 
     # moved up to Abstract_Person_Parent
     #title = models.CharField( max_length = 255, blank = True, null = True )
@@ -6604,9 +6662,6 @@ class Article_Person( Abstract_Person_Parent ):
         return string_OUT
 
     #-- END method get_article_info() --#
-
-
-    get_article_info.short_description = 'Article Info.'
 
 
     def get_person_id( self ):
@@ -6956,18 +7011,8 @@ class Article_Person( Abstract_Person_Parent ):
                 #-- END check to see if match_status passed in --#
             
                 #------------------------------------------------------#
-                # ==> capture_method
-
-                # value passed in?
-                if ( capture_method_IN is not None ):
-    
-                    # store it.
-                    self.capture_method = capture_method_IN
-    
-                    # we need to save.
-                    is_updated = True
-                    
-                #-- END check to see if capture_method passed in --#
+                # ==> capture_method - moved up into update_from_person_details
+                #     method in parent.
 
                 # updated?
                 if ( is_updated == True ):

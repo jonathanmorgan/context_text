@@ -1690,7 +1690,7 @@ class ArticleCoder( BasicRateLimited ):
                         if ( ( capture_method is not None ) and ( capture_method != "" ) ):
                         
                             # got a capture method.  Add it to person instance.
-                            person_instance.capture_method = capture_method
+                            person_instance.set_capture_method( capture_method )
                         
                         #-- END check to see if capture_method --#
                         
@@ -2623,6 +2623,7 @@ class ArticleCoder( BasicRateLimited ):
         coder_type_IN = ""
         person_id_IN = None
         article_person_id_IN = None
+        capture_method_IN = ""
         
         # declare variables.
         me = "process_person_name"
@@ -2711,6 +2712,7 @@ class ArticleCoder( BasicRateLimited ):
                 coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, None )
                 person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
                 article_person_id_IN = my_person_details.get( self.PARAM_ARTICLE_PERSON_ID, None )
+                capture_method_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, None )
                 
                 # if person name is populated in person details, it and fixed person
                 #     name take precedence over any name passed in.  If not, just
@@ -2742,14 +2744,22 @@ class ArticleCoder( BasicRateLimited ):
                     if ( ( ( person_lookup_name is not None ) and ( person_lookup_name != "" ) )
                         or ( ( person_id_IN is not None ) and ( person_id_IN != "" ) and ( person_id_IN > 0 ) ) ):
                     
-                        # get capture method
-                        if ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
+                        # get capture method - one in person details?
+                        if ( ( capture_method_IN is not None ) and ( capture_method_IN != "" ) ):
+                        
+                            # use it.
+                            my_capture_method = capture_method_IN
+                        
+                        # if no specific capture method passed in, see if coder
+                        #     type present in the person details passed in.
+                        elif ( ( coder_type_IN is not None ) and ( coder_type_IN != "" ) ):
                         
                             my_capture_method = coder_type_IN
                             
                         else:
                         
-                            # no coder type passed in, use coder_type from Article_Data.
+                            # no capture method or coder type passed in, use 
+                            #     coder_type from Article_Data.
                             my_capture_method = article_data_IN.coder_type
                             
                         #-- END check for coder_type_IN --#
@@ -3484,7 +3494,7 @@ class ArticleCoder( BasicRateLimited ):
         subject_UUID_source_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_SOURCE, "" )
         coder_type_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, "" )
         subject_person_id_IN = my_person_details.get( self.PARAM_PERSON_ID, None )
-        subject_type_IN = my_person_details.get( self.PARAM_SUBJECT_TYPE, None )
+        subject_type_IN = my_person_details.get( self.PARAM_SUBJECT_TYPE, Article_Subject.SUBJECT_TYPE_MENTIONED )  # default to mentioned.
         article_person_id_IN = my_person_details.get( self.PARAM_ARTICLE_PERSON_ID, None )
 
         # got Article_Data instance?
@@ -3667,6 +3677,7 @@ class ArticleCoder( BasicRateLimited ):
         
         - title (in parameter PARAM_TITLE) - if no title set for person passed in, places the title passed in into the title field and saves the Person instance.
         - organization (in parameter PARAM_PERSON_ORGANIZATION) - if no title set for person passed in, places the organization passed in into the title field and saves the Person instance.
+        - capture_method (in parameter PARAM_CAPTURE_METHOD) - if no capture method for person passed in, places capture method from person_details there, then saves.
         
         Associations supported:
            
@@ -3704,6 +3715,8 @@ class ArticleCoder( BasicRateLimited ):
         existing_title = ""
         organization_string_IN = ""
         existing_organization_string = ""
+        capture_method_IN = ""
+        existing_capture_method = ""
         
         self.output_debug( "Top of " + me + "(): person_IN: " + str( person_IN ) + "; person_details_IN: " + str( person_details_IN ), me, "========>" )
                 
@@ -3728,6 +3741,7 @@ class ArticleCoder( BasicRateLimited ):
             external_uuid_notes_IN = my_person_details.get( self.PARAM_EXTERNAL_UUID_NOTES, None )
             title_IN = my_person_details.get( self.PARAM_TITLE, "" )
             organization_string_IN = my_person_details.get( self.PARAM_PERSON_ORGANIZATION, "" )
+            capture_method_IN = my_person_details.get( self.PARAM_CAPTURE_METHOD, "" )
             
             #------------------------------------------------------#
             # ==> newspaper
@@ -3817,6 +3831,38 @@ class ArticleCoder( BasicRateLimited ):
 
             #-- END check to see if organization_string changed --#
             
+            #------------------------------------------------------#
+            # ==> capture_method
+
+            # has capture method changed?
+            existing_capture_method = person_OUT.capture_method
+            if ( capture_method_IN != existing_capture_method ):
+
+                # got a value, OR is empty OK?
+                if ( ( ( capture_method_IN is not None ) and ( capture_method_IN != "" ) )
+                    or ( allow_empty_IN == True ) ):
+
+                    # yes.  Update capture_method.
+                    self.output_debug( "Updating capture_method from: \"" + str( existing_capture_method ) + "\" to: \"" + str( capture_method_IN ) + "\"", me, "========>" )
+                    person_OUT.set_capture_method( capture_method_IN )
+                    self.output_debug( "Updated capture_method string: " + str( person_OUT.capture_method ), me, "========>" )
+    
+                    # we need to save.
+                    do_save = True
+
+                else:
+                
+                    self.output_debug( "NOT updating capture_method string from: \"" + str( existing_capture_method ) + "\" to: \"" + str( capture_method_IN ) + "\"", me, "========>" )
+                
+                #-- END check to see if we are OK to update --#
+
+            else:
+            
+                # capture_method string unchanged.
+                self.output_debug( "No need to update capture_method string - existing: \"" + str( existing_capture_method ) + "\"; new: \"" + str( capture_method_IN ) + "\"", me, "========>" )
+
+            #-- END check to see if capture_method changed --#
+
             # do we need to save the person itself?
             if ( do_save == True ):
                 
