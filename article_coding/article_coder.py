@@ -99,7 +99,7 @@ class ArticleCoder( BasicRateLimited ):
     STATUS_OK = "OK!"
 
     # debug
-    DEBUG_FLAG = False
+    DEBUG_FLAG = True
     
     # logging
     LOGGER_NAME = "sourcenet.article_coding.article_coder"
@@ -1328,13 +1328,15 @@ class ArticleCoder( BasicRateLimited ):
                         # make new person instance for name (not saved)
                         person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
                     
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " ( match_status = \"" + match_status + "\" )." )
+                    
                     elif ( multiple_count == 1 ):
                     
                         # one match. What?
                         match_status = self.MATCH_STATUS_SINGLE
                         person_instance = multiple_qs.get()
                         
-                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " in a part of code where result should have been either 0 or > 1.  Error." )
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " ( match_status = \"" + match_status + "\" ), in a part of code where result should have been either 0 or > 1.  Error." )
                     
                     elif ( multiple_count > 1 ):
                     
@@ -1350,11 +1352,13 @@ class ArticleCoder( BasicRateLimited ):
                             
                         #-- END loop over QuerySet. --#
 
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " ( match_status = \"" + match_status + "\" ). List of matches: " + str( multiple_list ) )
+                    
                     else:
                     
-                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + ", which is neither 0, 1, or > 1.  Error." )
+                        self.output_debug( "In " + me + ": multiple_qs.count() returned " + str( multiple_count ) + " ( match_status = \"" + str( match_status ) + "\" ), which is neither 0, 1, or > 1.  Error." )
                     
-                    #-- END 
+                    #-- END check to see how many matches --W
                 
                 else:
                 
@@ -1541,6 +1545,8 @@ class ArticleCoder( BasicRateLimited ):
                         person_id_list.append( current_person.id )
                         
                     #-- END loop over multiple persons. --#
+                    
+                    self.output_debug( "In " + me + ": Multiple person matches: " + str( person_id_list ) )
 
                     # filter on IDs.
                     person_qs = Person.objects.filter( id__in = person_id_list )
@@ -1559,6 +1565,8 @@ class ArticleCoder( BasicRateLimited ):
                             person_instance = person_filter_qs.get()
                             found_person = True
                             confidence_level = 1.0
+                            
+                            self.output_debug( "In " + me + ": MATCH FOUND for UUID " + str( uuid_IN ) + ": " + str( person_instance ) )
                         
                         #-- END check to see if single match. --#                            
 
@@ -1579,6 +1587,8 @@ class ArticleCoder( BasicRateLimited ):
                             found_person = True
                             confidence_level = 0.5
                         
+                            self.output_debug( "In " + me + ": MATCH FOUND for Newspaper " + str( newspaper_IN ) + ": " + str( person_instance ) )
+
                         #-- END check to see if single match. --#                            
                         
                     #-- END check to see if newspaper passed in. --#
@@ -1599,6 +1609,8 @@ class ArticleCoder( BasicRateLimited ):
                             found_person = True
                             confidence_level = 0.7  # not sure of level of confidence here - if small sample, might be right...                           
                         
+                            self.output_debug( "In " + me + ": MATCH FOUND for Exact Name Match: " + str( person_instance ) )
+
                         #-- END check to see if only 1 returned from exact. --#
                         
                     #-- END check to see if we want to do a strict match. --#
@@ -1611,6 +1623,8 @@ class ArticleCoder( BasicRateLimited ):
                         found_person = True
                         confidence_level = 0.0  # not sure what to do when you just give up and make a new person.
                     
+                        self.output_debug( "In " + me + ": NO MATCH, created new person: " + str( person_instance ) )
+
                     #-- END check to see if we make a new person --#
                 
                 #-- END check to see if multiple. --#

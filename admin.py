@@ -25,7 +25,9 @@ from sourcenet.models import Location
 from sourcenet.models import Topic
 from sourcenet.models import Person
 from sourcenet.models import Organization
+from sourcenet.models import Person_Newspaper
 from sourcenet.models import Person_Organization
+from sourcenet.models import Person_External_UUID
 from sourcenet.models import Document
 from sourcenet.models import Newspaper
 from sourcenet.models import Article_Author
@@ -89,26 +91,65 @@ class OrganizationAdmin( admin.ModelAdmin ):
 
 admin.site.register( Organization, OrganizationAdmin )
 
-class Person_OrganizationInline( admin.TabularInline ):
-    model = Person_Organization
-
 #-------------------------------------------------------------------------------
 # Person admin definition
 #-------------------------------------------------------------------------------
 
+
+class Person_Organization_Inline( admin.TabularInline ):
+
+    model = Person_Organization
+
+#-- END Person_Organization_Inline model --#
+
+
+class Person_External_UUID_Inline( admin.TabularInline ):
+
+    model = Person_External_UUID
+    extra = 1
+
+#-- END Person_External_UUID_Inline model --#
+
+
+class Person_Newspaper_Inline( admin.TabularInline ):
+
+    model = Person_Newspaper
+    extra = 1
+
+#-- END Person_Newspaper_Inline model --#
+
+
 class PersonAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    form = make_ajax_form( Person, dict( organization = 'organization' ) )
+
     fieldsets = [
         (
             None,
-            { 'fields' : [ 'first_name', 'middle_name', 'last_name', 'gender', 'title', 'is_ambiguous', 'notes' ] }
+            { "fields" : [ "first_name", "middle_name", "last_name", "gender", "title", "organization", "is_ambiguous", "notes" ] }
+        ),
+        ( 
+            "More details (Optional)",
+            {
+                "fields" : [ "more_title", "organization_string", "more_organization" ],
+                "classes" : ( "collapse", )
+            }
         ),
     ]
 
     # removing the organizational affiliation from the person area, for now, to
     #    avoid coding confusion.
-    #inlines = [
-    #    Person_OrganizationInline,
-    #]
+    inlines = [
+    #    Person_Organization_Inline,
+        Person_Newspaper_Inline,
+        Person_External_UUID_Inline,
+    ]
 
     list_display = ( 'id', 'last_name', 'first_name', 'middle_name', 'title' )
     list_display_links = ( 'id', 'last_name', 'first_name', 'middle_name', )

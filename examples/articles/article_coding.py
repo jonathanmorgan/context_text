@@ -68,7 +68,7 @@ tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and 
 #article_id_in_list = [ 21627, 21609, 21579 ]
 #article_id_in_list = [ 48778 ]
 #article_id_in_list = [ 6065 ]
-#article_id_in_list = [ 2698 ]
+article_id_in_list = [ 221858 ]
 
 # filter parameters
 params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date
