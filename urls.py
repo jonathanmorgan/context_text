@@ -99,4 +99,7 @@ urlpatterns = [
     url( r'^article/code/list/', sourcenet.views.article_coding_list, name = "sourcenet-article_coding_list" ),
     url( r'^article/code/', sourcenet.views.article_code, name = "sourcenet-article_code" ),
 
+    # filter and process Person records
+    url( r'^person/filter/$', sourcenet.views.person_filter_and_process, name = "sourcenet-person_filter_and_process" ),    
+    
 ]

@@ -35,6 +35,10 @@ import six
 # HTML parsing
 from bs4 import BeautifulSoup
 
+# nameparser import
+# http://pypi.python.org/pypi/nameparser
+from nameparser import HumanName
+
 # import django authentication code.
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -88,6 +92,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.strings.string_helper import StringHelper
 
 # sourcenet
+from sourcenet.shared.person_details import PersonDetails
 from sourcenet.shared.sourcenet_base import SourcenetBase
 
 # Import Form classes
@@ -99,6 +104,9 @@ from sourcenet.forms import ArticleCodingSubmitForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
+from sourcenet.forms import Person_ProcessSelectedForm
+from sourcenet.forms import PersonLookupTypeForm
+from sourcenet.forms import PersonLookupByNameForm
 from sourcenet.forms import PersonSelectForm
 from sourcenet.forms import ProcessSelectedArticlesForm
 from sourcenet.forms import NetworkOutputForm
@@ -2729,3 +2737,295 @@ def output_network( request_IN ):
     return response_OUT
 
 #-- END view method output_network() --#
+
+
+@login_required
+def person_filter_and_process( request_IN ):
+
+    '''
+    This view allows a user to look up a set of Persons who have similar names
+        and merge any that are duplicates.
+    '''
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "person_fix_duplicates"
+    my_logger_name = "sourcenet.views.person_filter_and_process"
+    debug_message = ""
+    current_user = None
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    person_lookup_by_name_form = None
+    person_lookup_type_form = None
+    person_process_selected_form = None
+    ready_to_act = False
+    is_lookup_form_empty = True
+    
+    # declare variables - filter Person records
+    person_qs = None
+    person_count = -1
+    full_name_string_IN = ""
+    first_name_IN = ""
+    middle_name_IN = ""
+    last_name_IN = ""
+    name_prefix_IN = ""
+    name_suffix_IN = ""
+    name_nickname_IN = ""
+    my_person_details = None
+    human_name = None
+    name_string = ""
+    lookup_type = ""
+    do_strict_match = False
+    do_partial_match = False
+    
+    # declare variables - person processing
+    action_IN = ""
+    action_summary = ""
+    action_detail_list = []
+    person_details_list = []
+    person_details_dict = {}
+    person_counter = -1
+    person_instance = None
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
+    # set my default rendering template
+    default_template = 'sourcenet/person/person-filter-process.html'
+    
+    # get current user
+    current_user = request_IN.user
+
+    # do we have input parameters?
+    request_inputs = get_request_data( request_IN )
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create forms
+        person_lookup_by_name_form = PersonLookupByNameForm( request_inputs )
+        person_lookup_type_form = PersonLookupTypeForm( request_inputs )
+        person_process_selected_form = Person_ProcessSelectedForm( request_inputs )
+        
+        # we can try an action
+        ready_to_act = True
+
+    else:
+    
+        # no inputs - create empty forms
+        person_lookup_by_name_form = PersonLookupByNameForm()
+        person_lookup_type_form = PersonLookupTypeForm()
+        person_process_selected_form = Person_ProcessSelectedForm()
+        
+        # no action without some inputs
+        ready_to_act = False
+
+    #-- END check to see if inputs. --#
+
+    # store forms in response
+    response_dictionary[ "person_lookup_by_name_form" ] = person_lookup_by_name_form
+    response_dictionary[ "person_lookup_type_form" ] = person_lookup_type_form
+    response_dictionary[ "person_process_selected_form" ] = person_process_selected_form
+
+    # form ready?
+    if ( ready_to_act == True ):
+
+        if ( person_lookup_by_name_form.is_valid() == True ):
+
+            # is the form empty?  If so, do nothing.
+            is_lookup_form_empty = person_lookup_by_name_form.am_i_empty()
+            if ( is_lookup_form_empty == False ):
+
+                # retrieve Person records specified by the input parameters,
+                #     ordered by Last Name, then First Name.  Then, create HTML
+                #     output of list of articles.  For each, output (to start):
+                #     - Person string
+                
+                # populate PersonDetails from request_inputs:
+                my_person_details = PersonDetails.get_instance( request_inputs )
+                
+                # get name fields from person_details
+                full_name_string_IN = my_person_details.get( PersonDetails.PROP_NAME_FULL_NAME_STRING, None )
+                first_name_IN = my_person_details.get( PersonDetails.PROP_NAME_FIRST_NAME, None )
+                middle_name_IN = my_person_details.get( PersonDetails.PROP_NAME_MIDDLE_NAME, None )
+                last_name_IN = my_person_details.get( PersonDetails.PROP_NAME_LAST_NAME, None )
+                name_prefix_IN = my_person_details.get( PersonDetails.PROP_NAME_NAME_PREFIX, None )
+                name_suffix_IN = my_person_details.get( PersonDetails.PROP_NAME_NAME_SUFFIX, None )
+                name_nickname_IN = my_person_details.get( PersonDetails.PROP_NAME_NICKNAME, None )
+                
+                # get HumanName instance...
+                human_name = my_person_details.to_HumanName()
+                name_string = str( human_name )
+                
+                # figure out type of lookup.
+                lookup_type = None
+                if ( person_lookup_type_form.is_valid() == True ):
+                
+                    # form is valid, use type from form.
+                    lookup_type = request_inputs.get( "lookup_type", PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY )
+                
+                else:
+                
+                    # form is not valid.  Default to general lookup
+                    lookup_type = PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY
+                
+                #-- END Check to see if lookup type passed in --#
+                
+                debug_message = "lookup_type = " + str( lookup_type )
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                # do lookup based on lookup_type
+                if ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY ):
+                
+                    debug_message = "performing general query"
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+                
+                    # not strict
+                    do_strict_match = False
+                    do_partial_match = True
+                    person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                                 parsed_name_IN = human_name,
+                                                                 do_strict_match_IN = do_strict_match,
+                                                                 do_partial_match_IN = do_partial_match )
+                
+                elif ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_EXACT_QUERY ):
+                
+                    debug_message = "performing exact query"
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                    # strict
+                    do_strict_match = True
+                    do_partial_match = False
+                    person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                                 parsed_name_IN = human_name,
+                                                                 do_strict_match_IN = do_strict_match,
+                                                                 do_partial_match_IN = do_partial_match )
+
+                else:
+                
+                    debug_message = "no lookup_type, so doing general query"
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                    # default to not strict
+                    do_strict_match = False
+                    do_partial_match = True
+                    person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                                 parsed_name_IN = human_name,
+                                                                 do_strict_match_IN = do_strict_match,
+                                                                 do_partial_match_IN = do_partial_match )
+                
+                #-- END decide how to lookup based on lookup_type --#
+                                    
+                # get count of queryset return items
+                if ( ( person_qs != None ) and ( person_qs != "" ) ):
+    
+                    # get count of records
+                    person_count = person_qs.count()
+        
+                    # got one or more?
+                    if ( person_count >= 1 ):
+                    
+                        # always create and store a summary of Person records.
+                        person_filter_summary = "Found " + str( person_count ) + " Person records that match your selected filter criteria: " + str( human_name )
+                        response_dictionary[ 'person_filter_summary' ] = person_filter_summary
+                        
+                        # ! use person_process_selected_form to see what we do now...
+                        
+                        # is form valid?
+                        if ( person_process_selected_form.is_valid() == True ):
+                        
+                            # yes - do we have an action?
+                            action_IN = request_inputs.get( "action", None )
+                            if ( action_IN is not None ):
+                                
+                                # add to response.
+                                response_dictionary[ 'action' ] = action_IN
+                            
+                                # is it "view_matches"?
+                                if ( action_IN == "view_matches" ):
+
+                                    # yes - initialize list of person_details
+                                    person_details_list = []
+                                
+                                    # loop over articles
+                                    person_counter = 0
+                                    for person_instance in person_qs:
+                                    
+                                        # increment counter
+                                        person_counter += 1
+                                    
+                                        # new details dictionary
+                                        person_details_dict = {}
+                                        
+                                        # store index and person instance
+                                        person_details_dict[ "index" ] = person_counter
+                                        person_details_dict[ "instance" ] = person_instance
+                                        
+                                        # add details to list.
+                                        person_details_list.append( person_details_dict )
+                
+                                    #-- END loop over records --#
+                                    
+                                    # seed response dictionary.
+                                    response_dictionary[ 'person_details_list' ] = person_details_list
+            
+                                elif ( action_IN == "merge" ):
+                                
+                                    # ! TODO - merge.
+                                    pass
+                                
+                                #-- END check to see what action. --#
+
+                            #-- END check to see if action present. --#
+                            
+                        #-- END check to see if article processing form is valid --#
+                                            
+                    else:
+                    
+                        # error - none or multiple articles found for ID. --#
+                        print( "No Person records returned for ID passed in." )
+                        response_dictionary[ 'output_string' ] = "No matches for filter criteria."
+                        
+                    #-- END check to see if there is one or other than one. --#
+    
+                else:
+                
+                    # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                    response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Person.look_up_person_from_name().  This is odd.  HumanName = " + str( human_name ) + "; lookup_type = " + str( lookup_type ) + "."
+                
+                #-- END check to see if query set is None --#
+                
+            else:
+            
+                # form is empty.
+                response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
+            
+            #-- END check to see if form is empty --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'output_string' ] = "ArticleCodingArticleFilterForm is not valid."
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, just use empty instance of form created and stored above.
+        pass
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view function person_filter_and_process() --#

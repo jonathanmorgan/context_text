@@ -19,6 +19,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 # six - python 2 + 3
 import six
 
+# nameparser import
+# http://pypi.python.org/pypi/nameparser
+from nameparser import HumanName
+
+# python_utilities imports
+from python_utilities.django_utils.django_form_helper import DjangoFormHelper
+
 # sourcenet imports
 #from sourcenet.models import Article_Subject
 
@@ -66,7 +73,21 @@ class PersonDetails( dict ):
     PROP_MAME_MATCH_CONFIDENCE_LEVEL = "match_confidence_level"
     PROP_NAME_CODER_TYPE = "coder_type"
     PROP_NAME_NOTES = "notes"
+    
+    # Properties that map to Person fields
+    PROP_NAME_FULL_NAME_STRING = "full_name_string"
+    PROP_NAME_FIRST_NAME = "first_name"
+    PROP_NAME_MIDDLE_NAME = "middle_name"
+    PROP_NAME_LAST_NAME = "last_name"
+    PROP_NAME_NAME_PREFIX = "name_prefix"
+    PROP_NAME_NAME_SUFFIX = "name_suffix"
+    PROP_NAME_NICKNAME = "nickname"
+    
+    PROP_LIST_NAME_PARTS = [ PROP_NAME_FIRST_NAME, PROP_NAME_MIDDLE_NAME, PROP_NAME_LAST_NAME, PROP_NAME_NAME_PREFIX, PROP_NAME_NAME_SUFFIX, PROP_NAME_NICKNAME ]
 
+    # constants-ish
+    IAMEMPTY = "IAMEMPTY"
+    
     # person types
     PERSON_TYPE_SUBJECT = "subject"
     PERSON_TYPE_SOURCE = "source"
@@ -284,6 +305,51 @@ class PersonDetails( dict ):
     #-- END method get_verbatim_name() --#
     
 
+    def got_name_parts( self, *args, **kwargs ):
+        
+        '''
+        Loops over the property names in PROP_LIST_NAME_PARTS.
+        '''
+        
+        # return reference
+        value_OUT = False
+        
+        # declare variables
+        me = "got_name_parts"
+        is_empty = False
+        got_name_parts = False
+        name_part_prop_name_list = []
+        current_prop_name = ""
+        current_prop_value = ""
+        
+        # get reference to name part property nanme list.
+        name_part_prop_name_list = self.PROP_LIST_NAME_PARTS
+        
+        # loop!
+        for current_prop_name in name_part_prop_name_list:
+        
+            # is there a value for this property name?
+            current_prop_value = self.get( current_prop_name, None )
+            
+            # empty?
+            is_empty = DjangoFormHelper.is_value_empty( current_prop_value )
+            if ( is_empty == False ):
+
+                # not empty - return True.
+                got_name_parts = True
+                
+            #-- END check to see if current value is empty. --#
+            
+        #-- END loop over property names. --#
+        
+        # return got_name_parts
+        value_OUT = got_name_parts
+        
+        return value_OUT
+        
+    #-- END method got_name_parts() --#
+    
+
     def init_from_dict( self, dict_IN = None, *args, **kwargs ):
         
         '''
@@ -311,5 +377,109 @@ class PersonDetails( dict ):
         
     #-- END method init_from_dict() --#
     
+
+    def to_HumanName( self ):
+        
+        '''
+        This method creates a nameparser HumanName() object instance for the
+            Person name property values in this instance.  Returns the HumanName
+            instance.
+           
+        preconditions: None.
+        postconditions: None.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        me = "to_HumanName"
+        my_name_prefix = ""
+        my_first_name = ""
+        my_middle_name = ""
+        my_last_name = ""
+        my_name_suffix = ""
+        my_nickname = ""
+        my_full_name_string = ""
+        my_lookup_name = ""
+        got_name_parts = False
+        
+        # retrieve values from this instance
+        my_name_prefix = self.get( self.PROP_NAME_NAME_PREFIX, None )
+        my_first_name = self.get( self.PROP_NAME_FIRST_NAME, None )
+        my_middle_name = self.get( self.PROP_NAME_MIDDLE_NAME, None )
+        my_last_name = self.get( self.PROP_NAME_LAST_NAME, None )
+        my_name_suffix = self.get( self.PROP_NAME_NAME_SUFFIX, None )
+        my_nickname = self.get( self.PROP_NAME_NICKNAME, None )
+        my_full_name_string = self.get( self.PROP_NAME_FULL_NAME_STRING, None )
+        my_lookup_name = self.get_lookup_name()
+        
+        # got name parts?
+        got_name_parts = self.got_name_parts()
+        if ( got_name_parts == True ):
+        
+            # build human name from name parts.
+            instance_OUT = HumanName()
+    
+            # Use nested values to populate HumanName.
+            if ( my_name_prefix ):
+        
+                instance_OUT.title = my_name_prefix
+                
+            #-- END check to see if name_prefix. --#
+            
+            if ( my_first_name ):
+        
+                instance_OUT.first = my_first_name
+                
+            #-- END check to see if first_name. --#
+            
+            if ( my_middle_name ):
+        
+                instance_OUT.middle = my_middle_name
+                
+            #-- END check to see if middle_name. --#
+            
+            if ( my_last_name ):
+        
+                instance_OUT.last = my_last_name
+                
+            #-- END check to see if last_name. --#
+            
+            if ( my_name_suffix ):
+        
+                instance_OUT.suffix = my_name_suffix
+                
+            #-- END check to see if name_suffix. --#
+            
+            if ( my_nickname ):
+        
+                instance_OUT.nickname = my_nickname
+                
+            #-- END check to see if nickname. --#
+            
+        # got full name string?
+        elif ( ( my_full_name_string is not None ) and ( my_full_name_string != "" ) ):
+        
+            # yes.  Pass it to HumanName
+            instance_OUT = HumanName( my_full_name_string )
+        
+        # how about lookup name?
+        elif ( ( my_lookup_name is not None ) and ( my_lookup_name != "" ) ):
+        
+            # yes.  Pass it to HumanName
+            instance_OUT = HumanName( my_lookup_name )
+        
+        else:
+        
+            # no names present at all.  Return None.
+            instance_OUT = None
+            
+        #-- END check to see what name information we have --#
+                
+        return instance_OUT
+        
+    #-- END method to_HumanName() --#
+
 
 #-- END class PersonDetails --#

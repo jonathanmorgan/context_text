@@ -105,7 +105,8 @@ from django.db.models.query import QuerySet
 from ajax_select.fields import AutoCompleteSelectField
 from ajax_select import make_ajax_field
 
-# python_utilities - logging
+# python_utilities
+from python_utilities.django_utils.django_form_helper import DjangoFormHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 
 # import stuff from sourcenet
@@ -117,6 +118,7 @@ from sourcenet.models import Article
 from sourcenet.models import Article_Data
 from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
+from sourcenet.models import Person
 from sourcenet.models import Topic
 
 class Article_DataLookupForm( forms.Form ):
@@ -129,7 +131,7 @@ class Article_DataLookupForm( forms.Form ):
     article_data_id = forms.IntegerField( required = True, label = "Article Data ID" )
     # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
 
-#-- END ArticleLookupForm --#
+#-- END Form class ArticleLookupForm --#
 
 
 class Article_DataSelectForm( forms.Form ):
@@ -194,7 +196,7 @@ class Article_DataSelectForm( forms.Form ):
     
     #-- END overridden/extended function __init__() --#
 
-#-- END ArticleLookupForm --#
+#-- END Form class ArticleLookupForm --#
 
 
 class ArticleCodingArticleFilterForm( forms.Form ):
@@ -256,101 +258,16 @@ class ArticleCodingArticleFilterForm( forms.Form ):
         me = "am_i_empty"
         my_logger_name = "sourcenet.forms.ArticleCodingArticleFilterForm"
         debug_message = ""
-        my_cleaned_data = None
-        input_counter = -1
-        current_key = None
-        current_value = None
         
-        # get cleaned data.
-        my_cleaned_data = self.cleaned_data
-        
-        # loop over keys
-        input_counter = 0
-        for current_key in six.iterkeys( my_cleaned_data ):
-        
-            # increment counter
-            input_counter += 1
-
-            # get value.
-            current_value = my_cleaned_data.get( current_key, self.IAMEMPTY )
-            
-            debug_message = "input " + str( input_counter ) + ": key = " + str( current_key ) + "; value = \"" + str( current_value ) + "\" ( class = \"" + str( current_value.__class__ ) + "\" )"
-            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
-            
-            # empty?
-            if ( current_value is not None ):
-                
-                # got a QuerySet?
-                if ( isinstance( current_value, QuerySet ) == True ):
-                    
-                    # yes.  anything in it?
-                    if ( current_value.count() > 0 ):
-                    
-                        is_empty_OUT = False
-                        
-                        debug_message = "QuerySet in key \"" + str( current_key ) + "\" IS NOT empty."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-                
-                    else:
-                    
-                        debug_message = "QuerySet in key \"" + str( current_key ) + "\" is EMPTY."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-                    
-                    #-- END check to see if anything in list. --#
-
-                elif ( isinstance( current_value, list ) == True ):
-                    
-                    # yes.  Is there anything in list?
-                    if ( len( current_value ) > 0 ):
-                            
-                        is_empty_OUT = False
-                            
-                        debug_message = "LIST in key \"" + str( current_key ) + "\" IS NOT empty."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-    
-                    else:
-                            
-                        debug_message = "LIST in key \"" + str( current_key ) + "\" is EMPTY."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-                            
-                    #-- END check to see if anything in list. --#
-                        
-                else:
-                    
-                    # not list - probably a string.
-                    if ( ( current_value != "" ) and ( current_value != self.IAMEMPTY ) ):
-                        
-                        # not an empty string.
-                        is_empty_OUT = False
-                        
-                        debug_message = "STRING in key \"" + str( current_key ) + "\" IS NOT empty."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-
-                    else:
-                        
-                        debug_message = "STRING in key \"" + str( current_key ) + "\" is EMPTY."
-                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-                        
-                    #-- END check to see if empty string, or set to self.IAMEMPTY --#
-                    
-                #-- END check to see if list. --#
-            
-            else:
-            
-                # empty.
-                debug_message = "key \"" + str( current_key ) + "\" is None, and so EMPTY."
-                LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
-            
-            #-- END check to see if empty. --#
-
-        #-- END loop over keys in data dictionary --#
+        # use DjangoFormHelper method
+        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
 
         return is_empty_OUT
         
     #-- END method am_i_empty() --#
 
     
-#-- END ArticleCodingArticleFilterForm ----------------------------------------#
+#-- END Form class ArticleCodingArticleFilterForm --#
 
 
 class ArticleCodingForm( forms.ModelForm ):
@@ -361,12 +278,14 @@ class ArticleCodingForm( forms.ModelForm ):
 
     class Meta:
         model = Article_Subject
-        exclude = [ 'article_data', 'original_person', 'match_confidence_level', 'match_status', 'capture_method', 'create_date', 'last_modified', 'source_type', 'subject_type', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'document', 'topics', 'source_contact_type', 'source_capacity', 'localness', 'notes', 'organization_string', 'more_organization' ]
+        fields = [ "person", ]
+
+        #exclude = [ 'article_data', 'original_person', 'match_confidence_level', 'match_status', 'capture_method', 'create_date', 'last_modified', 'source_type', 'subject_type', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'document', 'topics', 'source_contact_type', 'source_capacity', 'localness', 'notes', 'organization_string', 'more_organization' ]
 
     # AJAX lookup for person.
     person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
 
-#-- END ArticleCodingForm --#
+#-- END ModelForm class ArticleCodingForm --#
 
 
 class ArticleCodingListForm( forms.Form ):
@@ -379,7 +298,7 @@ class ArticleCodingListForm( forms.Form ):
     # list of unique tags to limit to.
     tags_in_list = forms.CharField( required = True, label = "Article Tag List (comma-delimited)" )
 
-#-- END ArticleLookupForm --#
+#-- END Form class ArticleLookupForm --#
 
 
 class ArticleCodingSubmitForm( forms.Form ):
@@ -392,7 +311,7 @@ class ArticleCodingSubmitForm( forms.Form ):
     data_store_json = forms.CharField( required = False, widget = forms.HiddenInput() )
     article_data_id = forms.IntegerField( required = False, widget = forms.HiddenInput() )
 
-#-- END ArticleLookupForm --#
+#-- END Form class ArticleLookupForm --#
 
 
 class ArticleLookupForm( forms.Form ):
@@ -405,7 +324,7 @@ class ArticleLookupForm( forms.Form ):
     article_id = forms.IntegerField( required = True, label = "Article ID" )
     # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
 
-#-- END ArticleLookupForm --#
+#-- Form class END ArticleLookupForm --#
 
 
 class ArticleOutputTypeSelectForm( forms.Form ):
@@ -421,7 +340,7 @@ class ArticleOutputTypeSelectForm( forms.Form ):
     # and a place to specify the text you want pre-pended to each column header.
     header_prefix = forms.CharField( required = False, label = "Column Header Prefix" )
 
-#-- END ArticleOutputTypeSelectForm -------------------------------------------#
+#-- END Form class ArticleOutputTypeSelectForm --#
 
 
 class ArticleSelectForm( forms.Form ):
@@ -472,7 +391,7 @@ class ArticleSelectForm( forms.Form ):
     # allow duplicate articles?
     allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
     
-#-- END ArticleSelectForm -----------------------------------------------------#
+#-- END Form class ArticleSelectForm --#
 
 
 class NetworkOutputForm( forms.Form ):
@@ -502,8 +421,110 @@ class NetworkOutputForm( forms.Form ):
     # do we want to output row and column headers?
     network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
-#-- END NetworkOutputForm -------------------------------------------#
+#-- END Form class NetworkOutputForm --#
 
+
+class PersonLookupTypeForm( forms.Form ):
+    
+    '''
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
+    '''
+    
+    PERSON_LOOKUP_TYPE_GENERAL_QUERY = "general_query"
+    PERSON_LOOKUP_TYPE_EXACT_QUERY = "exact_query"
+    
+    # action choices
+    PERSON_LOOKUP_TYPE_CHOICES = (
+        ( PERSON_LOOKUP_TYPE_GENERAL_QUERY, "General Query (match what is entered, ignore anything not entered)" ),
+        ( PERSON_LOOKUP_TYPE_EXACT_QUERY, "Exact Query (match exactly what is entered, even empty fields)" ),
+    )
+    lookup_type = forms.ChoiceField( required = True, choices = PERSON_LOOKUP_TYPE_CHOICES )
+
+#-- END Form class PersonLookupTypeForm --#
+
+
+class PersonLookupByNameForm( forms.ModelForm ):
+
+    # constants-ish
+    IAMEMPTY = "IAMEMPTY"
+    
+    '''
+    PersonNameLookupForm lets user specify full name or parts of a name to use
+        to lookup one or more matching Person records.
+    '''
+
+    class Meta:
+    
+        model = Person
+        fields = [ "full_name_string", "first_name", "middle_name", "last_name", "name_prefix", "name_suffix", "nickname" ]
+
+    '''
+    # name string - will be parsed as when a Person is created automatically
+    #     from a name string.
+    full_name_string = models.CharField( max_length = 255, blank = True, null = True )
+
+    # name parts
+    first_name = models.CharField( max_length = 255, blank = True, null = True )
+    middle_name = models.CharField( max_length = 255, blank = True, null = True )
+    last_name = models.CharField( max_length = 255, blank = True, null = True )
+    name_prefix = models.CharField( max_length = 255, blank = True, null = True )
+    name_suffix = models.CharField( max_length = 255, blank = True, null = True )
+    nickname = models.CharField( max_length = 255, blank = True, null = True )
+    '''
+    
+    #--------------------------------------------------------------------------#
+    # methods
+    #--------------------------------------------------------------------------#
+    
+        
+    def am_i_empty( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and checks to see if any has been
+            populated.  If not, returns True (it is empty!).  If there is a
+            value in any of them, returns False (not empty).
+        '''
+        
+        # return reference
+        is_empty_OUT = True
+        
+        # declare variables
+        me = "am_i_empty"
+        my_logger_name = "sourcenet.forms.ArticleCodingArticleFilterForm"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+
+        return is_empty_OUT
+
+    #-- END method am_i_empty() --#
+
+    
+#-- END ModelForm class PersonLookupByNameForm --#
+
+
+class Person_ProcessSelectedForm( forms.Form ):
+    
+    '''
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
+    '''
+    
+    # action choices
+    PERSON_ACTION_CHOICES = (
+        ( "match_summary", "Match Summary" ),
+        ( "view_matches", "View Matches" ),
+        ( "merge", "Merge Person records" ),
+    )
+    action = forms.ChoiceField( required = True, choices = PERSON_ACTION_CHOICES )
+
+    # apply_tags_list (comma-delimited)
+    #apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
+    
+#-- END Form class Person_ProcessSelectedForm --#
+    
 
 # create a form to let a user specify the criteria used to limit the output form
 class PersonSelectForm( forms.Form ):
@@ -560,7 +581,7 @@ class PersonSelectForm( forms.Form ):
     # allow duplicate articles?
     person_allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
-#-- end Form model PersonSelectForm -------------------------------------------
+#-- end Form class PersonSelectForm --#
 
 
 class ProcessSelectedArticlesForm( forms.Form ):
@@ -619,4 +640,4 @@ class RelationSelectForm( forms.Form ):
         choices = Article_Subject.SOURCE_CAPACITY_CHOICES,
         label = "relations - Exclude source capacities" )
 
-#-- END RelationSelectForm -----------------------------------------------------#
+#-- END Form class RelationSelectForm --#

@@ -30,7 +30,7 @@ import pickle
 # import six for Python 2 and 3 compatibility.
 import six
 
-# nameparse import
+# nameparser import
 # http://pypi.python.org/pypi/nameparser
 from nameparser import HumanName
 
@@ -1308,8 +1308,9 @@ class Abstract_Person( Abstract_Person_Parent ):
         nickname = ""
         strict_q = None
                 
-        # got a name?
-        if ( name_IN ):
+        # got a name or a pre-parsed name?
+        if ( ( ( name_IN is not None ) and ( name_IN != "" ) )
+            or ( parsed_name_IN is not None ) ):
         
             # Got a pre-parsed name?
             if ( parsed_name_IN is not None ):
