@@ -505,6 +505,27 @@ class PersonLookupByNameForm( forms.ModelForm ):
 #-- END ModelForm class PersonLookupByNameForm --#
 
 
+class Person_LookupResultViewForm( forms.Form ):
+    
+    '''
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
+    '''
+    
+    # action choices
+    PERSON_RESULT_VIEW_CHOICES = (
+        ( "match_summary", "Match Summary" ),
+        ( "view_matches", "View Matches" ),
+        #( "merge", "Merge Person records" ),
+    )
+    action = forms.ChoiceField( required = True, choices = PERSON_RESULT_VIEW_CHOICES )
+
+    # apply_tags_list (comma-delimited)
+    #apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
+    
+#-- END Form class Person_ProcessSelectedForm --#
+    
+
 class Person_ProcessSelectedForm( forms.Form ):
     
     '''
@@ -514,8 +535,8 @@ class Person_ProcessSelectedForm( forms.Form ):
     
     # action choices
     PERSON_ACTION_CHOICES = (
-        ( "match_summary", "Match Summary" ),
-        ( "view_matches", "View Matches" ),
+        #( "match_summary", "Match Summary" ),
+        #( "view_matches", "View Matches" ),
         ( "merge", "Merge Person records" ),
     )
     action = forms.ChoiceField( required = True, choices = PERSON_ACTION_CHOICES )

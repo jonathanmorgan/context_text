@@ -104,6 +104,7 @@ from sourcenet.forms import ArticleCodingSubmitForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
+from sourcenet.forms import Person_LookupResultViewForm
 from sourcenet.forms import Person_ProcessSelectedForm
 from sourcenet.forms import PersonLookupTypeForm
 from sourcenet.forms import PersonLookupByNameForm
@@ -2740,7 +2741,7 @@ def output_network( request_IN ):
 
 
 @login_required
-def person_filter_and_process( request_IN ):
+def person_filter( request_IN ):
 
     '''
     This view allows a user to look up a set of Persons who have similar names
@@ -2789,13 +2790,24 @@ def person_filter_and_process( request_IN ):
     person_details_dict = {}
     person_counter = -1
     person_instance = None
+    person_id = -1
+    person_id_string_list = []
+    person_id_list_string = ""
+    newspaper_list = None
+    newspaper_instance = None
+    UUID_list = None
+    UUID_instance = None
+    article_id_set = None
+    article_person = None
+    article_data = None
+    article_id = -1
     
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/person/person-filter-process.html'
+    default_template = 'sourcenet/person/person-filter.html'
     
     # get current user
     current_user = request_IN.user
@@ -2810,6 +2822,7 @@ def person_filter_and_process( request_IN ):
         person_lookup_by_name_form = PersonLookupByNameForm( request_inputs )
         person_lookup_type_form = PersonLookupTypeForm( request_inputs )
         person_process_selected_form = Person_ProcessSelectedForm( request_inputs )
+        person_lookup_result_view_form = Person_LookupResultViewForm( request_inputs )
         
         # we can try an action
         ready_to_act = True
@@ -2820,6 +2833,7 @@ def person_filter_and_process( request_IN ):
         person_lookup_by_name_form = PersonLookupByNameForm()
         person_lookup_type_form = PersonLookupTypeForm()
         person_process_selected_form = Person_ProcessSelectedForm()
+        person_lookup_result_view_form = Person_LookupResultViewForm()
         
         # no action without some inputs
         ready_to_act = False
@@ -2830,6 +2844,7 @@ def person_filter_and_process( request_IN ):
     response_dictionary[ "person_lookup_by_name_form" ] = person_lookup_by_name_form
     response_dictionary[ "person_lookup_type_form" ] = person_lookup_type_form
     response_dictionary[ "person_process_selected_form" ] = person_process_selected_form
+    response_dictionary[ "person_lookup_result_view_form" ] = person_lookup_result_view_form
 
     # form ready?
     if ( ready_to_act == True ):
@@ -2936,7 +2951,7 @@ def person_filter_and_process( request_IN ):
                         # ! use person_process_selected_form to see what we do now...
                         
                         # is form valid?
-                        if ( person_process_selected_form.is_valid() == True ):
+                        if ( person_lookup_result_view_form.is_valid() == True ):
                         
                             # yes - do we have an action?
                             action_IN = request_inputs.get( "action", None )
@@ -2965,6 +2980,58 @@ def person_filter_and_process( request_IN ):
                                         person_details_dict[ "index" ] = person_counter
                                         person_details_dict[ "instance" ] = person_instance
                                         
+                                        # list of person IDs.
+                                        person_id = person_instance.id
+                                        person_id_string_list.append( str( person_id ) )
+                                        
+                                        # make lists of newspapers and UUIDs.
+                                        newspaper_list = []
+                                        for newspaper_instance in person_instance.person_newspaper_set.all():
+                                        
+                                            # add the newspaper to the list.
+                                            newspaper_list.append( newspaper_instance )
+                                            
+                                        #-- END loop over newspapers --#
+                                        
+                                        # add to details dict.
+                                        person_details_dict[ "newspaper_list" ] = newspaper_list
+                                        
+                                        UUID_list = []
+                                        for UUID_instance in person_instance.person_external_uuid_set.all():
+                                        
+                                            # add the UUID to the list.
+                                            UUID_list.append( UUID_instance )
+                                            
+                                        #-- END loop over UUIDs --#
+                                        
+                                        # add to details dict.
+                                        person_details_dict[ "UUID_list" ] = UUID_list
+                                        
+                                        # build a set of related article IDs.
+                                        article_id_set = set()
+                                        for article_person in person_instance.article_subject_set.all():
+                                        
+                                            # get related article ID through the
+                                            #     related article data.
+                                            article_data = article_person.article_data
+                                            article_id = article_data.article.id
+                                            article_id_set.add( article_id )
+                                            
+                                        #-- END loop over related Article_Subjects --#
+                                        
+                                        for article_person in person_instance.article_author_set.all():
+                                        
+                                            # get related article ID through the
+                                            #     related article data.
+                                            article_data = article_person.article_data
+                                            article_id = article_data.article.id
+                                            article_id_set.add( article_id )
+                                            
+                                        #-- END loop over related Article_Subjects --#
+                                        
+                                        # add to details.
+                                        person_details_dict[ "article_id_set" ] = article_id_set
+
                                         # add details to list.
                                         person_details_list.append( person_details_dict )
                 
@@ -2972,6 +3039,11 @@ def person_filter_and_process( request_IN ):
                                     
                                     # seed response dictionary.
                                     response_dictionary[ 'person_details_list' ] = person_details_list
+                                    
+                                    # place list of matching person IDs in dict
+                                    #     as well.
+                                    response_dictionary[ "person_id_string_list" ] = person_id_string_list
+                                    response_dictionary[ "person_id_list_string" ] = ",".join( person_id_string_list )
             
                                 elif ( action_IN == "merge" ):
                                 
@@ -3028,4 +3100,4 @@ def person_filter_and_process( request_IN ):
 
     return response_OUT
 
-#-- END view function person_filter_and_process() --#
+#-- END view function person_filter() --#

@@ -100,6 +100,6 @@ urlpatterns = [
     url( r'^article/code/', sourcenet.views.article_code, name = "sourcenet-article_code" ),
 
     # filter and process Person records
-    url( r'^person/filter/$', sourcenet.views.person_filter_and_process, name = "sourcenet-person_filter_and_process" ),    
+    url( r'^person/filter/$', sourcenet.views.person_filter, name = "sourcenet-person_filter" ),    
     
 ]
