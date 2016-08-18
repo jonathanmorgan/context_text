@@ -1275,7 +1275,7 @@ class Abstract_Person( Abstract_Person_Parent ):
 
 
     @classmethod
-    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False, do_partial_match_IN = False ):
+    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False, do_partial_match_IN = False, qs_IN = None, *args, **kwargs ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -1334,7 +1334,17 @@ class Abstract_Person( Abstract_Person_Parent ):
             nickname = parsed_name.nickname
             
             # build up queryset.
-            qs_OUT = cls.objects.all()
+            if ( qs_IN is not None ):
+            
+                # got one passed in, start with it.
+                qs_OUT = qs_IN
+            
+            else:
+            
+                # make a new one
+                qs_OUT = cls.objects.all()
+                
+            #-- END check to see if QuerySet passed in. --#
             
             # got a prefix?
             if ( prefix ):
@@ -6665,6 +6675,177 @@ class Article_Person( Abstract_Person_Parent ):
     #-- END method get_article_info() --#
 
 
+    def get_alternate_person_id_list( self, append_to_list_IN = None, *args, **kwargs ):
+        
+        '''
+        If there are any related Alternate person Match records, makes a list of
+            IDs of the Persons associated with each, then returns that
+            list.  If none, returns an empty list.  If error, returns None.
+        '''
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        me = "get_alternate_person_id_list"
+        alternate_person_list = None
+        person_instance = None
+        person_ID = -1
+        
+        # initialize output list
+        if ( ( append_to_list_IN is not None )
+            and ( isinstance( append_to_list_IN, list ) == True ) ):
+
+            list_OUT = append_to_list_IN
+
+        else:
+            
+            # Nothing passed in.  Make a new list.
+            list_OUT = []
+            
+        #-- END check to see if output list passed in. --#
+        
+        # try to get list of alternate persons.
+        alternate_person_list = self.get_alternate_person_list()
+        
+        # got something?
+        if ( ( alternate_person_list is not None )
+            and ( isinstance( alternate_person_list, list ) == True )
+            and ( len( alternate_person_list ) > 0 ) ):
+            
+            # yes.  Loop, grabbing the ID of each person and placing it in our
+            #     output list.
+            for person_instance in alternate_person_list:
+            
+                # get ID.
+                person_ID = person_instance.id
+                
+                # add to list.
+                list_OUT.append( person_ID )
+                
+            #-- END loop over person instances.
+            
+        #-- END check to see if any alternate persons. --#
+
+        return list_OUT
+        
+    #-- END function get_alternate_person_id_list() --#
+    
+
+    def get_alternate_person_list( self, *args, **kwargs ):
+        
+        '''
+        If there are any related Alternate_Author_Match records, makes a list of
+            Person instances of Persons associated with each, then returns that
+            list.  If none, returns an empty list.  If error, returns None.
+        '''
+        
+        # return reference
+        person_list_OUT = None
+        
+        # declare variables
+        me = "get_alternate_person_list"
+        alternate_person_qs = None
+        alternate_person_count = -1
+        alternate_person = None
+        person_instance = None
+        
+        # initialize output list
+        person_list_OUT = []
+        
+        # see if there is anything in article_author_match_set.
+        alternate_person_qs = self.get_alternate_person_match_qs()
+        alternate_person_count = alternate_person_qs.count()
+        
+        if ( alternate_person_count > 0 ):
+        
+            # loop, adding each person to the list.
+            for alternate_person in alternate_person_qs:
+            
+                # get Person instance.
+                person_instance = alternate_person.person
+                
+                # add to output list.
+                person_list_OUT.append( person_instance )
+            
+            #-- END loop over associated alternate persons --#
+        
+        #-- END check to see if any alternate matches --#
+
+        return person_list_OUT
+        
+    #-- END function get_alternate_person_list() --#
+    
+
+    @abstractmethod
+    def get_alternate_person_match_qs( self ):
+        
+        '''
+        If there are any alternate matches for this person, returns a list of
+            Match instances for each (each contains a reference to a "person"
+            along with other information).  If none found, returns empty list.
+            If error returns None.  This method is abstract, so the child
+            classes can each define how they deal with multiple matches and
+            ambiguity.
+        '''
+        
+        print( "++++++++ In Article_Person.get_alternate_person_match_qs() ++++++++" )
+        
+        pass
+        
+    #-- END function get_alternate_person_match_qs() --#
+    
+
+    def get_associated_person_id_list( self ):
+        
+        '''
+        If there is a related Person or any related Alternate person Match
+            records, makes a list of IDs of the Persons associated with each,
+            then returns that list.  If none, returns an empty list.  If error,
+            returns None.
+        '''
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        me = "get_associated_person_id_list"
+        my_person = None
+        alternate_person_list = None
+        person_instance = None
+        person_ID = -1
+        
+        # initialize output list
+        list_OUT = []
+        
+        # first, is there a nested person?
+        my_person = self.person
+        if ( my_person is not None ):
+        
+            # there is.  Get ID and add it to the list.
+            person_ID = my_person.id
+            list_OUT.append( person_ID )
+        
+        #-- END check to se if nested person --#
+        
+        # get alternate person ID list.
+        alternate_person_id_list = self.get_alternate_person_id_list()
+        
+        # got something?
+        if ( ( alternate_person_id_list is not None )
+            and ( isinstance( alternate_person_id_list, list ) == True )
+            and ( len( alternate_person_id_list ) > 0 ) ):
+            
+            # yes.  Add items in the list to our output list.
+            list_OUT = list_OUT.extend( alternate_person_id_list )
+            
+        #-- END check to see if any alternate persons. --#
+
+        return list_OUT
+        
+    #-- END function get_associated_person_id_list() --#
+    
+
     def get_person_id( self ):
 
         '''
@@ -7102,6 +7283,29 @@ class Article_Author( Article_Person ):
     #-- END __str__() method --#
 
 
+    def get_alternate_person_match_qs( self ):
+        
+        '''
+        If there are any alternate matches for this person, returns a list of
+            Match instances for each (each contains a reference to a "person"
+            along with other information).  If none found, returns empty
+            QuerySet.  If error returns None.  This method is abstract, so the child
+            classes can each define how they deal with multiple matches and
+            ambiguity.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # retrieve QuerySet
+        qs_OUT = self.alternate_author_match_set.all()
+
+        # return the list
+        return qs_OUT
+        
+    #-- END function get_alternate_person_match_qs() --#
+    
+
     def process_alternate_matches( self ):
         
         '''
@@ -7176,9 +7380,96 @@ class Article_Author( Article_Person ):
 #= End Article_Author Model ======================================================
 
 
+@python_2_unicode_compatible
+class Abstract_Alternate_Person_Match( models.Model ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+
+    person = models.ForeignKey( Person, blank = True, null = True )
+
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True, blank = True, null = True )
+    last_modified = models.DateTimeField( auto_now = True, blank = True, null = True )
+
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+
+        abstract = True
+
+    #-- END Meta class --#
+
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        got_last_name = False
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id ) + " - "
+            
+        #-- END check for ID. --#
+
+        # got associated person?  We'd better...
+        if ( self.person ):
+        
+            string_OUT += " alternate = "
+            
+            # got ID?
+            if ( self.person.id ):
+            
+                # yup.  Output it.
+                string_OUT += "person " + str( self.person.id ) + " - "
+            
+            #-- END check to see if ID --#
+        
+            # got a last name?
+            if ( ( self.person.last_name is not None ) and ( self.person.last_name != "" ) ):
+            
+                string_OUT += self.person.last_name
+                got_last_name = True
+                
+            #-- END check to see if last name. --#
+            
+            # got a first name?
+            if ( ( self.person.first_name is not None ) and ( self.person.first_name != "" ) ):
+            
+                if ( got_last_name == True ):
+                
+                    string_OUT += ", "
+                    
+                #-- END check to see if last name preceded first name --#
+                
+                string_OUT += self.person.first_name
+                
+            #-- END check to see if first name. --#
+            
+        #-- END check to see if we have a person. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+
+
+#= End Abstract_Alternate_Person_Match Model ======================================================
+
+
 # Alternate_Author_Match model
 @python_2_unicode_compatible
-class Alternate_Author_Match( models.Model ):
+class Alternate_Author_Match( Abstract_Alternate_Person_Match ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
@@ -7186,8 +7477,15 @@ class Alternate_Author_Match( models.Model ):
 
 
     article_author = models.ForeignKey( Article_Author, blank = True, null = True )
+
+    '''
+    # now in parent class.
     person = models.ForeignKey( Person, blank = True, null = True )
 
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True, blank = True, null = True )
+    last_modified = models.DateTimeField( auto_now = True, blank = True, null = True )
+    '''
 
     #----------------------------------------------------------------------
     # instance methods
@@ -7467,6 +7765,29 @@ class Article_Subject( Article_Person ):
     #-- END method __str__() --#
 
 
+    def get_alternate_person_match_qs( self ):
+        
+        '''
+        If there are any alternate matches for this person, returns a list of
+            Match instances for each (each contains a reference to a "person"
+            along with other information).  If none found, returns empty
+            QuerySet.  If error returns None.  This method is abstract, so the child
+            classes can each define how they deal with multiple matches and
+            ambiguity.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # retrieve QuerySet
+        qs_OUT = self.alternate_subject_match_set.all()
+
+        # return the list
+        return qs_OUT
+        
+    #-- END function get_alternate_person_match_qs() --#
+        
+
     def is_connected( self, param_dict_IN = None ):
 
         """
@@ -7677,7 +7998,7 @@ class Article_Subject( Article_Person ):
 
 # Alternate_Subject_Match model
 @python_2_unicode_compatible
-class Alternate_Subject_Match( models.Model ):
+class Alternate_Subject_Match( Abstract_Alternate_Person_Match ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
@@ -7685,7 +8006,15 @@ class Alternate_Subject_Match( models.Model ):
 
 
     article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
+
+    '''
+    # in parent class now.
     person = models.ForeignKey( Person, blank = True, null = True )
+
+    # time stamps.
+    create_date = models.DateTimeField( auto_now_add = True, blank = True, null = True )
+    last_modified = models.DateTimeField( auto_now = True, blank = True, null = True )
+    '''
 
 
     #----------------------------------------------------------------------

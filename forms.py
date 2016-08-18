@@ -301,6 +301,19 @@ class ArticleCodingListForm( forms.Form ):
 #-- END Form class ArticleLookupForm --#
 
 
+class ArticleCodingPersonAmbiguityForm( forms.Form ):
+
+    '''
+    form to hold lookup criteria for articles that need to be coded.  To start,
+        just includes list of tags.
+    '''
+
+    # list of unique tags to limit to.
+    article_tags_in_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
+
+#-- END Form class ArticleCodingPersonAmbiguityForm --#
+
+
 class ArticleCodingSubmitForm( forms.Form ):
 
     '''
@@ -444,6 +457,51 @@ class PersonLookupTypeForm( forms.Form ):
 #-- END Form class PersonLookupTypeForm --#
 
 
+class PersonLookupByIDForm( forms.Form ):
+    
+    '''
+    Form that holds ways of finding and retrieving persons with certain IDs.  To
+        start includes a list of IDs, or the ID of either an Article_Subject or
+        Article_Author instance that might contain references to multiple
+        people amongst which there is some ambiguity.
+    '''
+    
+    person_id_in_list = forms.CharField( required = False, label = "Person ID List (comma-delimited)" )
+    article_author_id = forms.CharField( required = False, label = "Article_Subject ID" )
+    article_subject_id = forms.CharField( required = False, label = "Article_Subject ID" )
+
+    
+    #--------------------------------------------------------------------------#
+    # methods
+    #--------------------------------------------------------------------------#
+    
+        
+    def am_i_empty( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and checks to see if any has been
+            populated.  If not, returns True (it is empty!).  If there is a
+            value in any of them, returns False (not empty).
+        '''
+        
+        # return reference
+        is_empty_OUT = True
+        
+        # declare variables
+        me = "am_i_empty"
+        my_logger_name = "sourcenet.forms.PersonLookupByIDForm"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+
+        return is_empty_OUT
+
+    #-- END method am_i_empty() --#
+
+#-- END Form class PersonLookupByIDForm --#
+
+
 class PersonLookupByNameForm( forms.ModelForm ):
 
     # constants-ish
@@ -491,7 +549,7 @@ class PersonLookupByNameForm( forms.ModelForm ):
         
         # declare variables
         me = "am_i_empty"
-        my_logger_name = "sourcenet.forms.ArticleCodingArticleFilterForm"
+        my_logger_name = "sourcenet.forms.PersonLookupByNameForm"
         debug_message = ""
         
         # use DjangoFormHelper method

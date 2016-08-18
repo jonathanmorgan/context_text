@@ -97,9 +97,10 @@ urlpatterns = [
     
     # article coding pages
     url( r'^article/code/list/', sourcenet.views.article_coding_list, name = "sourcenet-article_coding_list" ),
+    url( r'^article/code/view/ambiguities/', sourcenet.views.article_coding_view_person_ambiguities, name = "sourcenet-article_coding_view_person_ambiguities" ),
     url( r'^article/code/', sourcenet.views.article_code, name = "sourcenet-article_code" ),
 
     # filter and process Person records
-    url( r'^person/filter/$', sourcenet.views.person_filter, name = "sourcenet-person_filter" ),    
+    url( r'^person/filter/$', sourcenet.views.person_filter, name = "sourcenet-person_filter" ),
     
 ]

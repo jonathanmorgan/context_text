@@ -38,13 +38,13 @@
                             View: <a href="{% url 'sourcenet-article_view' %}">an article</a> | <a href="{% url 'sourcenet-article_view_article_data_with_text' %}">article + coding</a> | <a href="{% url 'sourcenet-article_view_article_data' %}">article coding detail</a>
                         </li>
                         <li>
-                            Coding: <a href="{% url 'sourcenet-article_code' %}">Code an article</a> | <a href="{% url 'sourcenet-article_coding_list' %}">Article Coding List</a>
+                            Coding: <a href="{% url 'sourcenet-article_code' %}">Code an article</a> | <a href="{% url 'sourcenet-article_coding_list' %}">Article Coding List</a> | <a href="{% url 'sourcenet-article_coding_view_person_ambiguities' %}">Person Ambiguities</a>
                         </li>
                         <li>
                             Data: <a href="{% url 'sourcenet-output_network' %}">network outputter</a> | <a href="{% url 'sourcenet-output_articles' %}">article outputter</a>
                         </li>
                         <li>
-                            <a href="{% url 'sourcenet-filter_articles' %}">Go to article processing</a>
+                            Processing: <a href="{% url 'sourcenet-filter_articles' %}">Article processing</a> | <a href="{% url 'sourcenet-person_filter' %}">Person processing</a>
                         </li>
                     </ul>
                     <hr />
