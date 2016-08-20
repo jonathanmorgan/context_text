@@ -1,0 +1,44 @@
+{# parameters: #}
+{# - current_person - dictionary that contains: #}
+{#     - "index" - counter value in loop over persons for this person. #}
+{#     - "instance" - reference to the person's Person model instance. #}
+{#     - "newspaper_list" - list of Newspaper model instances for papers the person has appeared in. #}
+{#     - "UUID_list" - list of UUIDs that have been associated with the person. #}
+{#     - "article_id_set" - list of IDs of articles in which the person has been a subject or author. #}
+
+<td>{{ current_person.index }}</td>
+<td>{{ current_person.instance.id }}</td>
+<td>{{ current_person.instance.get_name_string }}</td>
+<td>
+    {% if current_person.newspaper_list %}
+        <ul>
+            {% for newspaper in current_person.newspaper_list %}
+                <li>{{ newspaper }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        No related newspapers.
+    {% endif %}
+</td>
+<td>
+    {% if current_person.UUID_list %}
+        <ul>
+            {% for UUID_instance in current_person.UUID_list %}
+                <li>{{ UUID_instance.uuid }} ( {{ UUID_instance.source }} )</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        No related UUID.
+    {% endif %}
+</td>
+<td>
+    {% if current_person.article_id_set %}
+        <ul>
+            {% for article_id in current_person.article_id_set %}
+                <li><a href="{% url 'sourcenet-article_view' %}?article_id={{ article_id }}">{{ article_id }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        No related article IDs.
+    {% endif %}
+</td>

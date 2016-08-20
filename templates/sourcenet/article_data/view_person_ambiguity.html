@@ -52,7 +52,7 @@
                     <tr>
                         <td>{{ article_subject.id }}</td>
                         <td>{{ article_subject }}</td>
-                        <td><a href="{% url 'sourcenet-person_filter' %}?article_subject_id={{ article_subject.id }}">view/fix</a></td>
+                        <td><a href="{% url 'sourcenet-person_filter' %}?article_subject_id={{ article_subject.id }}&action=view_matches&lookup_type=general_query">view/fix</a></td>
                     </tr>
                 {% endfor %}
             </table>

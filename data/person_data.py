@@ -22,6 +22,9 @@ Configuration properties for it are stored in django's admins, in the
 # six - python 2 + 3
 import six
 
+# django imports
+from django.db.models.query import QuerySet
+
 # python utilities
 from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.status.status_container import StatusContainer
@@ -42,6 +45,28 @@ class PersonData( object ):
 
     # DEBUG
     DEBUG_FLAG = False
+    LOGGER_NAME = "sourcenet.data.person_data.PersonData"
+    
+    # names of reverse lookup classes.
+    CLASS_NAME_REVERSE_1_TO_1_OLD = "SingleRelatedObjectDescriptor"
+    CLASS_NAME_REVERSE_1_TO_1_NEW = "ReverseOneToOneDescriptor"
+    CLASS_NAME_REVERSE_M_TO_1_OLD = "ForeignRelatedObjectsDescriptor"
+    CLASS_NAME_REVERSE_M_TO_1_NEW = "ReverseManyToOneDescriptor"
+    CLASS_NAME_REVERSE_GENERIC_M_TO_1_OLD = "ReverseGenericRelatedObjectsDescriptor"
+    CLASS_NAME_REVERSE_GENERIC_M_TO_1_NEW = "ReverseGenericManyToOneDescriptor"
+    CLASS_NAME_M_TO_M_OLD = "ManyRelatedObjectsDescriptor"
+    CLASS_NAME_M_TO_M_NEW = "ManyToManyDescriptor"
+    
+    REVERSE_LOOKUP_CLASS_NAMES = [ CLASS_NAME_REVERSE_1_TO_1_OLD,
+                                   CLASS_NAME_REVERSE_1_TO_1_NEW,
+                                   CLASS_NAME_REVERSE_M_TO_1_OLD,
+                                   CLASS_NAME_REVERSE_M_TO_1_NEW,
+                                   CLASS_NAME_REVERSE_GENERIC_M_TO_1_OLD,
+                                   CLASS_NAME_REVERSE_GENERIC_M_TO_1_NEW,
+                                   CLASS_NAME_M_TO_M_OLD,
+                                   CLASS_NAME_M_TO_M_NEW ]
+                                   
+    
     
 
     #============================================================================
@@ -53,6 +78,208 @@ class PersonData( object ):
     # ! class methods
     #============================================================================
 
+    @classmethod
+    def delete_records( cls, record_qs_IN, merge_to_id_IN, do_delete_IN = False, logger_name_IN = None, *args, **kwargs ):
+        
+        '''
+        accepts a QuerySet of records.  calls delete() on each record in the
+            QuerySet.  Be careful!
+
+        preconditions: Seriously, BE CAREFUL!!!
+        postconditions: deletes everything in the QuerySet.
+        '''
+        
+        # return reference
+        status_OUT = StatusContainer()
+        
+        # declare variables
+        me = "delete_records"
+        my_logger_name = ""
+        debug_message = ""
+        current_record = None
+        
+        # set logger name.
+        if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
+        
+            # got one - use it.
+            my_logger_name = logger_name_IN
+        
+        else:
+        
+            # not set.  Use default.
+            my_logger_name = cls.LOGGER_NAME
+        
+        #-- END check to see if loger name passed in. --#
+        
+        # got a QuerySet?
+        if ( isinstance( record_qs_IN, QuerySet ) == True ):
+            
+            # yes.  anything in it?
+            if ( record_qs_IN.count() > 0 ):
+            
+                debug_message = "QuerySet IS NOT empty."
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                # loop over records.
+                for current_record in record_qs_IN:
+                
+                    debug_message = "Current record: " + str( current_record )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+                
+                    # do we delete?
+                    if ( do_delete_IN == True ):
+                    
+                        # OK...
+                        current_record.delete()
+                        
+                        debug_message = "DELETED!!!"
+                        LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "========> ", logger_name_IN = my_logger_name )
+                    
+                    #-- END check to see if we delete. --#
+                
+                #-- END loop over records. --#
+        
+            else:
+            
+                debug_message = "QuerySet is EMPTY."
+                LoggingHelper.output_debug( debug_message, method_IN = me, indent_with_IN = "====> ", logger_name_IN = my_logger_name )
+            
+            #-- END check to see if anything in list. --#
+            
+        else:
+        
+        #-- END check to see if QuerySet instance passed in. --#
+        
+        return status_OUT
+        
+    #-- END class method delete_related_records. --#
+        
+    
+    @classmethod
+    def get_function_for_attr_name( cls, record_qs_IN, merge_to_id_IN, do_delete_IN = False, logger_name_IN = None, *args, **kwargs ):
+        
+        '''
+        accepts a QuerySet of records.  calls delete() on each record in the
+        '''
+        
+        pass
+
+
+
+    @classmethod
+    def get_person_set_names( cls, *args, **kwargs ):
+        
+        # return reference
+        name_list_OUT = []
+        
+        # declare variables
+        attr_list = None
+        
+        # get all non-standard attributes of Person class.
+        attr_list = ObjectHelper.get_user_attributes( Person )
+        
+        # get list of person "*_set" attributes
+        for name, value in six.iteritems( attr_list ):
+        
+            # check to see if it ends in "_set"
+   ...:     if ( name.endswith( "_set" ) == True ):
+   ...:         print( name )
+
+
+    
+
+
+    @classmethod
+    def merge_persons( cls, from_person_id_list_IN, to_person_id_IN, do_updates_IN = True, logger_name_IN = None, *args, **kwargs ):
+
+        '''
+        Have to account for references:
+        - reliability_names_set
+        - article_author_set
+        - person_organization_set
+        - sourcenet_article_author_original_person_set
+        - person_newspaper_set
+        - alternate_author_match_set
+        - sourcenet_article_subject_original_person_set
+        - person_external_uuid_set
+        - alternate_name_set
+        - reliability_ties_to_set
+        - reliability_ties_from_set
+        - alternate_subject_match_set
+        - article_subject_set
+        '''
+
+        # return reference
+        status_OUT = StatusContainer()
+                
+        # declare variables
+        me = "switch_persons_in_data"
+        debug_message = ""
+        my_logger_name = ""
+        status_message = ""
+        person_id = -1
+        person_instance = None
+        
+        # set logger name.
+        if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
+        
+            # got one - use it.
+            my_logger_name = logger_name_IN
+        
+        else:
+        
+            # not set.  Use default.
+            my_logger_name = cls.LOGGER_NAME
+        
+        #-- END check to see if loger name passed in. --#
+        
+        # init status container
+        status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
+        
+        # get list of person "*_set"s.
+                
+        # got a list passed in?
+        if ( ( from_person_id_list_IN is not None )
+            and ( isinstance( from_person_id_list_IN, list ) == True )
+            and ( len( from_person_id_list_IN ) > 0 ) ):
+        
+            # make sure there is a person to merge to...
+            if ( ( to_person_id_IN is not None )
+                and ( isinstance( to_person_id_IN, six.integer_types ) == True )
+                and ( to_person_id_IN > 0 ) ):
+                
+                # loop over person list.
+                for person_id in from_person_id_list_IN:
+                
+                    # get person instance.
+                    person_instance = Person.objects.get( pk = person_id )
+                    
+                    #
+                    
+                #-- END loop over persons. --#
+
+            else:
+            
+                # no person ID to merge into - nothing to merge.
+                status_OUT.set_status_code( StatusContainer.STATUS_CODE_ERROR )
+                status_message = "No person ID to merge into, so nothing to merge."
+                status_OUT.add_message( status_message )
+                
+            #-- END check to see if ID to merge into. --#
+        
+            
+        else:
+        
+            # no list of from person IDs - nothing to merge.
+            status_OUT.set_status_code( StatusContainer.STATUS_CODE_ERROR )
+            status_message = "No person IDs in list of persons to merge passed in, so nothing to merge."
+            status_OUT.add_message( status_message )
+            
+        #-- END check to see if list of person to merge. --#
+
+        return status_OUT
+        
+    #-- END class method merge_persons() --#
 
     @classmethod
     def switch_persons_in_data( cls, from_person_id_IN, to_person_id_IN, do_updates_IN = True, *args, **kwargs ):

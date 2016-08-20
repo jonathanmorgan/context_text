@@ -102,5 +102,6 @@ urlpatterns = [
 
     # filter and process Person records
     url( r'^person/filter/$', sourcenet.views.person_filter, name = "sourcenet-person_filter" ),
+    url( r'^person/merge/$', sourcenet.views.person_merge, name = "sourcenet-person_merge" ),
     
 ]

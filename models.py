@@ -1275,7 +1275,14 @@ class Abstract_Person( Abstract_Person_Parent ):
 
 
     @classmethod
-    def look_up_person_from_name( cls, name_IN = "", parsed_name_IN = None, do_strict_match_IN = False, do_partial_match_IN = False, qs_IN = None, *args, **kwargs ):
+    def look_up_person_from_name( cls,
+                                  name_IN = "",
+                                  parsed_name_IN = None,
+                                  do_strict_match_IN = False, 
+                                  do_partial_match_IN = False,
+                                  qs_IN = None,
+                                  *args,
+                                  **kwargs ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -6837,7 +6844,7 @@ class Article_Person( Abstract_Person_Parent ):
             and ( len( alternate_person_id_list ) > 0 ) ):
             
             # yes.  Add items in the list to our output list.
-            list_OUT = list_OUT.extend( alternate_person_id_list )
+            list_OUT.extend( alternate_person_id_list )
             
         #-- END check to see if any alternate persons. --#
 

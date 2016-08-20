@@ -1,0 +1,125 @@
+{% extends "sourcenet/base.html" %}
+
+{% block title %}Filter Person records{% endblock %}
+
+{% block content %}
+
+    <h1>Filter Person records</h1>
+    
+    {# include standard status message output #}
+    {% include "sourcenet/shared/output_status_message.html" %}
+    
+    <table>
+        <tr>
+            <td class="page_layout" valign="top">
+                
+    <div id="person_form" name="person_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+
+            {% include "sourcenet/shared/form-filter_person.html" %}
+                
+            <p>
+                <input type="submit" />
+            </p>
+        
+        </form>
+        
+    </div>
+
+            </td>
+            <td class="page_layout" valign="top">
+        
+    {% if lookup_action %}
+
+        <p>lookup action = {{ lookup_action }}</p>
+
+        {% if person_filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ person_filter_summary }}</p>
+        {% endif %}
+        
+        {% if action_summary %}
+            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+        {% endif %}
+        
+        {% if person_details_list %}
+            <p><strong>Selected Person records:</strong></p>
+
+            <table class="gridtable">
+                <tr>
+                    <th>index</th>
+                    <th>ID</th>
+                    <th>name</th>
+                    <th>paper(s)</th>
+                    <th>UUID(S)</th>
+                    <th>articles</th>
+                </tr>
+                {% for current_person in person_details_list %}
+                    <tr>
+
+                        {# output standard person detail <td>s #}
+                        {% include "sourcenet/shared/td-person_detail.html" %}
+
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3">No Person records selected.</td></tr>
+                {% endfor %}
+            </table>
+
+            <p>
+                <form action="{% url 'sourcenet-person_merge' %}" method="post">
+                    {# always include CSRF token #}
+                    {% csrf_token %}
+                    
+                    <input type="hidden" name="merge_action" value="lookup" />
+                    <input type="hidden" name="person_id_list" value="{{ person_id_list_string }}" />
+
+                    {# include inputs from all forms on page #}
+                    {% if person_lookup_by_name_form_hidden_inputs %}
+                        {{ person_lookup_by_name_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_by_id_form_hidden_inputs %}
+                        {{ person_lookup_by_id_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_type_form_hidden_inputs %}
+                        {{ person_lookup_type_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_process_selected_form_hidden_inputs %}
+                        {{ person_process_selected_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_result_view_form_hidden_inputs %}
+                        {{ person_lookup_result_view_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    <input type="submit" name="Merge Persons" value="Merge Persons" />                
+                </form>
+            </p>
+        {% endif %}
+            
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
+            <ul>
+                {% for detail_item in action_detail_list %}
+                    <ul>{{ detail_item }}</ul>
+                {% empty %}
+                    <ul>No details returned...</ul>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    {% endif %} {# END if action...endif #}
+
+    
+            </td>
+        </tr>
+    </table>
+        
+
+{% endblock %}

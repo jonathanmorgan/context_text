@@ -107,6 +107,7 @@ from ajax_select import make_ajax_field
 
 # python_utilities
 from python_utilities.django_utils.django_form_helper import DjangoFormHelper
+from python_utilities.lists.list_helper import ListHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 
 # import stuff from sourcenet
@@ -120,6 +121,147 @@ from sourcenet.models import Article_Subject
 from sourcenet.models import Newspaper
 from sourcenet.models import Person
 from sourcenet.models import Topic
+from sourcenet.shared.person_details import PersonDetails
+
+
+#===============================================================================
+# ! ==> Parent classes
+#===============================================================================
+
+
+class FormParent( forms.Form ):
+
+
+    #--------------------------------------------------------------------------#
+    # instance methods
+    #--------------------------------------------------------------------------#
+    
+        
+    def am_i_empty( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and checks to see if any has been
+            populated.  If not, returns True (it is empty!).  If there is a
+            value in any of them, returns False (not empty).
+
+        Preconditions: Must be called after is_valid() is called on the form.
+            If not, there will not be any "cleaned_data".
+        '''
+        
+        # return reference
+        is_empty_OUT = True
+        
+        # declare variables
+        me = "am_i_empty"
+        my_logger_name = "sourcenet.forms.FormParent"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+
+        return is_empty_OUT
+
+    #-- END method am_i_empty() --#
+    
+
+    def to_html_as_hidden_inputs( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and for each, creates HTML string of
+            a hidden input that contains the value.  If no data, returns empty
+            string.  If error returns None.
+            
+        Preconditions: Must be called after is_valid() is called on the form.
+            If not, there will not be any "cleaned_data".
+        '''
+        
+        # return reference
+        html_OUT = ""
+        
+        # declare variables
+        me = "to_html_as_hidden_inputs"
+        my_logger_name = "sourcenet.forms.FormParent"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        html_OUT = DjangoFormHelper.data_to_html_as_hidden_inputs( self, logger_name_IN = my_logger_name )
+
+        return html_OUT
+
+    #-- END method to_html_as_hidden_inputs() --#
+    
+
+#-- END Form class AbstractFormParent --#
+
+
+class ModelFormParent( forms.ModelForm ):
+
+
+    #--------------------------------------------------------------------------#
+    # instance methods
+    #--------------------------------------------------------------------------#
+    
+        
+    def am_i_empty( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and checks to see if any has been
+            populated.  If not, returns True (it is empty!).  If there is a
+            value in any of them, returns False (not empty).
+
+        Preconditions: Must be called after is_valid() is called on the form.
+            If not, there will not be any "cleaned_data".
+        '''
+        
+        # return reference
+        is_empty_OUT = True
+        
+        # declare variables
+        me = "am_i_empty"
+        my_logger_name = "sourcenet.forms.ModelFormParent"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+
+        return is_empty_OUT
+
+    #-- END method am_i_empty() --#
+    
+
+    def to_html_as_hidden_inputs( self, *args, **kwargs ):
+        
+        '''
+        Goes through the fields in the form and for each, creates HTML string of
+            a hidden input that contains the value.  If no data, returns empty
+            string.  If error returns None.
+            
+        Preconditions: Must be called after is_valid() is called on the form.
+            If not, there will not be any "cleaned_data".
+        '''
+        
+        # return reference
+        html_OUT = ""
+        
+        # declare variables
+        me = "to_html_as_hidden_inputs"
+        my_logger_name = "sourcenet.forms.ModelFormParent"
+        debug_message = ""
+        
+        # use DjangoFormHelper method
+        html_OUT = DjangoFormHelper.data_to_html_as_hidden_inputs( self, logger_name_IN = my_logger_name )
+
+        return html_OUT
+
+    #-- END method to_html_as_hidden_inputs() --#
+    
+
+#-- END Form class ModelFormParent --#
+
+
+#===============================================================================
+# ! ==> Classes
+#===============================================================================
 
 class Article_DataLookupForm( forms.Form ):
 
@@ -437,7 +579,7 @@ class NetworkOutputForm( forms.Form ):
 #-- END Form class NetworkOutputForm --#
 
 
-class PersonLookupTypeForm( forms.Form ):
+class PersonLookupTypeForm( FormParent ):
     
     '''
     allows user to specify list of tags they would like to be applied to
@@ -457,7 +599,7 @@ class PersonLookupTypeForm( forms.Form ):
 #-- END Form class PersonLookupTypeForm --#
 
 
-class PersonLookupByIDForm( forms.Form ):
+class PersonLookupByIDForm( FormParent ):
     
     '''
     Form that holds ways of finding and retrieving persons with certain IDs.  To
@@ -467,42 +609,218 @@ class PersonLookupByIDForm( forms.Form ):
     '''
     
     person_id_in_list = forms.CharField( required = False, label = "Person ID List (comma-delimited)" )
-    article_author_id = forms.CharField( required = False, label = "Article_Subject ID" )
+    article_author_id = forms.CharField( required = False, label = "Article_Author ID" )
     article_subject_id = forms.CharField( required = False, label = "Article_Subject ID" )
 
     
     #--------------------------------------------------------------------------#
-    # methods
+    # class methods
     #--------------------------------------------------------------------------#
     
-        
-    def am_i_empty( self, *args, **kwargs ):
+    
+    @classmethod
+    def lookup_person_by_id( cls, request_inputs_IN, person_qs_IN = None, response_dictionary_IN = None, *args, **kwargs ):
         
         '''
-        Goes through the fields in the form and checks to see if any has been
-            populated.  If not, returns True (it is empty!).  If there is a
-            value in any of them, returns False (not empty).
+        Accepts request inputs we'd expect to contain the fields defined for
+            this form.  Uses this information to lookup Persons and returns the
+            QuerySet that contains the results of the lookup.  If error, returns None.
         '''
         
         # return reference
-        is_empty_OUT = True
+        qs_OUT = None
         
         # declare variables
-        me = "am_i_empty"
+        me = "lookup_person_by_id"
         my_logger_name = "sourcenet.forms.PersonLookupByIDForm"
         debug_message = ""
+        request_inputs = None
+        person_qs = None
         
-        # use DjangoFormHelper method
-        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+        
+        person_id_in_list_string = ""
+        person_id_in_list = []
+        article_author_id = -1
+        article_subject_id = -1
+        article_author = None
+        article_subject = None
+        temp_list = []
+        
+        # first, make sure we have request inputs.
+        if ( request_inputs_IN is not None ):
+        
+            # store off the inputs.
+            request_inputs = request_inputs_IN
 
-        return is_empty_OUT
+            # got a person qs?
+            if ( person_qs_IN is not None ):
+            
+                person_qs = person_qs_IN
+                
+            #-- END check to see if person_qs --#
+        
+            # get values from form
+            person_id_in_list_string = request_inputs.get( "person_id_in_list", None )
+            
+            # convert string to list
+            if ( ( person_id_in_list_string is not None ) and ( person_id_in_list_string != "" ) ):
+            
+                # got something.  Try to coerce it into a python list.
+                person_id_in_list = ListHelper.get_value_as_list( person_id_in_list_string, delimiter_IN = "," )
+                
+                debug_message = "found person ID list - using it."
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
-    #-- END method am_i_empty() --#
+            else:
+            
+                # no ID list passed in.  Make an empty list.
+                person_id_in_list = []
+                
+                debug_message = "no straight up list of person IDs passed in - creating empty list,"
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+            #-- END check to see if person ID list passed in --#
+            
+            # see if there are Article_Subject or Article_Author IDs.
+            article_author_id = request_inputs.get( "article_author_id", None ) 
+            article_subject_id = request_inputs.get( "article_subject_id", None )
+            
+            debug_message = "article_author_id: " + str( article_author_id )
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+            debug_message = "article_subject_id: " + str( article_subject_id )
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+            # Article_Author?
+            if ( ( article_author_id is not None )
+                and ( article_author_id != "" )
+                and ( int( article_author_id ) > 0 ) ):
+            
+                try:
+                
+                    # Got one.  Look up instance based on ID.
+                    article_author = Article_Author.objects.get( pk = article_author_id )
+                    
+                    debug_message = "found Article_Author: " + str( article_author )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                    # see if any associated Persons.
+                    temp_list = article_author.get_associated_person_id_list()
+                    if ( ( temp_list is not None )
+                        and ( isinstance( temp_list, list ) == True )
+                        and ( len( temp_list ) > 0 ) ):
+                        
+                        # got something in list.  Append it to the end of
+                        #     the person_id_in_list.
+                        person_id_in_list.extend( temp_list )
+                        
+                    #-- END check to see if associated Persons. --#
+                
+                except Article_Author.DoesNotExist as dne:
+                
+                    debug_message = "No Article_Author found for ID " + str( article_author_id )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+                    if ( response_dictionary_IN is not None ):
+                    
+                        response_dictionary_IN[ 'output_string' ] = debug_message
+                        
+                    #-- END check to see if response dictionary. --#
+
+                #-- END try/except lookup for Article_Author --#
+                
+            
+            #-- END check to see if article_author_id --#
+                    
+            # Article_Subject?
+            if ( ( article_subject_id is not None )
+                and ( article_subject_id != "" )
+                and ( int( article_subject_id ) > 0 ) ):
+            
+                try:
+                
+                    # Got one.  Look up instance based on ID.
+                    article_subject = Article_Subject.objects.get( pk = article_subject_id )
+                    
+                    debug_message = "found Article_Subject: " + str( article_subject )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                    # see if any associated Persons.
+                    temp_list = article_subject.get_associated_person_id_list()
+
+                    debug_message = "Associated Person IDs in Article_Subject: " + str( article_subject ) + ", ID list = " + str( temp_list )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                    if ( ( temp_list is not None )
+                        and ( isinstance( temp_list, list ) == True )
+                        and ( len( temp_list ) > 0 ) ):
+                        
+                        # got something in list.  Append it to the end of
+                        #     the person_id_in_list.
+                        person_id_in_list.extend( temp_list )
+                    
+                    #-- END check to see if associated Persons. --#
+                    
+                except Article_Subject.DoesNotExist as dne:
+                
+                    debug_message = "No Article_Subject found for ID " + str( article_subject_id )
+                    LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+                    if ( response_dictionary_IN is not None ):
+                    
+                        response_dictionary_IN[ 'output_string' ] = debug_message
+                        
+                    #-- END check to see if response dictionary. --#
+
+                #-- END try/except lookup for Article_Author --#
+                
+            #-- END check to see if article_subject_id --#
+                    
+            debug_message = "Before filtering: person_id_in_list = " + str( person_id_in_list ) + "; person_qs = " + str( person_qs )
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+            # anything in person_id_in_list?
+            if ( ( person_id_in_list is not None )
+                and ( isinstance( person_id_in_list, list ) == True )
+                and ( len( person_id_in_list ) > 0 ) ):
+                
+                # there are IDs to look for.  Do we have a QuerySet
+                #     already?
+                if ( person_qs is None ):
+                
+                    # no.  Initialize to all()
+                    person_qs = Person.objects.all()
+                    
+                #-- END check to see if Person QuerySet --#
+                
+                # filter.
+                person_qs = person_qs.filter( pk__in = person_id_in_list )
+                
+            #-- END check to see if anything in ID list. --#
+            
+        else:
+        
+            debug_message = "no request_inputs_IN, so no query - returning None."
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+            person_qs = None
+        
+        #-- END check to see if request_inputs_IN --#
+        
+        # return person_qs
+        qs_OUT = person_qs
+        
+        return qs_OUT
+
+    #-- END class method lookup_person_by_id() --#
+    
+
+    #--------------------------------------------------------------------------#
+    # instance methods
+    #--------------------------------------------------------------------------#
+    
 
 #-- END Form class PersonLookupByIDForm --#
 
 
-class PersonLookupByNameForm( forms.ModelForm ):
+class PersonLookupByNameForm( ModelFormParent ):
 
     # constants-ish
     IAMEMPTY = "IAMEMPTY"
@@ -532,38 +850,138 @@ class PersonLookupByNameForm( forms.ModelForm ):
     '''
     
     #--------------------------------------------------------------------------#
-    # methods
+    # class methods
     #--------------------------------------------------------------------------#
     
-        
-    def am_i_empty( self, *args, **kwargs ):
+    
+    @classmethod
+    def lookup_person_by_name( cls, request_inputs_IN, lookup_type_IN = None, person_qs_IN = None, *args, **kwargs ):
         
         '''
-        Goes through the fields in the form and checks to see if any has been
-            populated.  If not, returns True (it is empty!).  If there is a
-            value in any of them, returns False (not empty).
+        Accepts request inputs we'd expect to contain the fields defined for
+            this form and a lookup type that is one of those in the form class
+            PersonLookupTypeForm defined above.  Uses this information to lookup
+            a person and returns the QuerySet that contains the results of the
+            lookup.  If error, returns None.
         '''
         
         # return reference
-        is_empty_OUT = True
+        qs_OUT = None
         
         # declare variables
-        me = "am_i_empty"
+        me = "lookup_person_by_name"
         my_logger_name = "sourcenet.forms.PersonLookupByNameForm"
         debug_message = ""
+        request_inputs = None
+        lookup_type = ""
+        person_qs = None
+        my_person_details = None
+        human_name = None
+        name_string = None
+        do_strict_match = False
+        do_partial_match = False
         
-        # use DjangoFormHelper method
-        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
+        # first, make sure we have request inputs.
+        if ( request_inputs_IN is not None ):
+        
+            # store off the inputs.
+            request_inputs = request_inputs_IN
+            
+            # and the lookup type.
+            lookup_type = lookup_type_IN
+            
+            debug_message = "lookup_type = " + str( lookup_type )
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
-        return is_empty_OUT
+            # got a person qs?
+            if ( person_qs_IN is not None ):
+            
+                person_qs = person_qs_IN
+                
+            #-- END check to see if person_qs --#
+        
+            # retrieve Person records specified by the input parameters,
+            #     ordered by Last Name, then First Name.  Then, create HTML
+            #     output of list of articles.  For each, output (to start):
+            #     - Person string
+            
+            # populate PersonDetails from request_inputs:
+            my_person_details = PersonDetails.get_instance( request_inputs )
+            
+            # get HumanName instance...
+            human_name = my_person_details.to_HumanName()
+            name_string = str( human_name )
+            
+            # do lookup based on lookup_type
+            if ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY ):
+            
+                debug_message = "performing general query"
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+            
+                # not strict
+                do_strict_match = False
+                do_partial_match = True
+                person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                             parsed_name_IN = human_name,
+                                                             do_strict_match_IN = do_strict_match,
+                                                             do_partial_match_IN = do_partial_match,
+                                                             qs_IN = person_qs )
+            
+            elif ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_EXACT_QUERY ):
+            
+                debug_message = "performing exact query"
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
-    #-- END method am_i_empty() --#
+                # strict
+                do_strict_match = True
+                do_partial_match = False
+                person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                             parsed_name_IN = human_name,
+                                                             do_strict_match_IN = do_strict_match,
+                                                             do_partial_match_IN = do_partial_match,
+                                                             qs_IN = person_qs )
 
+            else:
+            
+                debug_message = "no lookup_type, so doing general query"
+                LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+
+                # default to not strict
+                do_strict_match = False
+                do_partial_match = True
+                person_qs = Person.look_up_person_from_name( name_IN = name_string,
+                                                             parsed_name_IN = human_name,
+                                                             do_strict_match_IN = do_strict_match,
+                                                             do_partial_match_IN = do_partial_match,
+                                                             qs_IN = person_qs )
+            
+            #-- END decide how to lookup based on lookup_type --#
+
+        else:
+        
+            debug_message = "no request_inputs_IN, so no query - returning None."
+            LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
+            person_qs = None
+        
+        #-- END check to see if request_inputs_IN --#
+        
+        # return person_qs
+        qs_OUT = person_qs
+        
+        return qs_OUT
+        
+    #-- END class method lookup_person() --#
     
+        
+    #--------------------------------------------------------------------------#
+    # instance methods
+    #--------------------------------------------------------------------------#
+    
+        
 #-- END ModelForm class PersonLookupByNameForm --#
 
 
-class Person_LookupResultViewForm( forms.Form ):
+class Person_LookupResultViewForm( FormParent ):
     
     '''
     allows user to specify list of tags they would like to be applied to
@@ -576,7 +994,7 @@ class Person_LookupResultViewForm( forms.Form ):
         ( "view_matches", "View Matches" ),
         #( "merge", "Merge Person records" ),
     )
-    action = forms.ChoiceField( required = True, choices = PERSON_RESULT_VIEW_CHOICES )
+    lookup_action = forms.ChoiceField( required = True, choices = PERSON_RESULT_VIEW_CHOICES )
 
     # apply_tags_list (comma-delimited)
     #apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
@@ -584,7 +1002,7 @@ class Person_LookupResultViewForm( forms.Form ):
 #-- END Form class Person_ProcessSelectedForm --#
     
 
-class Person_ProcessSelectedForm( forms.Form ):
+class Person_ProcessSelectedForm( FormParent ):
     
     '''
     allows user to specify list of tags they would like to be applied to

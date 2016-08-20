@@ -84,3 +84,10 @@ table.gridtable tr:nth-child(even)
     padding: 0px;
     margin: 0px;
 }
+
+/* table for page structure (not form inputs) */
+td.page_layout
+{
+    vertical-align: top;
+    border: 1px solid gray;
+}

@@ -86,20 +86,31 @@
                 <ul>
 
                     {# loop over source Article_Subject(s) #}
-                    {% for article_source in article_data.article_subject_set.all %}
+                    {% for article_subject in article_data.article_subject_set.all %}
 
                         <li>
-                            {{ article_source }}{% if article_source.title %} - <em>title "{{article_source.title}}"</em> - {% endif %} ( quotes: {{ article_source.article_subject_quotation_set.all.count }}; mentions: {{ article_source.article_subject_mention_set.all.count }} )
-                            <br />==> Name: {{ article_source.name }}
-                            <br />====> Verbatim Name: {{ article_source.verbatim_name }}
-                            <br />====> Lookup Name: {{ article_source.lookup_name }}
+                            {{ article_subject }}{% if article_subject.title %} - <em>title "{{article_subject.title}}"</em> - {% endif %} ( quotes: {{ article_subject.article_subject_quotation_set.all.count }}; mentions: {{ article_subject.article_subject_mention_set.all.count }} )
+                            <br />==> Name: {{ article_subject.name }}
+                            <br />====> Verbatim Name: {{ article_subject.verbatim_name }}
+                            <br />====> Lookup Name: {{ article_subject.lookup_name }}
+                            <br />==> Alternate Matches: 
+                            {% if article_subject.alternate_subject_match_set.all %}
+                                <br />
+                                <ul>
+                                    {% for alternate_subject_match in article_subject.alternate_subject_match_set.all %}
+                                        <li>{{ alternate_subject_match }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                None
+                            {% endif %}
                             <br />
                             <br />
                             <strong><em>Quotations</em></strong>
                             <br />
                             <table class="gridtable">
                                 <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>quote</th><th>notes</th></tr>
-                                {% for source_quotation in article_source.article_subject_quotation_set.all %}
+                                {% for source_quotation in article_subject.article_subject_quotation_set.all %}
                         
                                     <tr>
                                         <td align="center">{{ source_quotation.id }}</td>
