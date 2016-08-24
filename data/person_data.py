@@ -729,7 +729,7 @@ class PersonData( object ):
         #-- END check to see if we have FROM and TO persons. --#
         
         # Output summary
-        status_message = "Switching associated person FROM: " + str( FROM_person ) + " TO: " + str( TO_person )
+        status_message = "Switching associated person FROM: \"" + str( FROM_person ) + "\" --> TO: \"" + str( TO_person ) + "\""
         status_OUT.add_message( status_message )
         
         # do updates?
@@ -759,7 +759,7 @@ class PersonData( object ):
     
 
     @classmethod
-    def undo_switch_persons_in_data( cls, from_person_id_IN, to_person_id_IN, do_updates_IN = True, *args, **kwargs ):
+    def undo_switch_persons_in_data( cls, from_person_id_IN, to_person_id_IN = -1, do_updates_IN = True, *args, **kwargs ):
         
         '''
         Accepts a FROM person ID, a TO person ID, and an optional flag that
@@ -774,6 +774,9 @@ class PersonData( object ):
             the status_code will be StatusContainer.STATUS_CODE_ERROR.  If
             success, it will be StatusContainer.STATUS_CODE_SUCCESS.
         '''
+
+        # return reference
+        status_OUT = StatusContainer()
 
         # declare variables
         FROM_person_id = None
@@ -791,21 +794,44 @@ class PersonData( object ):
         article_subject_id = -1
         article_subject_count = -1
 
+        # init status to success
+        status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
+
         # first, set the IDs of the persons we will be switching from and to.
         FROM_person_id = from_person_id_IN
         TO_person_id = to_person_id_IN
         
         # Look up Person instances for each.
         FROM_person = Person.objects.get( id = FROM_person_id )
-        TO_person = Person.objects.get( id = TO_person_id )
         
-        # make sure we found one for each.
-        if ( ( FROM_person is not None ) and ( TO_person is not None ) ):
+        # only get to person if one specified.
+        if ( ( to_person_id_IN is not None )
+            and ( isinstance( to_person_id_IN, six.integer_types ) == True )
+            and ( to_person_id_IN > 0 ) ):
+
+            # got a TO_person_id - get person.
+            TO_person = Person.objects.get( id = TO_person_id )
+            
+        #-- END check to see if TO_person_id passed in. --#
+        
+        # make sure we at least have a FROM person.
+        if ( FROM_person is not None ):
         
             # find all Article_Subject and Article_Author records that refer the the FROM
             #    person.
             article_author_qs = FROM_person.sourcenet_article_author_original_person_set.all()
             article_subject_qs = FROM_person.sourcenet_article_subject_original_person_set.all()
+            
+            # got a TO_person (so only undoing a switch to a particular person,
+            #     not undoing all switches to any and all persons ever)?
+            if ( TO_person is not None ):
+            
+                # yes.  Limit these lists to just those that refer to the
+                #     TO_person.
+                article_author_qs = article_author_qs.filter( person = TO_person )
+                article_subject_qs = article_subject_qs.filter( person = TO_person )
+                
+            #-- end check to see if TO_person --#                
             
             # loop over author records
             for article_author in article_author_qs:
@@ -860,13 +886,21 @@ class PersonData( object ):
         else:
         
             status_OUT.status_code = StatusContainer.STATUS_CODE_ERROR
-            status_message = "ERROR - don't have both FROM and TO persons."
+            status_message = "ERROR - don't have FROM person."
             status_OUT.add_message( status_message )
             
         #-- END check to see if we have FROM and TO persons. --#
         
         # Output summary
-        status_message = "UNDO switching associated person FROM: " + str( FROM_person ) + " TO: " + str( TO_person )
+        status_message = "UNDO switching associated person FROM: \"" + str( FROM_person ) + "\""
+        
+        # is there a TO_person?
+        if ( TO_person is not None ):
+        
+            status_message += " --> TO: \"" + str( TO_person ) + "\""
+            
+        #-- END check to see if there is a TO_person. --#
+            
         status_OUT.add_message( status_message )
         
         # do updates?

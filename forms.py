@@ -1002,26 +1002,42 @@ class Person_LookupResultViewForm( FormParent ):
 #-- END Form class Person_ProcessSelectedForm --#
     
 
-class Person_ProcessSelectedForm( FormParent ):
-    
+class Person_MergeActionForm( FormParent ):
+        
     '''
-    allows user to specify list of tags they would like to be applied to
-        some taggable entity.
+    Allows user to select from different types of merges to perform.  To start,
+        just merge coding.
     '''
     
-    # action choices
-    PERSON_ACTION_CHOICES = (
-        #( "match_summary", "Match Summary" ),
-        #( "view_matches", "View Matches" ),
-        ( "merge", "Merge Person records" ),
+    #===========================================================================
+    # ! ==> CONSTANTS-ISH
+    #===========================================================================
+    
+    # merge_action choices
+    PERSON_MERGE_ACTION_LOOKUP = "lookup"
+    PERSON_MERGE_ACTION_MERGE_CODING = "merge_coding"
+    PERSON_MERGE_ACTION_UN_MERGE_CODING = "un_merge_coding"
+    PERSON_MERGE_ACTION_MERGE_ALL = "merge_all"
+    
+    PERSON_MERGE_ACTION_CHOICES = (
+        ( PERSON_MERGE_ACTION_LOOKUP, "Lookup (no changes)" ),
+        ( PERSON_MERGE_ACTION_MERGE_CODING, "Merge Coding --> FROM 1 / INTO 1" ),
+        ( PERSON_MERGE_ACTION_UN_MERGE_CODING, "Un-Merge Coding --> FROM = person we want coding to once again refer to; INTO (optional) = only undo records updated to refer to this person." ),
+        #( PERSON_MERGE_ACTION_MERGE_ALL, "Merge All Person Data" ),
     )
-    action = forms.ChoiceField( required = True, choices = PERSON_ACTION_CHOICES )
+    
+    # other constants
+    INPUT_NAME_MERGE_FROM_PREFIX = "merge_from_person_id_"
+    INPUT_NAME_MERGE_INTO_PREFIX = "merge_into_person_id_"
 
-    # apply_tags_list (comma-delimited)
-    #apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
-    
-#-- END Form class Person_ProcessSelectedForm --#
-    
+    #===========================================================================
+    # ! ==> fields
+    #===========================================================================
+
+    merge_action = forms.ChoiceField( required = False, choices = PERSON_MERGE_ACTION_CHOICES )
+
+#-- END Form class Person_MergeActionForm --#
+
 
 # create a form to let a user specify the criteria used to limit the output form
 class PersonSelectForm( forms.Form ):

@@ -37,13 +37,26 @@
         
     {% if merge_action %}
     
+        <p><strong>Merge Action = </strong> <em>{{ merge_action }}</em></p>
         {% if action_summary %}
-            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+            <p><p><strong>Action Summary:</strong> {{ action_summary }}</p>
         {% endif %}
         
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
+            <ul>
+                {% for detail_item in action_detail_list %}
+                    <li>{{ detail_item }}</li>
+                {% empty %}
+                    <li>No details returned...</li>
+                {% endfor %}
+            </ul>
+            <hr />
+        {% endif %}
+
         {% if lookup_action %}
     
-            <p>lookup action = {{ lookup_action }}</p>
+            <p><strong>Lookup Action = </strong> <em>{{ lookup_action }}</em></p>
             
             {% if person_filter_summary %}
                 <p><strong>Filter Summary:</strong> {{ person_filter_summary }}</p>
@@ -54,13 +67,36 @@
     
                 <form action="" method="post">
                     
-                    <input type="hidden" name="merge_action" value="merge" />
+                    {# always include CSRF token #}
+                    {% csrf_token %}
+
+                    {# include inputs from person lookup forms #}
+                    {% if person_lookup_by_name_form_hidden_inputs %}
+                        {{ person_lookup_by_name_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_by_id_form_hidden_inputs %}
+                        {{ person_lookup_by_id_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_type_form_hidden_inputs %}
+                        {{ person_lookup_type_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_process_selected_form_hidden_inputs %}
+                        {{ person_process_selected_form_hidden_inputs | safe }}
+                    {% endif %}
+                    
+                    {% if person_lookup_result_view_form_hidden_inputs %}
+                        {{ person_lookup_result_view_form_hidden_inputs | safe }}
+                    {% endif %}
+
                     <input type="hidden" name="person_id_list" value="{{ person_id_list_string }}" />
                     
                     <table class="gridtable">
                         <tr>
-                            <th>merge...</th>
-                            <th>...into</th>
+                            <th>merge FROM...</th>
+                            <th>...merge INTO</th>
                             <th>index</th>
                             <th>ID</th>
                             <th>name</th>
@@ -70,8 +106,8 @@
                         </tr>
                         {% for current_person in person_details_list %}
                             <tr>
-                                <td><input type="checkbox" name="merge_{{ current_person.instance.id }}" /></td>
-                                <td><input type="checkbox" name="into_{{ current_person.instance.id }}" /></td>
+                                <td><input type="checkbox" name="{{ input_name_merge_from_prefix }}{{ current_person.instance.id }}" /></td>
+                                <td><input type="checkbox" name="{{ input_name_merge_into_prefix }}{{ current_person.instance.id }}" /></td>
     
                                 {# output standard person detail <td>s #}
                                 {% include "sourcenet/shared/td-person_detail.html" %}
@@ -81,26 +117,16 @@
                             <tr><td colspan="3">No Person records selected.</td></tr>
                         {% endfor %}
                     </table>
+                    {{ person_merge_action_form.as_p }}
                     <p>
-                        <input type="submit" name="Merge Persons" value="Merge Persons" />
+                        <input type="submit" name="Do Action" value="Do Action" />
                     </p>
                 </form>
             {% endif %}
                 
-            {% if action_detail_list %}
-                <p><strong>Action Details:</strong></p>
-                <ul>
-                    {% for detail_item in action_detail_list %}
-                        <ul>{{ detail_item }}</ul>
-                    {% empty %}
-                        <ul>No details returned...</ul>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-    
         {% endif %} {# END if lookup_action...endif #}
 
-    
+    {% endif %}
             </td>
         </tr>
     </table>

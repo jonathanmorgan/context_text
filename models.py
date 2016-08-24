@@ -2374,8 +2374,32 @@ class Newspaper( models.Model ):
     #----------------------------------------------------------------------
 
     def __str__( self ):
-        string_OUT = self.name
+        
+        # return reference
+        string_OUT = ""
+        
+        # got an ID?
+        if ( self.id ):
+        
+            # output ID
+            string_OUT += str( self.id ) + " - "
+            
+        #-- END check to see if ID. --#
+        
+        string_OUT += self.name
+
+        # got a newsbank code?
+        current_value = self.newsbank_code
+        if ( ( current_value is not None ) and ( current_value != "" ) ):
+        
+            # yes.  Append it.
+            string_OUT += " ( " + current_value + " )"
+            
+        #-- END check to see if newsbank_code --#
+
         return string_OUT
+        
+    #-- END method __str__() --#
 
 #= End Newspaper Model ======================================================
 
