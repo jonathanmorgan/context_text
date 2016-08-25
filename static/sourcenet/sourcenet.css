@@ -90,4 +90,6 @@ td.page_layout
 {
     vertical-align: top;
     border: 1px solid gray;
+    margin: 0px;
+    padding: 10px;
 }

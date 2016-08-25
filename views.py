@@ -3484,7 +3484,7 @@ def person_merge( request_IN ):
     is_id_lookup_form_empty = True
     is_lookup_form_empty = True
     
-    # declare variables - process merge.
+    # declare variables - process actions.
     merge_from_id_list = []
     merge_into_id_list = []
     input_name = ""
@@ -3609,7 +3609,7 @@ def person_merge( request_IN ):
                 #-- END loop over request_inputs --#
             
                 # Got one.  what are we doing?  Lookup?
-                if ( merge_action_IN == "lookup" ):
+                if ( merge_action_IN == Person_MergeActionForm.PERSON_MERGE_ACTION_LOOKUP ):
     
                     # ! ---- lookup
                     # call the person_lookup_and_filter() method.
@@ -3742,8 +3742,6 @@ def person_merge( request_IN ):
             response_dictionary[ 'output_string' ] = "merge action form is not valid."
 
         #-- END check to see whether or not form is valid. --#
-                    
-            
 
     else:
     

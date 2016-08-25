@@ -107,6 +107,8 @@ from ajax_select import make_ajax_field
 
 # python_utilities
 from python_utilities.django_utils.django_form_helper import DjangoFormHelper
+from python_utilities.django_utils.django_form_helper import FormParent
+from python_utilities.django_utils.django_form_helper import ModelFormParent
 from python_utilities.lists.list_helper import ListHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 
@@ -125,138 +127,8 @@ from sourcenet.shared.person_details import PersonDetails
 
 
 #===============================================================================
-# ! ==> Parent classes
+# ! ==> Parent classes imported from python_utilities.django_utils.django_form_helper
 #===============================================================================
-
-
-class FormParent( forms.Form ):
-
-
-    #--------------------------------------------------------------------------#
-    # instance methods
-    #--------------------------------------------------------------------------#
-    
-        
-    def am_i_empty( self, *args, **kwargs ):
-        
-        '''
-        Goes through the fields in the form and checks to see if any has been
-            populated.  If not, returns True (it is empty!).  If there is a
-            value in any of them, returns False (not empty).
-
-        Preconditions: Must be called after is_valid() is called on the form.
-            If not, there will not be any "cleaned_data".
-        '''
-        
-        # return reference
-        is_empty_OUT = True
-        
-        # declare variables
-        me = "am_i_empty"
-        my_logger_name = "sourcenet.forms.FormParent"
-        debug_message = ""
-        
-        # use DjangoFormHelper method
-        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
-
-        return is_empty_OUT
-
-    #-- END method am_i_empty() --#
-    
-
-    def to_html_as_hidden_inputs( self, *args, **kwargs ):
-        
-        '''
-        Goes through the fields in the form and for each, creates HTML string of
-            a hidden input that contains the value.  If no data, returns empty
-            string.  If error returns None.
-            
-        Preconditions: Must be called after is_valid() is called on the form.
-            If not, there will not be any "cleaned_data".
-        '''
-        
-        # return reference
-        html_OUT = ""
-        
-        # declare variables
-        me = "to_html_as_hidden_inputs"
-        my_logger_name = "sourcenet.forms.FormParent"
-        debug_message = ""
-        
-        # use DjangoFormHelper method
-        html_OUT = DjangoFormHelper.data_to_html_as_hidden_inputs( self, logger_name_IN = my_logger_name )
-
-        return html_OUT
-
-    #-- END method to_html_as_hidden_inputs() --#
-    
-
-#-- END Form class AbstractFormParent --#
-
-
-class ModelFormParent( forms.ModelForm ):
-
-
-    #--------------------------------------------------------------------------#
-    # instance methods
-    #--------------------------------------------------------------------------#
-    
-        
-    def am_i_empty( self, *args, **kwargs ):
-        
-        '''
-        Goes through the fields in the form and checks to see if any has been
-            populated.  If not, returns True (it is empty!).  If there is a
-            value in any of them, returns False (not empty).
-
-        Preconditions: Must be called after is_valid() is called on the form.
-            If not, there will not be any "cleaned_data".
-        '''
-        
-        # return reference
-        is_empty_OUT = True
-        
-        # declare variables
-        me = "am_i_empty"
-        my_logger_name = "sourcenet.forms.ModelFormParent"
-        debug_message = ""
-        
-        # use DjangoFormHelper method
-        is_empty_OUT = DjangoFormHelper.is_form_empty( self )
-
-        return is_empty_OUT
-
-    #-- END method am_i_empty() --#
-    
-
-    def to_html_as_hidden_inputs( self, *args, **kwargs ):
-        
-        '''
-        Goes through the fields in the form and for each, creates HTML string of
-            a hidden input that contains the value.  If no data, returns empty
-            string.  If error returns None.
-            
-        Preconditions: Must be called after is_valid() is called on the form.
-            If not, there will not be any "cleaned_data".
-        '''
-        
-        # return reference
-        html_OUT = ""
-        
-        # declare variables
-        me = "to_html_as_hidden_inputs"
-        my_logger_name = "sourcenet.forms.ModelFormParent"
-        debug_message = ""
-        
-        # use DjangoFormHelper method
-        html_OUT = DjangoFormHelper.data_to_html_as_hidden_inputs( self, logger_name_IN = my_logger_name )
-
-        return html_OUT
-
-    #-- END method to_html_as_hidden_inputs() --#
-    
-
-#-- END Form class ModelFormParent --#
 
 
 #===============================================================================
