@@ -3567,7 +3567,7 @@ def person_merge( request_IN ):
         if ( is_merge_action_form_valid == True ):
 
             # first, get the merge action and add it to the response_dictionary.
-            merge_action_IN = request_inputs.get( "merge_action", None )
+            merge_action_IN = request_inputs.get( "merge_action", Person_MergeActionForm.PERSON_MERGE_ACTION_LOOKUP )
             response_dictionary[ "merge_action" ] = merge_action_IN
             
             # got an action?

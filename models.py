@@ -7295,7 +7295,7 @@ class Article_Author( Article_Person ):
         
         if ( self.id ):
         
-            string_OUT += str( self.id ) + " - "
+            string_OUT += str( self.id ) + " (AA) - "
             
         #-- END check to see if id --#
         
@@ -7716,7 +7716,7 @@ class Article_Subject( Article_Person ):
 
         if ( self.id ):
         
-            string_OUT += str( self.id ) + " - "
+            string_OUT += str( self.id ) + " (AS) - "
         
         #-- END check to see if ID --#
         
