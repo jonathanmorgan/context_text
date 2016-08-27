@@ -45,6 +45,14 @@ class SourcenetBase( BasicRateLimited ):
     STATUS_SUCCESS = "Success!"
     STATUS_ERROR_PREFIX = "Error: "
     
+    # django_config properties
+    DJANGO_CONFIG_APPLICATION_SOURCENET_DB_ADMIN = "sourcenet-db-admin"
+    DJANGO_CONFIG_PROP_DB_USERNAME = "db_username"
+    DJANGO_CONFIG_PROP_DB_PASSWORD = "db_password"
+    DJANGO_CONFIG_PROP_DB_HOST = "db_host"
+    DJANGO_CONFIG_PROP_DB_PORT = "db_port"
+    DJANGO_CONFIG_PROP_DB_NAME = "db_name"    
+    
     # defaults
     DEFAULT_DATE_FORMAT = "%Y-%m-%d"
     
