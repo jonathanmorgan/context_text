@@ -66,6 +66,7 @@ from django.utils.encoding import python_2_unicode_compatible
 
 # python_utilities - text cleanup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
+from python_utilities.integers.integer_helper import IntegerHelper
 from python_utilities.lists.list_helper import ListHelper
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
@@ -6086,7 +6087,7 @@ class Article_Data( models.Model ):
     STATUS_DEFAULT = STATUS_NEW
 
     #----------------------------------------------------------------------
-    # model fields
+    # ! ==> model fields
     #----------------------------------------------------------------------
 
     article = models.ForeignKey( Article )
@@ -6123,7 +6124,7 @@ class Article_Data( models.Model ):
 
 
     #----------------------------------------------------------------------
-    # class methods
+    # ! ==> class methods
     #----------------------------------------------------------------------
 
     @classmethod
@@ -6287,9 +6288,64 @@ class Article_Data( models.Model ):
 
     #-- END class method filter_only_automated() --#
 
+    
+    @classmethod
+    def make_deep_copy( cls, id_to_copy_IN, *args, **kwargs ):
+        
+        '''
+        Accepts ID of Article_Data instance we want to make a deep copy of.
+            First, loads record with ID passed in and makes a copy (by setting
+            pk and id to None, then saving).  Then, goes through all the related
+            sets and manually makes copies of all the related records, pointing
+            them at the appropriate places in the new copied tree.
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        is_id_valid = -1
+        copy_me = None
+        copy_to = None
+        
+        # got an ID?
+        is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
+        if ( is_id_valid ):
+        
+            # make and save copy.
+            copy_me = Article_Data.objects.get( pk = id_to_copy_IN )
+            copy_to = copy_me
+            copy_to.id = None
+            copy_to.pk = None
+            copy_to.save()
+            
+            # reload copy_me.
+            copy_me = Article_Data.objects.get( pk = id_to_copy_IN )
+            
+            '''
+            - Article_Data deep copy
+                - look at all relations that will need to be duplicated and re-referenced...
+                - Article_Data_Notes
+                - Article_Person
+                    - Article_Author
+                        - Alternate_Author_Match
+                    - Article_Subject
+                        - Alternate_Subject_Match
+                        - Article_Subject_Mention
+                        - Article_Subject_Quotation
+                        - Subject_Organization
+            '''
+            
+        #-- END check to see if id passed in is valid --#
+        
+        return instance_OUT
+
+    #-- END class method make_deep_copy() --#
+    
+
 
     #----------------------------------------------------------------------------
-    # instance methods
+    # ! ==> instance methods
     #----------------------------------------------------------------------------
 
     def __str__( self ):
