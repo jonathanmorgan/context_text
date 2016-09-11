@@ -6298,6 +6298,18 @@ class Article_Data( models.Model ):
             pk and id to None, then saving).  Then, goes through all the related
             sets and manually makes copies of all the related records, pointing
             them at the appropriate places in the new copied tree.
+            
+        - Article_Data deep copy
+            - look at all relations that will need to be duplicated and re-referenced...
+            - Article_Data_Notes
+            - Article_Person
+                - Article_Author
+                    - Alternate_Author_Match
+                - Article_Subject
+                    - Alternate_Subject_Match
+                    - Article_Subject_Mention
+                    - Article_Subject_Quotation
+                    - Subject_Organization
         '''
         
         # return reference
@@ -6305,22 +6317,40 @@ class Article_Data( models.Model ):
         
         # declare variables
         is_id_valid = -1
-        copy_me = None
-        copy_to = None
+        copy_from_article_data = None
+        copy_to_article_data = None
+        
+        # declare variables - related Article_Data_Notes
+        copy_me_article_data_notes_qs = None
+        copy_me_article_data_notes_count = None
+        article_data_notes = None
+
+        # declare variables - related Article_Author
+        copy_me_article_author_qs = None
+        copy_me_article_author_count = None
+        article_author = None
+        copy_me_id = -1
+        new_article_author = None
+
+        # declare variables - related Article_Subject
+        copy_me_article_subject_qs = None
+        copy_me_article_subject_count = None
+        article_subject = None        
+        new_article_subject = None        
         
         # got an ID?
         is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
         if ( is_id_valid ):
         
             # make and save copy.
-            copy_me = Article_Data.objects.get( pk = id_to_copy_IN )
-            copy_to = copy_me
-            copy_to.id = None
-            copy_to.pk = None
-            copy_to.save()
+            copy_from_article_data = Article_Data.objects.get( pk = id_to_copy_IN )
+            copy_to_article_data = copy_from_article_data
+            copy_to_article_data.id = None
+            copy_to_article_data.pk = None
+            copy_to_article_data.save()
             
             # reload copy_me.
-            copy_me = Article_Data.objects.get( pk = id_to_copy_IN )
+            copy_from_article_data = Article_Data.objects.get( pk = id_to_copy_IN )
             
             '''
             - Article_Data deep copy
@@ -6336,13 +6366,96 @@ class Article_Data( models.Model ):
                         - Subject_Organization
             '''
             
+            # ! ----> Article_Data_Notes
+            
+            # get QuerySet and count()
+            copy_me_article_data_notes_qs = copy_from_article_data.article_data_notes_set.all()
+            copy_me_article_data_notes_count = copy_me_article_data_notes_qs.count()
+            
+            # got anything?
+            if ( copy_me_article_data_notes_count > 0 ):
+            
+                # yes.  loop.
+                for article_data_notes in copy_me_article_data_notes_qs:
+                
+                    # None out id and pk.
+                    article_data_notes.id = None
+                    article_data_notes.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    article_data_notes.article_data = copy_to_article_data
+                    
+                    # save.
+                    article_data_notes.save()
+                    
+                #-- END loop over Article_Data_Notes --#
+            
+            #-- END check to see if any Article_Data_Notes --#
+            
+            # ! ----> Article_Author
+
+            # get QuerySet and count()
+            copy_me_article_author_qs = copy_from_article_data.article_author_set.all()
+            copy_me_article_author_count = copy_me_article_author_qs.count()
+
+            # got anything?
+            if ( copy_me_article_author_count > 0 ):
+            
+                # yes.  loop.
+                for article_author in copy_me_article_author_qs:
+                
+                    # get original ID
+                    copy_me_id = article_author.id
+                
+                    # call the deep copy method in it.
+                    new_article_author = Article_Author.make_deep_copy( id_to_copy_IN = copy_me_id )
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    new_article_author.article_data = copy_to_article_data
+                    
+                    # save.
+                    new_article_author.save()
+                                        
+                #-- END loop over Article_Author --#
+            
+            #-- END check to see if any Article_Author --#
+            
+            # ! ----> Article_Subject
+
+            # get QuerySet and count()
+            copy_me_article_subject_qs = copy_from_article_data.article_subject_set.all()
+            copy_me_article_subject_count = copy_me_article_subject_qs.count()
+
+            # got anything?
+            if ( copy_me_article_subject_count > 0 ):
+            
+                # yes.  loop.
+                for article_subject in copy_me_article_subject_qs:
+                
+                    # get original ID
+                    copy_me_id = article_subject.id
+                
+                    # call the deep copy method in it.
+                    new_article_subject = Article_Subject.make_deep_copy( id_to_copy_IN = copy_me_id )
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    new_article_subject.article_data = copy_to_article_data
+                    
+                    # save.
+                    new_article_subject.save()
+
+                #-- END loop over Article_Subject --#
+            
+            #-- END check to see if any Article_Subject --#
+            
         #-- END check to see if id passed in is valid --#
+        
+        instance_OUT = copy_to_article_data
         
         return instance_OUT
 
     #-- END class method make_deep_copy() --#
     
-
 
     #----------------------------------------------------------------------------
     # ! ==> instance methods
@@ -7340,7 +7453,98 @@ class Article_Author( Article_Person ):
 
 
     #----------------------------------------------------------------------
-    # instance methods
+    # ! ==> class methods
+    #----------------------------------------------------------------------
+
+
+    @classmethod
+    def make_deep_copy( cls, id_to_copy_IN, *args, **kwargs ):
+        
+        '''
+        Accepts ID of Article_Author instance we want to make a deep copy of.
+            First, loads record with ID passed in and makes a copy (by setting
+            pk and id to None, then saving).  Then, goes through all the related
+            sets and manually makes copies of all the related records, pointing
+            them at the appropriate places in the new copied tree.
+            
+        - Article_Author deep copy
+            - look at all relations that will need to be duplicated and re-referenced...
+            - Article_Author
+                - Alternate_Author_Match
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        is_id_valid = -1
+        copy_from_article_author = None
+        copy_to_article_author = None
+        
+        # declare variables - related Article_Author --> Alternate_Author_Match
+        copy_me_alternate_author_match_qs = None
+        copy_me_alternate_author_match_count = None
+        alternate_author_match = None
+
+        # got an ID?
+        is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
+        if ( is_id_valid ):
+        
+            # make and save copy.
+            copy_from_article_author = Article_Author.objects.get( pk = id_to_copy_IN )
+            copy_to_article_author = copy_from_article_author
+            copy_to_article_author.id = None
+            copy_to_article_author.pk = None
+            copy_to_article_author.save()
+            
+            # reload copy_from_...
+            copy_from_article_author = Article_Author.objects.get( pk = id_to_copy_IN )
+            
+            '''
+            - Article_Author deep copy
+                - look at all relations that will need to be duplicated and re-referenced...
+                - Alternate_Author_Match
+            '''
+            
+            # Now, process children
+            
+            # ! ----> Alternate_Author_Match
+            
+            # get QuerySet and count()
+            copy_me_alternate_author_match_qs = copy_from_article_author.alternate_author_match_set.all()
+            copy_me_alternate_author_match_count = copy_me_alternate_author_match_qs.count()
+
+            # got anything?
+            if ( copy_me_alternate_author_match_count > 0 ):
+            
+                # yes.  loop.
+                for alternate_author_match in copy_me_alternate_author_match_qs:
+                
+                    # None out id and pk.
+                    alternate_author_match.id = None
+                    alternate_author_match.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    alternate_author_match.article_author = copy_to_article_author
+                    
+                    # save.
+                    alternate_author_match.save()
+                                                
+                #-- END loop over Alternate_Author_Match --#
+            
+            #-- END check to see if any Alternate_Author_Match --#
+            
+        #-- END check to see if id passed in is valid --#
+        
+        instance_OUT = copy_to_article_author
+        
+        return instance_OUT
+
+    #-- END class method make_deep_copy() --#
+    
+
+    #----------------------------------------------------------------------
+    # ! ==> instance methods
     #----------------------------------------------------------------------
 
 
@@ -7756,9 +7960,202 @@ class Article_Subject( Article_Person ):
     #capture_method = models.CharField( max_length = 255, blank = True, null = True )
     
     
+    #----------------------------------------------------------------------
+    # ! ==> class methods
+    #----------------------------------------------------------------------
+
+
+    @classmethod
+    def make_deep_copy( cls, id_to_copy_IN, *args, **kwargs ):
+        
+        '''
+        Accepts ID of Article_Author instance we want to make a deep copy of.
+            First, loads record with ID passed in and makes a copy (by setting
+            pk and id to None, then saving).  Then, goes through all the related
+            sets and manually makes copies of all the related records, pointing
+            them at the appropriate places in the new copied tree.
+            
+        - Article_Subject deep copy
+            - look at all relations that will need to be duplicated and re-referenced...
+            - Article_Subject
+                - Alternate_Subject_Match
+                - Article_Subject_Mention
+                - Article_Subject_Quotation
+                - Subject_Organization
+        '''
+        
+        # return reference
+        instance_OUT = None
+        
+        # declare variables
+        is_id_valid = -1
+        copy_from_article_subject = None
+        copy_to_article_subject = None
+        
+        # declare variables - related Alternate_Subject_Match
+        copy_me_alternate_subject_match_qs = None
+        copy_me_alternate_subject_match_count = None
+        alternate_subject_match = None
+
+        # declare variables - related Article_Subject_Mention
+        copy_me_article_subject_mention_qs = None
+        copy_me_article_subject_mention_count = None
+        article_subject_mention = None
+
+        # declare variables - related Article_Subject_Quotation
+        copy_me_article_subject_quotation_qs = None
+        copy_me_article_subject_quotation_count = None
+        article_subject_quotation = None
+
+        # declare variables - related Subject_Organization
+        copy_me_subject_organization_qs = None
+        copy_me_subject_organization_count = None
+        subject_organization = None
+
+        # got an ID?
+        is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
+        if ( is_id_valid ):
+        
+            # make and save copy.
+            copy_from_article_subject = Article_Subject.objects.get( pk = id_to_copy_IN )
+            copy_to_article_subject = copy_from_article_subject
+            copy_to_article_subject.id = None
+            copy_to_article_subject.pk = None
+            copy_to_article_subject.save()
+            
+            # reload copy_me.
+            copy_from_article_subject = Article_Subject.objects.get( pk = id_to_copy_IN )
+            
+            '''
+            - Article_Subject deep copy
+                - look at all relations that will need to be duplicated and re-referenced...
+                - Article_Subject
+                    - Alternate_Subject_Match
+                    - Article_Subject_Mention
+                    - Article_Subject_Quotation
+                    - Subject_Organization
+            '''
+            
+            # Now, process children
+            
+
+            # ! ----> Alternate_Subject_Match
+            
+            # get QuerySet and count()
+            copy_me_alternate_subject_match_qs = copy_from_article_subject.alternate_subject_match_set.all()
+            copy_me_alternate_subject_match_count = copy_me_alternate_subject_match_qs.count()
+
+            # got anything?
+            if ( copy_me_alternate_subject_match_count > 0 ):
+            
+                # yes.  loop.
+                for alternate_subject_match in copy_me_alternate_subject_match_qs:
+                
+                    # None out id and pk.
+                    alternate_subject_match.id = None
+                    alternate_subject_match.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    alternate_subject_match.article_subject = copy_to_article_subject
+                    
+                    # save.
+                    alternate_subject_match.save()
+                                                
+                #-- END loop over Alternate_Subject_Match --#
+            
+            #-- END check to see if any Alternate_Subject_Match --#
+            
+
+            # ! ----> Article_Subject_Mention
+            
+            # get QuerySet and count()
+            copy_me_article_subject_mention_qs = copy_from_article_subject.article_subject_mention_set.all()
+            copy_me_article_subject_mention_count = copy_me_article_subject_mention_qs.count()
+
+            # got anything?
+            if ( copy_me_article_subject_mention_count > 0 ):
+            
+                # yes.  loop.
+                for article_subject_mention in copy_me_article_subject_mention_qs:
+                
+                    # None out id and pk.
+                    article_subject_mention.id = None
+                    article_subject_mention.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    article_subject_mention.article_subject = copy_to_article_subject
+                    
+                    # save.
+                    article_subject_mention.save()
+                                                
+                #-- END loop over Article_Subject_Mention --#
+            
+            #-- END check to see if any Article_Subject_Mention --#
+            
+
+            # ! ----> Article_Subject_Quotation
+
+            # get QuerySet and count()
+            copy_me_article_subject_quotation_qs = copy_from_article_subject.article_subject_quotation_set.all()
+            copy_me_article_subject_quotation_count = copy_me_article_subject_quotation_qs.count()
+
+            # got anything?
+            if ( copy_me_article_subject_quotation_count > 0 ):
+            
+                # yes.  loop.
+                for article_subject_quotation in copy_me_article_subject_quotation_qs:
+                
+                    # None out id and pk.
+                    article_subject_quotation.id = None
+                    article_subject_quotation.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    article_subject_quotation.article_subject = copy_to_article_subject
+                    
+                    # save.
+                    article_subject_quotation.save()
+                                                
+                #-- END loop over Article_Subject_Quotation --#
+            
+            #-- END check to see if any Article_Subject_Quotation --#
+            
+            # ! ----> Subject_Organization
+
+            # get QuerySet and count()
+            copy_me_subject_organization_qs = copy_from_article_subject.subject_organization_set.all()
+            copy_me_subject_organization_count = copy_me_subject_organization_qs.count()
+
+            # got anything?
+            if ( copy_me_subject_organization_count > 0 ):
+            
+                # yes.  loop.
+                for subject_organization in copy_me_subject_organization_qs:
+                
+                    # None out id and pk.
+                    subject_organization.id = None
+                    subject_organization.pk = None
+                    
+                    # change reference to Article_Data from copy_me to copy_to.
+                    subject_organization.article_subject = copy_to_article_subject
+                    
+                    # save.
+                    subject_organization.save()
+                                                
+                #-- END loop over Subject_Organization --#
+            
+            #-- END check to see if any Subject_Organization --#
+            
+        #-- END check to see if id passed in is valid --#
+        
+        instance_OUT = copy_to_article_subject
+        
+        return instance_OUT
+
+    #-- END class method make_deep_copy() --#
+    
 
     #----------------------------------------------------------------------
-    # methods
+    # ! ==> instance methods
     #----------------------------------------------------------------------
 
     def __str__( self ):
