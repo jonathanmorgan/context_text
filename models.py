@@ -6316,6 +6316,9 @@ class Article_Data( models.Model ):
         instance_OUT = None
         
         # declare variables
+        me = "make_deep_copy"
+        debug_message = ""
+        my_logger_name = "sourcenet.models.Article_Data"
         is_id_valid = -1
         copy_from_article_data = None
         copy_to_article_data = None
@@ -6342,6 +6345,10 @@ class Article_Data( models.Model ):
         is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
         if ( is_id_valid ):
         
+            # DEBUG
+            debug_message = "deep copying Article_Data record with ID = " + str( id_to_copy_IN )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             # make and save copy.
             copy_from_article_data = Article_Data.objects.get( pk = id_to_copy_IN )
             copy_to_article_data = copy_from_article_data
@@ -6352,6 +6359,9 @@ class Article_Data( models.Model ):
             # reload copy_me.
             copy_from_article_data = Article_Data.objects.get( pk = id_to_copy_IN )
             
+            debug_message = "--> deep copying FROM Article_Data record with ID = " + str( id_to_copy_IN ) + " INTO Article_Data ID = " + str( copy_to_article_data.id )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             '''
             - Article_Data deep copy
                 - look at all relations that will need to be duplicated and re-referenced...
@@ -6372,12 +6382,18 @@ class Article_Data( models.Model ):
             copy_me_article_data_notes_qs = copy_from_article_data.article_data_notes_set.all()
             copy_me_article_data_notes_count = copy_me_article_data_notes_qs.count()
             
+            debug_message = "found " + str( copy_me_article_data_notes_count ) + " Article_Data_Notes instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             # got anything?
             if ( copy_me_article_data_notes_count > 0 ):
             
                 # yes.  loop.
                 for article_data_notes in copy_me_article_data_notes_qs:
                 
+                    debug_message = "----> deep copying FROM Article_Data_Notes record with ID = " + str( article_data_notes.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
                     # None out id and pk.
                     article_data_notes.id = None
                     article_data_notes.pk = None
@@ -6388,6 +6404,9 @@ class Article_Data( models.Model ):
                     # save.
                     article_data_notes.save()
                     
+                    debug_message = "----> INTO Article_Data_Notes ID = " + str( article_data_notes.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
                 #-- END loop over Article_Data_Notes --#
             
             #-- END check to see if any Article_Data_Notes --#
@@ -6398,6 +6417,9 @@ class Article_Data( models.Model ):
             copy_me_article_author_qs = copy_from_article_data.article_author_set.all()
             copy_me_article_author_count = copy_me_article_author_qs.count()
 
+            debug_message = "found " + str( copy_me_article_author_count ) + " Article_Author instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             # got anything?
             if ( copy_me_article_author_count > 0 ):
             
@@ -6416,6 +6438,9 @@ class Article_Data( models.Model ):
                     # save.
                     new_article_author.save()
                                         
+                    debug_message = "----> deep copying FROM Article_Author record with ID = " + str( copy_me_id ) + " INTO Article_Author ID = " + str( new_article_author.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
                 #-- END loop over Article_Author --#
             
             #-- END check to see if any Article_Author --#
@@ -6426,6 +6451,9 @@ class Article_Data( models.Model ):
             copy_me_article_subject_qs = copy_from_article_data.article_subject_set.all()
             copy_me_article_subject_count = copy_me_article_subject_qs.count()
 
+            debug_message = "found " + str( copy_me_article_subject_count ) + " Article_Subject instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             # got anything?
             if ( copy_me_article_subject_count > 0 ):
             
@@ -6444,6 +6472,9 @@ class Article_Data( models.Model ):
                     # save.
                     new_article_subject.save()
 
+                    debug_message = "----> deep copying FROM Article_Subject record with ID = " + str( copy_me_id ) + " INTO Article_Subject ID = " + str( new_article_subject.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
                 #-- END loop over Article_Subject --#
             
             #-- END check to see if any Article_Subject --#
@@ -7477,6 +7508,9 @@ class Article_Author( Article_Person ):
         instance_OUT = None
         
         # declare variables
+        me = "make_deep_copy"
+        debug_message = ""
+        my_logger_name = "sourcenet.models.Article_Author"
         is_id_valid = -1
         copy_from_article_author = None
         copy_to_article_author = None
@@ -7490,6 +7524,10 @@ class Article_Author( Article_Person ):
         is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
         if ( is_id_valid ):
         
+            # DEBUG
+            debug_message = "deep copying Article_Author record with ID = " + str( id_to_copy_IN )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+        
             # make and save copy.
             copy_from_article_author = Article_Author.objects.get( pk = id_to_copy_IN )
             copy_to_article_author = copy_from_article_author
@@ -7500,6 +7538,9 @@ class Article_Author( Article_Person ):
             # reload copy_from_...
             copy_from_article_author = Article_Author.objects.get( pk = id_to_copy_IN )
             
+            debug_message = "--> deep copying FROM Article_Author record with ID = " + str( id_to_copy_IN ) + " INTO Article_Author ID = " + str( copy_to_article_author.id )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             '''
             - Article_Author deep copy
                 - look at all relations that will need to be duplicated and re-referenced...
@@ -7514,12 +7555,18 @@ class Article_Author( Article_Person ):
             copy_me_alternate_author_match_qs = copy_from_article_author.alternate_author_match_set.all()
             copy_me_alternate_author_match_count = copy_me_alternate_author_match_qs.count()
 
+            debug_message = "found " + str( copy_me_alternate_author_match_count ) + " Alternate_Author_Match instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # got anything?
             if ( copy_me_alternate_author_match_count > 0 ):
             
                 # yes.  loop.
                 for alternate_author_match in copy_me_alternate_author_match_qs:
                 
+                    debug_message = "----> deep copying FROM Alternate_Author_Match record with ID = " + str( alternate_author_match.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                     # None out id and pk.
                     alternate_author_match.id = None
                     alternate_author_match.pk = None
@@ -7530,6 +7577,9 @@ class Article_Author( Article_Person ):
                     # save.
                     alternate_author_match.save()
                                                 
+                    debug_message = "----> INTO Alternate_Author_Match ID = " + str( alternate_author_match.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                 #-- END loop over Alternate_Author_Match --#
             
             #-- END check to see if any Alternate_Author_Match --#
@@ -7988,6 +8038,9 @@ class Article_Subject( Article_Person ):
         instance_OUT = None
         
         # declare variables
+        me = "make_deep_copy"
+        debug_message = ""
+        my_logger_name = "sourcenet.models.Article_Subject"
         is_id_valid = -1
         copy_from_article_subject = None
         copy_to_article_subject = None
@@ -8016,6 +8069,10 @@ class Article_Subject( Article_Person ):
         is_id_valid = IntegerHelper.is_valid_integer( id_to_copy_IN, must_be_greater_than_IN = 0 )
         if ( is_id_valid ):
         
+            # DEBUG
+            debug_message = "deep copying Article_Subject record with ID = " + str( id_to_copy_IN )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # make and save copy.
             copy_from_article_subject = Article_Subject.objects.get( pk = id_to_copy_IN )
             copy_to_article_subject = copy_from_article_subject
@@ -8026,6 +8083,9 @@ class Article_Subject( Article_Person ):
             # reload copy_me.
             copy_from_article_subject = Article_Subject.objects.get( pk = id_to_copy_IN )
             
+            debug_message = "--> deep copying FROM Article_Subject record with ID = " + str( id_to_copy_IN ) + " INTO Article_Subject ID = " + str( copy_to_article_subject.id )
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             '''
             - Article_Subject deep copy
                 - look at all relations that will need to be duplicated and re-referenced...
@@ -8045,12 +8105,18 @@ class Article_Subject( Article_Person ):
             copy_me_alternate_subject_match_qs = copy_from_article_subject.alternate_subject_match_set.all()
             copy_me_alternate_subject_match_count = copy_me_alternate_subject_match_qs.count()
 
+            debug_message = "found " + str( copy_me_alternate_subject_match_count ) + " Alternate_Subject_Match instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # got anything?
             if ( copy_me_alternate_subject_match_count > 0 ):
             
                 # yes.  loop.
                 for alternate_subject_match in copy_me_alternate_subject_match_qs:
                 
+                    debug_message = "----> deep copying FROM Alternate_Subject_Match record with ID = " + str( alternate_subject_match.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                     # None out id and pk.
                     alternate_subject_match.id = None
                     alternate_subject_match.pk = None
@@ -8061,6 +8127,9 @@ class Article_Subject( Article_Person ):
                     # save.
                     alternate_subject_match.save()
                                                 
+                    debug_message = "----> INTO Alternate_Subject_Match ID = " + str( alternate_subject_match.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                 #-- END loop over Alternate_Subject_Match --#
             
             #-- END check to see if any Alternate_Subject_Match --#
@@ -8072,12 +8141,18 @@ class Article_Subject( Article_Person ):
             copy_me_article_subject_mention_qs = copy_from_article_subject.article_subject_mention_set.all()
             copy_me_article_subject_mention_count = copy_me_article_subject_mention_qs.count()
 
+            debug_message = "found " + str( copy_me_article_subject_mention_count ) + " Article_Subject_Mention instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # got anything?
             if ( copy_me_article_subject_mention_count > 0 ):
             
                 # yes.  loop.
                 for article_subject_mention in copy_me_article_subject_mention_qs:
                 
+                    debug_message = "----> deep copying FROM Article_Subject_Mention record with ID = " + str( article_subject_mention.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                     # None out id and pk.
                     article_subject_mention.id = None
                     article_subject_mention.pk = None
@@ -8088,6 +8163,9 @@ class Article_Subject( Article_Person ):
                     # save.
                     article_subject_mention.save()
                                                 
+                    debug_message = "----> INTO Article_Subject_Mention ID = " + str( article_subject_mention.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                 #-- END loop over Article_Subject_Mention --#
             
             #-- END check to see if any Article_Subject_Mention --#
@@ -8099,12 +8177,18 @@ class Article_Subject( Article_Person ):
             copy_me_article_subject_quotation_qs = copy_from_article_subject.article_subject_quotation_set.all()
             copy_me_article_subject_quotation_count = copy_me_article_subject_quotation_qs.count()
 
+            debug_message = "found " + str( copy_me_article_subject_quotation_count ) + " Article_Subject_Quotation instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # got anything?
             if ( copy_me_article_subject_quotation_count > 0 ):
             
                 # yes.  loop.
                 for article_subject_quotation in copy_me_article_subject_quotation_qs:
                 
+                    debug_message = "----> deep copying FROM Article_Subject_Quotation record with ID = " + str( article_subject_quotation.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                     # None out id and pk.
                     article_subject_quotation.id = None
                     article_subject_quotation.pk = None
@@ -8115,6 +8199,9 @@ class Article_Subject( Article_Person ):
                     # save.
                     article_subject_quotation.save()
                                                 
+                    debug_message = "----> INTO Article_Subject_Quotation ID = " + str( article_subject_quotation.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                 #-- END loop over Article_Subject_Quotation --#
             
             #-- END check to see if any Article_Subject_Quotation --#
@@ -8125,12 +8212,18 @@ class Article_Subject( Article_Person ):
             copy_me_subject_organization_qs = copy_from_article_subject.subject_organization_set.all()
             copy_me_subject_organization_count = copy_me_subject_organization_qs.count()
 
+            debug_message = "found " + str( copy_me_subject_organization_count ) + " Subject_Organization instances."
+            self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
             # got anything?
             if ( copy_me_subject_organization_count > 0 ):
             
                 # yes.  loop.
                 for subject_organization in copy_me_subject_organization_qs:
                 
+                    debug_message = "----> deep copying FROM Subject_Organization record with ID = " + str( subject_organization.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                     # None out id and pk.
                     subject_organization.id = None
                     subject_organization.pk = None
@@ -8141,6 +8234,9 @@ class Article_Subject( Article_Person ):
                     # save.
                     subject_organization.save()
                                                 
+                    debug_message = "----> INTO Subject_Organization ID = " + str( subject_organization.id )
+                    self.output_debug( debug_message, me, logger_name_IN = my_logger_name )
+
                 #-- END loop over Subject_Organization --#
             
             #-- END check to see if any Subject_Organization --#
