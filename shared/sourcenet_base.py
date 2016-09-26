@@ -109,6 +109,10 @@ class SourcenetBase( BasicRateLimited ):
     # automated coder user
     CODER_USERNAME_AUTOMATED = "automated"
     CODER_USER_AUTOMATED = None
+    
+    # ground truth coding user
+    CODER_USERNAME_GROUND_TRUTH = "ground_truth"
+    CODER_USER_GROUND_TRUTH = None
         
 
     #============================================================================
@@ -192,6 +196,71 @@ class SourcenetBase( BasicRateLimited ):
         return user_OUT
         
     #-- END class method get_automated_coding_user() --#
+    
+    
+    @classmethod
+    def get_ground_truth_coding_user( cls, create_if_no_match_IN = True, *args, **kwargs ):
+    
+        '''
+        Can't reference django models in class context anymore in models files:
+            http://stackoverflow.com/questions/25537905/django-1-7-throws-django-core-exceptions-appregistrynotready-models-arent-load
+        So, this method gets User instance for ground truth user username instead.
+        '''
+        
+        # return reference
+        user_OUT = None
+
+        # declare variables
+        temp_user = None
+        temp_password = ""
+        
+        # User already retrieved?
+        if ( cls.CODER_USER_GROUND_TRUTH == None ):
+        
+            # use a try to detect if no ground truth user.
+            try:
+            
+                # get user
+                temp_user = User.objects.get( username = cls.CODER_USERNAME_GROUND_TRUTH )
+                
+                # store it
+                cls.CODER_USER_GROUND_TRUTH = temp_user
+                
+            except:
+            
+                # exception in get() call - create and return new user?
+                if ( create_if_no_match_IN == True ):
+                
+                    # set password to current time stamp.
+                    temp_password = datetime.datetime.utcnow()
+                    temp_password = calendar.timegm( temp_password.timetuple() )
+                    temp_password = str( temp_password )
+                
+                    # create user with username, password, no email.
+                    temp_user = User.objects.create_user( cls.CODER_USERNAME_GROUND_TRUTH, None, temp_password )
+                    
+                    # add information to user.
+                    temp_user.first_name = "Coding"
+                    temp_user.last_name = "Ground Truth"
+                    
+                    # save user.
+                    temp_user.save()
+                    
+                    # store user in class
+                    cls.CODER_USER_GROUND_TRUTH = temp_user
+                    
+                #-- END check to see if we create a user. ---#
+            
+            #-- END try/except for looking up ground truth user. --#
+            
+        #-- END check to see if user already stored in class. --#
+
+        # return it.
+        user_OUT = cls.CODER_USER_GROUND_TRUTH
+
+        return user_OUT
+        
+    #-- END class method get_ground_truth_coding_user() --#
     
     
     @classmethod

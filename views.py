@@ -1900,7 +1900,7 @@ def article_coding_view_person_ambiguities( request_IN ):
 
 #-- END view method article_coding_view_person_ambiguities() --#
 
-
+    
 @login_required
 def article_view( request_IN ):
 
