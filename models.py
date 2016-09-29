@@ -2617,6 +2617,7 @@ class Article( models.Model ):
     PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
     PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
     PARAM_CUSTOM_ARTICLE_Q = SourcenetBase.PARAM_CUSTOM_ARTICLE_Q
+    PARAM_GET_DISTINCT_RECORDS = SourcenetBase.PARAM_GET_DISTINCT_RECORDS
     
     # Django queryset parameters
     #===========================
@@ -2928,7 +2929,9 @@ class Article( models.Model ):
             - cls.PARAM_TAGS_NOT_IN_LIST ("tags_not_in_list_IN") - tags articles in our set should not have.
             - cls.PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
             - cls.PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
-            - cls.PARAM_CUSTOM_ARTICLE_Q ("custom_article_q") - Django django.db.models.Q instance to apply to filtered QuerySet.
+            - cls.PARAM_CUSTOM_ARTICLE_Q = SourcenetBase.PARAM_CUSTOM_ARTICLE_Q - Django django.db.models.Q instance to apply to filtered QuerySet.
+            - cls.PARAM_GET_DISTINCT_RECORDS = SourcenetBase.PARAM_GET_DISTINCT_RECORDS   # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
+
         
         Preconditions: None.
         Postconditions: returns the QuerySet passed in with filters added as
@@ -2960,6 +2963,7 @@ class Article( models.Model ):
         unique_id_in_list_IN = None
         article_id_in_list_IN = None
         custom_q_IN = None
+        get_distinct_records_IN = False
         
         # declare variables - processing variables
         current_query = None
@@ -2972,6 +2976,12 @@ class Article( models.Model ):
         unique_id_in_list = None
         article_id_in_list = None
         query_item = None
+        
+        # do DISTINCT?
+        article_id_list = None
+        duplicate_count = -1
+        current_article = None
+        current_article_id = -1
         
         #-----------------------------------------------------------------------
         # ! ==> init
@@ -2998,6 +3008,7 @@ class Article( models.Model ):
             my_params = kwargs
             
         #-- END check to see if params other than kwargs passed in.
+
         my_dict_helper = DictHelper()
         my_dict_helper.set_dictionary( my_params )
 
@@ -3067,6 +3078,14 @@ class Article( models.Model ):
         unique_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_UNIQUE_ID_IN_LIST, default_IN = None )
         article_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_ARTICLE_ID_IN_LIST, default_IN = None )
         custom_q_IN = my_dict_helper.get_value( cls.PARAM_CUSTOM_ARTICLE_Q, default_IN = None )
+        get_distinct_records_IN = my_dict_helper.get_value_as_boolean( cls.PARAM_GET_DISTINCT_RECORDS, default_IN = True )
+        
+        # got anything?
+        if get_distinct_records_IN is not None:
+        
+            do_distinct = get_distinct_records_IN
+            
+        #-- END check to see if flag passed in. --#
 
         #-----------------
         # ! ==> newspaper
@@ -3232,6 +3251,9 @@ class Article( models.Model ):
                 current_query = Q( tags__name__in = tags_in_list )
                 query_list.append( current_query )
                 
+                # And, need to do DISTINCT on id.
+                do_distinct = True
+                
             #-- END check to see if anything in list. --#
     
         #-- END check to see if tags IN list is in arguments --#
@@ -3343,6 +3365,60 @@ class Article( models.Model ):
             qs_OUT = qs_OUT.filter( query_item )
 
         #-- END loop over query set items --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> do DISTINCT?
+        #-----------------------------------------------------------------------
+        
+        # do DISTINCT on ID?
+        if ( do_distinct == True ):
+        
+            # do DISTINCT
+            # qs_OUT.distinct() - doesn't work.
+            
+            # init ID set.
+            article_id_list = []
+            duplicate_count = 0
+            
+            # loop over results:
+            for current_article in qs_OUT:
+            
+                # get ID
+                current_article_id = current_article.id
+            
+                # already in list?
+                if ( current_article_id not in article_id_list ):
+                
+                    # add it to list.
+                    article_id_list.append( current_article_id )
+                    
+                else:
+                
+                    # alread in the list.
+                    duplicate_count += 1
+
+                #-- END check to see if ID already in list. --#
+            
+            #-- END loop over articles --#
+            
+            my_logger.debug( "In " + me + "(): do_distinct = " + str( do_distinct ) + "; duplicate count = " + str( duplicate_count ) + "; Article IDs = " + str( article_id_list ) )
+
+            # anything in list?
+            if ( len( article_id_list ) > 0 ):
+            
+                # yes - were there any duplicates?
+                if ( duplicate_count > 0 ):
+
+                    # yes.  Make a query that just limits to current matches.
+                    qs_OUT = Article.objects.filter( id__in = article_id_list )
+                    
+                    my_logger.debug( "In " + me + "(): filtered out duplicate Articles." )
+
+                #-- END check to see if any duplicates. --#
+            
+            #-- END check to see if anything in ID list --#
+
+        #-- END check to see if we do DISTINCT --#
 
         return qs_OUT
         

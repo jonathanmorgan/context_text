@@ -79,6 +79,7 @@ class SourcenetBase( BasicRateLimited ):
     PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
     PARAM_ARTICLE_ID_LIST = 'article_id_list'   # list of ids of articles whose data you want included.
     PARAM_CUSTOM_ARTICLE_Q = 'custom_article_q'  # pre-built Q() instance to use to filter articles.  Can be anything you want!
+    PARAM_GET_DISTINCT_RECORDS = "get_distinct_records"  # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
 
     # constants for parsing date range string
     PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
