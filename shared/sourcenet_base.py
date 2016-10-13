@@ -81,6 +81,12 @@ class SourcenetBase( BasicRateLimited ):
     PARAM_CUSTOM_ARTICLE_Q = 'custom_article_q'  # pre-built Q() instance to use to filter articles.  Can be anything you want!
     PARAM_GET_DISTINCT_RECORDS = "get_distinct_records"  # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
 
+    # Article_Data filter parameters.
+    PARAM_CODERS = "coders"
+    PARAM_CODER_TYPE_FILTER_TYPE = "coder_type_filter_type"
+    PARAM_CODER_TYPES_LIST = "coder_types_list"
+    
+
     # constants for parsing date range string
     PARAM_DATE_RANGE_ITEM_SEPARATOR = '||'
     PARAM_DATE_RANGE_DATE_SEPARATOR = ' to '

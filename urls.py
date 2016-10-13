@@ -104,4 +104,7 @@ urlpatterns = [
     url( r'^person/filter/$', sourcenet.views.person_filter, name = "sourcenet-person_filter" ),
     url( r'^person/merge/$', sourcenet.views.person_merge, name = "sourcenet-person_merge" ),
     
+    # Article_Data
+    url( r'^article_data/filter/$', sourcenet.views.article_data_filter, name = "sourcenet-article_data_filter" ),
+    
 ]

@@ -1,0 +1,93 @@
+{% extends "sourcenet/base.html" %}
+
+{% block title %}Filter and process Article_Data{% endblock %}
+
+{% block content %}
+
+    <h1>Filter and process Article_Data</h1>
+    
+    {# got an output_string? #}
+    {% include "sourcenet/shared/output_status_message.html" %}
+    
+    <div id="article_data_form" name="article_data_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+                
+            <p>
+                <h2>Article_Data filter criteria</h3>
+                <table class="gridtable">
+                    {# output Article_Data filter form #}
+                    {{ article_data_filter_form.as_table }}
+                </table>
+            </p>
+            <hr />
+            <p>
+                <h2>What to do with results?</h3>
+                <table class="gridtable">
+                    {# output action form #}
+                    {{ article_data_processing_form.as_table }}
+                </table>
+            </p>
+                
+            <p>
+                <input type="submit" />
+            </p>
+            
+        </form>
+        
+    </div>
+
+    <p>action = {{ action }}</p>
+    {% if action %}
+
+        <hr />
+        
+        {% if article_data_filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ article_data_filter_summary }}</p>
+        {% endif %}
+        
+        {% if action_summary %}
+            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+        {% endif %}
+        
+        {% if article_data_details_list %}
+            <p><strong>Selected Article_Data:</strong></p>
+            <table class="gridtable">
+                <tr>
+                    <th>index</th>
+                    <th>ID</th>
+                    <th>coder</th>
+                    <th>article.tags</th>
+                    <th>article</th>
+                </tr>
+                {% for current_article_data in article_data_details_list %}
+                    <tr>
+                        <td>{{ current_article_data.index }}</td>
+                        <td>{{ current_article_data.article_data_instance.id }}</td>
+                        <td>{{ current_article_data.article_data_instance.coder }}</td>
+                        <td>{{ current_article.article_data_instance.article.tags.all }}</td>
+                        <td><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ current_article.article_data_instance.article.id }}">{{ current_article.article_data_instance.article }}</a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No Article_Data selected.</td></tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
+            <ul>
+                {% for detail_item in action_detail_list %}
+                    <ul>{{ detail_item }}</ul>
+                {% empty %}
+                    <ul>No details returned...</ul>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    {% endif %}
+
+{% endblock %}

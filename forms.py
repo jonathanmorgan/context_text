@@ -341,6 +341,53 @@ class ArticleCodingSubmitForm( forms.Form ):
 #-- END Form class ArticleLookupForm --#
 
 
+class ArticleDataFilterForm( FormParent ):
+    
+    '''
+    create a form to let a user specify the criteria used to filter
+        Article_Data records.
+    '''
+    
+    # what fields do I want?
+
+    # coders to include
+    coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
+
+    # type of filtering on Article_Data coder_type identifiers we want to do.
+    coder_type_filter_type = forms.ChoiceField( required = False,
+        choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
+        initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
+        label = "Article_Data coder_type Filter Type" )
+    
+    # list of Article_Data coder_type identifiers to limit to.
+    coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
+    
+    # list of unique identifiers to limit to.
+    tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
+    
+    # article_id_list - list of Article IDs whose coding we want to see.
+    article_id_list = forms.CharField( required = False, label = "IDs of Articles whose coding you want (,)" )
+    
+#-- END Form class ArticleDataFilterForm --#
+
+
+class ArticleDataProcessingForm( forms.Form ):
+    
+    '''
+    allows user to specify list of tags they would like to be applied to
+        some taggable entity.
+    '''
+    
+    # action choices
+    ACTION_CHOICES = (
+        ( "match_summary", "Match Summary" ),
+        ( "view_matches", "View Matches" ),
+    )
+    action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
+
+#-- END Form class ArticleDataProcessingForm --#
+    
+
 class ArticleLookupForm( forms.Form ):
 
     '''

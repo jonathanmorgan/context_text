@@ -110,6 +110,8 @@ from sourcenet.forms import ArticleCodingForm
 from sourcenet.forms import ArticleCodingListForm
 from sourcenet.forms import ArticleCodingPersonAmbiguityForm
 from sourcenet.forms import ArticleCodingSubmitForm
+from sourcenet.forms import ArticleDataFilterForm
+from sourcenet.forms import ArticleDataProcessingForm
 from sourcenet.forms import ArticleLookupForm
 from sourcenet.forms import ArticleOutputTypeSelectForm
 from sourcenet.forms import ArticleSelectForm
@@ -1901,6 +1903,238 @@ def article_coding_view_person_ambiguities( request_IN ):
 #-- END view method article_coding_view_person_ambiguities() --#
 
     
+@login_required
+def article_data_filter( request_IN ):
+
+    '''
+    This view allows a user to look up Article_Data records (first by entering a
+        tag to use to filter records related to articles with the selected
+        tags) to see a summary or details of the matches.
+    '''
+
+    #return reference
+    response_OUT = None
+
+    # declare variables
+    me = "article_data_filter"
+    current_user = None
+    response_dictionary = {}
+    default_template = ''
+    request_inputs = None
+    article_data_filter_form = None
+    article_data_processing_form = None
+    ready_to_act = False
+    is_article_data_filter_form_empty = True
+    
+    # declare variables - filter records
+    article_data_qs = None
+    coder_list_IN = None
+    coder_type_filter_type_IN = None
+    coder_types_list_IN = None
+    tags_in_list_IN = ""
+    article_id_list_IN = ""
+    filter_params = {}
+    article_data_count = -1
+    article_data_filter_summary = ""
+    article_data_details_list = []
+    article_data_counter = -1
+    article_data_instance = None
+    article_data_details = {}
+    
+    # declare variables - article processing
+    action_IN = ""
+    action_summary = ""
+    action_detail_list = []
+    apply_tags_list_IN = []
+    apply_tags_count = -1
+    
+    # initialize response dictionary
+    response_dictionary = {}
+    response_dictionary.update( csrf( request_IN ) )
+
+    # set my default rendering template
+    default_template = 'sourcenet/article_data/article_data-filter.html'
+    
+    # get current user
+    current_user = request_IN.user
+
+    # do we have input parameters?
+    request_inputs = get_request_data( request_IN )
+    
+    # got inputs?
+    if ( request_inputs is not None ):
+        
+        # create forms
+        article_data_filter_form = ArticleDataFilterForm( request_inputs )
+        article_data_processing_form = ArticleDataProcessingForm( request_inputs )
+        
+        # we can try an action
+        ready_to_act = True
+
+    else:
+    
+        # no inputs - create empty forms
+        article_data_filter_form = ArticleDataFilterForm()
+        article_data_processing_form = ArticleDataProcessingForm()
+        
+        # no action without some inputs
+        ready_to_act = False
+
+    #-- END check to see if inputs. --#
+
+    # store forms in response
+    response_dictionary[ 'article_data_filter_form' ] = article_data_filter_form
+    response_dictionary[ 'article_data_processing_form' ] = article_data_processing_form
+
+    # form ready?
+    if ( ready_to_act == True ):
+
+        if ( article_data_filter_form.is_valid() == True ):
+
+            # is the form empty?  If so, do nothing.
+            is_article_data_filter_form_empty = article_data_filter_form.am_i_empty()
+            if ( is_article_data_filter_form_empty == False ):
+
+                # retrieve Article_Data specified by the input parameters, ordered by
+                #     Article ID, then create HTML output of list of articles.  For
+                #     each, output:
+                #     - article string
+                #     - link to code article.  If no existing coding, make it a
+                #         generic link.  If existing coding, make the Article_Data
+                #         string the link.
+                
+                # retrieve the incoming parameters
+                coder_list_IN = request_inputs.getlist( SourcenetBase.PARAM_CODERS, None )
+                coder_type_filter_type_IN = request_inputs.get( SourcenetBase.PARAM_CODER_TYPE_FILTER_TYPE, None )
+                coder_types_list_IN = request_inputs.get( SourcenetBase.PARAM_CODER_TYPES_LIST, None )
+                tags_in_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_TAGS_IN_LIST, None )
+                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
+            
+                # get all Article_Data records to start
+                article_data_qs = Article_Data.objects.all()
+                
+                # set up dictionary for call to Article_Data.filter_records()
+                filter_params = {}
+                filter_params[ Article_Data.PARAM_CODERS ] = coder_list_IN
+                filter_params[ Article_Data.PARAM_CODER_TYPE_FILTER_TYPE ] = coder_type_filter_type_IN
+                filter_params[ Article_Data.PARAM_CODER_TYPES_LIST ] = coder_types_list_IN
+                filter_params[ Article_Data.PARAM_TAGS_IN_LIST ] = tags_in_list_IN
+                filter_params[ Article_Data.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
+
+                # call Article_Data.filter_records() to retrieve QuerySet that
+                #     contains Article_Data records that match filter criteria.
+                article_data_qs = Article_Data.filter_records( qs_IN = article_data_qs, params_IN = filter_params )
+                
+                # Order by ID.
+                article_data_qs = article_data_qs.order_by( "id" )
+    
+                # get count of queryset return items
+                if ( ( article_data_qs != None ) and ( article_data_qs != "" ) ):
+    
+                    # get count of Article_Data
+                    article_data_count = article_data_qs.count()
+        
+                    # got one or more?
+                    if ( article_data_count >= 1 ):
+                    
+                        # always create and store a summary of articles.
+                        filter_summary = "Found " + str( article_data_count ) + " Article_Data that match your selected filter criteria: " + str( filter_params )
+                        response_dictionary[ 'filter_summary' ] = filter_summary
+                        
+                        # ! ---- use "action" input to see what we do now...
+                        
+                        # is form valid?
+                        if ( article_data_processing_form.is_valid() == True ):
+                        
+                            # yes - do we have an action?
+                            action_IN = request_inputs.get( "action", None )
+                            if ( action_IN is not None ):
+                                
+                                # add to response.
+                                response_dictionary[ 'action' ] = action_IN
+                            
+                                # is it "view_matches"?
+                                if ( action_IN == "view_matches" ):
+
+                                    # yes - initialize list of article_details
+                                    article_details_list = []
+                                
+                                    # loop over articles
+                                    article_counter = 0
+                                    for article_data_instance in article_qs:
+                                    
+                                        # increment article_counter
+                                        article_counter += 1
+                                    
+                                        # new article_details
+                                        article_data_details = {}
+                                        
+                                        # store index and article
+                                        article_data_details[ "index" ] = article_counter
+                                        article_data_details[ "article_data_instance" ] = article_data_instance
+                                        
+                                        # add details to list.
+                                        article_data_details_list.append( article_data_details )
+                
+                                    #-- END loop over articles --#
+                                    
+                                    # seed response dictionary.
+                                    response_dictionary[ 'article_data_details_list' ] = article_data_details_list
+                                
+                                #-- END check to see what action. --#
+
+                            #-- END check to see if action present. --#
+                            
+                        #-- END check to see if article processing form is valid --#
+                                            
+                    else:
+                    
+                        # error - none or multiple articles found for ID. --#
+                        print( "No article returned for ID passed in." )
+                        response_dictionary[ 'output_string' ] = "No matches for filter criteria."
+                        
+                    #-- END check to see if there is one or other than one. --#
+    
+                else:
+                
+                    # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                    response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
+                    
+                
+                #-- END check to see if query set is None --#
+                
+            else:
+            
+                # form is empty.
+                response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
+            
+            #-- END check to see if form is empty --#
+
+        else:
+
+            # not valid - render the form again
+            response_dictionary[ 'output_string' ] = "ArticleCodingArticleFilterForm is not valid."
+
+        #-- END check to see whether or not form is valid. --#
+
+    else:
+    
+        # new request, just use empty instance of form created and stored above.
+        pass
+
+    #-- END check to see if new request or POST --#
+    
+    # add on the "me" property.
+    response_dictionary[ 'current_view' ] = me        
+
+    # render response
+    response_OUT = render( request_IN, default_template, response_dictionary )
+
+    return response_OUT
+
+#-- END view function article_data_filter() --#
+
+
 @login_required
 def article_view( request_IN ):
 

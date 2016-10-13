@@ -6164,6 +6164,15 @@ class Article_Data( models.Model ):
     STATUS_SERVICE_ERROR = "service_error"
     STATUS_UNKNOWN_ERROR = "unknown_error"
     STATUS_DEFAULT = STATUS_NEW
+    
+    # filter_records() parameters
+    PARAM_CODERS = SourcenetBase.PARAM_CODERS
+    PARAM_CODER_TYPE_FILTER_TYPE = SourcenetBase.PARAM_CODER_TYPE_FILTER_TYPE
+    PARAM_CODER_TYPES_LIST = SourcenetBase.PARAM_CODER_TYPES_LIST
+    PARAM_TAGS_IN_LIST = SourcenetBase.PARAM_TAGS_IN_LIST
+    PARAM_TAG_LIST = SourcenetBase.PARAM_TAG_LIST
+    PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST
+
 
     #----------------------------------------------------------------------
     # ! ==> model fields
@@ -6368,6 +6377,305 @@ class Article_Data( models.Model ):
     #-- END class method filter_only_automated() --#
 
     
+    @classmethod
+    def filter_records( cls, qs_IN = None, params_IN = None, *args, **kwargs ):
+        
+        '''
+        Accepts parameters in kwargs.  Uses arguments to filter a QuerySet of
+            articles, which it subsequently returns.  If QuerySet
+            passed in, this method appends filters to it.  If not, starts with
+            a new QuerySet.  Specifically, accepts:
+            - Article_Data.PARAM_CODERS ("coder_list_IN") - list of coder Users we want work for.
+            - Article_Data.PARAM_CODER_TYPE_FILTER_TYPE ("coder_type_filter_type_IN") - 
+            - Article_Data.PARAM_CODER_TYPES_LIST ("coder_types_list_IN") - 
+            - Article_Data.PARAM_TAGS_IN_LIST ("tags_in_list_IN") - Looks at the tags for the article associated with each Article_Data
+            - Article_Data.PARAM_ARTICLE_ID_IN_LIST ("article_id_list_IN") - Looks for Article_Data for articles whose ID is in this parameter.
+        
+        Preconditions: None.
+        Postconditions: returns the QuerySet passed in with filters added as
+            specified by arguments.  If no QuerySet passed in, creates new
+            Article_Data QuerySet, returns it with filters added.
+        '''
+        
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        me = "filter_articles"
+        my_logger_name = "sourcenet.models.Article_Data"
+        my_logger = None
+        
+        # declare variables - input parameters
+        my_params = None
+        my_dict_helper = None
+        coder_in_list_IN = None
+        coder_type_filter_type_IN = None
+        coder_types_list_IN = None
+        tags_in_list_IN = None
+        article_id_in_list_IN = None
+        custom_q_IN = None
+        get_distinct_records_IN = None
+        
+        # declare variables - processing variables
+        current_query = None
+        query_list = None
+        newspaper_instance = None
+        paper_id_in_list = None
+        q_date_range = None
+        coder_in_list = None
+        tags_in_list = None
+        article_id_in_list = None
+        query_item = None        
+        
+        # do DISTINCT?
+        article_data_id_list = None
+        duplicate_count = -1
+        current_article_data = None
+        current_id = -1
+        
+        #-----------------------------------------------------------------------
+        # ! ==> init
+        #-----------------------------------------------------------------------
+
+        # init - get logger
+        my_logger = LoggingHelper.get_a_logger( logger_name_IN = my_logger_name )
+        
+        # init - query list
+        query_list = []
+        
+        # init - store kwargs in params_IN, and in DictHelper instance.
+        if ( params_IN is not None ):
+        
+            # got params passed in - use them.
+            my_params = params_IN
+            
+            # and append kwargs, just in case.
+            my_params.update( kwargs )
+        
+        else:
+        
+            # use kwargs
+            my_params = kwargs
+            
+        #-- END check to see if params other than kwargs passed in.
+
+        my_dict_helper = DictHelper()
+        my_dict_helper.set_dictionary( my_params )
+
+        # got a query set?
+        if ( qs_IN ):
+        
+            # use the one passed in.
+            qs_OUT = qs_IN
+            
+            #output_debug( "QuerySet passed in, using it.", me, "*** " )
+        
+        else:
+        
+            # No.  Make one.
+            qs_OUT = cls.objects.all()
+            
+            #output_debug( "No QuerySet passed in, using fresh one.", me, "*** " )
+        
+        #-- END check to see if query set passed in --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> retrieve parameters
+        #-----------------------------------------------------------------------
+
+        # coder_in_list
+        coder_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_CODERS, default_IN = None )  
+        
+        
+        # Coder type
+        coder_type_filter_type_IN = my_params.get( cls.PARAM_CODER_TYPE_FILTER_TYPE, None )
+        coder_types_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_CODERS, default_IN = None )
+
+        # multiple options for tag in list
+        tags_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAGS_IN_LIST, default_IN = None )
+        
+        # got anything for cls.PARAM_TAGS_IN_LIST?
+        if ( tags_in_list_IN is None ):
+        
+            # no.  Try cls.PARAM_TAG_LIST...
+            tags_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAG_LIST, default_IN = None )
+        
+        #-- END check to see if cls.PARAM_TAGS_IN_LIST present --#
+
+        article_id_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_ARTICLE_ID_IN_LIST, default_IN = None )
+        
+        # custom Q parameter, just in case.
+        custom_q_IN = my_params.get( cls.PARAM_CODER_TYPE_FILTER_TYPE, None )
+        
+        #---------------------
+        # ! ==> coder IN list
+        #---------------------
+
+        my_logger.debug( "In " + me + "(): coder_in_list_IN = " + str( coder_in_list_IN ) )
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( coder_in_list_IN is not None ):
+    
+            # get the value as a list, whether it is a delimited string or list.
+            coder_in_list = ListHelper.get_value_as_list( coder_in_list_IN )
+            
+            # filter?
+            if ( ( coder_in_list is not None ) and ( len( coder_in_list ) > 0 ) ):
+
+                # something in list - filter.
+                current_query = Q( coder__in = coder_in_list )
+                query_list.append( current_query )
+                
+                # And, need to do DISTINCT on id.
+                do_distinct = True
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #--------------------
+        # ! ==> tags IN list
+        #--------------------
+
+        my_logger.debug( "In " + me + "(): tags_in_list_IN = " + str( tags_in_list_IN ) )
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( tags_in_list_IN is not None ):
+    
+            # get the value as a list, whether it is a delimited string or list.
+            tags_in_list = ListHelper.get_value_as_list( tags_in_list_IN )
+            
+            # filter?
+            if ( ( tags_in_list is not None ) and ( len( tags_in_list ) > 0 ) ):
+
+                # something in list - filter.
+                current_query = Q( article__tags__name__in = tags_in_list )
+                query_list.append( current_query )
+                
+                # And, need to do DISTINCT on id.
+                do_distinct = True
+                
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #--------------------------
+        # ! ==> article ID IN list
+        #--------------------------
+
+        my_logger.debug( "In " + me + "(): article_id_in_list_IN = " + str( article_id_in_list_IN ) )
+
+        # Update QuerySet to only include articles with tags in list?
+        if ( article_id_in_list_IN is not None ):
+    
+            # get the value as a list, whether it is a delimited string or list.
+            article_id_in_list = ListHelper.get_value_as_list( article_id_in_list_IN )
+            
+            # filter?
+            if ( ( article_id_in_list is not None ) and ( len( article_id_in_list ) > 0 ) ):
+
+                # set up query instance to look for articles with
+                #    ID in the list of values passed in.  Not
+                #    quoting, since django should do that.
+                current_query = Q( article__id__in = article_id_in_list )
+
+                # add it to list of queries
+                query_list.append( current_query )
+
+            #-- END check to see if anything in list. --#
+    
+        #-- END check to see if tags IN list is in arguments --#
+
+        #-------------------------------
+        # ! ==> custom-built Q() object
+        #-------------------------------
+
+        # try to update QuerySet for selected sections.
+        if ( custom_q_IN is not None ):
+
+            # got something in the parameter?
+            if ( ( custom_q_IN is not None )
+                and ( isinstance( custom_q_IN, Q ) == True ) ):
+
+                # yes.  Add to q queue.
+                current_query = custom_q_IN
+                query_list.append( current_query )
+
+            #-- END check to see if custom Q() present. --#
+
+        #-- END check to see if Custom Q argument present --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> filter with Q() list
+        #-----------------------------------------------------------------------
+
+        # now, add them all to the QuerySet - try a loop
+        for query_item in query_list:
+
+            # append each filter to query set.
+            qs_OUT = qs_OUT.filter( query_item )
+
+        #-- END loop over query set items --#
+        
+        #-----------------------------------------------------------------------
+        # ! ==> do DISTINCT?
+        #-----------------------------------------------------------------------
+        
+        # do DISTINCT on ID?
+        if ( do_distinct == True ):
+        
+            # do DISTINCT
+            # qs_OUT.distinct() - doesn't work.
+            
+            # init ID set.
+            article_data_id_list = []
+            duplicate_count = 0
+            
+            # loop over results:
+            for current_article_data in qs_OUT:
+            
+                # get ID
+                current_id = current_article_data.id
+            
+                # already in list?
+                if ( current_id not in article_data_id_list ):
+                
+                    # add it to list.
+                    article_data_id_list.append( current_id )
+                    
+                else:
+                
+                    # already in the list.
+                    duplicate_count += 1
+
+                #-- END check to see if ID already in list. --#
+            
+            #-- END loop over articles --#
+            
+            my_logger.debug( "In " + me + "(): do_distinct = " + str( do_distinct ) + "; duplicate count = " + str( duplicate_count ) + "; Article_Data IDs = " + str( article_data_id_list ) )
+
+            # anything in list?
+            if ( len( article_data_id_list ) > 0 ):
+            
+                # yes - were there any duplicates?
+                if ( duplicate_count > 0 ):
+
+                    # yes.  Make a query that just limits to current matches.
+                    qs_OUT = Article_Data.objects.filter( id__in = article_id_list )
+                    
+                    my_logger.debug( "In " + me + "(): filtered out " + str( duplicate_count ) + " duplicate Article_Data." )
+
+                #-- END check to see if any duplicates. --#
+            
+            #-- END check to see if anything in ID list --#
+
+        #-- END check to see if we do DISTINCT --#
+
+        return qs_OUT
+
+    #-- END class method filter_records() --#
+
+
     @classmethod
     def make_deep_copy( cls, id_to_copy_IN, new_coder_user_id_IN = None, *args, **kwargs ):
         
