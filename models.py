@@ -6495,7 +6495,7 @@ class Article_Data( models.Model ):
         
         # Coder type
         coder_type_filter_type_IN = my_params.get( cls.PARAM_CODER_TYPE_FILTER_TYPE, None )
-        coder_types_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_CODERS, default_IN = None )
+        coder_types_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_CODER_TYPES_LIST, default_IN = None )
 
         # multiple options for tag in list
         tags_in_list_IN = my_dict_helper.get_value_as_list( cls.PARAM_TAGS_IN_LIST, default_IN = None )
@@ -6542,6 +6542,9 @@ class Article_Data( models.Model ):
         #---------------------
         # ! ==> coder type
         #---------------------
+
+        my_logger.debug( "In " + me + "(): coder_type_filter_type_IN = " + str( coder_type_filter_type_IN ) )
+        my_logger.debug( "In " + me + "(): coder_types_list_IN = " + str( coder_types_list_IN ) )
 
         # anything in automated coder type include list?
         if ( ( coder_types_list_IN is not None ) and ( isinstance( coder_types_list_IN, list ) == True ) and ( len( coder_types_list_IN ) > 0 ) ):
@@ -6623,6 +6626,8 @@ class Article_Data( models.Model ):
         #-------------------------------
         # ! ==> custom-built Q() object
         #-------------------------------
+
+        my_logger.debug( "In " + me + "(): custom_q_IN = " + str( custom_q_IN ) )
 
         # try to update QuerySet for selected sections.
         if ( custom_q_IN is not None ):
