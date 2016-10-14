@@ -45,8 +45,8 @@
 
         <hr />
         
-        {% if article_data_filter_summary %}
-            <p><strong>Filter Summary:</strong> {{ article_data_filter_summary }}</p>
+        {% if filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ filter_summary }}</p>
         {% endif %}
         
         {% if action_summary %}
@@ -60,16 +60,32 @@
                     <th>index</th>
                     <th>ID</th>
                     <th>coder</th>
+                    <th>coder type</th>
                     <th>article.tags</th>
                     <th>article</th>
+                    <th>date</th>
                 </tr>
                 {% for current_article_data in article_data_details_list %}
                     <tr>
                         <td>{{ current_article_data.index }}</td>
-                        <td>{{ current_article_data.article_data_instance.id }}</td>
-                        <td>{{ current_article_data.article_data_instance.coder }}</td>
-                        <td>{{ current_article.article_data_instance.article.tags.all }}</td>
-                        <td><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ current_article.article_data_instance.article.id }}">{{ current_article.article_data_instance.article }}</a></td>
+                        <td>{{ current_article_data.instance.id }}</td>
+                        <td>{{ current_article_data.instance.coder }}</td>
+                        <td>{{ current_article_data.instance.coder_type }}</td>
+                        <td>
+                            {% if current_article_data.instance.article.tags.all %}
+                            <ul>
+                                {% for current_tag in current_article_data.instance.article.tags.all %}
+                                    <li>{{ current_tag }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
+                        <td><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ current_article_data.instance.article.id }}">{{ current_article_data.instance.article }}</a></td>
+                        <td>{{ current_article_data.instance.create_date }}</td>
                     </tr>
                 {% empty %}
                     <tr><td colspan="5">No Article_Data selected.</td></tr>

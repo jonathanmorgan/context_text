@@ -68,14 +68,40 @@
                     <th>tags</th>
                     <th>paper</th>
                     <th>headline</th>
+                    <th>coded</th>
                 </tr>
                 {% for current_article in article_details_list %}
                     <tr>
                         <td>{{ current_article.index }}</td>
-                        <td>{{ current_article.article_instance.id }}</td>
-                        <td>{{ current_article.article_instance.tags.all }}</td>
+                        <td><a href="{% url 'sourcenet-article_view_article_data_with_text' %}?article_id={{ current_article.article_instance.id }}">{{ current_article.article_instance.id }}</a></td>
+                        <td>
+                            {% if current_article.article_instance.tags.all %}
+                            <ul>
+                                {% for current_tag in current_article.article_instance.tags.all %}
+                                    <li>{{ current_tag }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
                         <td>{{ current_article.article_instance.newspaper }}</td>
                         <td>{{ current_article.article_instance.headline }}</td>
+                        <td>
+                            {% if current_article.article_instance.article_data_set.all %}
+                            <ul>
+                                {% for current_article_data in current_article.article_instance.article_data_set.all %}
+                                    <li>{{ current_article_data.id }} - {{ current_article_data.coder }} ( {{ current_article_data.coder_type }} ) - {{ current_article_data.create_date }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
                     </tr>
                 {% empty %}
                     <tr><td colspan="5">No articles selected.</td></tr>

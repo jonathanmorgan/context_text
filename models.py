@@ -6172,6 +6172,12 @@ class Article_Data( models.Model ):
     PARAM_TAGS_IN_LIST = SourcenetBase.PARAM_TAGS_IN_LIST
     PARAM_TAG_LIST = SourcenetBase.PARAM_TAG_LIST
     PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST
+    
+    # Filtering Article_Data on coder_type.
+    CODER_TYPE_FILTER_TYPE_NONE = SourcenetBase.CODER_TYPE_FILTER_TYPE_NONE
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = SourcenetBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
+    CODER_TYPE_FILTER_TYPE_ALL = SourcenetBase.CODER_TYPE_FILTER_TYPE_ALL
+    CODER_TYPE_FILTER_TYPE_DEFAULT = SourcenetBase.CODER_TYPE_FILTER_TYPE_DEFAULT
 
 
     #----------------------------------------------------------------------
@@ -6401,7 +6407,7 @@ class Article_Data( models.Model ):
         qs_OUT = None
         
         # declare variables
-        me = "filter_articles"
+        me = "filter_records"
         my_logger_name = "sourcenet.models.Article_Data"
         my_logger = None
         
@@ -6532,6 +6538,34 @@ class Article_Data( models.Model ):
             #-- END check to see if anything in list. --#
     
         #-- END check to see if tags IN list is in arguments --#
+
+        #---------------------
+        # ! ==> coder type
+        #---------------------
+
+        # anything in automated coder type include list?
+        if ( ( coder_types_list_IN is not None ) and ( isinstance( coder_types_list_IN, list ) == True ) and ( len( coder_types_list_IN ) > 0 ) ):
+        
+            # What is our filter type?
+            if ( coder_type_filter_type_IN == cls.CODER_TYPE_FILTER_TYPE_AUTOMATED ):
+            
+                # Just filter automated records, not all records.
+                qs_OUT = Article_Data.filter_automated_by_coder_type( qs_OUT, coder_types_list_IN )
+                
+            elif( coder_type_filter_type_IN == cls.CODER_TYPE_FILTER_TYPE_ALL ):
+            
+                # all records.
+                qs_OUT = qs_OUT.filter( coder_type__in = coder_types_list_IN )
+                
+            else:
+            
+                # unknown, or specifically requested to not filter on coder
+                #    type.
+                pass
+                
+            #-- END check to see what filter type --#
+        
+        #-- END check to see if anything in coder_type_list.
 
         #--------------------
         # ! ==> tags IN list

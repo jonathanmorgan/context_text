@@ -120,7 +120,13 @@ class SourcenetBase( BasicRateLimited ):
     # ground truth coding user
     CODER_USERNAME_GROUND_TRUTH = "ground_truth"
     CODER_USER_GROUND_TRUTH = None
-        
+    
+    # Filtering Article_Data on coder_type.
+    CODER_TYPE_FILTER_TYPE_NONE = "none"
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = "automated"
+    CODER_TYPE_FILTER_TYPE_ALL = "all"
+    CODER_TYPE_FILTER_TYPE_DEFAULT = CODER_TYPE_FILTER_TYPE_NONE
+
 
     #============================================================================
     # instance variables

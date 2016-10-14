@@ -2061,7 +2061,7 @@ def article_data_filter( request_IN ):
                                 
                                     # loop over articles
                                     article_counter = 0
-                                    for article_data_instance in article_qs:
+                                    for article_data_instance in article_data_qs:
                                     
                                         # increment article_counter
                                         article_counter += 1
@@ -2071,7 +2071,7 @@ def article_data_filter( request_IN ):
                                         
                                         # store index and article
                                         article_data_details[ "index" ] = article_counter
-                                        article_data_details[ "article_data_instance" ] = article_data_instance
+                                        article_data_details[ "instance" ] = article_data_instance
                                         
                                         # add details to list.
                                         article_data_details_list.append( article_data_details )

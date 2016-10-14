@@ -363,7 +363,7 @@ class ArticleDataFilterForm( FormParent ):
     coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
     
     # list of unique identifiers to limit to.
-    tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
+    tags_in_list_IN = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
     
     # article_id_list - list of Article IDs whose coding we want to see.
     article_id_list = forms.CharField( required = False, label = "IDs of Articles whose coding you want (,)" )
