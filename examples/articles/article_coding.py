@@ -51,8 +51,9 @@ error_status_counter = -1
 #tag_in_list = "prelim_unit_test_007"
 #tag_in_list = [ "prelim_reliability", "prelim_network" ]
 #tag_in_list = [ "prelim_reliability_test" ] # 60 articles - Grand Rapids only.
-tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and Detroit.
+#tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and Detroit.
 #tag_in_list = [ "prelim_training_001" ]
+tag_in_list = [ "grp_month" ]
 
 # ==> IDs of newspapers to include.
 #paper_id_in_list = "1"
@@ -68,7 +69,9 @@ tag_in_list = [ "prelim_reliability_combined" ] # 87 articles, Grand Rapids and 
 #article_id_in_list = [ 21627, 21609, 21579 ]
 #article_id_in_list = [ 48778 ]
 #article_id_in_list = [ 6065 ]
-article_id_in_list = [ 221858 ]
+#article_id_in_list = [ 221858 ]
+#article_id_in_list = [ 23804, 22630 ]
+article_id_in_list = [ 23804 ]
 
 # filter parameters
 params[ ArticleCoding.PARAM_START_DATE ] = start_pub_date

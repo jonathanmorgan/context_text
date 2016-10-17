@@ -1976,6 +1976,10 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             
             # "quotation" is the quotation without an attribution string.
             quotation_string = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTATION, None )
+            
+            # sometimes the software detects a quote, but can't quite figure out
+            #     the quotation string.  If this occurs, quotation_string will
+            #     be None.
         
             # "quotationtype" is the type of quote ("Paraphrase" or "Primary").
             quotation_type = quotation_JSON_IN.get( OpenCalaisV2ApiResponse.JSON_NAME_QUOTE_QUOTATION_TYPE, None )
@@ -2147,8 +2151,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         
                     else:
                     
-                        # ERROR.
-                        notes_string = "In " + me + ": ERROR - canonical index - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
+                        # ERROR
+                        notes_string = "In " + me + ": ERROR - canonical index - search for quotation ( \"" + str( quotation_string ) + "\" - EXACT: \"" + str( quotation_exact ) + "\" ) either returned 0 or multiple matches: " + str( found_list )
                         notes_list.append( notes_string )
                         self.output_debug( notes_string )
                         
@@ -2181,7 +2185,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     else:
                     
                         # ERROR.
-                        notes_string = "In " + me + ": ERROR - word first and last numbers - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( first_word_list )
+                        notes_string = "In " + me + ": ERROR - word first and last numbers - search for quotation ( \"" + str( quotation_string ) + "\" - EXACT: \"" + str( quotation_exact ) + "\" ) either returned 0 or multiple matches: " + str( first_word_list )
                         notes_list.append( notes_string )
                         self.output_debug( notes_string )
 
@@ -2205,7 +2209,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     else:
                     
                         # ERROR.
-                        notes_string = "In " + me + ": ERROR - paragraph number - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
+                        notes_string = "In " + me + ": ERROR - paragraph number - search for quotation ( \"" + str( quotation_string ) + "\" - EXACT: \"" + str( quotation_exact ) + "\" ) either returned 0 or multiple matches: " + str( found_list )
                         notes_list.append( notes_string )
                         self.output_debug( notes_string )
 
