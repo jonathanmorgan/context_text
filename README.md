@@ -682,16 +682,17 @@ Once the database tables are created, you'll want to make a django admin user at
                     
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
-        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/lib/python3.5/site-packages 
+        WSGIApplicationGroup %{GLOBAL}
+        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
 
         # Python 2:
-        #WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages 
+        #WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
 
         # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess sourcenet-1 ... python-path=
         # no virualenv
         # ... python-path=<path_to_django_project_parent>/research
-        # using virtualenv (or any other paths, each separated by colons)
-        # ... python-path=<path_to_django_project_parent>/research:<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages
+        # virtualenv, place the root of the virtualenv in a separate python-home property:
+        # ... python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research
 
         WSGIProcessGroup sourcenet-1
         WSGIScriptAlias /sourcenet <path_to_django_project_parent>/research/research/wsgi.py process-group=sourcenet-1

@@ -389,7 +389,13 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
                 quote_value = quote.value
                 quote_paragraph_number = quote.paragraph_number
                 
-                html_OUT += quote_value + " ( graf: " + StringHelper.object_to_unicode_string( quote_paragraph_number ) + " )"
+                if( quote_value is None ):
+
+                    quote_value = "None"
+
+                #-- END check to see if quote value is "None" --#
+
+                html_OUT += str( quote_value ) + " ( graf: " + StringHelper.object_to_unicode_string( quote_paragraph_number ) + " )"
     
             else:
                 

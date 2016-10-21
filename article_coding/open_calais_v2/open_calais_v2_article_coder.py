@@ -2008,6 +2008,15 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             #    - Example: "quote", said Jim.
             quotation_exact = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_EXACT, None )
             
+            # if no quoation string, but quotation exact present, use exact as
+            #     quotation_string as well.
+            if ( ( quotation_string is None ) and ( quotation_exact is not None ) ):
+            
+                # use exact as quotation string.
+                quotation_string = quotation_exact
+            
+            #-- END check to see if empty quotation string, but exact present --#
+            
             # "length" is the length of the quotation string.
             quotation_length = current_instance.get( OpenCalaisV2ApiResponse.JSON_NAME_LENGTH, None )
             
