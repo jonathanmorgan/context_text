@@ -141,29 +141,29 @@
                             <strong><em>Mentions</em></strong>
                             <br />
                             <table class="gridtable">
-                                <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>quote</th><th>notes</th></tr>
-                                {% for source_mention in article_source.article_subject_mention_set.all %}
+                                <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>mention</th><th>notes</th></tr>
+                                {% for subject_mention in article_subject.article_subject_mention_set.all %}
                         
                                     <tr>
-                                        <td align="center">{{ source_mention.id }}</td>
-                                        <td align="center">{{ source_mention.paragraph_number }}</td>
-                                        <td align="center">{{ source_mention.value_word_number_start }}</td>
-                                        <td align="center">{{ source_mention.value_word_number_end }}</td>
-                                        <td align="center">{{ source_mention.value_index }}</td>
-                                        <td align="center">{{ source_mention.canonical_index }}</td>                                        
-                                        <td align="center">{{ source_mention.article_subject.person.id }}</td>
+                                        <td align="center">{{ subject_mention.id }}</td>
+                                        <td align="center">{{ subject_mention.paragraph_number }}</td>
+                                        <td align="center">{{ subject_mention.value_word_number_start }}</td>
+                                        <td align="center">{{ subject_mention.value_word_number_end }}</td>
+                                        <td align="center">{{ subject_mention.value_index }}</td>
+                                        <td align="center">{{ subject_mention.canonical_index }}</td>                                        
+                                        <td align="center">{{ subject_mention.article_subject.person.id }}</td>
                                         
-                                        {% if source_mention.value_in_context %}
+                                        {% if subject_mention.value_in_context %}
                                         
-                                            <td>{{ source_mention.value_in_context }}</td>
+                                            <td>{{ subject_mention.value_in_context }}</td>
                                             
                                         {% else %}
                                         
-                                            <td>{{ source_mention.value }}
+                                            <td>{{ subject_mention.value }}
                                                 
                                         {% endif %}
 
-                                        <td>{{ source_mention.notes }}</td>
+                                        <td>{{ subject_mention.notes }}</td>
                                     </tr>
                                     
                                 {% endfor %}
