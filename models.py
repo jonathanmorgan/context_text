@@ -1157,7 +1157,12 @@ class Abstract_Person( Abstract_Person_Parent ):
     #-- END class method find_person_from_name() --#
 
     @classmethod
-    def get_person_for_name( cls, name_IN, create_if_no_match_IN = False, parsed_name_IN = None, do_strict_match_IN = False ):
+    def get_person_for_name( cls,
+                             name_IN,
+                             create_if_no_match_IN = False,
+                             parsed_name_IN = None,
+                             do_strict_match_IN = False,
+                             do_partial_match_IN = False ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -1186,7 +1191,10 @@ class Abstract_Person( Abstract_Person_Parent ):
         if ( name_IN ):
         
             # try to retrieve person for name.
-            person_qs = cls.look_up_person_from_name( name_IN, parsed_name_IN = parsed_name_IN, do_strict_match_IN = do_strict_match_IN )
+            person_qs = cls.look_up_person_from_name( name_IN,
+                                                      parsed_name_IN = parsed_name_IN,
+                                                      do_strict_match_IN = do_strict_match_IN,
+                                                      do_partial_match_IN = do_partial_match_IN )
             
             # got a match?
             person_count = person_qs.count()
@@ -1276,7 +1284,91 @@ class Abstract_Person( Abstract_Person_Parent ):
         return status_OUT
         
     #-- END class method get_person_lookup_status() --#
+    
+    
+    @classmethod
+    def is_single_name_part( cls, name_string_IN ):
+        
+        '''
+        Accepts a name string.  If name string just has a single word, returns
+            True.  If not, returns False.  If error, returns None.  This works
+            with nameparser.HumanName - it parses the name using HumanName, then
+            checks to see if there is a value in first_name and the rest of the
+            values are empty.  If that is the case, then single name part.  If
+            more than one name field is populated, then not single name part.
+        '''
+        
+        # return reference
+        is_just_first_name_OUT = False
+        
+        # declare variables
+        human_name = None
+        first_name = ""
+        other_name_part_list = []
+        name_part = ""
+        cleaned_name_part = ""
+        other_name_part_string = ""
+        
+        # Make sure we have a string value
+        if ( ( name_string_IN is not None ) and ( name_string_IN != "" ) ):
+        
+            # parse with HumanName
+            human_name = HumanName( name_string_IN )
+            
+            # get first name
+            first_name = human_name.first
 
+            # put all the rest of the values into a list.
+            other_name_part_list.append( human_name.title )
+            other_name_part_list.append( human_name.middle )
+            other_name_part_list.append( human_name.last )
+            other_name_part_list.append( human_name.suffix )
+            other_name_part_list.append( human_name.nickname )
+            
+            # clump the rest of the name parts together into a string.
+            for name_part in other_name_part_list:
+                
+                # got anything?
+                if ( ( name_part is not None ) and ( name_part != "" ) ):
+                
+                    # clean it up - strip white space.
+                    cleaned_name_part = name_part.strip()
+                    
+                    # got anything now?
+                    if ( cleaned_name_part != "" ):
+                    
+                        # yup.  Add to other_name_part_string.
+                        other_name_part_string += cleaned_name_part
+
+                    #-- END check to see if other name parts. --#
+
+                #-- check to see if empty. --#
+                
+            #-- loop over other name parts. --#
+            
+            # anything in other_name_part_string?
+            if ( ( other_name_part_string is not None ) and ( other_name_part_string != "" ) ):
+            
+                # yes.  Not just first name.
+                is_just_first_name_OUT = False
+                
+            else:
+            
+                # no.  Just first name.
+                is_just_first_name_OUT = True
+            
+            #-- END check to see if anything other than first name --#
+                
+        else:
+        
+            # None - No string passed in, so returning None.
+            is_just_first_name_OUT = None
+        
+        #-- END check to see if None. --#
+    
+        return is_just_first_name_OUT
+        
+    #-- END class method is_single_name_part() --#
 
     @classmethod
     def look_up_person_from_name( cls,
@@ -1874,7 +1966,10 @@ class Abstract_Person( Abstract_Person_Parent ):
         # got a name?
         if ( name_IN ):
         
-            # yes.  Parse it using HumanName class from nameparser.
+            # yes.  Store original name string
+            self.original_name_string = name_IN
+            
+            # Parse it using HumanName class from nameparser.
             parsed_name = HumanName( name_IN )          
             
             # Use parsed values to build a search QuerySet.  First, get values.

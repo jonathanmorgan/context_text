@@ -1177,8 +1177,13 @@ class ArticleCoder( BasicRateLimited ):
         
         # declare variables - match status
         match_status = ""
-        multiple_list = []
+        is_single_name_part = False
         temp_person = None
+        temp_lookup_status = None
+        test_person_qs = None
+        test_person_count = -1
+        test_person = None
+        multiple_list = []
         temp_full_name = None
         
         # declare variables - disambiguation
@@ -1289,7 +1294,7 @@ class ArticleCoder( BasicRateLimited ):
         #------------------------------------------------------------------------
             
                 # lookup Person
-                person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN )
+                person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = create_if_no_match_IN )
                 lookup_status = Person.get_person_lookup_status( person_instance )
                 
                 # Decide what to do based on status.
@@ -1299,6 +1304,65 @@ class ArticleCoder( BasicRateLimited ):
                 
                     # found one match.
                     match_status = self.MATCH_STATUS_SINGLE
+                    
+                    # check to see if the name passed in is a single name.
+                    is_single_name_part = Person.is_single_name_part( full_name_IN )
+                    if ( is_single_name_part == True ):
+
+                        # yes.  Do strict lookup with no partial match to see if
+                        #     this is an exact match.
+                        temp_person = Person.get_person_for_name( full_name_IN,
+                                                                  create_if_no_match_IN = False,
+                                                                  do_strict_match_IN = True,
+                                                                  do_partial_match_IN = False )
+                        temp_lookup_status = Person.get_person_lookup_status( temp_person )
+                        
+                        # exact match?
+                        if ( ( temp_person is None ) or ( person_instance.id != temp_person.id ) ):
+                        
+                            # we have a single word name, lookup and strict
+                            #     lookup result in different matches.
+                                                        
+                            # further verify by checking if just one match for
+                            #     the name passed in and first_name, ignoring
+                            #     other name fields.
+                            test_person_qs = Person.objects.filter( first_name__iexact = full_name_IN )
+                            test_person_count = test_person_qs.count()
+                            if ( test_person_count == 1 ):
+
+                                # This is a relatively rare scenario - a single
+                                #     name part matches to the only person in
+                                #     the database that contains that name part
+                                #     in their first name.  For our purposes,
+                                #     this is not a match.  Make a new person
+                                #     for the single name part, set match status
+                                #     to None.
+                                match_status = self.MATCH_STATUS_NONE
+                                person_instance = Person.create_person_for_name( full_name_IN )
+                                self.output_debug( "In " + me + ": name " + str( full_name_IN ) + " is first name of one person ( " + str( person_instance ) + " ) who has more name information.  This is not a reliable match, so creating new Person with just name passed in." )
+                                
+                            elif ( test_person_count > 1 ):
+                            
+                                # make list of IDs of multiple matches.
+                                multiple_list = []
+                                for test_person in test_person_qs:
+                                    
+                                    # add ID of each person to list.
+                                    multiple_list.append( test_person )
+                                    
+                                #-- END loop over multiple matches. --#
+                                
+                                self.output_debug( "In " + me + ": name " + str( full_name_IN ) + " is first name of more than one person ( " + str( multiple_list ) + " ) who just has that first name.  But we found an exact match.  This makes no sense." )
+                                
+                            else:
+                            
+                                self.output_debug( "In " + me + ": name " + str( full_name_IN ) + " is not first name of any person, and yet it was matched to person: " + str( person_instance ) + ".  This makes no sense." )                                
+
+                            #-- END check to see if one person with same first name --#
+                                
+                        #-- END check to see if our match is an exact match --#
+                    
+                    #-- END check to see if single name part --#
                 
                 # Person.LOOKUP_STATUS_NEW - no match, new record created.
                 elif ( lookup_status == Person.LOOKUP_STATUS_NEW ):
@@ -1345,6 +1409,7 @@ class ArticleCoder( BasicRateLimited ):
                     
                         # store persons in list.
                         #multiple_list = list( multiple_qs )
+                        multiple_list = []
                         for current_person in multiple_qs:
                         
                             # add person to list.
@@ -1402,9 +1467,17 @@ class ArticleCoder( BasicRateLimited ):
                     if ( full_name_count == 0 ):
 
                         # !remove periods, look again.
-                        # no - try lookup after removing periods from all name
-                        #    parts.
-                        temp_person = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
+
+                        # If no match, try removing periods ( "." ) from name
+                        #     parts, then looking up using string full name (in
+                        #     case middle initials are inconsistently entered 
+                        #     with or without periods).
+                        
+                        # Use temp person to clean up punctuation
+                        temp_person = Person.get_person_for_name( full_name_IN,
+                                                                  create_if_no_match_IN = True,
+                                                                  do_strict_match_IN = True,
+                                                                  do_partial_match_IN = False )
                         temp_person.standardize_name_parts( True )
                         temp_full_name = temp_person.full_name_string
                         
@@ -1454,70 +1527,6 @@ class ArticleCoder( BasicRateLimited ):
                 
                 #-- END check to see if we need to try full-name lookup. --#
 
-                # If no match, try removing periods ( "." ) from name parts,
-                #    then looking up using string full name (in case middle
-                #    initials are inconsistently entered with or without
-                #    periods).
-                if ( match_status == self.MATCH_STATUS_NONE ):
-
-                    # no match for parsed name.  Try looking up using string
-                    #    full name (could in some cases be because of nameparser
-                    #    parsing error).
-                    
-                    # get standardized full name.
-                    
-                    # if no person instance, use Person.get_person_for_name() to
-                    #    make one.
-                    if ( person_instance is None ):
-                    
-                        person_instance = Person.get_person_for_name( full_name_IN, create_if_no_match_IN = True )
-                        
-                    #-- END check to see if person_instance --#
-                    
-                    # get full name string.
-                    standardized_full_name = person_instance.full_name_string
-                        
-                    # look for matches based on full name string.
-                    full_name_qs = Person.objects.filter( full_name_string__iexact = standardized_full_name )
-
-                    # got anything back?
-                    full_name_count = full_name_qs.count()
-                    if ( full_name_count == 0 ):
-                    
-                        # nothing returned from looking for full name, either.
-                        match_status = self.MATCH_STATUS_NONE
-                    
-                    elif ( full_name_count == 1 ):
-                    
-                        # found one based on full name.  Parse error?
-                        match_status = self.MATCH_STATUS_SINGLE
-                        
-                        # store person as person_instance.
-                        person_instance = full_name_qs.get()
-                        
-                        # verification will handle assessing confidence.
-                    
-                    elif ( full_name_count > 1 ):
-
-                        # found more than one based on full name.  What to do?
-                        match_status = self.MATCH_STATUS_MULTIPLE
-                        
-                        # store persons in list.
-                        #multiple_list = list( full_name_qs )
-                        for current_person in full_name_qs:
-                        
-                            # add person to list.
-                            multiple_list.append( current_person )
-                            
-                        #-- END loop over QuerySet. --#
-                        
-                    else:
-                    
-                        self.output_debug( "In " + me + ": full_name_qs.count() returned " + str( full_name_count ) + ", which is neither 0, 1, or > 1. Error." )
-                    
-                    #-- END check to see if any matches. --#
-                
-                #-- END check to see if we need to try full-name lookup. --#
                     
         #-----------------------------------------------------------------------
         # !Disambiguation Phase
@@ -1526,6 +1535,7 @@ class ArticleCoder( BasicRateLimited ):
         # - UUID?
         # - newspaper?
         #-----------------------------------------------------------------------
+
                 
                 # multiple matches...        
                 if ( match_status == self.MATCH_STATUS_MULTIPLE ):
