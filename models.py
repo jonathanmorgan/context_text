@@ -1048,7 +1048,12 @@ class Abstract_Person( Abstract_Person_Parent ):
     
     
     @classmethod
-    def create_person_for_name( cls, name_IN ):
+    def create_person_for_name( cls,
+                                name_IN,
+                                parsed_name_IN = None,
+                                remove_periods_IN = False,
+                                *args,
+                                **kwargs ):
     
         '''
         Accepts name string.  Creates instance of cls, stores name in it, then
@@ -1066,7 +1071,11 @@ class Abstract_Person( Abstract_Person_Parent ):
             instance_OUT = cls()
             
             # store name
-            instance_OUT.set_name( name_IN )
+            instance_OUT.set_name( name_IN,
+                                   parsed_name_IN = parsed_name_IN,
+                                   remove_periods_IN = remove_periods_IN,
+                                   *args,
+                                   **kwargs )
             
         else:
         
@@ -1211,7 +1220,7 @@ class Abstract_Person( Abstract_Person_Parent ):
                 if ( create_if_no_match_IN == True ):
                 
                     # create new Person!
-                    instance_OUT = cls.create_person_for_name( name_IN )
+                    instance_OUT = cls.create_person_for_name( name_IN, parsed_name_IN = parsed_name_IN )
                     
                     output_debug( "In " + me + ": no match for name: \"" + name_IN + "\"; so, creating new Person instance (but not saving yet)!" )
                     
@@ -1870,37 +1879,37 @@ class Abstract_Person( Abstract_Person_Parent ):
         # standardize name parts.
         if ( self.name_prefix ):
     
-            self.name_prefix = self.standardize_name_part( self.name_prefix, remove_periods_IN )
+            self.name_prefix = self.standardize_name_part( self.name_prefix, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if name_prefix.
         
         if ( self.first_name ):
     
-            self.first_name = self.standardize_name_part( self.first_name, remove_periods_IN )
+            self.first_name = self.standardize_name_part( self.first_name, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if first_name.
         
         if ( self.middle_name ):
     
-            self.middle_name = self.standardize_name_part( self.middle_name, remove_periods_IN )
+            self.middle_name = self.standardize_name_part( self.middle_name, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if middle_name.
         
         if ( self.last_name ):
     
-            self.last_name = self.standardize_name_part( self.last_name, remove_periods_IN )
+            self.last_name = self.standardize_name_part( self.last_name, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if last_name.
         
         if ( self.name_suffix ):
     
-            self.name_suffix = self.standardize_name_part( self.name_suffix, remove_periods_IN )
+            self.name_suffix = self.standardize_name_part( self.name_suffix, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if name_suffix.
         
         if ( self.nickname ):
     
-            self.nickname = self.standardize_name_part( self.nickname, remove_periods_IN )
+            self.nickname = self.standardize_name_part( self.nickname, remove_periods_IN = remove_periods_IN )
             
         #-- END check to see if nickname.
         
@@ -1937,7 +1946,12 @@ class Abstract_Person( Abstract_Person_Parent ):
     #-- END method save() --#
 
 
-    def set_name( self, name_IN = "" ):
+    def set_name( self,
+                  name_IN,
+                  parsed_name_IN = None,
+                  remove_periods_IN = False,
+                  *args,
+                  **kwargs ):
     
         '''
         This method accepts the full name of a person.  Uses NameParse object to
@@ -1961,16 +1975,29 @@ class Abstract_Person( Abstract_Person_Parent ):
         standardized_hn = None
                 
         # No name, returning None
-        output_debug( "In " + me + ": storing name: " + name_IN )
+        output_debug( "In " + me + ": storing name: " + str( name_IN ) )
 
         # got a name?
-        if ( name_IN ):
+        if ( ( name_IN is not None ) and ( name_IN != "" ) ):
         
             # yes.  Store original name string
             self.original_name_string = name_IN
             
-            # Parse it using HumanName class from nameparser.
-            parsed_name = HumanName( name_IN )          
+            # was parsed name passed in?
+            if ( parsed_name_IN is not None ):
+
+                # used pre-parsed name.
+                parsed_name = parsed_name_IN
+
+                # No name, returning None
+                output_debug( "In " + me + ": using pre-parsed name: " + str( parsed_name_IN ) )
+
+            else:
+
+                # Parse it using HumanName class from nameparser.
+                parsed_name = HumanName( name_IN )
+                
+            #-- END check to see if name already parsed. --#
             
             # Use parsed values to build a search QuerySet.  First, get values.
             prefix = parsed_name.title
@@ -2029,7 +2056,7 @@ class Abstract_Person( Abstract_Person_Parent ):
             #-- END nickname --#
             
             # standardize name parts
-            self.standardize_name_parts()
+            self.standardize_name_parts( remove_periods_IN = remove_periods_IN )
             
             # Finally, store the full name string (and the pickled object?).
             standardized_hn = self.to_HumanName()
@@ -2047,7 +2074,7 @@ class Abstract_Person( Abstract_Person_Parent ):
         
         #-- END check to see if we have a name. --#
         
-    #-- END ethod set_name() --#
+    #-- END method set_name() --#
     
 
     def to_HumanName( self ):

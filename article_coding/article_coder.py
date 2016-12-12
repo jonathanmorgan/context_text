@@ -1184,6 +1184,9 @@ class ArticleCoder( BasicRateLimited ):
         test_person_count = -1
         test_person = None
         multiple_list = []
+        
+        # declare variables - match status - remove periods from name.
+        my_human_name = None
         temp_full_name = None
         
         # declare variables - disambiguation
@@ -1474,11 +1477,10 @@ class ArticleCoder( BasicRateLimited ):
                         #     with or without periods).
                         
                         # Use temp person to clean up punctuation
-                        temp_person = Person.get_person_for_name( full_name_IN,
-                                                                  create_if_no_match_IN = True,
-                                                                  do_strict_match_IN = True,
-                                                                  do_partial_match_IN = False )
-                        temp_person.standardize_name_parts( True )
+                        my_human_name = person_instance.to_HumanName()
+                        temp_person = Person.create_person_for_name( full_name_IN,
+                                                                     human_name_IN = my_human_name,
+                                                                     remove_periods_IN = True )
                         temp_full_name = temp_person.full_name_string
                         
                         # look for matches based on no-periods full name string.
