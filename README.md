@@ -1474,9 +1474,13 @@ Specific sets of tests:
             
 - sourcenet model instances:
 
+    - test Article_Data model
+    
+            python manage.py test sourcenet.tests.models.test_Article_Data_model
+
     - test Person (and AbstractPerson) model
     
-            python manage.py test sourcenet.tests.models.test-Person_model
+            python manage.py test sourcenet.tests.models.test_Person_model
 
 ## Test data
 

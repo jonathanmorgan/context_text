@@ -6556,6 +6556,7 @@ class Article_Data( models.Model ):
         query_item = None        
         
         # do DISTINCT?
+        do_distinct = False
         article_data_id_list = None
         duplicate_count = -1
         current_article_data = None
