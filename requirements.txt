@@ -7,5 +7,4 @@ ipython
 psycopg2
 requests
 django-taggit
-mechanize
 regex
