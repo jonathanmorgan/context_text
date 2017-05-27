@@ -338,6 +338,136 @@ class ArticleCoderTest( django.test.TestCase ):
         error_message = "In " + me + ": Person " + str( test_person ) + " has organization " + str( test_value ) + ", should be " + str( should_be ) + "."
         self.assertEqual( test_value, should_be, msg = error_message )
 
+
+        #----------------------------------------------------------------------#
+        # !test 5 - Single name, single match test - should not match.
+        # - "Anirban" matches one person with that first name ( 526 - "Anirban Basu" )
+        # - should not be counted as a match.
+        # - No match, do create.
+        #----------------------------------------------------------------------#
+
+        
+        # retrieve person information.
+        lookup_person_name = "Anirban"
+        lookup_person_id = -1
+        lookup_title = "test_title"
+        lookup_organization_string = "test_org"
+
+        # set up person details
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = True,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): No person returned for name \"" + lookup_person_name + "\", id = " + str( lookup_person_id )
+        self.assertIsNotNone( test_person, msg = error_message )
+        
+        # retrieve the person and person ID
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        test_person_organization = test_person.organization_string
+        
+        # there should be an ID.
+        test_value = test_person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be None."
+        self.assertIsNotNone( test_value, msg = error_message )
+        
+        # ID should not be 526.
+        test_value = test_person_id
+        should_not_be = 526
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should not be " + str( should_not_be ) + "."
+        self.assertNotEqual( test_value, should_not_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+        # check to see if organization_string updated.
+        test_value = test_person_organization
+        should_be = lookup_organization_string
+        error_message = "In " + me + ": Person " + str( test_person ) + " has organization " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+
+        #----------------------------------------------------------------------#
+        # !test 6 - 526 - Anirban Basu - use name.       
+        #----------------------------------------------------------------------#
+
+        
+        # retrieve person information.
+        lookup_person_name = "Anirban Basu"
+        lookup_person_id = 526
+        lookup_title = "test_title"
+        lookup_organization_string = "test_org"
+
+        # set up person details
+        person_details = PersonDetails()
+        person_details[ ManualArticleCoder.PARAM_PERSON_NAME ] = lookup_person_name
+        person_details[ ManualArticleCoder.PARAM_TITLE ] = lookup_title
+        person_details[ ManualArticleCoder.PARAM_PERSON_ORGANIZATION ] = lookup_organization_string
+        #person_details[ ManualArticleCoder.PARAM_PERSON_ID ] = lookup_person_id
+        
+        # make test Article_Author
+        test_article_author = Article_Author()
+
+        # lookup person - returns person and confidence score inside
+        #    Article_Author instance.
+        test_article_author = test_manual_article_coder.lookup_person( test_article_author, 
+                                                                       lookup_person_name,
+                                                                       create_if_no_match_IN = True,
+                                                                       update_person_IN = True,
+                                                                       person_details_IN = person_details )
+
+        # get results from Article_Author
+        test_person = test_article_author.person
+        test_person_match_list = test_article_author.person_match_list  # list of Person instances
+                                
+        # got a person?
+        error_message = "In " + me + "(): No person returned for name \"" + lookup_person_name + "\", id = " + str( lookup_person_id )
+        self.assertIsNotNone( test_person, msg = error_message )
+        
+        # retrieve the person and person ID
+        test_person_id = test_person.id
+        test_person_title = test_person.title
+        test_person_organization = test_person.organization_string
+        
+        # check to make sure it is the right person.
+        test_value = test_person_id
+        should_be = lookup_person_id
+        error_message = "In " + me + ": Person " + str( test_person ) + " has ID " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+        
+        # check to see if person title updated.
+        test_value = test_person_title
+        should_be = lookup_title
+        error_message = "In " + me + ": Person " + str( test_person ) + " has title " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
+        # check to see if organization_string updated.
+        test_value = test_person_organization
+        should_be = lookup_organization_string
+        error_message = "In " + me + ": Person " + str( test_person ) + " has organization " + str( test_value ) + ", should be " + str( should_be ) + "."
+        self.assertEqual( test_value, should_be, msg = error_message )
+
     #-- END test method test_lookup_person() --#
 
     
