@@ -8,3 +8,5 @@ psycopg2
 requests
 django-taggit
 regex
+six
+ipykernel
