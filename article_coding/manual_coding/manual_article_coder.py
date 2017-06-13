@@ -1152,7 +1152,7 @@ class ManualArticleCoder( ArticleCoder ):
     
                                 #-- END loop over persons --#
                                 
-                                # ! TODO - removal check
+                                # ! ==> removal check
                                 # Remove any Article_Author or Article_Subject
                                 #     whose ID is in the original list but not
                                 #     in the processed list.
