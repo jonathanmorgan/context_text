@@ -3076,6 +3076,7 @@ class ArticleCoder( BasicRateLimited ):
         quotation_qs = None
         quotation_count = -1
         current_quotation = None
+        original_quotation_string = ""
 
         # declare variables - get values from article text.
         article_text = None
@@ -3206,6 +3207,29 @@ class ArticleCoder( BasicRateLimited ):
                             # to start, make sure the text is in the article.
                             found_list = article_text.find_in_plain_text( quotation_string )
                             found_list_count = len( found_list )
+                            
+                            # got anything?
+                            if ( found_list_count == 0 ):
+                            
+                                # last ditch effort - compact white space inside
+                                #    the string.
+                                original_quotation_string = quotation_string
+                                quotation_string = StringHelper.replace_white_space( string_IN = original_quotation_string,
+                                                                                     replace_with_IN = " ",
+                                                                                     use_regex_IN = True )
+                                                                                     
+                                # and try again - make sure the text is in the article.
+                                found_list = article_text.find_in_plain_text( quotation_string )
+                                found_list_count = len( found_list )
+                            
+                                # ERROR.
+                                notes_string = "In " + me + ": searching in plain text for compacted quote ( \"" + quotation_string + "\" ): " + str( found_list )
+                                notes_list.append( notes_string )
+                                self.output_debug( notes_string )
+
+                            #-- END check to see if match in plain text. --#
+                            
+                            # got anything now?
                             if ( found_list_count == 1 ):
                             
                                 # we know we have one match, so we can dig in and try to get
@@ -3300,6 +3324,14 @@ class ArticleCoder( BasicRateLimited ):
                                 
                                 #-- END check to see if found mention + suffix
                                 
+
+                            else:
+
+                                # ERROR.
+                                notes_string = "In " + me + ": ERROR - canonical index - search for quotation ( \"" + quotation_string + "\" ) either returned 0 or multiple matches: " + str( found_list )
+                                notes_list.append( notes_string )
+                                self.output_debug( notes_string )
+
                             #-- END check to see if quotation is in plain text string --#
                                                     
                         #-- END check to make sure all searches returned same count of matches. --#

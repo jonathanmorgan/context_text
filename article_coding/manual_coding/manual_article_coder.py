@@ -37,6 +37,9 @@ import sys
 # mess with python 3 support
 import six
 
+# other imports
+import regex
+
 # django imports
 from django.core.exceptions import MultipleObjectsReturned
 
@@ -46,6 +49,7 @@ from python_utilities.json.json_helper import JSONHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.network.http_helper import Http_Helper
 from python_utilities.sequences.sequence_helper import SequenceHelper
+from python_utilities.strings.string_helper import StringHelper
 
 # sourcenet classes
 
@@ -663,7 +667,8 @@ class ManualArticleCoder( ArticleCoder ):
                                  data_store_json_string_IN,
                                  article_data_id_IN = None,
                                  request_IN = None,
-                                 response_dictionary_IN = None ):
+                                 response_dictionary_IN = None,
+                                 compact_white_space_IN = False ):
     
         '''
         Accepts:
@@ -961,14 +966,45 @@ class ManualArticleCoder( ArticleCoder ):
                                         # set capture method to "manual_coding".
                                         person_details[ self.PARAM_CAPTURE_METHOD ] = self.coder_type
                                         
-                                        # retrieve person information.
+                                        # ! ==> retrieve person information.
                                         person_type = person_details.get( self.DATA_STORE_PROP_PERSON_TYPE )
                                         original_person_type = person_details.get( self.DATA_STORE_PROP_ORIGINAL_PERSON_TYPE )
+
+                                        # person_name
                                         person_name = person_details.get( self.DATA_STORE_PROP_PERSON_NAME )
+                                        if ( compact_white_space_IN == True ):
+
+                                            person_name = StringHelper.replace_white_space( string_IN = person_name,
+                                                                                       replace_with_IN = " ",
+                                                                                       use_regex_IN = True )
+                                                                                       
+                                        #-- END check to see if we are compacting white space --#
+
                                         fixed_person_name = person_details.get( self.DATA_STORE_PROP_FIXED_PERSON_NAME )
                                         title = person_details.get( self.DATA_STORE_PROP_TITLE )
+
+                                        # person_organization
                                         person_organization = person_details.get( self.DATA_STORE_PROP_PERSON_ORGANIZATION )
+                                        if ( compact_white_space_IN == True ):
+
+                                            person_organization = StringHelper.replace_white_space( string_IN = person_organization,
+                                                                                                    replace_with_IN = " ",
+                                                                                                    use_regex_IN = True )
+
+                                        #-- END check to see if we are compacting white space --#
+
+                                        # quote text - replace more than one
+                                        #     contiguous internal white space
+                                        #     character with a single space.
                                         quote_text = person_details.get( self.DATA_STORE_PROP_QUOTE_TEXT )
+                                        if ( compact_white_space_IN == True ):
+                                        
+                                            quote_text = StringHelper.replace_white_space( string_IN = quote_text,
+                                                                                           replace_with_IN = " ",
+                                                                                           use_regex_IN = True )
+                                        
+                                        #-- END check to see if we are compacting white space --#
+                                        
                                         person_id = person_details.get( self.DATA_STORE_PROP_PERSON_ID )
                                         article_person_id = person_details.get( self.DATA_STORE_PROP_ARTICLE_PERSON_ID )
         

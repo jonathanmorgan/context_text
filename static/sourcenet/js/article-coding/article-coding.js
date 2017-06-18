@@ -4769,7 +4769,13 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
+                
+                // replace more than one contiguous internal white space
+                //     character with a single space.
+                //selected_text = selected_text.replace( /\s+/g, ' ' );
+
                 //SOURCENET.log_message( "selected text : \"" + selected_text + "\"" );
+
                 $( '#' + SOURCENET.INPUT_ID_PERSON_NAME ).val( selected_text );
                 
                 // place last name in text-to-find-in-article <input>, then try
@@ -4872,6 +4878,11 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
+                
+                // replace more than one contiguous internal white space
+                //     character with a single space.
+                //selected_text = selected_text.replace( /\s+/g, ' ' );
+
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
@@ -4919,6 +4930,11 @@ $( document ).ready(
                 // get selection
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
+                
+                // replace more than one contiguous internal white space
+                //     character with a single space.
+                //selected_text = selected_text.replace( /\s+/g, ' ' );
+                
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
