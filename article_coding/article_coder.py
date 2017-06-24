@@ -3043,7 +3043,13 @@ class ArticleCoder( BasicRateLimited ):
     #-- END method process_person_name() --#
 
 
-    def process_quotation( self, article_IN, article_subject_IN, quotation_string_IN, quotation_uuid_IN = "", quotation_uuid_type_IN = "" ):
+    def process_quotation( self,
+                           article_IN,
+                           article_subject_IN,
+                           quotation_string_IN,
+                           quotation_uuid_IN = "",
+                           quotation_uuid_type_IN = "",
+                           do_try_compact_IN = False ):
     
         '''
         Accepts Article, Article_Subject of a source, string quotation
@@ -3208,8 +3214,10 @@ class ArticleCoder( BasicRateLimited ):
                             found_list = article_text.find_in_plain_text( quotation_string )
                             found_list_count = len( found_list )
                             
-                            # got anything?
-                            if ( found_list_count == 0 ):
+                            # ! ==> do_try_compact_IN?
+                            # got anything?  If no, do we try compacting white
+                            #     space inside string?
+                            if ( ( found_list_count == 0 ) and ( do_try_compact_IN == True ) ):
                             
                                 # last ditch effort - compact white space inside
                                 #    the string.
@@ -3222,8 +3230,8 @@ class ArticleCoder( BasicRateLimited ):
                                 found_list = article_text.find_in_plain_text( quotation_string )
                                 found_list_count = len( found_list )
                             
-                                # ERROR.
-                                notes_string = "In " + me + ": searching in plain text for compacted quote ( \"" + quotation_string + "\" ): " + str( found_list )
+                                # make note of compaction.
+                                notes_string = "In " + me + ": searched in plain text for compacted quote ( original: \"" + original_quotation_string + "\"; compacted: \"" + quotation_string + "\" ): " + str( found_list )
                                 notes_list.append( notes_string )
                                 self.output_debug( notes_string )
 

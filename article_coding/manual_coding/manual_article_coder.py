@@ -434,6 +434,7 @@ class ManualArticleCoder( ArticleCoder ):
     
                         # yes - get quote string from 1st.
                         first_quote = current_quote_qs[ 0 ]
+                        #current_quote_text = JSONHelper.escape_json_value( first_quote.value, compact_white_space_IN = True )
                         current_quote_text = JSONHelper.escape_json_value( first_quote.value )
     
                     #-- END check to see if quotes present. --#
@@ -975,8 +976,8 @@ class ManualArticleCoder( ArticleCoder ):
                                         if ( compact_white_space_IN == True ):
 
                                             person_name = StringHelper.replace_white_space( string_IN = person_name,
-                                                                                       replace_with_IN = " ",
-                                                                                       use_regex_IN = True )
+                                                                                            replace_with_IN = " ",
+                                                                                            use_regex_IN = True )
                                                                                        
                                         #-- END check to see if we are compacting white space --#
 
@@ -1077,7 +1078,10 @@ class ManualArticleCoder( ArticleCoder ):
                                                 if ( ( quote_text is not None ) and ( quote_text != "" ) ):
         
                                                     # add quote to Article_Subject.
-                                                    current_article_subject_quotation = self.process_quotation( article_IN, current_article_subject, quote_text )
+                                                    current_article_subject_quotation = self.process_quotation( article_IN,
+                                                                                                                current_article_subject,
+                                                                                                                quote_text,
+                                                                                                                do_try_compact_IN = True )
         
                                                     # error?
                                                     if ( current_article_subject_quotation is None ):

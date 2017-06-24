@@ -9286,6 +9286,20 @@ class Abstract_Selected_Text( models.Model ):
        reference a Foreign Key of the container in which this text was found.
     '''
 
+
+    #----------------------------------------------------------------------------
+    # static/CONSTANTS-ish
+    #----------------------------------------------------------------------------
+
+
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP = {}
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP[ "value_index" ] = ( -1, None )
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP[ "canonical_index" ] = ( -1, None )
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP[ "value_word_number_start" ] = ( -1, None )
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP[ "value_word_number_end" ] = ( -1, None )
+    HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP[ "paragraph_number" ] = ( -1, None )
+
+
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
@@ -9403,6 +9417,96 @@ class Abstract_Selected_Text( models.Model ):
         
     #-- END method build_details_list --#
     
+    
+    def get_error_list( self ):
+        
+        '''
+        Checks fields within where a certain value is an error (specified in
+            self.HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP).  For each field,
+            checks the value in the current instance.  If that value is equal
+            to the error condition, adds the field name to the error list.
+            Returns the error list.
+        '''
+        
+        # return reference
+        error_list_OUT = []
+        
+        # declare variables
+        current_field_name = None
+        current_error_value_list = None
+        current_value = None
+        
+        # loop over HAS_ERROR_FIELD_NAME_LIST
+        for current_field_name in six.iterkeys( self.HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP ):
+        
+            # get error value
+            current_error_value_list = self.HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP.get( current_field_name, [] )
+            
+            # get value.
+            current_value = getattr( self, current_field_name, None )
+            
+            # got a value?
+            if ( current_value in current_error_value_list ):
+            
+                # value is in error value list - add field to error list.
+                error_list_OUT.append( current_field_name )
+                
+            #-- END check to see if value is in error list. --#
+            
+        #-- END end loop over fields that can has_error. --#
+        
+        return error_list_OUT
+        
+    #-- END method get_error_list() --#
+
+
+    def has_error( self ):
+        
+        '''
+        Checks fields within where a certain value is an error (specified in
+            self.HAS_ERROR_FIELD_NAME_TO_ERROR_VALUE_MAP).  For each field,
+            checks the value in the current instance.  If that value is equal
+            to the error condition, adds the field name to the error list.
+            Returns the error list.
+        '''
+        
+        # return reference
+        has_error_OUT = False
+        
+        # declare variables
+        me = "has_error"
+        error_list = []
+        
+        # call get_error_list()
+        error_list = self.get_error_list()
+        
+        # got any errors?
+        if( error_list is not None ):
+        
+            # anything in it?
+            if ( len( error_list ) > 0 ):
+            
+                # yes.  we has_error.
+                has_error_OUT = True
+                
+            else:
+            
+                # no - we do not has_error.
+                has_error_OUT = False
+        
+        else:
+        
+            # error list is None - an error getting errors...  Do we has_error?
+            
+            # ...yes...?
+            has_error_OUT = True
+            print( "ERROR in " + me + "(): get_error_list() returned None.  Should have been at least an empty list." )
+            
+        #-- END check to see if list returned. --#
+        
+        return has_error_OUT
+        
+    #-- END method has_error() --#
 
 
 #-- END abstract class Abstract_Selected_Text --#
@@ -9550,7 +9654,7 @@ class Article_Subject_Quotation( Abstract_Selected_Text ):
         return string_OUT
 
     #-- END __str__() method --#
-
+    
 #= End Article_Subject_Quotation Model ======================================================
 
 

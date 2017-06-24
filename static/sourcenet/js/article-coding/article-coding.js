@@ -23,7 +23,7 @@ SOURCENET.article_data_id = -1;
 SOURCENET.data_store = null;
 
 // DEBUG!
-SOURCENET.debug_flag = true;
+SOURCENET.debug_flag = false;
 
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
@@ -75,6 +75,9 @@ SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
 // Find in Article Text - HTML for matched word highlighting
 SOURCENET.HTML_SPAN_MATCHED_WORDS = "<span class=\"" + SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS + "\">";
 SOURCENET.HTML_SPAN_CLOSE = "</span>";
+
+// Compress white space in values?
+SOURCENET.compress_white_space = false
 
 
 //----------------------------------------------------------------------------//
@@ -4770,9 +4773,12 @@ $( document ).ready(
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
                 
-                // replace more than one contiguous internal white space
-                //     character with a single space.
-                //selected_text = selected_text.replace( /\s+/g, ' ' );
+                if ( SOURCENET.compress_white_space == true )
+                {
+                    // replace more than one contiguous internal white space
+                    //     character with a single space.
+                    selected_text = selected_text.replace( /\s+/g, ' ' );
+                }
 
                 //SOURCENET.log_message( "selected text : \"" + selected_text + "\"" );
 
@@ -4879,9 +4885,12 @@ $( document ).ready(
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
                 
-                // replace more than one contiguous internal white space
-                //     character with a single space.
-                //selected_text = selected_text.replace( /\s+/g, ' ' );
+                if ( SOURCENET.compress_white_space == true )
+                {
+                    // replace more than one contiguous internal white space
+                    //     character with a single space.
+                    selected_text = selected_text.replace( /\s+/g, ' ' );
+                }
 
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
@@ -4931,11 +4940,14 @@ $( document ).ready(
                 selected_text = $.selection();
                 selected_text = selected_text.trim();
                 
-                // replace more than one contiguous internal white space
-                //     character with a single space.
-                //selected_text = selected_text.replace( /\s+/g, ' ' );
+                if ( SOURCENET.compress_white_space == true )
+                {
+                    // replace more than one contiguous internal white space
+                    //     character with a single space.
+                    selected_text = selected_text.replace( /\s+/g, ' ' );
+                }
                 
-                //SOURCENET.log_message( "selected text : " + selected_text );
+                SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
                 source_quote_text_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT )
