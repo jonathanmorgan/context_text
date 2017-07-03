@@ -28,6 +28,7 @@ from django.db.models import Q
 
 # sourcenet imports
 from sourcenet.models import Article
+from sourcenet.models import Article_Data
 from sourcenet.models import Newspaper
 from sourcenet.models import Organization
 from sourcenet.models import Person
@@ -283,6 +284,50 @@ class ArticleLookup( LookupParent ):
     #-- END method get_objects --#
 
 #-- END class ArticleLookup --#
+
+
+@register( "article_data" )
+class Article_DataLookup( LookupParent ):
+
+    my_class = Article	
+
+    def get_query( self, q, request ):
+
+        """
+        return a query set.  you also have access to request.user if needed
+        """
+
+        # return reference
+        query_set_OUT = None
+
+        # is the q a number and is it the ID of an article?
+        query_set_OUT = self.get_instance_query( q, request, self.my_class )
+
+        # got anything back?
+        if ( query_set_OUT is None ):
+
+            # No exact match for q as ID.  Return search of text in contributor.
+            query_set_OUT = self.my_class.objects.filter( Q( coder_type__icontains = q ) | Q( status__icontains = q ) )
+
+        #-- END retrieval of query set when no ID match. --#
+
+        return query_set_OUT
+
+    #-- END method get_query --#
+
+
+    def get_objects(self,ids):
+
+        """
+        given a list of ids, return the objects ordered as you would like them
+            on the admin page.  This is for displaying the currently selected
+            items (in the case of a ManyToMany field)
+        """
+        return self.my_class.objects.filter(pk__in=ids).order_by( 'article', 'coder' )
+
+    #-- END method get_objects --#
+
+#-- END class Article_DataLookup --#
 
 
 @register( "newspaper" )
