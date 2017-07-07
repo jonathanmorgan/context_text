@@ -289,7 +289,7 @@ class ArticleLookup( LookupParent ):
 @register( "article_data" )
 class Article_DataLookup( LookupParent ):
 
-    my_class = Article	
+    my_class = Article_Data	
 
     def get_query( self, q, request ):
 
