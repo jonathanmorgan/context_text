@@ -102,7 +102,7 @@ SOURCENET.decode_html = function( html_IN )
     // from: http://stackoverflow.com/questions/7394748/whats-the-right-way-to-decode-a-string-that-has-special-html-entities-in-it?lq=1
 
     // return reference
-    text_OUT = "";
+    var text_OUT = "";
 
     // declare variables
     var txt = null;
