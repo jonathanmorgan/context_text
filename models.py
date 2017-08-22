@@ -1089,7 +1089,7 @@ class Abstract_Person( Abstract_Person_Parent ):
         
         
     @classmethod
-    def find_person_from_name( cls, name_IN ):
+    def find_person_from_name( cls, name_IN, do_strict_match_IN = True, do_partial_match_IN = False ):
         
         '''
         More flexible way of looking for a person than look_up_person_from_name
@@ -1115,7 +1115,7 @@ class Abstract_Person( Abstract_Person_Parent ):
         name_part_count = -1
     
         # first, try a strict lookup.
-        query_set_OUT = cls.look_up_person_from_name( name_IN, do_strict_match_IN = True, do_partial_match_IN = False )
+        query_set_OUT = cls.look_up_person_from_name( name_IN, do_strict_match_IN = do_strict_match_IN, do_partial_match_IN = do_partial_match_IN )
         
         # got anything back?
         match_count = query_set_OUT.count()

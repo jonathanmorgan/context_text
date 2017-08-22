@@ -456,7 +456,7 @@ class PersonLookup( LookupParent ):
         if ( query_set_OUT is None ):
 
             # No exact match for q as ID.  Try Person.find_person_from_name()
-            query_set_OUT = Person.find_person_from_name( person_name )
+            query_set_OUT = Person.find_person_from_name( person_name, do_strict_match_IN = False, do_partial_match_IN = True )
             
         #-- END retrieval of QuerySet when no ID match. --#
 

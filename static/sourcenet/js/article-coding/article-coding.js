@@ -25,16 +25,28 @@ SOURCENET.data_store = null;
 // DEBUG!
 SOURCENET.debug_flag = false;
 
+// JSON property names
+SOURCENET.JSON_PROP_PERSON_NAME = "person_name";
+SOURCENET.JSON_PROP_FIXED_PERSON_NAME = "fixed_person_name";
+SOURCENET.JSON_PROP_PERSON_TYPE = "person_type";
+SOURCENET.JSON_PROP_TITLE = "title";
+SOURCENET.JSON_PROP_PERSON_ORGANIZATION = "person_organization";
+SOURCENET.JSON_PROP_QUOTE_TEXT = "quote_text";
+SOURCENET.JSON_PROP_PERSON_INDEX = "person_index";
+SOURCENET.JSON_PROP_PERSON_ID = "person_id";
+SOURCENET.JSON_PROP_ORIGINAL_PERSON_TYPE = "original_person_type";
+SOURCENET.JSON_PROP_ARTICLE_PERSON_ID = "article_person_id";
+
 // person types:
 SOURCENET.PERSON_TYPE_SOURCE = "source";
 SOURCENET.PERSON_TYPE_SUBJECT = "subject";
 SOURCENET.PERSON_TYPE_AUTHOR = "author";
-SOURCENET.PERSON_TYPE_ARRAY = [ SOURCENET.PERSON_TYPE_SOURCE, SOURCENET.PERSON_TYPE_SUBJECT, SOURCENET.PERSON_TYPE_AUTHOR ]
+SOURCENET.PERSON_TYPE_ARRAY = [ SOURCENET.PERSON_TYPE_SOURCE, SOURCENET.PERSON_TYPE_SUBJECT, SOURCENET.PERSON_TYPE_AUTHOR ];
 
 // Article coding submit button values
-SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT = "Please wait..."
-SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding"
-SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!"
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT = "Please wait...";
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_PROCESS = "Process Article Coding";
+SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_RESET = "Process Article Coding!";
 
 // ! HTML element IDs
 SOURCENET.DIV_ID_PERSON_CODING = "person-coding";
@@ -77,7 +89,7 @@ SOURCENET.HTML_SPAN_MATCHED_WORDS = "<span class=\"" + SOURCENET.CSS_CLASS_FOUND
 SOURCENET.HTML_SPAN_CLOSE = "</span>";
 
 // Compress white space in values?
-SOURCENET.compress_white_space = false
+SOURCENET.compress_white_space = false;
 
 
 //----------------------------------------------------------------------------//
@@ -102,7 +114,7 @@ SOURCENET.decode_html = function( html_IN )
     txt.innerHTML = html_IN;
 
     // get value back out.
-    text_OUT = txt.value
+    text_OUT = txt.value;
     
     return text_OUT;
 }
@@ -275,7 +287,7 @@ SOURCENET.clear_find_in_text = function()
     SOURCENET.clear_find_in_text_matches();
                 
     // get text-to-find-in-article text field, set value to "".
-    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
+    input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
     input_element.val( "" );
 
 } //-- END function SOURCENET.clear_find_in_text() --//
@@ -301,7 +313,7 @@ SOURCENET.clear_find_in_text_matches = function(  )
     article_paragraphs = SOURCENET.get_article_paragraphs();
     
     // remove class "foundInText" from all.
-    article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false )
+    article_paragraphs.toggleClass( SOURCENET.CSS_CLASS_FOUND_IN_TEXT, false );
     
     // set all paragraphs' html() back to their text()...
     article_paragraphs.each( function()
@@ -344,7 +356,7 @@ SOURCENET.clear_fixed_person_name = function()
     var input_element = null;
 
     // get fixed_person_name text field,  place value there.
-    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
     input_element.val( "" );
     
 } //-- END function SOURCENET.clear_fixed_person_name() --//
@@ -452,10 +464,10 @@ SOURCENET.clear_person_id = function( status_message_IN )
     SOURCENET.log_message( "Top of " + me );
         
     // clear out the person lookup form
-    SOURCENET.clear_person_lookup_form( false )
+    SOURCENET.clear_person_lookup_form( false );
     
     // clear out the matched person ID
-    SOURCENET.clear_matched_person_id( null )
+    SOURCENET.clear_matched_person_id( null );
     
     // got a status message?
     if ( ( status_message_IN != null ) && ( status_message_IN != "" ) )
@@ -517,7 +529,7 @@ SOURCENET.clear_person_lookup_form = function( do_clear_matched_id_IN, status_me
     {
         
         // yes, clear it out.
-        SOURCENET.clear_matched_person_id()
+        SOURCENET.clear_matched_person_id();
         
     }
     
@@ -788,7 +800,7 @@ SOURCENET.display_persons = function()
             
             // make sure form is visible.
             SOURCENET.log_message( "In " + me + "(): active people, show coding submit <form>." );
-            form_element.show()
+            form_element.show();
                         
         }
         else //-- no active people. --//
@@ -796,7 +808,7 @@ SOURCENET.display_persons = function()
             
             // no active people, hide form.
             SOURCENET.log_message( "In " + me + "(): no people, hide coding submit <form>." );
-            form_element.hide()
+            form_element.hide();
                     
         } //-- END check to see if active people. --//
         
@@ -836,7 +848,7 @@ SOURCENET.find_in_article_text = function( find_text_IN )
     //var match_paragraphs = null;
     
     // clear any previous matches
-    SOURCENET.clear_find_in_text_matches()
+    SOURCENET.clear_find_in_text_matches();
 
     SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
     
@@ -1008,7 +1020,7 @@ SOURCENET.find_words_in_article_text = function( find_text_IN )
     //var match_paragraphs = null;
     
     // clear any previous matches
-    SOURCENET.clear_find_in_text_matches()
+    SOURCENET.clear_find_in_text_matches();
 
     SOURCENET.log_message( "In " + me + "(): find_text_IN = " + find_text_IN );
     
@@ -1184,7 +1196,7 @@ SOURCENET.get_fixed_person_name_value = function()
     name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
 
     // get value for that name.
-    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_FIXED_PERSON_NAME, null )
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_FIXED_PERSON_NAME, null );
     
     return value_OUT;
     
@@ -1233,7 +1245,7 @@ SOURCENET.get_person_id_value = function()
         my_person_id = ajax_person_id_element.val();
         
         // is it an OK string?
-        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
+        is_person_id_ok = SOURCENET.is_string_OK( my_person_id );
         if ( is_person_id_ok == true )
         {
 
@@ -1256,7 +1268,7 @@ SOURCENET.get_person_id_value = function()
         my_person_id = matched_person_id_element.val()
         
         // is it an OK string?
-        is_person_id_ok = SOURCENET.is_string_OK( my_person_id )
+        is_person_id_ok = SOURCENET.is_string_OK( my_person_id );
         if ( is_person_id_ok == true )
         {
             
@@ -1304,7 +1316,7 @@ SOURCENET.get_person_last_name_value = function()
     {
         
         // got name. split into a list of tokens on space.
-        name_part_list = current_person_name.split( " " )
+        name_part_list = current_person_name.split( " " );
         
         // got anything?
         if ( name_part_list != null )
@@ -1412,7 +1424,7 @@ SOURCENET.get_person_name_value = function()
     name_input_name = SOURCENET.INPUT_ID_PERSON_NAME;
 
     // get value for that name.
-    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_PERSON_NAME, null )
+    value_OUT = SOURCENET.get_value_for_id( SOURCENET.INPUT_ID_PERSON_NAME, null );
     
     return value_OUT;
     
@@ -1452,10 +1464,10 @@ SOURCENET.get_quote_text_value = function()
     quote_text_prop_info = SOURCENET.Person_property_name_to_info_map[ quote_text_prop_name ];
     
     // get quote_text from form (so avoid recursive calls to this function).
-    quote_text = quote_text_prop_info.get_value_from_form()
+    quote_text = quote_text_prop_info.get_value_from_form();
     
     // get person_type
-    person_type = person_type_prop_info.get_value()
+    person_type = person_type_prop_info.get_value();
     
     // only return quote text if person type is "source".
     if ( person_type == SOURCENET.PERSON_TYPE_SOURCE )
@@ -1670,11 +1682,11 @@ SOURCENET.load_person_into_form = function( person_index_IN )
         my_person_instance = my_data_store.get_person_at_index( person_index_IN );
         
         // call populate_form()
-        my_person_instance.populate_form()
+        my_person_instance.populate_form();
         
         // place last name in text-to-find-in-article <input>, then try to find
         //     in text.
-        SOURCENET.find_last_name_in_article_text()
+        SOURCENET.find_last_name_in_article_text();
     }
     else
     {
@@ -1706,7 +1718,7 @@ SOURCENET.load_person_name_to_fix = function()
     //SOURCENET.log_message( "source text : " + source_text );
 
     // get fixed_person_name text field,  place value there.
-    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+    input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
     input_element.val( name_text );
     
 } //-- END function SOURCENET.load_person_name_to_fix() --//
@@ -1878,7 +1890,7 @@ SOURCENET.load_value_person_type = function( person_IN )
     temp_value = SOURCENET.set_selected_value_for_id( input_id, value_to_load );
     
     // process the selected person type:
-    SOURCENET.process_selected_person_type()
+    SOURCENET.process_selected_person_type();
     
     // sanity check
     if ( temp_value != person_type )
@@ -2098,7 +2110,7 @@ SOURCENET.process_person_coding = function()
     status_message_array = person_instance.populate_from_form( form_element );
     
     // valid?
-    status_message_count = status_message_array.length
+    status_message_count = status_message_array.length;
     if ( status_message_count == 0 )
     {
         
@@ -2148,7 +2160,7 @@ SOURCENET.process_person_coding = function()
     {
         
         // yes, there are messages.  Output them.
-        SOURCENET.output_status_messages( status_message_array )
+        SOURCENET.output_status_messages( status_message_array );
         
     } //-- END check to see if messages --//    
     
@@ -2229,7 +2241,7 @@ SOURCENET.remove_person = function( person_index_IN )
     {
         
         // yes, there are messages.  Output them.
-        SOURCENET.output_status_messages( status_message_array )
+        SOURCENET.output_status_messages( status_message_array );
         
     } //-- END check to see if messages --//
         
@@ -2762,7 +2774,7 @@ SOURCENET.DataStore.prototype.add_person_to_array = function( person_IN )
     
     // declare variables
     var me = "SOURCENET.DataStore.prototype.add_person_to_array";
-    var my_person_array = []
+    var my_person_array = [];
     var my_next_index = -1;
     var my_latest_index = -1;
     var person_array_length = -1;
@@ -2796,7 +2808,7 @@ SOURCENET.DataStore.prototype.add_person_to_array = function( person_IN )
         this.next_person_index = person_array_length;
         
         // return index of length of array minus 1.
-        index_OUT = person_array_length -1
+        index_OUT = person_array_length -1;
         this.latest_person_index = index_OUT;
         
         // and store index in person instance.
@@ -2834,11 +2846,11 @@ SOURCENET.DataStore.prototype.get_index_for_person_id = function( person_id_IN )
     
     // declare variables
     var is_person_id_ok = false;
-    var id_to_index_map = null
+    var id_to_index_map = null;
     var is_in_map = false;
     
     // got an ID?
-    is_person_id_ok = SOURCENET.is_integer_OK( person_id_IN, 1 )
+    is_person_id_ok = SOURCENET.is_integer_OK( person_id_IN, 1 );
     if ( is_person_id_ok == true )
     {
         
@@ -3258,7 +3270,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
         SOURCENET.log_message( "In " + me + "(): JSON before decode: " + my_data_store_json_string );
 
         // decode
-        my_data_store_json_string = SOURCENET.decode_html( my_data_store_json_string )
+        my_data_store_json_string = SOURCENET.decode_html( my_data_store_json_string );
 
         SOURCENET.log_message( "In " + me + "(): JSON after decode: " + my_data_store_json_string );
 
@@ -3312,7 +3324,7 @@ SOURCENET.DataStore.prototype.load_from_json = function()
             // ID for Article_Person descendent instance, based on person_type:
             //     Article_Subject ID if source or subject, Article_Author ID if
             //     this person is an author.
-            current_person.article_person_id = current_article_person_id
+            current_person.article_person_id = current_article_person_id;
             
             // person name - are verbatim and name different?
             if ( ( current_fixed_person_name != null )
@@ -3376,7 +3388,7 @@ SOURCENET.DataStore.prototype.process_person = function( person_IN )
     var my_person_index = -1
     var is_index_ok = true;
     
-    SOURCENET.log_message( "Top of " + me )
+    SOURCENET.log_message( "Top of " + me );
     
     // got a valid index?
     my_person_index = person_IN.person_index
@@ -3392,7 +3404,7 @@ SOURCENET.DataStore.prototype.process_person = function( person_IN )
     {
         
         // We do not.  Call add_person().
-        status_array_OUT = this.add_person( person_IN )
+        status_array_OUT = this.add_person( person_IN );
         
     }
     
@@ -3604,14 +3616,14 @@ SOURCENET.DataStore.prototype.update_person = function( person_IN )
     var name_map_status_array = [];
     var id_map_status_array = [];
     
-    SOURCENET.log_message( "Top of " + me )
+    SOURCENET.log_message( "Top of " + me );
     
     // make sure we have a person.
     if ( ( person_IN !== undefined ) && ( person_IN != null ) )
     {
         
         // and make sure we have an index.
-        index_IN = person_IN.person_index
+        index_IN = person_IN.person_index;
         is_index_ok = SOURCENET.is_integer_OK( index_IN, 0 );
         if ( is_index_ok == true )
         {
@@ -3623,10 +3635,10 @@ SOURCENET.DataStore.prototype.update_person = function( person_IN )
             {
                 
                 // do update-specific validation here - none for now...
-                is_ok_to_update = true
+                is_ok_to_update = true;
                 
                 // make sure that index passed in matches index in person.
-                person_index = person_IN.person_index
+                person_index = person_IN.person_index;
                 if ( person_index != index_IN )
                 {
                     
@@ -3658,7 +3670,7 @@ SOURCENET.DataStore.prototype.update_person = function( person_IN )
                     {
                         
                         // got a person ID?
-                        my_person_id = person_IN.person_id
+                        my_person_id = person_IN.person_id;
                         has_person_id = SOURCENET.is_integer_OK( my_person_id, 1 );
                         if ( has_person_id == true )
                         {
@@ -3852,16 +3864,16 @@ SOURCENET.DataStore.prototype.update_person_in_person_id_map = function( person_
 
 // PersonProperty Property Names
 SOURCENET.PersonProperty_names = {};
-SOURCENET.PersonProperty_names[ "PERSON_NAME" ] = "person_name";
-SOURCENET.PersonProperty_names[ "FIXED_PERSON_NAME" ] = "fixed_person_name";
-SOURCENET.PersonProperty_names[ "PERSON_TYPE" ] = "person_type";
-SOURCENET.PersonProperty_names[ "TITLE" ] = "title";
-SOURCENET.PersonProperty_names[ "PERSON_ORGANIZATION" ] = "person_organization";
-SOURCENET.PersonProperty_names[ "QUOTE_TEXT" ] = "quote_text";
-SOURCENET.PersonProperty_names[ "PERSON_INDEX" ] = "person_index";
-SOURCENET.PersonProperty_names[ "PERSON_ID" ] = "person_id";
-SOURCENET.PersonProperty_names[ "ORIGINAL_PERSON_TYPE" ] = "original_person_type";
-SOURCENET.PersonProperty_names[ "ARTICLE_PERSON_ID" ] = "article_person_id";
+SOURCENET.PersonProperty_names[ "PERSON_NAME" ] = SOURCENET.JSON_PROP_PERSON_NAME; // "person_name"
+SOURCENET.PersonProperty_names[ "FIXED_PERSON_NAME" ] = SOURCENET.JSON_PROP_FIXED_PERSON_NAME; // "fixed_person_name"
+SOURCENET.PersonProperty_names[ "PERSON_TYPE" ] = SOURCENET.JSON_PROP_PERSON_TYPE; // "person_type"
+SOURCENET.PersonProperty_names[ "TITLE" ] = SOURCENET.JSON_PROP_TITLE; // "title"
+SOURCENET.PersonProperty_names[ "PERSON_ORGANIZATION" ] = SOURCENET.JSON_PROP_PERSON_ORGANIZATION; // "person_organization"
+SOURCENET.PersonProperty_names[ "QUOTE_TEXT" ] = SOURCENET.JSON_PROP_QUOTE_TEXT; // "quote_text"
+SOURCENET.PersonProperty_names[ "PERSON_INDEX" ] = SOURCENET.JSON_PROP_PERSON_INDEX; // "person_index"
+SOURCENET.PersonProperty_names[ "PERSON_ID" ] = SOURCENET.JSON_PROP_PERSON_ID; // "person_id"
+SOURCENET.PersonProperty_names[ "ORIGINAL_PERSON_TYPE" ] = SOURCENET.JSON_PROP_ORIGINAL_PERSON_TYPE; // "original_person_type"
+SOURCENET.PersonProperty_names[ "ARTICLE_PERSON_ID" ] = SOURCENET.JSON_PROP_ARTICLE_PERSON_ID; // "article_person_id"
 
 // PersonProperty Property Types
 SOURCENET.PersonProperty_data_types = {};
@@ -3970,7 +3982,7 @@ SOURCENET.PersonProperty.prototype.get_value = function()
     var value_OUT = null;
 
     // declare variables
-    var me = "SOURCENET.PersonProperty.prototype.get_value"
+    var me = "SOURCENET.PersonProperty.prototype.get_value";
     
     // declare variables - processing person properties.
     var get_value_function = null;
@@ -3990,7 +4002,7 @@ SOURCENET.PersonProperty.prototype.get_value = function()
     {
         
         // no fancy function - get value from form.
-        value_OUT = this.get_value_from_form()
+        value_OUT = this.get_value_from_form();
         
     } //-- END check to see if we have a clear function to call --//
 
@@ -4016,7 +4028,7 @@ SOURCENET.PersonProperty.prototype.get_value_from_form = function()
     var value_OUT = [];
 
     // declare variables
-    var me = "SOURCENET.PersonProperty.prototype.get_value_from_form"
+    var me = "SOURCENET.PersonProperty.prototype.get_value_from_form";
     
     // declare variables - processing person properties.
     var data_type = "";
@@ -4087,7 +4099,7 @@ SOURCENET.PersonProperty.prototype.put_value = function( person_IN )
     var value_OUT = null;
 
     // declare variables
-    var me = "SOURCENET.PersonProperty.prototype.put_value"
+    var me = "SOURCENET.PersonProperty.prototype.put_value";
     
     // declare variables - processing person properties.
     var load_form_function = null;
@@ -4135,7 +4147,7 @@ SOURCENET.PersonProperty.prototype.put_value_into_form = function( person_IN )
     var value_OUT = [];
 
     // declare variables
-    var me = "SOURCENET.PersonProperty.prototype.put_value_into_form"
+    var me = "SOURCENET.PersonProperty.prototype.put_value_into_form";
     var property_element = null;
         
     // declare variables - processing person properties.
@@ -4155,7 +4167,7 @@ SOURCENET.PersonProperty.prototype.put_value_into_form = function( person_IN )
         
         // initialize values
         select_input_type = SOURCENET.PersonProperty_input_types[ "SELECT" ];
-        integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ]
+        integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ];
             
         // retrieve info on current property.
         property_name = this.name;
@@ -4179,7 +4191,7 @@ SOURCENET.PersonProperty.prototype.put_value_into_form = function( person_IN )
         {
             
             // not integer.  Check as string.
-            is_value_OK = SOURCENET.is_string_OK( my_value )
+            is_value_OK = SOURCENET.is_string_OK( my_value );
             
         }
         
@@ -4382,7 +4394,7 @@ SOURCENET.log_message( "Property names: " + SOURCENET.Person_property_name_list 
 SOURCENET.Person = function()
 {   
     // declare variables
-    var me = "SOURCENET.Person() constructor"
+    var me = "SOURCENET.Person() constructor";
     var property = null;
     
     // instance variables
@@ -4394,7 +4406,7 @@ SOURCENET.Person = function()
     this.quote_text = "";
     this.person_index = -1;
     this.person_id = null;
-    this.original_person_type = ""
+    this.original_person_type = "";
     this.article_person_id = -1;
     
     // make list of properties, map names to info.
@@ -4415,7 +4427,7 @@ SOURCENET.Person.prototype.populate_form = function()
     var validate_status_array_OUT = [];
 
     // declare variables
-    var me = "SOURCENET.Person.populate_form"
+    var me = "SOURCENET.Person.populate_form";
     
     // declare variables - processing person properties.
     var my_person_name = "";
@@ -4431,9 +4443,10 @@ SOURCENET.Person.prototype.populate_form = function()
     var input_id = -1;
     var input_type = "";
     var get_value_function = null;
+    var status_message_array = null;
 
     // start by clearing coding form
-    SOURCENET.clear_coding_form( "Loaded data for " + my_person_name )
+    SOURCENET.clear_coding_form( "Loading data" );
 
     // retrieve values from instance and use to populate the form.
     
@@ -4455,7 +4468,30 @@ SOURCENET.Person.prototype.populate_form = function()
         // load the value
         current_value = current_property_info.put_value( this );
         
+        // is it the name?
+        if ( current_property_name == SOURCENET.JSON_PROP_PERSON_NAME )
+        {
+            
+            // yes - store person name.
+            my_person_name = current_value;
+            
+        } //-- END check to see if person name --//
+        
     } //-- END loop over Person properties --//
+    
+    // got a person name?
+    if ( ( my_person_name != null ) && ( my_person_name != "" ) )
+    {
+        
+        // yes.  make status message array (empty message will clear status area).
+        status_message_array = [];
+        status_message_array.push( "Loaded data for person: " + my_person_name );
+        
+        // output it.
+        SOURCENET.output_status_messages( status_message_array );
+
+        
+    } //-- END check to see if person name --//
 
     SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) );
     
@@ -4481,7 +4517,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     var validate_status_array_OUT = [];
 
     // declare variables
-    var me = "SOURCENET.Person.populate_from_form"
+    var me = "SOURCENET.Person.populate_from_form";
     
     // declare variables - processing person properties.
     var person_property_list = null;
@@ -4501,7 +4537,7 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
     
     // initialize values
     select_input_type = SOURCENET.PersonProperty_input_types[ "SELECT" ];
-    integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ]
+    integer_data_type = SOURCENET.PersonProperty_data_types[ "INTEGER" ];
 
     // get form element
     form_element = form_element_IN
@@ -4532,10 +4568,10 @@ SOURCENET.Person.prototype.populate_from_form = function( form_element_IN )
 
     } //-- END loop over Person properties --//
 
-    SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) )
+    SOURCENET.log_message( "In " + me + "(): Person JSON = " + JSON.stringify( this ) );
     
     // validate
-    validate_status_array_OUT = this.validate()
+    validate_status_array_OUT = this.validate();
     
     // SOURCENET.log_message( "validate_status = " + validate_status )
     
@@ -4555,7 +4591,7 @@ SOURCENET.Person.prototype.to_string = function()
     
     // declare variables.
     var my_person_id = -1;
-    var is_person_id_ok = false
+    var is_person_id_ok = false;
     var my_person_name = "";
     var my_person_type = "";
     
@@ -4596,7 +4632,7 @@ SOURCENET.Person.prototype.to_table_cell_html = function()
     
     // declare variables.
     var my_person_id = -1;
-    var is_person_id_ok = false
+    var is_person_id_ok = false;
     var my_person_name = "";
     var my_person_type = "";
     var my_person_index = -1;
@@ -4746,7 +4782,7 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get input
-                selected_text_input = $( '#selected-text' )
+                selected_text_input = $( '#selected-text' );
                 
                 // set value
                 selected_text_input.val( selected_text );
@@ -4815,7 +4851,7 @@ $( document ).ready(
 
                 // get id_person_text_element text field,  place value, then
                 //    fire lookup event.
-                input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME )
+                input_element = $( '#' + SOURCENET.INPUT_ID_FIXED_PERSON_NAME );
                 input_element.val( name_text );
             }
         )
@@ -4842,8 +4878,8 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
-                person_title_element = $( '#' + SOURCENET.INPUT_ID_TITLE )
-                existing_text = person_title_element.val()
+                person_title_element = $( '#' + SOURCENET.INPUT_ID_TITLE );
+                existing_text = person_title_element.val();
                 //SOURCENET.log_message( "Existing text: " + existing_text )
                 
                 // something already there?
@@ -4895,8 +4931,8 @@ $( document ).ready(
                 //SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // see if there is already something there.
-                person_organization_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION )
-                existing_text = person_organization_element.val()
+                person_organization_element = $( '#' + SOURCENET.INPUT_ID_ORGANIZATION );
+                existing_text = person_organization_element.val();
                 //SOURCENET.log_message( "Existing text: " + existing_text )
                 
                 // something already there?
@@ -4950,7 +4986,7 @@ $( document ).ready(
                 SOURCENET.log_message( "selected text : " + selected_text );
                 
                 // get source-quote-text element.
-                source_quote_text_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT )
+                source_quote_text_element = $( '#' + SOURCENET.INPUT_ID_QUOTE_TEXT );
                 
                 // store selected text.
                 source_quote_text_element.val( selected_text );
@@ -4980,7 +5016,7 @@ $( document ).ready(
 
                 // get id_person_text_element text field,  place value, then
                 //    fire lookup event.
-                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT )
+                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
                 id_person_text_element.val( source_text );
                 id_person_text_element.trigger( 'keydown' );
                 
@@ -5024,7 +5060,7 @@ $( document ).ready(
     
                 // get id_person_text_element text field, place value, then
                 //    fire lookup event.
-                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT )
+                id_person_text_element = $( '#' + SOURCENET.INPUT_ID_AJAX_ID_PERSON_TEXT );
                 id_person_text_element.val( "" );
                 id_person_text_element.trigger( 'keydown' );
                 
@@ -5074,7 +5110,7 @@ $( document ).ready(
                 //SOURCENET.log_message( "In document.ready( button - #find-name-in-article-text ) - name text : " + name_text );
 
                 // get text-to-find-in-article text field, place value.
-                input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE )
+                input_element = $( '#' + SOURCENET.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE );
                 input_element.val( name_text );
                 
             }
@@ -5229,7 +5265,7 @@ $( document ).ready(
         }
 
         // Make sure value isn't "Please wait..."
-        submit_button_value = submit_button_element.val()
+        submit_button_value = submit_button_element.val();
         if ( submit_button_value == SOURCENET.ARTICLE_CODING_SUBMIT_BUTTON_VALUE_WAIT )
         {
             
