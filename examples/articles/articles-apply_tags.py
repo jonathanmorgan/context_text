@@ -23,6 +23,17 @@ Interacting with a model that has tags:
     [<Tag: red>, <Tag: delicious>]
     >>> Food.objects.filter(tags__name__in=["red"])
     [<Food: apple>, <Food: cherry>]
+    
+    # include only those with certain tags.
+    #tags_in_list = [ "prelim_unit_test_001", "prelim_unit_test_002", "prelim_unit_test_003", "prelim_unit_test_004", "prelim_unit_test_005", "prelim_unit_test_006", "prelim_unit_test_007" ]
+    tags_in_list = [ "grp_month", ]
+    if ( len( tags_in_list ) > 0 ):
+    
+        # filter
+        print( "filtering to just articles with tags: " + str( tags_in_list ) )
+        grp_article_qs = grp_article_qs.filter( tags__name__in = tags_in_list )
+        
+    #-- END check to see if we have a specific list of tags we want to include --#
 
 '''
 
