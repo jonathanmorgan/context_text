@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2010-2013 Jonathan Morgan
+Copyright 2010-2017 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/sourcenet.
 
@@ -92,6 +92,7 @@ class NetworkOutput( SourcenetBase ):
 
     # network selection parameters unique to this class.
     PARAM_CODER_LIST = 'coders'   # list of IDs of coders whose data you want included.
+    PARAM_CODER_ID_PRIORITY_LIST = 'coder_id_priority_list' # list of IDs of coders whose data you want included, in order of highest priority in case of a collision (two coders coding the same article) to lowest.
     PARAM_CODER_TYPE_LIST = 'coder_types_list'   # comma-delimited string list of coder_type values from Article_Data that you want articles' data to have for articles we process.
     PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
     PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
@@ -122,6 +123,7 @@ class NetworkOutput( SourcenetBase ):
         SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_CODER_ID_PRIORITY_LIST : ParameterContainer.PARAM_TYPE_LIST,
         PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
         SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -145,6 +147,7 @@ class NetworkOutput( SourcenetBase ):
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + PARAM_CODER_ID_PRIORITY_LIST : ParameterContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -499,6 +502,8 @@ class NetworkOutput( SourcenetBase ):
         date_range_IN = ''
         publication_list_IN = None
         coder_list_IN = None
+        coder_id_list = None
+        coder_id_priority_list_IN = None
         coder_id_string = ""
         coder_id_int = -1
         coder_int_list = None
@@ -532,6 +537,23 @@ class NetworkOutput( SourcenetBase ):
         date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
         publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+        coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        
+        # got a priority list?
+        if ( ( coder_id_priority_list_IN is not None )
+            and ( coder_id_priority_list_IN != "" ) 
+            and ( len( coder_id_priority_list_IN ) > 0 ):
+        
+            # yes - use it.
+            coder_id_list = coder_id_priority_list_IN
+            
+        else:
+        
+            # no - use the normal list
+            coder_id_list = coder_list_IN
+            
+        #-- END code IR processing. --#
+        
         coder_type_filter_type_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_FILTER_TYPE, '' )
         coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
         topic_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TOPIC_LIST )
@@ -616,11 +638,11 @@ class NetworkOutput( SourcenetBase ):
 
         # coders
         #if ( coder_list_IN ):
-        if ( ( coder_list_IN is not None ) and ( len( coder_list_IN ) > 0 ) ):
+        if ( ( coder_id_list is not None ) and ( len( coder_id_list ) > 0 ) ):
 
             # try converting items in list to int.
             coder_int_list = []
-            for coder_id_string in coder_list_IN:
+            for coder_id_string in coder_id_list:
             
                 # convert to int, then append to list.
                 coder_id_int = int( coder_id_string )
@@ -628,7 +650,7 @@ class NetworkOutput( SourcenetBase ):
                 
             #-- END loop over string coder IDs. --#
             
-            my_logger.debug( "In " + me + ": coder_int_list = " + str( coder_list_IN ) )
+            my_logger.debug( "In " + me + ": coder_int_list = " + str( coder_id_list ) )
             
             # set up query instance
             current_query = Q( coder__pk__in = coder_int_list )
@@ -1058,16 +1080,10 @@ class NetworkOutput( SourcenetBase ):
 
         """
             Accepts query set of Article_Data.  Creates a new instance of the
-               CsvArticleOutput class, places the query set in it, sets up its
+               requested output class, places the query set in it, sets up its
                instance variables appropriately according to the request, then
-               renders CSV output and returns that output as a string.
-               Uses the query set to output CSV data in the format specified in
-               the output_type request parameter.  If one line per article, has
-               sets of columns for as many authors and sources as are present in
-               the articles with the most authors and sources, respectively.  If
-               one line per source, each article is given a line for each source
-               with all other article information duplicated for each source. If
-               one line per author, each article is given a line for each author
+               renders output and returns that output as a string.
+
             Preconditions: assumes that we have a query set of articles passed
                in that we can store in the instance.  If not, does nothing,
                returns empty string.
@@ -1078,7 +1094,7 @@ class NetworkOutput( SourcenetBase ):
             - query_set_IN - django HTTP request instance that contains parameters we use to generate network data.
 
             Returns:
-            - String - CSV output for the network described by the articles selected based on the parameters passed in.
+            - String - output for the network described by the articles selected based on the parameters passed in.
         """
 
         # return reference

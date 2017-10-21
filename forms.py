@@ -443,6 +443,7 @@ class ArticleSelectForm( forms.Form ):
 
     # coders to include
     coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
+    coder_id_priority_list =  = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
 
     # type of filtering on Article_Data coder_type identifiers we want to do.
     coder_type_filter_type = forms.ChoiceField( required = False,
@@ -994,8 +995,12 @@ class PersonSelectForm( forms.Form ):
     # Ex.: "YYY1-M1-D1 to YYY2-M2-D2||YYY3-M3-D3 to YYY4-M4-D4", etc.
     person_date_range = forms.CharField( required = False, label = "* Fancy person date range" )
 
+    # publication
     person_publications = forms.ModelMultipleChoiceField( required = False, queryset = Newspaper.objects.all() )
+
+    # Coders to include
     person_coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
+    person_coder_id_priority_list =  = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
 
     # filtering on Article_Data coder_type identifiers...  filter type:
     person_coder_type_filter_type = forms.ChoiceField( required = False,
