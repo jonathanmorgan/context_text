@@ -123,7 +123,7 @@ class NetworkOutput( SourcenetBase ):
         SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
-        PARAM_CODER_ID_PRIORITY_LIST : ParameterContainer.PARAM_TYPE_LIST,
+        PARAM_CODER_ID_PRIORITY_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
         SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -147,7 +147,7 @@ class NetworkOutput( SourcenetBase ):
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + PARAM_CODER_ID_PRIORITY_LIST : ParameterContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + PARAM_CODER_ID_PRIORITY_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -542,7 +542,7 @@ class NetworkOutput( SourcenetBase ):
         # got a priority list?
         if ( ( coder_id_priority_list_IN is not None )
             and ( coder_id_priority_list_IN != "" ) 
-            and ( len( coder_id_priority_list_IN ) > 0 ):
+            and ( len( coder_id_priority_list_IN ) > 0 ) ):
         
             # yes - use it.
             coder_id_list = coder_id_priority_list_IN

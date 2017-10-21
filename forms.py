@@ -443,7 +443,7 @@ class ArticleSelectForm( forms.Form ):
 
     # coders to include
     coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
-    coder_id_priority_list =  = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
+    coder_id_priority_list = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
 
     # type of filtering on Article_Data coder_type identifiers we want to do.
     coder_type_filter_type = forms.ChoiceField( required = False,
@@ -1000,7 +1000,7 @@ class PersonSelectForm( forms.Form ):
 
     # Coders to include
     person_coders = forms.ModelMultipleChoiceField( required = False, queryset = User.objects.all() )
-    person_coder_id_priority_list =  = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
+    person_coder_id_priority_list = forms.CharField( required = False, label = "Coder IDs to include, in order of highest to lowest priority" )
 
     # filtering on Article_Data coder_type identifiers...  filter type:
     person_coder_type_filter_type = forms.ChoiceField( required = False,
