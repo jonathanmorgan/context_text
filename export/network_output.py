@@ -224,6 +224,10 @@ class NetworkOutput( SourcenetBase ):
         self.mime_type = ""
         self.file_extension = ""
         
+        # variable to hold combined master article and person coder ID list.
+        self.m_article_coder_id_list = None
+        self.m_person_coder_id_list = None
+        
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
         self.set_logger_name( "sourcenet.export.network_output" )
         
@@ -536,23 +540,9 @@ class NetworkOutput( SourcenetBase ):
         end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, '' )
         date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
         publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
-        coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
-        coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
-        
-        # got a priority list?
-        if ( ( coder_id_priority_list_IN is not None )
-            and ( coder_id_priority_list_IN != "" ) 
-            and ( len( coder_id_priority_list_IN ) > 0 ) ):
-        
-            # yes - use it.
-            coder_id_list = coder_id_priority_list_IN
-            
-        else:
-        
-            # no - use the normal list
-            coder_id_list = coder_list_IN
-            
-        #-- END code IR processing. --#
+
+        # use method to get coder ID list now that there are two fields.
+        coder_id_list = self.get_coder_id_list( param_prefix_IN )
         
         coder_type_filter_type_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_FILTER_TYPE, '' )
         coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
@@ -768,7 +758,7 @@ class NetworkOutput( SourcenetBase ):
         if ( ( allow_duplicate_articles_IN == NetworkOutput.CHOICE_NO ) and ( has_unique_id_list == False ) ):
 
             # remove duplicate articles.
-            query_set_OUT = self.remove_duplicate_article_data( query_set_OUT )
+            query_set_OUT = self.remove_duplicate_article_data( query_set_OUT, param_prefix_IN )
 
             my_logger.debug( "In " + me + ": after remove_duplicate_article_data() - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
@@ -867,6 +857,118 @@ class NetworkOutput( SourcenetBase ):
     #-- end method debug_parameters() ------------------------------------------
 
 
+    def get_article_coder_id_list( self ):
+        
+        '''
+        Checks to see if article coder list already populated.  If so, returns
+            it.  If not, builds article coder ID list, stores it, then returns
+            it.
+        '''
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        coder_id_list = None
+        
+        # try to set from instance variable.
+        coder_id_list = self.m_article_coder_id_list
+        
+        # is it None?
+        if ( coder_id_list is None ):
+        
+            # it is None.  Render list.
+            coder_id_list = self.get_coder_id_list()
+            
+            # store it.
+            self.m_article_coder_id_list = coder_id_list
+            
+            # and return it.
+            list_OUT = self.m_article_coder_id_list
+        
+        else:
+        
+            # not None - return it.
+            list_OUT = self.m_article_coder_id_list
+        
+        #-- END check to see if list populated. --#
+                
+        return list_OUT
+
+    #-- END method get_article_coder_id_list --#
+
+
+    def get_coder_id_list( self, param_prefix_IN = '' ):
+        
+        '''
+        Builds coder ID list, then returns it.  To do this:
+        - checks to see if prioritized list of coder IDs was in request.
+        - If not, returns the unordered person ID list.
+        - If so:
+        
+            - starts with prioritized list as a base.  Loops over IDs that
+                are in the unordered list.  If any are not in prioritized
+                list, appends them to the end.
+            - return the merged list.
+            
+        Returns None if error. 
+        '''
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        coder_list_IN = None
+        coder_id_priority_list_IN = None
+        coder_id_list = None
+        coder_id = None
+        
+        # get the two places where coder IDs are stored.
+        coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+        coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        
+        # got a priority list?
+        if ( ( coder_id_priority_list_IN is not None )
+            and ( coder_id_priority_list_IN != "" ) 
+            and ( len( coder_id_priority_list_IN ) > 0 ) ):
+        
+            # yes - use it.
+            coder_id_list = coder_id_priority_list_IN
+            
+            # now, see if unordered list has anything in it.
+            if ( ( coder_list_IN is not None )
+                and ( coder_list_IN != "" ) 
+                and ( len( coder_list_IN ) > 0 ) ):
+            
+                # loop
+                for coder_id in coder_list_IN:
+                
+                    # see if it is in the output list.
+                    if ( coder_id not in coder_id_list ):
+                    
+                        # not in ther already - append().
+                        coder_id_list.append( coder_id )
+                        
+                    #-- END check to see if coder ID is in coder_id_list. --#
+                    
+                #-- END loop over coder IDs in unordered list.
+            
+            #-- END check to see if unordered list. --#
+            
+        else:
+        
+            # no - use the normal list
+            coder_id_list = coder_list_IN
+            
+        #-- END coder ID processing. --#
+        
+        list_OUT = coder_id_list
+        
+        return list_OUT
+
+    #-- END method get_coder_id_list --#
+
+
     def get_NDO_instance( self ):
 
         '''
@@ -915,6 +1017,84 @@ class NetworkOutput( SourcenetBase ):
         return NDO_instance_OUT
 
     #-- END get_NDO_instance() --#
+
+
+    def get_person_coder_id_list( self ):
+        
+        '''
+        Checks to see if person coder list already populated.  If so, returns
+            it.  If not, builds article coder ID list, stores it, then returns
+            it.
+        '''
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        coder_id_list = None
+        
+        # try to set from instance variable.
+        coder_id_list = self.m_person_coder_id_list
+        
+        # is it None?
+        if ( coder_id_list is None ):
+        
+            # it is None.  Render list.
+            coder_id_list = self.get_coder_id_list( param_prefix_IN = self.PARAM_PERSON_PREFIX )
+            
+            # store it.
+            self.m_person_coder_id_list = coder_id_list
+            
+            # and return it.
+            list_OUT = self.m_person_coder_id_list
+        
+        else:
+        
+            # not None - return it.
+            list_OUT = self.m_person_coder_id_list
+        
+        #-- END check to see if list populated. --#
+                
+        return list_OUT
+
+    #-- END method get_person_coder_id_list --#
+
+
+    def has_prioritized_coder_list( self, param_prefix_IN = "" ):
+        
+        '''
+        Accepts param prefix.  Checks to see if there is a
+            coder_id_priority_list set.  If so, return True.  If not, returns
+            False.
+        '''
+
+        # return reference
+        has_list_OUT = False
+        
+        # declare variables
+        coder_id_priority_list_IN = None
+        
+        # try to get coder ID priority list.
+        coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        
+        # anything in the list?
+        if ( ( coder_id_priority_list_IN is not None )
+            and ( isinstance( coder_id_priority_list_IN, list ) == True )
+            and ( len( coder_id_priority_list_IN ) > 0 ) ):
+            
+            # yes.  Return True.
+            has_list_OUT = True
+            
+        else:
+        
+            # no prioritized list.
+            has_list_OUT = False
+            
+        #-- END check to see if prioritized list. --#
+        
+        return has_list_OUT
+        
+    #-- END method has_prioritized_coder_list() --#
 
 
     def render_csv_article_data( self, query_set_IN ):
@@ -981,7 +1161,7 @@ class NetworkOutput( SourcenetBase ):
     #-- END render_csv_article_data() --#
 
 
-    def remove_duplicate_article_data( self, query_set_IN ):
+    def remove_duplicate_article_data( self, query_set_IN, param_prefix_IN ):
 
         """
             Accepts query set of Article_Data.  Designed to make sure we only
@@ -1002,6 +1182,8 @@ class NetworkOutput( SourcenetBase ):
             Returns:
             - QuerySet - QuerySet of Article_Data instances with only one Article_Data row per Article.  If nothing to remove, just returns QuerySet passed in.  If something other than a QuerySet passed in, just returns it.
         """
+        
+        # ! TODO - test!
 
         # return reference
         qs_OUT = ''
@@ -1010,10 +1192,22 @@ class NetworkOutput( SourcenetBase ):
         me = "remove_duplicate_article_data"
         my_logger = None
         unique_article_id_to_article_data_id_dict = {}
+        unique_article_id_to_article_data_map = {}        
+        has_prioritized_coders = False
+        prioritized_coder_id_list = None
         current_article_data = None
         current_article = None
         current_unique_id = ''
         current_id = -1
+        current_coder = None
+        current_coder_id = -1
+        current_coder_index = -1
+        current_article_data_id = -1
+        selected_article_data = None
+        selected_article_data_id = -1
+        selected_coder = None
+        selected_coder_id = -1
+        selected_coder_index = -1
         omit_id_list = []
 
         # get logger
@@ -1026,7 +1220,16 @@ class NetworkOutput( SourcenetBase ):
 
         # do we have a query set?
         if query_set_IN is not None:
-    
+        
+            # get prioritized coder list?
+            has_prioritized_coders = self.has_prioritized_coder_list( param_prefix_IN )
+            if ( has_prioritized_coders == True ):
+            
+                # yes - retrieve.
+                prioritized_coder_id_list = self.get_coder_id_list( param_prefix_IN )
+                
+            #-- END check to see if prioritized coders? --#
+             
             # loop over the article data
             for current_article_data in query_set_IN:
 
@@ -1036,22 +1239,66 @@ class NetworkOutput( SourcenetBase ):
 
                     # yes - get unique identifier of article
                     current_unique_id = current_article.unique_identifier
+                    current_id = current_article.id
 
                     # get ID of current Article_Data row.
-                    current_id = current_article_data.id
+                    current_article_data_id = current_article_data.id
     
                     #my_logger.debug( "In " + me + ": current_article = id: " + str( current_id ) + "; current_unique_id = " + str( current_unique_id ) )
 
                     # is the unique_id in the dict?
                     if current_unique_id in unique_article_id_to_article_data_id_dict:
     
-                        # yes - so, this is a duplicate.  Add id to omit list.
-                        omit_id_list.append( current_id )
+                        # yes - so, this is a duplicate.  Do we have prioritized
+                        #     coders?
+                        if ( has_prioritized_coders == True ):
+                        
+                            # prioritized coders.  Get instance for current
+                            #     selected article, then get ID of coder.
+                            selected_article_data = unique_article_id_to_article_data_map[ current_unique_id ]
+                            selected_article_data_id = selected_article_data.id
+                            selected_coder = selected_article_data.coder
+                            selected_coder_id = selected_coder.id
+                            
+                            # get selected index from prioritized list.
+                            selected_coder_index = prioritized_coder_id_list.index( selected_coder_id )
+                            
+                            # get coder ID and index from current.
+                            current_coder = current_article_data.coder 
+                            current_coder_id = current_coder_id
+                            current_coder_index = prioritized_coder_id_list.index( current_coder_id )
+                        
+                            # if current index less than selected_value...
+                            if ( current_coder_index < selected_coder_index ):
+                                
+                                # this is highest priority yet. store current
+                                #     rather than selected.
+                                unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_article_data_id
+                                unique_article_id_to_article_data_map[ current_unique_id ] = current_article_data
+                            
+                                # add selected to the omit list.
+                                omit_id_list.append( selected_article_data_id )
+                            
+                            else:
+                            
+                                # not a higher priority - add to omit list.
+                                omit_id_list.append( current_article_data_id )
+                            
+                            #-- END check to see if higher priority. --#
+                            
+                        else:
+                        
+                            # No prioritization - first come, first served.
+                            #     Add id to omit list.
+                            omit_id_list.append( current_article_data_id )
+                            
+                        #-- END check to see if prioritized coder list. --#
     
                     else:
     
-                        # not in dict, so add it and its ID.
-                        unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_id
+                        # not in dict, so add it and its ID and instance.
+                        unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_article_data_id
+                        unique_article_id_to_article_data_map[ current_unique_id ] = current_article_data
     
                     #-- END check to see if duplicate. --#
                     

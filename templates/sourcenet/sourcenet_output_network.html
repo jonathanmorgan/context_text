@@ -6,14 +6,14 @@
 
     <h1>Output attribution network</h1>
 
-    {% if network_output_form.errors %}
-        <p style="color: red;">
-            Please correct "Select Articles" error {{ network_output_form.errors|pluralize }} below.
-        </p>
-    {% endif %}
     {% if article_select_form.errors %}
         <p style="color: red;">
             Please correct "Select Articles" error {{ article_select_form.errors|pluralize }} below.
+        </p>
+    {% endif %}
+    {% if network_output_form.errors %}
+        <p style="color: red;">
+            Please correct "Configure Network" error {{ network_output_form.errors|pluralize }} below.
         </p>
     {% endif %}
     {% if person_select_form.errors %}

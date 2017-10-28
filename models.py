@@ -2757,6 +2757,7 @@ class Article( models.Model ):
     # Model fields (persisted in database)
     #----------------------------------------------------------------------------
 
+    # ! TODO - need to figure out a way to actually make a unique identifier.
     unique_identifier = models.CharField( max_length = 255, blank = True )
     source_string = models.CharField( max_length = 255, blank = True, null = True )
     newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
