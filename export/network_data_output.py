@@ -1548,7 +1548,7 @@ class NetworkDataOutput( SourcenetBase ):
             # create ties
             #--------------------------------------------------------------------
             
-            # loop over the articles.
+            # loop over the article data for each article to be processed.
             for current_article_data in article_data_query_set:
 
                 article_data_counter += 1
@@ -1596,7 +1596,7 @@ class NetworkDataOutput( SourcenetBase ):
 
                 #-- END check to make sure there are authors.
 
-            #-- END loop over articles.
+            #-- END loop over article data for each article to be processed.
 
             #--------------------------------------------------------------------
             # build person list (list of network matrix rows/columns)
