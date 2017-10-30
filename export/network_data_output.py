@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from __future__ import division
+
 '''
 Copyright 2010-2014 Jonathan Morgan
 
@@ -24,6 +27,9 @@ if __name__ == "__main__":
 from abc import ABCMeta, abstractmethod
 
 #import copy
+
+# import six for Python 2 and 3 compatibility.
+import six
 
 # Django DB classes, just to play with...
 #from django.db.models import Count # for aggregating counts of authors, sources.
@@ -1326,7 +1332,7 @@ class NetworkDataOutput( SourcenetBase ):
             #-- END DEBUG --#
 
             # Now, make a copy of the keys of the map, for us to loop over.
-            author_id_list = author_map.keys()
+            author_id_list = list( six.viewkeys( author_map ) )
 
             # loop over keys.
             for current_person_id in author_id_list:

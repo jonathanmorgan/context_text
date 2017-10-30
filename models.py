@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from __future__ import division
 
 '''
 Copyright 2010-2016 Jonathan Morgan
