@@ -919,14 +919,24 @@ class NetworkOutput( SourcenetBase ):
         list_OUT = None
         
         # declare variables
+        me = "get_coder_id_list"
+        my_logger = None
+        debug_message = None
         coder_list_IN = None
         coder_id_priority_list_IN = None
         coder_id_list = None
+        coder_id_string = None
         coder_id = None
+        
+        # get logger
+        my_logger = self.get_logger()
         
         # get the two places where coder IDs are stored.
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
         coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        
+        debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
+        my_logger.debug( debug_message )
         
         # got a priority list?
         if ( ( coder_id_priority_list_IN is not None )
@@ -963,7 +973,20 @@ class NetworkOutput( SourcenetBase ):
             
         #-- END coder ID processing. --#
         
-        list_OUT = coder_id_list
+        # convert them all to integers and store in list_OUT
+        list_OUT = []
+        for coder_id_string in coder_id_list:
+        
+            # convert to int
+            coder_id = int( coder_id_string )
+            
+            # add to output list.
+            list_OUT.append( coder_id )
+        
+        #-- END loop over string coder IDs. --#
+        
+        debug_message = "In " + me + ": list_OUT = " + str( list_OUT )
+        my_logger.debug( debug_message )
         
         return list_OUT
 

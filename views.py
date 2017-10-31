@@ -478,7 +478,7 @@ def get_request_data( request_IN ):
 debugging code, shared across all models.
 '''
 
-DEBUG = False
+DEBUG = True
 LOGGER_NAME = "sourcenet.views"
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
@@ -3316,6 +3316,7 @@ def output_network( request_IN ):
     me = "output_network"
     response_dictionary = {}
     default_template = ''
+    debug_message = None
     
     # declare variables - forms
     article_select_form = None
@@ -3403,6 +3404,16 @@ def output_network( request_IN ):
             network_outputter = NetworkOutput()
             network_outputter.set_request( request_IN )
             
+            debug_message = "In " + me + ": parameter debug - " + network_outputter.debug_parameters()
+            output_debug( debug_message )
+            
+            # get the two places where coder IDs are stored.
+            coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
+            coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+
+            debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
+            output_debug( debug_message )
+
             # prepare data
             
             # retrieve Article_Data QuerySet based on parameters passed in.
