@@ -527,6 +527,23 @@ class SourcenetBase( BasicRateLimited ):
     #-- END method get_param_container() --#
     
 
+    def get_string_param_as_list( self, param_name_IN, default_IN = [], delimiter_IN = ',' ):
+        
+        # return reference
+        list_OUT = []
+        
+        # declare variables
+        my_params = None
+        
+        # call get_param_as_list()
+        my_params = self.get_param_container()
+        list_OUT = my_params.get_string_param_as_list( param_name_IN, default_IN, delimiter_IN )
+        
+        return list_OUT
+
+    #-- END method get_string_param_as_list() --#
+    
+
     def parse_date_range( self, date_range_IN ):
         
         """

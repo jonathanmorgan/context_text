@@ -933,7 +933,7 @@ class NetworkOutput( SourcenetBase ):
         
         # get the two places where coder IDs are stored.
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
-        coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        coder_id_priority_list_IN = self.get_string_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
         
         debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
         my_logger.debug( debug_message )
