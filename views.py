@@ -3338,6 +3338,12 @@ def output_network( request_IN ):
     my_content_type = ""
     my_file_extension = ""
     current_date_time = ""
+    
+    # declare variables - DEBUG
+    coder_list_IN = None
+    coder_id_priority_list_IN = None
+    person_coder_list_IN = None
+    person_coder_id_priority_list_IN = None
 
     # initialize response dictionary
     response_dictionary = {}
@@ -3408,10 +3414,17 @@ def output_network( request_IN ):
             output_debug( debug_message )
             
             # get the two places where coder IDs are stored.
-            coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
-            coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+            coder_list_IN = network_outputter.get_param_as_list( NetworkOutput.PARAM_CODER_LIST )
+            coder_id_priority_list_IN = network_outputter.get_string_param_as_list ( NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
 
             debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
+            output_debug( debug_message )
+
+            # get the two places where person coder IDs are stored.
+            person_coder_list_IN = network_outputter.get_param_as_list( "person_" + NetworkOutput.PARAM_CODER_LIST )
+            person_coder_id_priority_list_IN = network_outputter.get_string_param_as_list ( "person_" + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+
+            debug_message = "In " + me + ": person_coder_list_IN = " + str( person_coder_list_IN ) + "; person_coder_id_priority_list_IN = " + str( person_coder_id_priority_list_IN )
             output_debug( debug_message )
 
             # prepare data

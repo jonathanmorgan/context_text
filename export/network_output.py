@@ -1289,7 +1289,7 @@ class NetworkOutput( SourcenetBase ):
                             
                             # get coder ID and index from current.
                             current_coder = current_article_data.coder 
-                            current_coder_id = current_coder_id
+                            current_coder_id = current_coder.id
                             current_coder_index = prioritized_coder_id_list.index( current_coder_id )
                         
                             # if current index less than selected_value...
