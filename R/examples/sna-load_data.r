@@ -1,12 +1,26 @@
 # based on: http://www.shizukalab.com/toolkits/sna/sna_data
 
+# CONSTANTS-ish
+DATA_FILE_TYPE_CSV <- "csv"
+DATA_FILE_TYPE_TAB <- "tab"
+
+# input parameters
+# data_path_IN <- ""
+# data_file_type_IN <- ""
+
 # First, read a delimited file of network data in to a data frame in R.
 
-# tab-delimited:
-tab_test1 <- read.delim( "tab-test1-data.txt", header = TRUE, row.names = 1, check.names = FALSE )
+if ( data_file_type_IN == DATA_FILE_TYPE_TAB ) {
 
-# comma-delimited:
-csv_test1 <- read.csv( "csv-test1.csv", header = TRUE, row.names = 1, check.names = FALSE )
+    # tab-delimited:
+    tab_test1 <- read.delim( data_path_IN, header = TRUE, row.names = 1, check.names = FALSE )
+
+} else if ( data_file_type_IN == DATA_FILE_TYPE_CSV ) {
+    
+    # comma-delimited:
+    csv_test1 <- read.csv( data_path_IN, header = TRUE, row.names = 1, check.names = FALSE )
+    
+}
 
 #------------------------------------------------------------------------------#
 # If extra data on nodes stored in rows at the end of the file:
