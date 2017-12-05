@@ -389,7 +389,7 @@ class Organization( models.Model ):
 
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
-    location = models.ForeignKey( Location, blank = True, null = True )
+    location = models.ForeignKey( Location, on_delete = models.SET_NULL, blank = True, null = True )
 
     # Meta-data for this class.
     class Meta:
@@ -417,7 +417,7 @@ class Abstract_Person_Parent( models.Model ):
     # moving title up from Article_Person
     title = models.CharField( max_length = 255, blank = True, null = True )
     more_title = models.TextField( blank = True, null = True )
-    organization = models.ForeignKey( Organization, blank = True, null = True )
+    organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, blank = True, null = True )
     organization_string = models.CharField( max_length = 255, blank = True, null = True )
     more_organization = models.TextField( blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
@@ -2399,7 +2399,7 @@ class Alternate_Name( Abstract_Person ):
     notes = models.TextField( blank = True )
     '''
     
-    person = models.ForeignKey( Person )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE )
 
     #----------------------------------------------------------------------
     # instance methods
@@ -2443,8 +2443,8 @@ class Alternate_Name( Abstract_Person ):
 @python_2_unicode_compatible
 class Person_Organization( models.Model ):
 
-    person = models.ForeignKey( Person )
-    organization = models.ForeignKey( Organization, blank = True, null = True )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE )
+    organization = models.ForeignKey( Organization, on_delete = models.CASCADE, blank = True, null = True )
     title = models.CharField( max_length = 255, blank = True )
 
     #----------------------------------------------------------------------
@@ -2466,7 +2466,7 @@ class Document( models.Model ):
 
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True)
-    organization = models.ForeignKey( Organization, blank = True, null = True )
+    organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------
     # methods
@@ -2485,12 +2485,12 @@ class Newspaper( models.Model ):
 
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
-    organization = models.ForeignKey( Organization )
+    organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, null = True, blank = True )
     newsbank_code = models.CharField( max_length = 255, null = True, blank = True )
     sections_local_news = models.TextField( blank = True, null = True )
     sections_sports = models.TextField( blank = True, null = True )
     
-    #location = models.ForeignKey( Location )
+    #location = models.ForeignKey( Location, on_delete = models.SET_NULL, null = True, blank = True )
 
     # Meta-data for this class.
     class Meta:
@@ -2535,7 +2535,7 @@ class Newspaper( models.Model ):
 #@python_2_unicode_compatible
 #class Article_Topic( models.Model ):
 
-    #topic = models.ForeignKey( Topic )
+    #topic = models.ForeignKey( Topic, on_delete = models.CASCADE )
     #rank = models.IntegerField()
 
     #----------------------------------------------------------------------
@@ -2556,7 +2556,7 @@ class Newspaper( models.Model ):
 @python_2_unicode_compatible
 class Person_External_UUID( models.Model ):
 
-    person = models.ForeignKey( Person )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE )
     name = models.CharField( max_length = 255, null = True, blank = True )
     uuid = models.TextField( blank = True, null = True )
     source = models.CharField( max_length = 255, null = True, blank = True )
@@ -2616,8 +2616,8 @@ class Person_External_UUID( models.Model ):
 @python_2_unicode_compatible
 class Person_Newspaper( models.Model ):
 
-    person = models.ForeignKey( Person )
-    newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE )
+    newspaper = models.ForeignKey( Newspaper, on_delete = models.CASCADE, blank = True, null = True )
     notes = models.TextField( blank = True, null = True )
 
     #----------------------------------------------------------------------
@@ -2761,7 +2761,7 @@ class Article( models.Model ):
     # ! TODO - need to figure out a way to actually make a unique identifier.
     unique_identifier = models.CharField( max_length = 255, blank = True )
     source_string = models.CharField( max_length = 255, blank = True, null = True )
-    newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+    newspaper = models.ForeignKey( Newspaper, on_delete = models.SET_NULL, blank = True, null = True )
     pub_date = models.DateField()
     section = models.CharField( max_length = 255, blank = True )
     #page = models.IntegerField( blank = True )
@@ -4111,7 +4111,7 @@ class Abstract_Related_Content( models.Model ):
     # model fields and meta
     #----------------------------------------------------------------------
 
-    #article = models.ForeignKey( Article, unique = True )
+    #article = models.ForeignKey( Article, on_delete = models.SET_NULL, unique = True, null = True )
     content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
     content = models.TextField()
     status = models.CharField( max_length = 255, blank = True, null = True )
@@ -4278,7 +4278,7 @@ class Article_Content( Abstract_Related_Content ):
     #----------------------------------------------------------------------
 
     # allow more than one related piece of "Article_Content" per article.
-    article = models.ForeignKey( Article )
+    article = models.ForeignKey( Article, on_delete = models.CASCADE )
 
     # meta class so we know this is an abstract class.
     class Meta:
@@ -4344,7 +4344,7 @@ class Unique_Article_Content( Abstract_Related_Content ):
     #----------------------------------------------------------------------
 
     # only allow one related piece of "Unique_Article_Content" per article.
-    article = models.ForeignKey( Article, unique = True )
+    article = models.ForeignKey( Article, on_delete = models.CASCADE, unique = True )
 
     # meta class so we know this is an abstract class.
     class Meta:
@@ -6308,8 +6308,8 @@ class Article_Data( models.Model ):
     # ! ==> model fields
     #----------------------------------------------------------------------
 
-    article = models.ForeignKey( Article )
-    coder = models.ForeignKey( User )
+    article = models.ForeignKey( Article, on_delete = models.CASCADE )
+    coder = models.ForeignKey( User, on_delete = models.CASCADE )
     coder_type = models.CharField( max_length = 255, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True )
     locations = models.ManyToManyField( Location, blank = True )
@@ -7329,7 +7329,7 @@ class Article_Data_Notes( Abstract_Related_Content ):
     #----------------------------------------------------------------------
 
     # allow more than one related piece of "Article_Content" per article.
-    article_data = models.ForeignKey( Article_Data )
+    article_data = models.ForeignKey( Article_Data, on_delete = models.CASCADE )
 
     # meta class with ordering.
     class Meta:
@@ -7406,9 +7406,9 @@ class Article_Person( Abstract_Person_Parent ):
     # model fields and meta
     #----------------------------------------------------------------------------
 
-    article_data = models.ForeignKey( Article_Data )
-    person = models.ForeignKey( Person, blank = True, null = True )
-    original_person = models.ForeignKey( Person, blank = True, null = True, related_name="%(app_label)s_%(class)s_original_person_set")
+    article_data = models.ForeignKey( Article_Data, on_delete = models.CASCADE )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE, blank = True, null = True )
+    original_person = models.ForeignKey( Person, on_delete = models.SET_NULL, blank = True, null = True, related_name="%(app_label)s_%(class)s_original_person_set")
     #relation_type = models.CharField( max_length = 255, choices = RELATION_TYPE_CHOICES )
     name = models.CharField( max_length = 255, blank = True, null = True )
     verbatim_name = models.CharField( max_length = 255, blank = True, null = True )
@@ -8337,7 +8337,7 @@ class Abstract_Alternate_Person_Match( models.Model ):
     #----------------------------------------------------------------------------
 
 
-    person = models.ForeignKey( Person, blank = True, null = True )
+    person = models.ForeignKey( Person, on_delete = models.CASCADE, blank = True, null = True )
 
     # time stamps.
     create_date = models.DateTimeField( auto_now_add = True, blank = True, null = True )
@@ -8425,7 +8425,7 @@ class Alternate_Author_Match( Abstract_Alternate_Person_Match ):
     #----------------------------------------------------------------------------
 
 
-    article_author = models.ForeignKey( Article_Author, blank = True, null = True )
+    article_author = models.ForeignKey( Article_Author, on_delete = models.CASCADE, blank = True, null = True )
 
     '''
     # now in parent class.
@@ -8590,7 +8590,7 @@ class Article_Subject( Article_Person ):
     # moved up to Article_Person (so also over to Article_Author).
     #title = models.CharField( max_length = 255, blank = True, null = True )
     #more_title = models.TextField( blank = True, null = True )
-    document = models.ForeignKey( Document, blank = True, null = True )
+    document = models.ForeignKey( Document, on_delete = models.SET_NULL, blank = True, null = True )
     topics = models.ManyToManyField( Topic, blank = True )
     source_contact_type = models.CharField( max_length = 255, choices = SOURCE_CONTACT_TYPE_CHOICES, blank = True, null = True )
     source_capacity = models.CharField( max_length = 255, choices = SOURCE_CAPACITY_CHOICES, blank = True, null = True )
@@ -9195,7 +9195,7 @@ class Alternate_Subject_Match( Abstract_Alternate_Person_Match ):
     #----------------------------------------------------------------------------
 
 
-    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
+    article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE, blank = True, null = True )
 
     '''
     # in parent class now.
@@ -9524,7 +9524,7 @@ class Article_Subject_Mention( Abstract_Selected_Text ):
 
 
     # subject in a given article whom this quote belongs to.
-    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
+    article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE, blank = True, null = True )
     
     # is name a pronoun?
     is_speaker_name_pronoun = models.BooleanField( default = False )
@@ -9593,7 +9593,7 @@ class Article_Subject_Quotation( Abstract_Selected_Text ):
 
 
     # subject in a given article whom this quote belongs to.
-    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
+    article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE, blank = True, null = True )
     
     # value_with_attribution
     value_with_attribution = models.TextField( blank = True, null = True )
@@ -9664,8 +9664,8 @@ class Article_Subject_Quotation( Abstract_Selected_Text ):
 @python_2_unicode_compatible
 class Subject_Organization( models.Model ):
 
-    article_subject = models.ForeignKey( Article_Subject )
-    organization = models.ForeignKey( Organization, blank = True, null = True )
+    article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE )
+    organization = models.ForeignKey( Organization, on_delete = models.CASCADE, blank = True, null = True )
     title = models.CharField( max_length = 255, blank = True )
 
     # time stamps.
@@ -9695,8 +9695,8 @@ class Subject_Organization( models.Model ):
 # Subject_Organization model
 #class Subject_Organization( models.Model ):
 
-#    article_subject = models.ForeignKey( Article_Subject, blank = True, null = True )
-#    organization = models.ForeignKey( Organization, blank = True, null = True )
+#    article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE, blank = True, null = True )
+#    organization = models.ForeignKey( Organization, on_delete = models.CASCADE, blank = True, null = True )
 #    title = models.CharField( max_length = 255, blank = True )
 
     #----------------------------------------------------------------------
@@ -9726,8 +9726,8 @@ class Subject_Organization( models.Model ):
 # Article_Location model
 #class Article_Location( models.Model ):
 
-#    article = models.ForeignKey( Article )
-#    location = models.ForeignKey( Location )
+#    article = models.ForeignKey( Article, on_delete = models.CASCADE )
+#    location = models.ForeignKey( Location, on_delete = models.CASCADE )
 #    rank = models.IntegerField()
 
     #----------------------------------------------------------------------
@@ -11060,10 +11060,10 @@ class Articles_To_Migrate( models.Model ):
         ( "other", "Other" )
     )
 
-    article = models.ForeignKey( Article, blank = True, null = True )
+    article = models.ForeignKey( Article, on_delete = models.CASCADE, blank = True, null = True )
     unique_identifier = models.CharField( max_length = 255, blank = True )
-    coder = models.ForeignKey( User )
-    newspaper = models.ForeignKey( Newspaper, blank = True, null = True )
+    coder = models.ForeignKey( User, on_delete = models.SET_NULL, blank = True, null = True )
+    newspaper = models.ForeignKey( Newspaper, on_delete = models.SET_NULL, blank = True, null = True )
     pub_date = models.DateField()
     section = models.CharField( max_length = 255, blank = True )
     page = models.IntegerField( blank = True )
