@@ -99,9 +99,9 @@ class Migration(migrations.Migration):
                 ('notes', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('coder1', models.ForeignKey(related_name='reliability_ties_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
-                ('coder2', models.ForeignKey(related_name='reliability_ties_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
-                ('coder3', models.ForeignKey(related_name='reliability_ties_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('coder1', models.ForeignKey(related_name='reliability_ties_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE )),
+                ('coder2', models.ForeignKey(related_name='reliability_ties_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE )),
+                ('coder3', models.ForeignKey(related_name='reliability_ties_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['person_type', 'person', 'relation_person'],
@@ -166,8 +166,8 @@ class Migration(migrations.Migration):
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('capture_method', models.CharField(max_length=255, null=True, blank=True)),
-                ('article', models.ForeignKey(to='sourcenet.Article')),
-                ('coder', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('article', models.ForeignKey(to='sourcenet.Article', on_delete = models.CASCADE )),
+                ('coder', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
@@ -184,7 +184,7 @@ class Migration(migrations.Migration):
                 ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('article_data', models.ForeignKey(to='sourcenet.Article_Data')),
+                ('article_data', models.ForeignKey(to='sourcenet.Article_Data', on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['article_data', 'last_modified', 'create_date'],
@@ -201,7 +201,7 @@ class Migration(migrations.Migration):
                 ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('article', models.ForeignKey(to='sourcenet.Article')),
+                ('article', models.ForeignKey(to='sourcenet.Article', on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
@@ -219,7 +219,7 @@ class Migration(migrations.Migration):
                 ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('article', models.ForeignKey(to='sourcenet.Article', unique=True)),
+                ('article', models.ForeignKey(to='sourcenet.Article', unique=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
@@ -242,7 +242,7 @@ class Migration(migrations.Migration):
                 ('source_capacity', models.CharField(blank=True, max_length=255, null=True, choices=[('government', 'Government Source'), ('police', 'Police Source'), ('business', 'Business Source'), ('labor', 'Labor Source'), ('education', 'Education Source'), ('organization', 'Other Organization Source'), ('expert', 'Expert Opinion'), ('individual', 'Personal Opinion'), ('other', 'Other')])),
                 ('localness', models.CharField(blank=True, max_length=255, null=True, choices=[('none', 'None'), ('local', 'Local'), ('state', 'State'), ('national', 'National'), ('international', 'International'), ('other', 'Other')])),
                 ('notes', models.TextField(null=True, blank=True)),
-                ('article_data', models.ForeignKey(to='sourcenet.Article_Data')),
+                ('article_data', models.ForeignKey(to='sourcenet.Article_Data', on_delete = models.CASCADE )),
             ],
             options={
                 'abstract': False,
@@ -269,7 +269,7 @@ class Migration(migrations.Migration):
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_speaker_name_pronoun', models.BooleanField(default=False)),
-                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True)),
+                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['paragraph_number', 'last_modified', 'create_date'],
@@ -304,7 +304,7 @@ class Migration(migrations.Migration):
                 ('is_speaker_name_pronoun', models.BooleanField(default=False)),
                 ('attribution_speaker_name_index_range', models.CharField(max_length=255, null=True, blank=True)),
                 ('attribution_speaker_name_word_range', models.CharField(max_length=255, null=True, blank=True)),
-                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True)),
+                ('article_subject', models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['paragraph_number', 'last_modified', 'create_date'],
@@ -322,7 +322,7 @@ class Migration(migrations.Migration):
                 ('content_description', models.TextField(null=True, blank=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
-                ('article', models.ForeignKey(to='sourcenet.Article', unique=True)),
+                ('article', models.ForeignKey(to='sourcenet.Article', unique=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['article', 'last_modified', 'create_date'],
@@ -342,8 +342,8 @@ class Migration(migrations.Migration):
                 ('is_sourced', models.BooleanField(default=True)),
                 ('can_code', models.BooleanField(default=True)),
                 ('article_type', models.CharField(default='news', max_length=255, blank=True, choices=[('news', 'News'), ('sports', 'Sports'), ('feature', 'Feature'), ('opinion', 'Opinion'), ('other', 'Other')])),
-                ('article', models.ForeignKey(blank=True, to='sourcenet.Article', null=True)),
-                ('coder', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('article', models.ForeignKey(blank=True, to='sourcenet.Article', null=True, on_delete = models.CASCADE )),
+                ('coder', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['pub_date', 'section', 'page'],
@@ -410,7 +410,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True)),
-                ('location', models.ForeignKey(blank=True, to='sourcenet.Location', null=True)),
+                ('location', models.ForeignKey(blank=True, to='sourcenet.Location', null=True, on_delete = models.CASCADE )),
             ],
             options={
                 'ordering': ['name', 'location'],
@@ -450,7 +450,7 @@ class Migration(migrations.Migration):
                 ('uuid', models.TextField(null=True, blank=True)),
                 ('source', models.CharField(max_length=255, null=True, blank=True)),
                 ('notes', models.TextField(null=True, blank=True)),
-                ('person', models.ForeignKey(to='sourcenet.Person')),
+                ('person', models.ForeignKey(to='sourcenet.Person', on_delete = models.CASCADE )),
             ],
         ),
         migrations.CreateModel(
@@ -458,8 +458,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('notes', models.TextField(null=True, blank=True)),
-                ('newspaper', models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True)),
-                ('person', models.ForeignKey(to='sourcenet.Person')),
+                ('newspaper', models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True, on_delete = models.CASCADE )),
+                ('person', models.ForeignKey(to='sourcenet.Person', on_delete = models.CASCADE )),
             ],
         ),
         migrations.CreateModel(
@@ -467,8 +467,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('title', models.CharField(max_length=255, blank=True)),
-                ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True)),
-                ('person', models.ForeignKey(to='sourcenet.Person')),
+                ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True, on_delete = models.CASCADE )),
+                ('person', models.ForeignKey(to='sourcenet.Person', on_delete = models.CASCADE )),
             ],
         ),
         migrations.CreateModel(
@@ -487,8 +487,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('title', models.CharField(max_length=255, blank=True)),
-                ('article_subject', models.ForeignKey(to='sourcenet.Article_Subject')),
-                ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True)),
+                ('article_subject', models.ForeignKey(to='sourcenet.Article_Subject', on_delete = models.CASCADE )),
+                ('organization', models.ForeignKey(blank=True, to='sourcenet.Organization', null=True, on_delete = models.CASCADE )),
             ],
         ),
         migrations.CreateModel(
@@ -531,37 +531,37 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='newspaper',
             name='organization',
-            field=models.ForeignKey(to='sourcenet.Organization'),
+            field=models.ForeignKey(to='sourcenet.Organization', on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='document',
             name='organization',
-            field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='articles_to_migrate',
             name='newspaper',
-            field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_subject',
             name='document',
-            field=models.ForeignKey(blank=True, to='sourcenet.Document', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Document', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_subject',
             name='organization',
-            field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Organization', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_subject',
             name='original_person',
-            field=models.ForeignKey(related_name='sourcenet_article_subject_original_person_set', blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(related_name='sourcenet_article_subject_original_person_set', blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_subject',
             name='person',
-            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_subject',
@@ -586,22 +586,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article_author',
             name='article_data',
-            field=models.ForeignKey(to='sourcenet.Article_Data'),
+            field=models.ForeignKey(to='sourcenet.Article_Data', on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_author',
             name='original_person',
-            field=models.ForeignKey(related_name='sourcenet_article_author_original_person_set', blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(related_name='sourcenet_article_author_original_person_set', blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article_author',
             name='person',
-            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article',
             name='newspaper',
-            field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Newspaper', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='article',
@@ -611,61 +611,61 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='analysis_reliability_ties',
             name='person',
-            field=models.ForeignKey(related_name='reliability_ties_from_set', blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(related_name='reliability_ties_from_set', blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_ties',
             name='relation_person',
-            field=models.ForeignKey(related_name='reliability_ties_to_set', blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(related_name='reliability_ties_to_set', blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_names',
             name='article',
-            field=models.ForeignKey(blank=True, to='sourcenet.Article', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Article', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_names',
             name='coder1',
-            field=models.ForeignKey(related_name='reliability_names_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+            field=models.ForeignKey(related_name='reliability_names_coder1_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_names',
             name='coder2',
-            field=models.ForeignKey(related_name='reliability_names_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+            field=models.ForeignKey(related_name='reliability_names_coder2_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_names',
             name='coder3',
-            field=models.ForeignKey(related_name='reliability_names_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True),
+            field=models.ForeignKey(related_name='reliability_names_coder3_set', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='analysis_reliability_names',
             name='person',
-            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='alternate_subject_match',
             name='article_subject',
-            field=models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Article_Subject', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='alternate_subject_match',
             name='person',
-            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='alternate_name',
             name='person',
-            field=models.ForeignKey(to='sourcenet.Person'),
+            field=models.ForeignKey(to='sourcenet.Person', on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='alternate_author_match',
             name='article_author',
-            field=models.ForeignKey(blank=True, to='sourcenet.Article_Author', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Article_Author', null=True, on_delete = models.CASCADE ),
         ),
         migrations.AddField(
             model_name='alternate_author_match',
             name='person',
-            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True),
+            field=models.ForeignKey(blank=True, to='sourcenet.Person', null=True, on_delete = models.CASCADE ),
         ),
     ]
