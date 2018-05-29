@@ -1,0 +1,11 @@
+---
+# Handler to handle common notifications. Handlers are called by other plays.
+# See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
+
+- name: reset ufw
+  ufw:
+    state: reset
+    
+- name: enable ufw
+  ufw:
+    state: enabled
