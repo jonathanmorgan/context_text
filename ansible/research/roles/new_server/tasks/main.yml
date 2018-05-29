@@ -91,3 +91,9 @@
       - libxml2-dev
       - libffi-dev
     state: present
+
+# create Downloads folder in ansible_user home if one not already present.
+- name: make sure there is a Downloads folder in ansible_user
+  file:
+    path: ~/Downloads
+    state: directory
