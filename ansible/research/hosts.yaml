@@ -5,6 +5,9 @@ all:
     new_servers:
       hosts:
         research.local
+    apache_servers:
+      hosts:
+        research.local
     postgres_servers:
       hosts:
         research.local

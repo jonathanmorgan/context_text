@@ -1,7 +1,7 @@
 # default variables for host research.local
 ansible_user: jonathanmorgan
 ansible_python_interpreter: /usr/bin/python3
-ansible_become: yes
+# ansible_become: yes
 ansible_become_user: root
 ansible_become_password: !vault |
           $ANSIBLE_VAULT;1.2;AES256;dev
