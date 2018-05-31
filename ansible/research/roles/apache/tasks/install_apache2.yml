@@ -1,24 +1,42 @@
 ---
-# These tasks install apache2 and mod_wsgi for python 3.
+# These tasks install and configure apache2 and mod_wsgi for python 3.
 
-#- name: Install http and php etc
-#  yum: name={{ item }} state=present
-#  with_items:
-#   - httpd
-#   - php
-#   - php-mysql
-#   - git
-#   - libsemanage-python
-#   - libselinux-python
-#
-#- name: insert iptables rule for httpd
-#  lineinfile: dest=/etc/sysconfig/iptables create=yes state=present regexp="{{ httpd_port }}" insertafter="^:OUTPUT "
-#              line="-A INPUT -p tcp  --dport {{ httpd_port }} -j  ACCEPT"
-#  notify: restart iptables
-#
-#- name: http service state
-#  service: name=httpd state=started enabled=yes
-#
-#- name: Configure SELinux to allow httpd to connect to remote database
-#  seboolean: name=httpd_can_network_connect_db state=true persistent=yes
-#  when: sestatus.rc != 0
+# Install apache2 and mod_wsgi for Python 3
+- name: Install OS packages for apache2 and mod_wsgi for Python 3
+  become: yes
+  become_user: root
+  apt:
+    name:
+      - apache2
+      - libapache2-mod-wsgi-py3
+
+# Enable mod_wsgi
+- name: Enable mod_wsgi module.
+  become: yes
+  become_user: root
+  apache2_module:
+    state: present
+    name: wsgi
+
+# restart apache
+- name: restart apache2
+  become: yes
+  become_user: root
+  service:
+    name: apache2
+    state: restarted
+
+# open firewall for http and https  
+- name: Allow HTTP ports
+  become: yes
+  become_user: root
+  ufw:
+    rule: allow
+    port: http
+
+- name: Allow HTTPS port
+  become: yes
+  become_user: root
+  ufw:
+    rule: allow
+    port: https

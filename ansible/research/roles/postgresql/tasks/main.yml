@@ -1,18 +1,25 @@
 ---
-# This playbook will install mysql and create db user and give permissions.
+# This playbook will install and configure postgresql.
 
-#- name: Install Mysql package
-#  yum: name={{ item }} state=installed
-#  with_items:
-#   - mysql-server
-#   - MySQL-python
-#   - libselinux-python
-#   - libsemanage-python
-#
-#- name: Configure SELinux to start mysql on any port
-#  seboolean: name=mysql_connect_any state=true persistent=yes
-#  when: sestatus.rc != 0
-#
+# Install PostgreSQL
+- name: Install Postgresql packages
+  become: yes
+  become_user: root
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - libpq-dev
+      - postgresql-server-dev-10
+
+# open firewall for postgresql
+- name: Allow postgresql ports
+  become: yes
+  become_user: root
+  ufw:
+    rule: allow
+    port: postgresql
+
 #- name: Create Mysql configuration file
 #  template: src=my.cnf.j2 dest=/etc/my.cnf
 #  notify:

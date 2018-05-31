@@ -62,9 +62,26 @@
   args:
     chdir: ~/Downloads
 
-# ==> virtualenv and virtualenvwrapper
-#- name: install virtualenv and virtualenvwrapper
-#  become: yes
-#  become_user: root
-#  pip:
-#    executable: pip3
+# ==> virtualenv and virtualenvwrapper in python 3.
+- name: install virtualenv and virtualenvwrapper
+  become: yes
+  become_user: root
+  pip:
+    executable: pip3
+    name:
+      - virtualenv
+      - virtualenvwrapper
+
+# create default virtaulenv folder "~/.virtualenv" for ansible user.
+- name: make sure there is a ~/.virtualenvs folder in ansible_user
+  file:
+    path: ~/.virtualenvs
+    state: directory
+
+# install build dependencies for pillow python package
+- name: install pillow build dependencies
+  become: yes
+  become_user: root
+  apt:
+    name: pillow
+    state: build-dep
