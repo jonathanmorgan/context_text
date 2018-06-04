@@ -10,7 +10,33 @@
       - postgresql
       - postgresql-contrib
       - libpq-dev
-      - postgresql-server-dev-10
+      - postgresql-server-dev-{{server_pgsql_version}}
+
+# install psycopg2 in python 3.
+- name: install psycopg2
+  become: yes
+  become_user: root
+  pip:
+    executable: pip3
+    name: psycopg2
+
+# set to listen on defined listen_addresses.
+- name: Set listen_addresses for postgresql
+  become: yes
+  become_user: postgres
+  lineinfile:
+    path: '/etc/postgresql/{{server_pgsql_version}}/main/postgresql.conf'
+    line: "listen_addresses = '{{server_pgsql_listen_addresses}}'"
+  notify: restart postgresql
+
+# allow database username/password connections.
+- name: Set listen_addresses for postgresql
+  become: yes
+  become_user: postgres
+  lineinfile:
+    path: '/etc/postgresql/{{server_pgsql_version}}/main/pg_hba.conf'
+    line: 'host all all  0.0.0.0/0 md5'
+  notify: restart postgresql
 
 # open firewall for postgresql
 - name: Allow postgresql ports
@@ -20,21 +46,15 @@
     rule: allow
     port: postgresql
 
-#- name: Create Mysql configuration file
-#  template: src=my.cnf.j2 dest=/etc/my.cnf
-#  notify:
-#  - restart mysql
-#
-#- name: Start Mysql Service
-#  service: name=mysqld state=started enabled=yes
-#
-#- name: insert iptables rule
-#  lineinfile: dest=/etc/sysconfig/iptables state=present regexp="{{ mysql_port }}"
-#              insertafter="^:OUTPUT " line="-A INPUT -p tcp  --dport {{ mysql_port }} -j  ACCEPT"
-#  notify: restart iptables
-#
-#- name: Create Application Database
-#  mysql_db: name={{ dbname }} state=present
-#
-#- name: Create Application DB User
-#  mysql_user: name={{ dbuser }} password={{ upassword }} priv=*.*:ALL host='%' state=present
+# create non-postgres admin user?
+#- name: Create non-postgres admin user
+#  become: yes
+#  become_user: postgres
+#  postgresql_user:
+#    login_host: localhost
+#    name: '{{server_pgsql_admin_user}}'
+#    password: '{{server_pgsql_admin_password}}'
+#    role_attr_flags: SUPERUSER
+#  when:
+#    - server_pgsql_admin_user != ""
+#    - server_pgsql_admin_password != ""
