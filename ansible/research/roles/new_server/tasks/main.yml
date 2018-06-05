@@ -90,6 +90,7 @@
       - libfreetype6-dev
       - libxml2-dev
       - libffi-dev
+      - acl
     state: present
 
 # create Downloads folder in ansible_user home if one not already present.
