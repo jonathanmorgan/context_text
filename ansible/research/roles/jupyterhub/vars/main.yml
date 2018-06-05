@@ -1,5 +1,0 @@
----
-jupyterhub_config_folder: /etc/jupyterhub
-#jupyterhub_configproxy_auth_token
-jupyterhub_admin_user_list: "'{{ansible_user}}'"
-jupyterhub_whitelist_list: ""
