@@ -47,14 +47,15 @@
     port: postgresql
 
 # create non-postgres admin user?
-#- name: Create non-postgres admin user
-#  become: yes
-#  become_user: postgres
-#  postgresql_user:
-#    login_host: localhost
-#    name: '{{server_pgsql_admin_user}}'
-#    password: '{{server_pgsql_admin_password}}'
-#    role_attr_flags: SUPERUSER
-#  when:
-#    - server_pgsql_admin_user != ""
-#    - server_pgsql_admin_password != ""
+- name: Create non-postgres admin user
+  become: yes
+  become_user: root
+  #postgresql_user:
+  #  #login_host: localhost
+  #  name: '{{server_pgsql_admin_user}}'
+  #  password: '{{server_pgsql_admin_password}}'
+  #  role_attr_flags: SUPERUSER
+  shell: sudo -u postgres psql -c "DO \$do\$ BEGIN IF NOT EXISTS( SELECT * FROM pg_catalog.pg_roles WHERE rolname = '{{server_pgsql_admin_user}}') THEN CREATE USER {{server_pgsql_admin_user}} WITH PASSWORD '{{server_pgsql_admin_password}}' SUPERUSER; END IF; END \$do\$;"
+  when:
+    - server_pgsql_admin_user != ""
+    - server_pgsql_admin_password != ""

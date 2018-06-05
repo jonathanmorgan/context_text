@@ -29,3 +29,7 @@
 
             - /etc/ansible/ansible.cfg
             - ~/.ansible.cfg
+
+    - if installing rstudio, roles/rstudio/tasks/rstudio_variables.yml
+
+        - add rstudio version to download (will have latest as of last changes to that file, might be outdated).

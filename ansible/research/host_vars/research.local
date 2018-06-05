@@ -14,9 +14,19 @@ ansible_become_password: !vault |
 # configuration
 server_name: research.local
 server_ip_address: 172.16.111.134
+server_ubuntu_version_code_name: bionic
 
 # postgresql configuration
 server_pgsql_version: "10"
 server_pgsql_listen_addresses: "localhost,127.0.0.1,{{server_ip_address}}"
 server_pgsql_admin_user: "{{ansible_user}}"
 server_pgsql_admin_password: "{{ansible_become_password}}"
+
+# RStudio server configuration
+#rstudio_version: 1.1.453
+
+# Jupyterhub configuration
+#jupyterhub_config_folder: /etc/jupyterhub
+jupyterhub_configproxy_auth_token: 8da752f8de9494b495aaa619bb5c2c8a7a163a0643b91fb57ec0ff9e0392ec85
+jupyterhub_admin_user_list: "'{{ansible_user}}'"
+jupyterhub_whitelist_list: "'{{ansible_user}}'"

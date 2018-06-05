@@ -1,33 +1,33 @@
 ---
-# This playbook will install mysql and create db user and give permissions.
+# This playbook will install CRAN R apt repository, then install R.
 
-#- name: Install Mysql package
-#  yum: name={{ item }} state=installed
-#  with_items:
-#   - mysql-server
-#   - MySQL-python
-#   - libselinux-python
-#   - libsemanage-python
-#
-#- name: Configure SELinux to start mysql on any port
-#  seboolean: name=mysql_connect_any state=true persistent=yes
-#  when: sestatus.rc != 0
-#
-#- name: Create Mysql configuration file
-#  template: src=my.cnf.j2 dest=/etc/my.cnf
-#  notify:
-#  - restart mysql
-#
-#- name: Start Mysql Service
-#  service: name=mysqld state=started enabled=yes
-#
-#- name: insert iptables rule
-#  lineinfile: dest=/etc/sysconfig/iptables state=present regexp="{{ mysql_port }}"
-#              insertafter="^:OUTPUT " line="-A INPUT -p tcp  --dport {{ mysql_port }} -j  ACCEPT"
-#  notify: restart iptables
-#
-#- name: Create Application Database
-#  mysql_db: name={{ dbname }} state=present
-#
-#- name: Create Application DB User
-#  mysql_user: name={{ dbuser }} password={{ upassword }} priv=*.*:ALL host='%' state=present
+# Add apt source for CRAN R.
+- name: Create APT source for CRAN R.
+  become: yes
+  become_user: root
+  template:
+    src: CRAN-R.list.j2
+    dest: /etc/apt/sources.list.d
+
+# Add apt key for CRAN R source
+- name: Add an apt key by id from a keyserver
+  become: yes
+  become_user: root
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: E084DAB9
+
+# update apt cache
+- name: Update apt cache
+  become: yes
+  become_user: root
+  apt:
+    update_cache: yes
+
+# install R base
+- name: install r-base
+  become: yes
+  become_user: root
+  apt:
+    name: r-base
+    state: present

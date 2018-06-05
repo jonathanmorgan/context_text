@@ -3,7 +3,7 @@
 
 # ==> SSH sanity check.
 
-# update cache
+# update apt cache
 - name: Update apt cache
   become: yes
   become_user: root
