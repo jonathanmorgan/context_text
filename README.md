@@ -602,6 +602,17 @@ Once the database tables are created, you'll want to make a django admin user at
                     https://docs.djangoproject.com/en/1.10/howto/deployment/wsgi/
                     """
                     
+                    '''
+                    # Uncomment this and comment out the rest of the file when getting:
+                    #    "RuntimeError: populate() isn't reentrant"
+                    import os
+                    def application(environ, start_response):
+                        if environ['mod_wsgi.process_group'] != '': 
+                            import signal
+                            os.kill(os.getpid(), signal.SIGINT)
+                        return ["killed"]
+                    '''
+
                     # imports
                     import os
                     import sys
