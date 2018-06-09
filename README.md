@@ -68,11 +68,11 @@ As you install the different github projects that make up sourcenet, you'll need
 
 The most efficient way to do this is to use the `requirements.txt` file in each project.  For example, inside the sourcenet project, the requirements.txt file is a list of all the Python packages that sourcenet needs to function.  It is the up-to-date list of what you need.  It assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
 
-    - activate your virtualenv if you are using one.
-    - install django using pip: `(sudo) pip install django`
-    - continue on in this guide until you have downloaded and installed sourcenet from github, then:
-    - `(sudo) pip install -r sourcenet/requirements.txt`
-    - you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
+- activate your virtualenv if you are using one.
+- install django using pip: `(sudo) pip install django`
+- continue on in this guide until you have downloaded and installed sourcenet from github, then:
+- `(sudo) pip install -r sourcenet/requirements.txt`
+- you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
 
 For reference, below are some of the main packages sourcenet uses, but this list is not up-to-date, and I'd recommend just using requirements.txt files to install packages, rather than installing them individually.
 
