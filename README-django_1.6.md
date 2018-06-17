@@ -304,7 +304,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - test by going to the URL:
 
-        http://<your_server>/sourcenet/sourcenet/output/network
+        http://<your_server>/research/sourcenet/output/network
 
 ## Collecting Articles
 
@@ -336,7 +336,7 @@ A draft content analysis protocol for assessing sources in a way that can be use
 
 ## Outputting Network Data
 
-Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/sourcenet/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
+Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
 
 - If you are generating multiple network slices across time periods, you will want to use the "Select People" section of the form (on the right) and enter a fancy date range that includes each date range for all of the slices you are making, so the matrices that result are of the same dimensions (same set of people for each - all people in all slices).
 

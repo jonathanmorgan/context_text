@@ -329,15 +329,15 @@ Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_co
 - add settings properties that tell django how to log people in and out.  Example:
 
         # login configuration
-        LOGIN_URL = '<apache_URL_path_to_django_project>/sourcenet/sourcenet/accounts/login/'
+        LOGIN_URL = '<apache_URL_path_to_django_project>/research/sourcenet/accounts/login/'
         LOGIN_REDIRECT_URL = '<apache_URL_path_to_django_project>/sourcenet/output/network/'
         LOGOUT_URL = '/'
 
     The following sample assumes that you'll follow the examples later on how to configure apache, and so serve the django sourcenet application from an apache directory named "sourcenet".  If you choose a different directory, you'll need to adjust these properties' values accordingly.
 
         # login configuration
-        LOGIN_URL = '/sourcenet/sourcenet/accounts/login/'
-        LOGIN_REDIRECT_URL = '/sourcenet/sourcenet/output/network/'
+        LOGIN_URL = '/research/sourcenet/accounts/login/'
+        LOGIN_REDIRECT_URL = '/research/sourcenet/output/network/'
         LOGOUT_URL = '/'
 
 - set the SESSION_COOKIE_NAME to sourcenet.
@@ -965,7 +965,7 @@ Once the database tables are created, you'll want to make a django admin user at
 
 - test by going to the URL:
 
-        http://<your_server>/sourcenet/sourcenet/index
+        http://<your_server>/research/sourcenet/index
 
 - log in with your django superuser user.
 - You should see a home page for sourcenet with a welcome message and a header that lists out the pages in the sourcenet application.
@@ -976,7 +976,7 @@ There is an example application in sourcenet/collectors/newsbank that you can us
 
 # Filtering and tagging articles:
 
-To filter and tag sets of articles, use the page: 'http://<your_server>/sourcenet/sourcenet/article/filter/'
+To filter and tag sets of articles, use the page: 'http://<your_server>/research/sourcenet/article/filter/'
 
 This page allows you to filter on:
 
@@ -995,7 +995,7 @@ Then either see a summary of articles that fit your filter, look at details on e
 
 Sourcenet includes a set of pages that can be used to code articles by hand, and then view article coding:
 
-- to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/sourcenet/sourcenet/article/code/`
+- to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/research/sourcenet/article/code/`
 
     - Setup:
     
@@ -1003,8 +1003,8 @@ Sourcenet includes a set of pages that can be used to code articles by hand, and
     
     - See directions for coding in `sourcenet/protocol/protocol-capturing_people_in_articles.pdf`.
 
-- to view an article's meta-data and text: `http://<your_server>/sourcenet/sourcenet/article/view/`
-- to view an article's coding: `http://<your_server>/sourcenet/sourcenet/article/article_data/view/`
+- to view an article's meta-data and text: `http://<your_server>/research/sourcenet/article/view/`
+- to view an article's coding: `http://<your_server>/research/sourcenet/article/article_data/view/`
 
 You can also use the django admin pages, but the process is much more cumbersome - there are a lot of interrelated tables that are populated during the process of coding, and so it is better to use the coding form above and let the software deal with making all the correct underlying data.  It is helpful to use the admins for managing Article_Data, however, if you need to clear out coding for a coder, either because of an error or as part of testing.
 
@@ -1058,7 +1058,7 @@ Then, the most reliable way to code large numbers of articles is to use the file
 
 # Outputting Network Data
 
-Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/sourcenet/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
+Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
 
 - If you are generating multiple network slices across time periods, you will want to use the "Select People" section of the form (on the right) and enter a fancy date range that includes each date range for all of the slices you are making, so the matrices that result are of the same dimensions (same set of people for each - all people in all slices).
 

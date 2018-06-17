@@ -4,7 +4,7 @@
 
 # Output Attention Network
 
-- When configured per README.md, accessed via [http://<your_server>/sourcenet/sourcenet/output/network](http://<your_server>/sourcenet/sourcenet/output/network).
+- When configured per README.md, accessed via [http://<your_server>/research/sourcenet/output/network](http://<your_server>/research/sourcenet/output/network).
 
 ## Files:
 
