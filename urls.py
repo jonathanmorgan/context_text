@@ -82,7 +82,7 @@ urlpatterns = [
     #( r'^output/display$', 'mysite.sourcenet.views.output_display'),
 
     # link the default authentication page to the admin login page.
-    url( r'^accounts/login/$', auth_views.login, name = "sourcenet-login" ),
+    url( r'^accounts/login/$', auth_views.LoginView.as_view( template_name = "registration/login.html" ), name = "sourcenet-login" ),
     
     # created a view to log people out that redirects to server root.    
     url( r'^accounts/logout/$', sourcenet.views.logout, name = "sourcenet-logout" ),
