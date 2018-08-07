@@ -37,8 +37,8 @@ SOURCENET.FindInText = function()
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED = "foundInTextMatchedWordsRed";
     
     // defaults:
-    SOURCENET.FindInText.CSS_CLASS_DEFAULT_P_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT_RED;
-    SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED;
+    SOURCENET.FindInText.CSS_CLASS_DEFAULT_P_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT;
+    SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS;
     
     // Find in Article Text - HTML element IDs
     SOURCENET.FindInText.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
@@ -75,9 +75,93 @@ SOURCENET.FindInText = function()
     
 } //-- END SOURCENET.FindInText constructor --//
 
-//--------------------------------//
-// !----> FindInText methods
-//--------------------------------//
+//----------------------------------//
+// !----> FindInText static methods
+//----------------------------------//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, removes class
+ *     "foundInText" from any where that class is present.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates classes on article <p> tags so none are assigned
+ *     "foundInText".
+ */
+SOURCENET.FindInText.clear_word_matches_in_element = function( element_IN, word_class_list_IN )
+{
+
+    // declare variables.
+    var me = "SOURCENET.FindInText.clear_word_matches_in_element";
+    var local_debug_flag = true;
+    var jquery_p_element = null;
+    var paragraph_html = "";
+    var paragraph_text = "";
+    var word_class_list_length = -1;
+    var word_class_list_index = -1;
+    var current_word_css_class = null;
+    var span_index = -1;
+    var found_highlight = false;
+    var span_list = null;
+    
+    // get element text
+    jquery_element = $( element_IN );
+    paragraph_html = jquery_element.html();
+    paragraph_text = jquery_element.text();
+    output_html = paragraph_html;
+    
+    // is there a matched words CSS class present in html?
+    word_class_list_length = word_class_list_IN.length;
+    for ( word_class_list_index = 0; word_class_list_index < word_class_list_length; word_class_list_index++ )
+    {
+
+        // get class from list.
+        current_word_css_class = word_class_list_IN[ word_class_list_index ];
+        
+        // look for class in paragraph.
+        span_index = paragraph_html.indexOf( current_word_css_class );
+        
+        // if found, retrieve all spans the set flag to true.
+        if ( span_index > -1 )
+        {
+            
+            // retrieve all spans with class = current_word_css_class
+            span_jquery_list = jquery_element.find( "span[class='" + current_word_css_class + "']" )
+            
+            // for each, get HTML and text, split the output_html on HTML
+            //     string, then join with just the text.
+            span_jquery_list.each( 
+                function()
+                {
+                    // declare variables.
+                    jquery_span_element = null;
+                    var span_html = "";
+                    var span_text = "";
+                   
+                    // get html and text.
+                    jquery_span_element = $( this );
+                    span_html = jquery_span_element.html();
+                    span_text = jquery_span_element.text();
+                    
+                    // replace span with text.
+                    jquery_span_element.replaceWith( span_text );
+
+                    //SOURCENET.log_message( "**** In " + me + "(): span_html = \"" + span_html + "\"; span_text = \"" + span_text + "\"" );
+                } //-- END anonymous function called on each span --//
+            )
+            found_highlight = true;
+            
+        } //-- end check to see if highlighting found. --//
+
+    } //-- end loop over CSS classes --//
+    
+} //-- END method clear_word_matches_in_element() --//
+
+
+//------------------------------------//
+// !----> FindInText instance methods
+//------------------------------------//
 
 
 /**
@@ -110,7 +194,7 @@ SOURCENET.FindInText.prototype.clear_all_find_in_text_matches = function()
  * Postconditions: Updates classes on article <p> tags so none are assigned
  *     "foundInText".
  */
-SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( p_class_list_IN, word_class_list_IN )
+SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( element_id_IN, p_class_list_IN, word_class_list_IN )
 {
     
     // declare variables
@@ -121,15 +205,15 @@ SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( p_class_li
     var current_css_class = null;
     
     // get article <p> tags.
-    article_paragraphs = this.get_paragraphs();
+    article_paragraphs = this.get_paragraphs( element_id_IN );
 
     // remove each class in p class list passed in.
-    list_length = this.p_class_list_IN.length;
+    list_length = p_class_list_IN.length;
     for ( list_index = 0; list_index < list_length; list_index++ )
     {
 
         // get class from list.
-        current_css_class = this.css_class_list_found_in_text[ list_index ];
+        current_css_class = p_class_list_IN[ list_index ];
         
         // toggle class
         article_paragraphs.toggleClass( current_css_class, false );
@@ -139,56 +223,53 @@ SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( p_class_li
     // set all paragraphs' html() back to their text()...
     article_paragraphs.each( function()
         {
-            // declare variables.
-            var jquery_p_element = null;
-            var paragraph_html = "";
-            var paragraph_text = "";
-            var word_class_list_length = -1;
-            var word_class_list_index = -1;
-            var current_word_css_class = null;
-            var span_index = -1;
-            var found_highlight = false;
-            
-            // get paragraph text
-            jquery_p_element = $( this );
-            paragraph_html = jquery_p_element.html();
-            paragraph_text = jquery_p_element.text();
-            
-            // is there a matched words CSS class present in html?
-            word_class_list_length = this.word_class_list_IN.length;
-            for ( word_class_list_index = 0; word_class_list_index < word_class_list_length; word_class_list_index++ )
-            {
-        
-                // get class from list.
-                current_word_css_class = this.word_class_list_IN[ list_index ];
-                
-                // look for class in paragraph.
-                span_index = paragraph_html.indexOf( current_word_css_class );
-                
-                // if found, set flag to true.
-                if ( span_index > -1 )
-                {
-                    
-                    // found one.  Need to clear HTML.
-                    found_highlight = true;
-                    
-                } //-- end check to see if highlighting found. --//
-        
-            } //-- end loop over CSS classes --//
-                    
-            // if found, update store plain text in place of HTML.
-            if ( found_highlight == true )
-            {
-                
-                // store plain text in <p>.html() to remove any HTML.
-                jquery_p_element.html( paragraph_text );
-                                    
-            } //-- END check to see if <span> found --//
+            // call static method to clear work matches.
+            SOURCENET.FindInText.clear_word_matches_in_element( this, word_class_list_IN )
         } //-- END anonymous function called on each paragraph --//
     );
 
 } //-- END function SOURCENET.clear_find_in_text_matches() --//
 
+
+/**
+ * Configures instance to highlight in red.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates instance to highlight in red.
+ */
+SOURCENET.FindInText.prototype.config_red_highlight = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.prototype.config_red_highlight";
+    
+    // configure SOURCENET.text_finder
+    this.css_class_matched_paragraph = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_RED;
+    this.css_class_matched_words = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED;
+    
+} //-- END method config_red_highlight()
+  
+
+/**
+ * Configures instance to highlight in red.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates instance to highlight in red.
+ */
+SOURCENET.FindInText.prototype.config_yellow_highlight = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.prototype.config_yellow_highlight";
+    
+    // configure SOURCENET.text_finder
+    this.css_class_matched_paragraph = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT;
+    this.css_class_matched_words = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS;
+    
+} //-- END method config_yellow_highlight()
+  
 
 /**
  * Accepts string to search inside and string to look for inside.  Looks for
@@ -210,6 +291,7 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
 
     // declare variables.
     var me = "SOURCENET.FindInText.prototype.find_text_in_string";
+    var local_debug_flag = false;
     var search_in_text = null;
     var work_text = "";
     var current_find_text = "";
@@ -225,6 +307,7 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
     var match_word_css_class = null;
     
     // initialize
+    string_OUT = string_IN;
     work_text = string_IN;
     match_word_css_class = this.get_css_class_matched_words();
 
@@ -254,6 +337,18 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
         //    the words themselves.
         work_text = text_around_match_list.join( matched_words_html );
 
+        if ( local_debug_flag == true )
+        {
+            SOURCENET.log_message( "**** In " + me + "(): MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+        }
+    
+    }
+    else
+    {
+        if ( local_debug_flag == true )
+        {
+            SOURCENET.log_message( "**** In " + me + "(): NO MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+        }
     } //-- END check to see if match --//
     
     // return work_text
@@ -296,6 +391,7 @@ SOURCENET.FindInText.prototype.find_text_list_in_string = function( string_IN,
     
     // initialize
     string_OUT = string_IN;
+    work_text = string_IN;
     match_word_css_class = this.get_css_class_matched_words();
 
     SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; element text = " + work_text );
@@ -362,10 +458,10 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_html = function( jquery
     SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; element HTML = " + element_html );
     
     // call this.find_text_list_in_string().
-    updated_html = find_text_list_in_string( element_html, find_text_list_IN );
+    updated_html = this.find_text_list_in_string( element_html, find_text_list_IN );
     
     // any matches?
-    if ( updated_html != element_html )
+    if ( ( updated_html !== undefined ) && ( updated_html != null ) && ( updated_html != "" ) && ( updated_html != element_html ) )
     {
         
         // html string was changed - found at least one match.
@@ -378,6 +474,14 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_html = function( jquery
     else
     {
         
+        if ( updated_html != element_html )
+        {
+            
+            // error - no HTML came back.
+            SOURCENET.log_message( "In " + me + "(): updated_html = " + updated_html + "; element HTML = " + element_html );
+            
+        }
+
         // no change, nothing found.
         found_match_OUT = false;
         
@@ -427,7 +531,7 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_text = function( jquery
     SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; element text = " + element_text );
     
     // call this.find_text_list_in_string().
-    updated_text = find_text_list_in_string( element_text, find_text_list_IN );
+    updated_text = this.find_text_list_in_string( element_text, find_text_list_IN );
     
     // any matches?
     if ( updated_text != element_text )
@@ -526,7 +630,7 @@ SOURCENET.FindInText.prototype.find_text_in_p_tag = function( p_tag_jquery_IN,
  *
  * Postconditions: None.
  */
-SOURCENET.FindInText.prototype.get_paragraphs = function( jquery_element_IN )
+SOURCENET.FindInText.prototype.get_paragraphs = function( element_id_IN )
 {
     
     // return reference
@@ -536,8 +640,8 @@ SOURCENET.FindInText.prototype.get_paragraphs = function( jquery_element_IN )
     var me = "SOURCENET.FindInText.prototype.get_paragraphs";
     var jquery_element = null;
     
-    // retrieve HTML element we are searching in.
-    jquery_element = jquery_element_IN;
+    // retrieve element in which we should look (id/name = element_id_IN).
+    jquery_element = $( '#' + element_id_IN );
     
     // find all <p> tags.
     grafs_OUT = jquery_element.find( "p" );
