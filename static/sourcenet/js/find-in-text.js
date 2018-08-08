@@ -72,6 +72,7 @@ SOURCENET.FindInText = function()
     this.be_case_sensitive = false;
     
     // lists of CSS classes used in the current instance.
+    this.default_find_location = "text"
 
     // list of known found in text <p> classes
     this.css_class_list_found_in_text = [];
@@ -693,7 +694,8 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
     var jquery_element = null;
     var match_p_css_class = null;
     var fail_over_to_text = false;
-    
+    var where_to_look = null;
+
     // initialize
     ignore_wrapper_element = this.ignore_wrapper_element;
     match_p_css_class = this.get_css_class_matched_paragraph();
@@ -706,19 +708,36 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
         fail_over_to_text = true;
         
     }
+    where_to_look = this.default_find_location;
+    SOURCENET.log_message( "In " + me + "(): where_to_look = " + where_to_look );
 
     // look for text in HTML element
     jquery_element = jquery_element_IN;
-    found_match_OUT = this.find_text_list_in_element_html( jquery_element, find_text_list_IN );
     
-    // did we find match?
-    if ( ( found_match_OUT == false ) && ( fail_over_to_text == true ) )
+    // Where to look?
+    if ( where_to_look == "html" )
+    {
+        
+        // HTML
+        found_match_OUT = this.find_text_list_in_element_html( jquery_element, find_text_list_IN );
+        
+        // did we find match?
+        if ( ( found_match_OUT == false ) && ( fail_over_to_text == true ) )
+        {
+    
+            // Fail over to text.
+            found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
+    
+        } //-- END check if no match and fail over to text. --//
+
+    }
+    else
     {
 
-        // Fail over to text.
+        // Text
         found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
 
-    } //-- END check if no match and fail over to text. --//
+    } //-- END check where to look. --//
 
     // did we find match?
     if ( ( found_match_OUT == true ) && ( ignore_wrapper_element == false ) )
