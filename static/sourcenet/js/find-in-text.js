@@ -102,7 +102,7 @@ SOURCENET.FindInText.clear_word_matches_in_element = function( element_IN, word_
 
     // declare variables.
     var me = "SOURCENET.FindInText.clear_word_matches_in_element";
-    var local_debug_flag = true;
+    var local_debug_flag = false;
     var jquery_p_element = null;
     var paragraph_html = "";
     var paragraph_text = "";
