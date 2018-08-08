@@ -2783,6 +2783,7 @@ class Article( models.Model ):
     archive_id = models.CharField( max_length = 255, blank = True, null = True )
     permalink = models.TextField( blank = True, null = True )
     copyright = models.TextField( blank = True, null = True )
+    file_path = models.CharField( max_length = 255, blank = True, null = True )
 
     # notes = models.TextField( blank = True, null = True ) - moved to related Article_Notes instance.
     # - to retrieve Article_Notes instance for this Article: self.article_notes_set.get()

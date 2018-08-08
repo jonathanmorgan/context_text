@@ -199,7 +199,7 @@ class ArticleAdmin( admin.ModelAdmin ):
         ( 
             "More details (Optional)",
             {
-                'fields' : [ 'index_terms', 'cleanup_status'  ],
+                'fields' : [ 'index_terms', 'cleanup_status', 'file_path'  ],
                 'classes' : ( "collapse", )
             }
         ),

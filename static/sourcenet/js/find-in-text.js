@@ -47,6 +47,11 @@ SOURCENET.FindInText = function()
     SOURCENET.FindInText.HTML_SPAN_TO_CLASS = "<span class=\""
     SOURCENET.FindInText.HTML_SPAN_AFTER_CLASS = "\">";
     SOURCENET.FindInText.HTML_SPAN_CLOSE = "</span>";
+    
+    // words to ignore
+    SOURCENET.FindInText.text_to_ignore_list = [];
+    // SOURCENET.FindInText.text_to_ignore_list.push( "the" );
+    // SOURCENET.FindInText.text_to_ignore_list.push( "The" );
 
     // instance variables.
     
@@ -60,8 +65,11 @@ SOURCENET.FindInText = function()
     // clear whenever we search again?
     this.clear_on_new_search = true;
     
-    // ignore <p> tags?
-    this.ignore_p_tags = false
+    // ignore enclosing element?
+    this.ignore_wrapper_element = false;
+    
+    // case-sensitive?
+    this.be_case_sensitive = false;
     
     // lists of CSS classes used in the current instance.
 
@@ -282,8 +290,8 @@ SOURCENET.FindInText.prototype.config_yellow_highlight = function()
  * Postconditions: if match found, will wrap the matched text in a span so it
  *     stands out.
  */
-SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
-                                                               find_text_IN )
+SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
+                                                               string_IN )
 {
 
     // return reference
@@ -291,18 +299,24 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
 
     // declare variables.
     var me = "SOURCENET.FindInText.prototype.find_text_in_string";
-    var local_debug_flag = false;
+    var local_debug_flag = true;
     var search_in_text = null;
     var work_text = "";
     var current_find_text = "";
+    var current_find_regex = null;
+    var ignore_index = -1;
     var found_index = -1;
     var text_around_match_list = null;
     var match_html = "";
     var current_text_index = -1;
     var new_html = "";
+    var be_case_sensitive = false;
+    var matches_array = null;
+    var unique_matches_array = null;
+    var current_match = "";
     
     // declare variables - initialize from instance variables
-    var ignore_p_tags = false;
+    var ignore_wrapper_element = false;
     var clear_on_new_search = false;
     var match_word_css_class = null;
     
@@ -310,46 +324,135 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( string_IN,
     string_OUT = string_IN;
     work_text = string_IN;
     match_word_css_class = this.get_css_class_matched_words();
+    ignore_wrapper_element = this.ignore_wrapper_element;
+    be_case_sensitive = this.be_case_sensitive;
 
-    SOURCENET.log_message( "In " + me + "(): find text \"" + find_text_IN + "\"; element text = " + work_text );
+    // SOURCENET.log_message( "In " + me + "(): find text \"" + find_text_IN + "\"; element text = " + work_text );
     
     // get current find item.
     current_find_text = find_text_IN;
     
-    // look for text.
-    found_index = work_text.indexOf( current_find_text );
-    
-    // got at least 1 match?
-    if ( found_index >= 0 )
+    // is it something we ignore?
+    ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text )
+    if ( ignore_index < 0 )
     {
-
-        // found a match - split on the text we matched.
-        text_around_match_list = work_text.split( current_find_text );
         
-        // add a span around the matched words.
-        matched_words_html = SOURCENET.HTML_SPAN_TO_CLASS;
-        matched_words_html += match_word_css_class;
-        matched_words_html += SOURCENET.HTML_SPAN_AFTER_CLASS;
-        matched_words_html += current_find_text;
-        matched_words_html += SOURCENET.HTML_SPAN_CLOSE;
-        
-        // put together again, but with <span>-ed matched word rather than just
-        //    the words themselves.
-        work_text = text_around_match_list.join( matched_words_html );
-
-        if ( local_debug_flag == true )
+        // look for text.
+        if ( be_case_sensitive == true )
         {
-            SOURCENET.log_message( "**** In " + me + "(): MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+            
+            // case-sensitive.
+            found_index = work_text.indexOf( current_find_text );
+
         }
+        else
+        {
+        
+            // case-insensitive...
+            
+            // ...regex.
+            current_find_regex = new RegExp( current_find_text, "i" );
+            found_index = work_text.search( current_find_regex );
+            
+        }
+        
+        // got at least 1 match?
+        if ( found_index >= 0 )
+        {
     
+            // found a match - split on the text we matched.
+            if ( be_case_sensitive == true )
+            {
+                
+                // case-sensitive.
+                text_around_match_list = work_text.split( current_find_text );
+    
+                // add a span around the matched words.
+                matched_words_html = SOURCENET.HTML_SPAN_TO_CLASS;
+                matched_words_html += match_word_css_class;
+                matched_words_html += SOURCENET.HTML_SPAN_AFTER_CLASS;
+                matched_words_html += current_find_text;
+                matched_words_html += SOURCENET.HTML_SPAN_CLOSE;
+                
+                // put together again, but with <span>-ed matched word rather than just
+                //    the words themselves.
+                work_text = text_around_match_list.join( matched_words_html );
+    
+            }
+            else
+            {
+            
+                // case-insensitive... find matches
+                unique_matches_array = [];
+                matches_array = work_text.match( current_find_regex );
+                for ( var i = 0; i < matches_array.length; i++ )
+                {
+                    // get current match.
+                    current_match = matches_array[ i ];
+                    
+                    // is it in unique list?
+                    if ( unique_matches_array.indexOf( current_match ) < 0 )
+                    {
+                        // no. add it.
+                        unique_matches_array.push( current_match );
+                    }
+                } //-- END loop over matches. --//
+                
+                // loop over unique matches, swapping each out.
+                for ( var i = 0; i < unique_matches_array.length; i++ )
+                {
+                    // get current match.
+                    current_match = unique_matches_array[ i ];
+                    
+                    // split on it.
+                    text_around_match_list = work_text.split( current_match );
+        
+                    // add a span around the matched words.
+                    matched_words_html = SOURCENET.HTML_SPAN_TO_CLASS;
+                    matched_words_html += match_word_css_class;
+                    matched_words_html += SOURCENET.HTML_SPAN_AFTER_CLASS;
+                    matched_words_html += current_match;
+                    matched_words_html += SOURCENET.HTML_SPAN_CLOSE;
+                    
+                    // put together again, but with <span>-ed matched word rather than just
+                    //    the words themselves.
+                    work_text = text_around_match_list.join( matched_words_html );
+    
+                }
+
+                //if ( local_debug_flag == true )
+                //{
+                //    //SOURCENET.log_message( "**** In " + me + "(): MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+                //    SOURCENET.log_message( "**** In " + me + "(): unique_matches_array = \"" + unique_matches_array + "\"" );
+                //    SOURCENET.log_message( "**** In " + me + "(): matches_array = \"" + matches_array + "\"" );
+                //}
+
+            }
+    
+            if ( local_debug_flag == true )
+            {
+                //SOURCENET.log_message( "**** In " + me + "(): MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+                SOURCENET.log_message( "**** In " + me + "(): MATCH \"" + find_text_IN + "\"" );
+            }
+        
+        }
+        else
+        {
+            if ( local_debug_flag == true )
+            {
+                //SOURCENET.log_message( "**** In " + me + "(): NO MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
+                SOURCENET.log_message( "**** In " + me + "(): NO MATCH \"" + find_text_IN + "\"" );
+            }
+        } //-- END check to see if match --//
+
     }
     else
     {
-        if ( local_debug_flag == true )
-        {
-            SOURCENET.log_message( "**** In " + me + "(): NO MATCH \"" + find_text_IN + "\", work_text = \"" + work_text + "\"" );
-        }
-    } //-- END check to see if match --//
+        
+        // log that we ignored a word.
+        SOURCENET.log_message( "**** In " + me + "(): Ignoring \"" + current_find_text + "\", text_to_ignore_list = \"" + SOURCENET.FindInText.text_to_ignore_list + "\"" );
+        
+    }
     
     // return work_text
     string_OUT = work_text;
@@ -387,12 +490,14 @@ SOURCENET.FindInText.prototype.find_text_list_in_string = function( string_IN,
     var current_find_text = "";
     
     // declare variables - initialize from instance variables
+    var ignore_wrapper_element = false;
     var match_word_css_class = null;
     
     // initialize
     string_OUT = string_IN;
     work_text = string_IN;
     match_word_css_class = this.get_css_class_matched_words();
+    ignore_wrapper_element = this.ignore_wrapper_element;
 
     SOURCENET.log_message( "In " + me + "(): find text list = " + find_text_list_IN + "; element text = " + work_text );
     
@@ -407,7 +512,7 @@ SOURCENET.FindInText.prototype.find_text_list_in_string = function( string_IN,
         current_find_text = find_text_list_IN[ current_index ];
         
         // look for text.
-        work_text = this.find_text_in_string( work_text, current_find_text );
+        work_text = this.find_text_in_string( current_find_text, work_text );
 
     } //-- END loop over find text items --//
     
@@ -446,10 +551,12 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_html = function( jquery
     var updated_html = "";
     
     // declare variables - initialize from instance variables
+    var ignore_wrapper_element = false;
     var match_word_css_class = null;
     
     // initialize
     match_word_css_class = this.get_css_class_matched_words();
+    ignore_wrapper_element = this.ignore_wrapper_element;
 
     // get element text and html
     jquery_element = jquery_element_IN;
@@ -519,10 +626,12 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_text = function( jquery
     var updated_text = "";
     
     // declare variables - initialize from instance variables
+    var ignore_wrapper_element = false;
     var match_word_css_class = null;
     
     // initialize
     match_word_css_class = this.get_css_class_matched_words();
+    ignore_wrapper_element = this.ignore_wrapper_element;
 
     // get element text and html
     jquery_element = jquery_element_IN;
@@ -570,22 +679,25 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_text = function( jquery
  * Postconditions: if match found, will update the <p> in the jquery instance
  *     passed in.
  */
-SOURCENET.FindInText.prototype.find_text_in_p_tag = function( p_tag_jquery_IN,
-                                                              find_text_list_IN,
-                                                              fail_over_to_text_IN )
+SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_IN,
+                                                                find_text_list_IN,
+                                                                fail_over_to_text_IN )
 {
     
     // return reference
     var found_match_OUT = false;
 
     // declare variables.
-    var me = "SOURCENET.find_in_p_tag";
-    var jquery_p_element = null;
+    var me = "SOURCENET.find_text_in_element";
+    var ignore_wrapper_element = false;
+    var jquery_element = null;
     var match_p_css_class = null;
     var fail_over_to_text = false;
     
     // initialize
+    ignore_wrapper_element = this.ignore_wrapper_element;
     match_p_css_class = this.get_css_class_matched_paragraph();
+    ignore_p_tags = this.
     fail_over_to_text = fail_over_to_text_IN;
     if ( fail_over_to_text === undefined )
     {
@@ -596,30 +708,62 @@ SOURCENET.FindInText.prototype.find_text_in_p_tag = function( p_tag_jquery_IN,
     }
 
     // look for text in HTML element
-    jquery_p_element = p_tag_jquery_IN;
-    found_match_OUT = this.find_text_list_in_element_html( jquery_p_element, find_text_list_IN );
+    jquery_element = jquery_element_IN;
+    found_match_OUT = this.find_text_list_in_element_html( jquery_element, find_text_list_IN );
     
     // did we find match?
     if ( ( found_match_OUT == false ) && ( fail_over_to_text == true ) )
     {
 
         // Fail over to text.
-        found_match_OUT = this.find_text_list_in_element_text( jquery_p_element, find_text_list_IN );
+        found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
 
     } //-- END check if no match and fail over to text. --//
 
     // did we find match?
-    if ( found_match_OUT == true )
+    if ( ( found_match_OUT == true ) && ( ignore_wrapper_element == false ) )
     {
 
         // For matches, add class passed in.
-        jquery_p_element.toggleClass( match_p_css_class, true );
+        jquery_element.toggleClass( match_p_css_class, true );
 
     } //-- END check if found match? --//
     
     return found_match_OUT;
 
-} //-- END function SOURCENET.find_in_p_tag --//
+} //-- END function SOURCENET.find_text_in_element --//
+
+
+/**
+ * Accepts jquery <p> element instance and list of strings to look for inside.
+ *     for each item in the list, checks to see if the string is in the text.
+ *     If it finds it, updates classes on <p> tag to assign "foundInText",
+ *     and wraps the matched text in a span so it stands out.
+ *
+ * Preconditions: Must have found paragraph tag you want to process and have it
+ *     in a jquery instance.  Must also have broken out list of search text
+ *     items as you want (split on spaces, or don't, etc.).
+ *
+ * Postconditions: if match found, will update the <p> in the jquery instance
+ *     passed in.
+ */
+SOURCENET.FindInText.prototype.find_text_in_p_tag = function( p_tag_jquery_IN,
+                                                              find_text_list_IN,
+                                                              fail_over_to_text_IN )
+{
+    
+    // return reference
+    var found_match_OUT = false;
+
+    // declare variables.
+    var me = "SOURCENET.find_text_in_p_tag";
+    
+    // call generic element method.
+    found_match_OUT = this.find_text_in_element( p_tag_jquery_IN, find_text_list_IN, fail_over_to_text_IN );
+    
+    return found_match_OUT;
+
+} //-- END function SOURCENET.find_text_in_p_tag --//
 
 
 /**
