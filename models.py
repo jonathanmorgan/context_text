@@ -4471,6 +4471,14 @@ class Article_Text( Unique_Article_Content ):
     FIT_PARAGRAPH_NUMBER_LIST = "paragraph_number_list"
     
  
+    #----------------------------------------------------------------------
+    # ! ==> model fields
+    #----------------------------------------------------------------------
+
+
+    do_clean_on_save = models.BooleanField( default = True )
+    
+
     #----------------------------------------------------------------------------
     # class methods
     #----------------------------------------------------------------------------
@@ -6212,7 +6220,7 @@ class Article_Text( Unique_Article_Content ):
         my_content = self.get_content()
         
         # clean that content
-        self.set_text( my_content, True )
+        self.set_text( my_content, self.do_clean_on_save )
         
         # call parent save() method
         super( Article_Text, self).save( *args, **kwargs )
