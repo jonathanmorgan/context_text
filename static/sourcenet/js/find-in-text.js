@@ -28,7 +28,7 @@ var SOURCENET = SOURCENET || {};
 SOURCENET.FindInText = function()
 {
     
-    // Class variables
+    // ! -----> Class variables
 
     // Find in Article Text - Dynamic CSS class names
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT = "foundInText";
@@ -52,8 +52,16 @@ SOURCENET.FindInText = function()
     SOURCENET.FindInText.text_to_ignore_list = [];
     // SOURCENET.FindInText.text_to_ignore_list.push( "the" );
     // SOURCENET.FindInText.text_to_ignore_list.push( "The" );
+    
+    // regexp escape regex.
+    
+    // bobince - https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript/3561711#3561711
+    SOURCENET.FindInText.regex_escape_regex = /[-\/\^$*+?.()|[]{}]/g
 
-    // instance variables.
+    // Bynens - https://stackoverflow.com/questions/3115150/how-to-escape-regular-expression-special-characters-using-javascript#9310752
+    //SOURCENET.FindInText.regex_escape_regex = /[-[]{}()*+?.,\^$|#\s]/g
+
+    // ! ------> instance variables.
     
     // jquery DOM element that contains text we want to search and highlight.
     this.element_to_search = null;
@@ -81,6 +89,9 @@ SOURCENET.FindInText = function()
     // list of known found in text word classes
     this.css_class_list_found_in_text_words = [];
     this.css_class_list_found_in_text_words.push( SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH  );
+    
+    // count of changes from last call to match_text.
+    this.match_text_count = -1;
     
 } //-- END SOURCENET.FindInText constructor --//
 
@@ -213,6 +224,52 @@ SOURCENET.FindInText.clear_word_matches_in_element = function( element_IN, word_
 } //-- END method clear_word_matches_in_element() --//
 
 
+/**
+ * Accepts regex string.  Escapes any characters that have meaning in regex,
+ *     then creates RegExp instance using escaped string.  Returns RegExp
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Returns new RegExp instance.
+ */
+SOURCENET.FindInText.create_regex = function( regex_string_IN, be_case_sensitive_IN )
+{
+    
+    // return reference
+    var regex_OUT = null;
+
+    // declare variables
+    var me = "SOURCENET.FindInText.prototype.create_regex";
+    var escaped_string = null;
+    var regex_flags = "";
+    
+    // escape string
+    escaped_string = regex_string_IN.replace( SOURCENET.FindInText.regex_escape_regex, '\$&' );
+    
+    // parameters for regex.
+    if ( be_case_sensitive_IN == true )
+    {
+        
+        // case-sensitive.
+        regex_flags = "gi";
+
+    }
+    else
+    {
+    
+        // case-insensitive...
+        regex_flags = "g";
+        
+    } //-- END check for case-sensitive --//
+    
+    // create the regex
+    regex_OUT = new RegExp( escaped_string, regex_flags );
+    
+    return regex_OUT;
+    
+} //-- END method create_regex()
+  
+
 //------------------------------------//
 // !----> FindInText instance methods
 //------------------------------------//
@@ -306,11 +363,11 @@ SOURCENET.FindInText.prototype.config_red_highlight = function()
   
 
 /**
- * Configures instance to highlight in red.
+ * Configures instance to highlight in yellow.
  *
  * Preconditions: None.
  *
- * Postconditions: Updates instance to highlight in red.
+ * Postconditions: Updates instance to highlight in yellow.
  */
 SOURCENET.FindInText.prototype.config_yellow_highlight = function()
 {
@@ -379,7 +436,7 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
     current_find_text = find_text_IN;
     
     // is it something we ignore?
-    ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text )
+    ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text );
     if ( ignore_index < 0 )
     {
         
@@ -397,7 +454,7 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
             // case-insensitive...
             
             // ...regex.
-            current_find_regex = new RegExp( current_find_text, "i" );
+            current_find_regex = SOURCENET.FindInText.create_regex( current_find_text, false );
             found_index = work_text.search( current_find_regex );
             
         }
@@ -738,13 +795,26 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
     var ignore_wrapper_element = false;
     var jquery_element = null;
     var match_p_css_class = null;
+    var match_word_css_class = null;
+    var be_case_sensitive = false;
     var fail_over_to_text = false;
     var where_to_look = null;
+    var use_match_text = true;
+    
+    // declare variables - match_text function.
+    var find_text_count = -1;
+    var find_text_index = -1;
+    var ignore_index = -1;
+    var current_find_text = null;
+    var dom_element = null;
+    var regex_flags = null;
+    var match_text_regex = null;
 
     // initialize
     ignore_wrapper_element = this.ignore_wrapper_element;
     match_p_css_class = this.get_css_class_matched_paragraph();
-    ignore_p_tags = this.
+    match_word_css_class = this.get_css_class_matched_words();
+    be_case_sensitive = this.be_case_sensitive;
     fail_over_to_text = fail_over_to_text_IN;
     if ( fail_over_to_text === undefined )
     {
@@ -759,40 +829,113 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
     // look for text in HTML element
     jquery_element = jquery_element_IN;
     
-    // Where to look?
-    if ( where_to_look == "html" )
+    // use match_text?
+    if ( use_match_text == true )
     {
         
-        // HTML
-        found_match_OUT = this.find_text_list_in_element_html( jquery_element, find_text_list_IN );
+        // parameters for regex.
+        //if ( be_case_sensitive == true )
+        //{
+        //    // case-sensitive.
+        //    regex_flags = "gi";
+        //}
+        //else
+        //{
+        //    // case-insensitive...
+        //    regex_flags = "g";
+        //}
         
-        // did we find match?
-        if ( ( found_match_OUT == false ) && ( fail_over_to_text == true ) )
+        // loop over list of text to find.
+        find_text_count = find_text_list_IN.length
+        for ( find_text_index = 0; find_text_index < find_text_count; find_text_index++ )
         {
-    
-            // Fail over to text.
-            found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
-    
-        } //-- END check if no match and fail over to text. --//
+        
+            // get text
+            current_find_text = find_text_list_IN[ find_text_index ];
 
+            // is it something we ignore?
+            ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text )
+            if ( ignore_index < 0 )
+            {
+                
+                // set up call to match_text
+                
+                // get actual DOM element
+                dom_element = jquery_element.get( 0 );
+                
+                // make regexp.
+                //match_text_regex = new RegExp( current_find_text, regex_flags );
+                match_text_regex = SOURCENET.FindInText.create_regex( current_find_text, be_case_sensitive );                
+
+                // call match_text
+                this.match_text(
+                    dom_element,
+                    match_text_regex,
+                    function( node, match, offset )
+                    {
+                        var span = document.createElement( "span" );
+                        span.className = match_word_css_class;
+                        span.textContent = match;
+                        return span;
+                    }
+                );
+                
+            }
+            
+        } //-- END loop over find_text_list --//
+        
+        // found any matches?
+        if ( this.match_text_count > 0 )
+        {
+            // yes
+            found_match_OUT = true;
+        }
+        else
+        {
+            // no
+            found_match_OUT = false;
+        }
+        
     }
     else
     {
-
-        // Text
-        found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
-
-    } //-- END check where to look. --//
-
-    // did we find match?
-    if ( ( found_match_OUT == true ) && ( ignore_wrapper_element == false ) )
-    {
-
-        // For matches, add class passed in.
-        jquery_element.toggleClass( match_p_css_class, true );
-
-    } //-- END check if found match? --//
+        
+        // Where to look?
+        if ( where_to_look == "html" )
+        {
+            
+            // HTML
+            found_match_OUT = this.find_text_list_in_element_html( jquery_element, find_text_list_IN );
+            
+            // did we find match?
+            if ( ( found_match_OUT == false ) && ( fail_over_to_text == true ) )
+            {
+        
+                // Fail over to text.
+                found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
+        
+            } //-- END check if no match and fail over to text. --//
     
+        }
+        else
+        {
+    
+            // Text
+            found_match_OUT = this.find_text_list_in_element_text( jquery_element, find_text_list_IN );
+    
+        } //-- END check where to look. --//
+    
+        // did we find match?
+        if ( ( found_match_OUT == true ) && ( ignore_wrapper_element == false ) )
+        {
+    
+            // For matches, add class passed in.
+            jquery_element.toggleClass( match_p_css_class, true );
+    
+        } //-- END check if found match? --//
+
+    }
+
     return found_match_OUT;
 
 } //-- END function SOURCENET.find_text_in_element --//
@@ -931,6 +1074,91 @@ SOURCENET.FindInText.prototype.get_element_to_search = function()
 } //-- END method get_element_to_search() --//
 
 
+/**
+ * Accepts Javascript DOM node, regex that we want to match, and a callback
+ *     function that should accept node, match string, and offset, and return a
+ *     DOM Node that you want inserted in place of the match.
+ *
+ * Example call:
+ * matchText(
+ *     document.getElementsByTagName("article")[0],
+ *     new RegExp("\\b" + searchTerm + "\\b", "g"),
+ *     function( node, match, offset ) 
+ *     {
+ *         var span = document.createElement("span");
+ *         span.className = "search-term";
+ *         span.textContent = match;
+ *         return span;
+ *     }
+ * );
+ *
+ * from: https://stackoverflow.com/a/29301739
+ */
+SOURCENET.FindInText.prototype.match_text = function( node, regex, callback, excludeElements )
+{ 
+
+    excludeElements || (excludeElements = ['script', 'style', 'iframe', 'canvas']);
+    this.match_text_count = 0;
+    
+    // declare variables
+    var child = node.firstChild;
+    var node_tag_name = null;
+    var ignore_wrapper_element = true;
+    var match_p_css_class = "";
+    
+    // initialize
+    ignore_wrapper_element = this.ignore_wrapper_element;
+    match_p_css_class = this.get_css_class_matched_paragraph();
+    
+    // get node name
+    node_tag_name = node.tagName;
+
+    while (child) {
+        switch (child.nodeType)
+        {
+            case 1:
+                if (excludeElements.indexOf(child.tagName.toLowerCase()) > -1)
+                    break;
+                this.match_text( child, regex, callback, excludeElements );
+                break;
+            case 3:
+                var bk = 0;
+                child.data.replace(regex, function(all) {
+                    var args = [].slice.call(arguments),
+                        offset = args[args.length - 2],
+                        newTextNode = child.splitText(offset+bk), tag;
+                    bk -= child.data.length + all.length;
+    
+                    newTextNode.data = newTextNode.data.substr(all.length);
+                    tag = callback.apply(window, [child].concat(args));
+                    child.parentNode.insertBefore(tag, newTextNode);
+                    child = newTextNode;
+                    
+                    // got a match - increment counter.
+                    this.match_text_count++;
+                    
+                    // we have a match, do we also highlight the <p>?
+                    //     Check if we are ignoring wrapper element, and if not,
+                    //     limit to just changing <p> tags.
+                    if ( ( ignore_wrapper_element == false ) && ( node_tag_name.toLowerCase() == "p" ) )
+                    {
+                
+                        // For matches, add class passed in.
+                        $( node ).toggleClass( match_p_css_class, true );
+                
+                    } //-- END check if found match? --//
+                });
+                regex.lastIndex = 0;
+
+                break;
+        }
+
+        child = child.nextSibling;
+    }
+
+    return node;
+}
+
 SOURCENET.FindInText.prototype.set_css_class_matched_paragraph = function( value_IN )
 {
 
@@ -997,6 +1225,7 @@ SOURCENET.FindInText.prototype.set_css_class_matched_words = function( value_IN 
     value_OUT = this.get_css_class_matched_words();
 
 } //-- END method set_css_class_matched_words() --//
+
 
 SOURCENET.FindInText.prototype.set_element_to_search = function( value_IN )
 {
