@@ -90,6 +90,51 @@ SOURCENET.FindInText = function()
 
 
 /**
+ * Accepts list of strings to ignore, after checking to make sure it is a list
+ *     with at least one thing in it, concats it with the existing
+ *     text_to_ignore_list.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates SOURCENET.FindInText.text_to_ignore_list.
+ */
+SOURCENET.FindInText.add_to_ignore_list = function( ignore_list_IN )
+{
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.add_to_ignore_list";
+    
+    // got anything?
+    if ( ( ignore_list_IN !== undefined ) && ( ignore_list_IN != null ) && ( ignore_list_IN.length > 0 ) )
+    {
+        
+        // yes.  concat the list passed in to the actual list.
+        SOURCENET.FindInText.text_to_ignore_list = SOURCENET.FindInText.text_to_ignore_list.concat( ignore_list_IN )
+    }
+
+} //-- END function SOURCENET.add_to_ignore_list() --//
+
+
+/**
+ * Empties SOURCENET.FindInText.text_to_ignore_list.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Empties SOURCENET.FindInText.text_to_ignore_list.
+ */
+SOURCENET.FindInText.clear_ignore_list = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.add_to_ignore_list";
+    
+    // yes.  concat the list passed in to the actual list.
+    SOURCENET.FindInText.text_to_ignore_list = []
+
+} //-- END function SOURCENET.clear_ignore_list() --//
+
+
+/**
  * Retrieves all the <p> tags that make up the article text, removes class
  *     "foundInText" from any where that class is present.
  *
@@ -651,7 +696,7 @@ SOURCENET.FindInText.prototype.find_text_list_in_element_text = function( jquery
         found_match_OUT = true;
         
         // update HTML in element.
-        jquery_element.text( updated_text );
+        jquery_element.html( updated_text );
         
     }
     else
