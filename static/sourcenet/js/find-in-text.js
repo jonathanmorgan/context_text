@@ -264,14 +264,14 @@ SOURCENET.FindInText.create_regex = function( regex_string_IN, be_case_sensitive
     {
         
         // case-sensitive.
-        regex_flags = "gi";
+        regex_flags = "g";
 
     }
     else
     {
     
         // case-insensitive...
-        regex_flags = "g";
+        regex_flags = "gi";
         
     } //-- END check for case-sensitive --//
     
