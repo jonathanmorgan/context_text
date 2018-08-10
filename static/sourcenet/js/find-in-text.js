@@ -369,8 +369,8 @@ SOURCENET.FindInText.prototype.config_red_highlight = function()
     var me = "SOURCENET.FindInText.prototype.config_red_highlight";
     
     // configure SOURCENET.text_finder
-    this.css_class_matched_paragraph = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_RED;
-    this.css_class_matched_words = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED;
+    this.set_css_class_matched_paragraph( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_RED );
+    this.set_css_class_matched_words( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED );
     
 } //-- END method config_red_highlight()
   
@@ -389,8 +389,8 @@ SOURCENET.FindInText.prototype.config_yellow_highlight = function()
     var me = "SOURCENET.FindInText.prototype.config_yellow_highlight";
     
     // configure SOURCENET.text_finder
-    this.css_class_matched_paragraph = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT;
-    this.css_class_matched_words = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS;
+    this.set_css_class_matched_paragraph( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT );
+    this.set_css_class_matched_words( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS );
     
 } //-- END method config_yellow_highlight()
   
