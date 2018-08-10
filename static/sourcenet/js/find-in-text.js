@@ -56,10 +56,22 @@ SOURCENET.FindInText = function()
     // regexp escape regex.
     
     // bobince - https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript/3561711#3561711
-    SOURCENET.FindInText.regex_escape_regex = /[-\/\^$*+?.()|[]{}]/g
+    //SOURCENET.FindInText.regex_escape_regex = /[-\/\^$*+?.()|[]{}]/g
 
     // Bynens - https://stackoverflow.com/questions/3115150/how-to-escape-regular-expression-special-characters-using-javascript#9310752
-    //SOURCENET.FindInText.regex_escape_regex = /[-[]{}()*+?.,\^$|#\s]/g
+    //SOURCENET.FindInText.regex_escape_regex = /[-[\]{}()*+?.,\\^$|#\s]/g
+
+    // https://simonwillison.net/2006/Jan/20/escape/
+    SOURCENET.FindInText.regex_specials = [
+      '/', '.', '*', '+', '?', '|',
+      '(', ')', '[', ']', '{', '}', '\\'
+    ];
+    SOURCENET.FindInText.regex_escape_regex_string = '(\\' + SOURCENET.FindInText.regex_specials.join('|\\') + ')';
+    SOURCENET.FindInText.regex_escape_regex = new RegExp(
+      SOURCENET.FindInText.regex_escape_regex_string,
+      'g'
+    );
+    
 
     // ! ------> instance variables.
     
@@ -90,8 +102,9 @@ SOURCENET.FindInText = function()
     this.css_class_list_found_in_text_words = [];
     this.css_class_list_found_in_text_words.push( SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH  );
     
-    // count of changes from last call to match_text.
-    this.match_text_count = -1;
+    // match_text variables - count of changes from last call to match_text.
+    this.match_text_match_count = -1;
+    this.match_text_level = 0;
     
 } //-- END SOURCENET.FindInText constructor --//
 
@@ -244,7 +257,7 @@ SOURCENET.FindInText.create_regex = function( regex_string_IN, be_case_sensitive
     var regex_flags = "";
     
     // escape string
-    escaped_string = regex_string_IN.replace( SOURCENET.FindInText.regex_escape_regex, '\$&' );
+    escaped_string = regex_string_IN.replace( SOURCENET.FindInText.regex_escape_regex, '\\$1' );
     
     // parameters for regex.
     if ( be_case_sensitive_IN == true )
@@ -833,18 +846,6 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
     if ( use_match_text == true )
     {
         
-        // parameters for regex.
-        //if ( be_case_sensitive == true )
-        //{
-        //    // case-sensitive.
-        //    regex_flags = "gi";
-        //}
-        //else
-        //{
-        //    // case-insensitive...
-        //    regex_flags = "g";
-        //}
-        
         // loop over list of text to find.
         find_text_count = find_text_list_IN.length
         for ( find_text_index = 0; find_text_index < find_text_count; find_text_index++ )
@@ -1098,7 +1099,15 @@ SOURCENET.FindInText.prototype.match_text = function( node, regex, callback, exc
 { 
 
     excludeElements || (excludeElements = ['script', 'style', 'iframe', 'canvas']);
-    this.match_text_count = 0;
+    
+    // init recursion bookkeeping
+    this.match_text_level += 1
+    
+    // only zero out this.match_text_match_count if level is 1.
+    if ( this.match_text_level == 1 )
+    {
+        this.match_text_match_count = 0;        
+    }
     
     // declare variables
     var child = node.firstChild;
@@ -1155,6 +1164,9 @@ SOURCENET.FindInText.prototype.match_text = function( node, regex, callback, exc
 
         child = child.nextSibling;
     }
+
+    // init recursion bookkeeping
+    this.match_text_level -= 1
 
     return node;
 }
