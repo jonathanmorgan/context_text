@@ -35,6 +35,8 @@ SOURCENET.FindInText = function()
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS = "foundInTextMatchedWords";
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_RED = "foundInTextRed";
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_RED = "foundInTextMatchedWordsRed";
+    SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_GREEN = "foundInTextGreen";
+    SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_GREEN = "foundInTextMatchedWordsGreen";
     
     // defaults:
     SOURCENET.FindInText.CSS_CLASS_DEFAULT_P_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT;
@@ -105,6 +107,9 @@ SOURCENET.FindInText = function()
     // match_text variables - count of changes from last call to match_text.
     this.match_text_match_count = -1;
     this.match_text_level = 0;
+    
+    // find_text_in_string variables - index of first match from last call to find_text_in_string.
+    this.find_text_in_string_index = -1;
     
 } //-- END SOURCENET.FindInText constructor --//
 
@@ -362,6 +367,26 @@ SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( element_id
  *
  * Postconditions: Updates instance to highlight in red.
  */
+SOURCENET.FindInText.prototype.config_green_highlight = function()
+{
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.prototype.config_green_highlight";
+    
+    // configure SOURCENET.text_finder
+    this.set_css_class_matched_paragraph( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_GREEN );
+    this.set_css_class_matched_words( SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_GREEN );
+    
+} //-- END method config_green_highlight()
+  
+
+/**
+ * Configures instance to highlight in red.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: Updates instance to highlight in red.
+ */
 SOURCENET.FindInText.prototype.config_red_highlight = function()
 {
     
@@ -471,6 +496,8 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
             found_index = work_text.search( current_find_regex );
             
         }
+        
+        this.find_text_in_string_index = found_index;
         
         // got at least 1 match?
         if ( found_index >= 0 )
