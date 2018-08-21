@@ -55,6 +55,9 @@ SOURCENET.FindInText = function()
     // SOURCENET.FindInText.text_to_ignore_list.push( "the" );
     // SOURCENET.FindInText.text_to_ignore_list.push( "The" );
     
+    // regexp compress internal white space
+    SOURCENET.regex_compress_internal_white_space = /\s+/g
+    
     // regexp escape regex.
     
     // bobince - https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript/3561711#3561711
@@ -246,6 +249,24 @@ SOURCENET.FindInText.clear_word_matches_in_element = function( element_IN, word_
     
 } //-- END method clear_word_matches_in_element() --//
 
+
+/**
+ * Accepts string, uses regular expression to compress runs of internal white
+ *     space to a single space, returns the result.
+ */
+SOURCENET.FindInText.compress_internal_white_space = function( string_IN ) 
+{
+    // return reference
+    var string_OUT = null;
+    
+    // replace more than one contiguous internal white space
+    //     character with a single space.
+    string_OUT = string_IN.replace( SOURCENET.regex_compress_white_space, ' ' );
+    
+    return string_OUT;
+
+} //-- end function SOURCENET.compress_internal_white_space --//
+ 
 
 /**
  * Accepts regex string.  Escapes any characters that have meaning in regex,
