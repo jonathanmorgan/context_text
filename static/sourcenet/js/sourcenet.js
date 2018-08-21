@@ -96,7 +96,7 @@ SOURCENET.get_value_for_id = function( id_IN, default_IN )
     var value_OUT = null;
     
     // declare variables
-    var me = "SOURCENET.get_input_value_for_id";
+    var me = "SOURCENET.get_value_for_id";
     var is_id_OK = false;
     var element = null;
     var value = "";
