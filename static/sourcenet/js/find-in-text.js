@@ -39,8 +39,8 @@ SOURCENET.FindInText = function()
     SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS_GREEN = "foundInTextMatchedWordsGreen";
     
     // defaults:
-    SOURCENET.FindInText.CSS_CLASS_DEFAULT_P_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT;
-    SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH = SOURCENET.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS;
+    SOURCENET.FindInText.CSS_CLASS_DEFAULT_P_MATCH = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT;
+    SOURCENET.FindInText.CSS_CLASS_DEFAULT_WORD_MATCH = SOURCENET.FindInText.CSS_CLASS_FOUND_IN_TEXT_MATCHED_WORDS;
     
     // Find in Article Text - HTML element IDs
     SOURCENET.FindInText.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article";
@@ -74,6 +74,11 @@ SOURCENET.FindInText = function()
       'g'
     );
     
+    // element cleanup list
+    SOURCENET.FindInText.cleanup_in_these_elements = [];
+    SOURCENET.FindInText.cleanup_in_these_elements.push( "p" );
+    SOURCENET.FindInText.cleanup_in_these_elements.push( "h3" );    
+    SOURCENET.FindInText.cleanup_in_these_elements.push( "li" );
 
     // ! ------> instance variables.
     
@@ -323,40 +328,57 @@ SOURCENET.FindInText.prototype.clear_all_find_in_text_matches = function()
  * Postconditions: Updates classes on article <p> tags so none are assigned
  *     "foundInText".
  */
-SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( element_id_IN, p_class_list_IN, word_class_list_IN )
+SOURCENET.FindInText.prototype.clear_find_in_text_matches = function( element_id_IN,
+                                                                      wrapper_class_list_IN,
+                                                                      word_class_list_IN )
 {
     
     // declare variables
     var me = "SOURCENET.FindInText.prototype.clear_find_in_text_matches";
-    var article_paragraphs = null;
+    var cleanup_element_list = null;
+    var cleanup_element_count = -1;
+    var cleanup_element_index = -1;
+    var cleanup_element_name = "";
+    var article_elements = null;
     var list_length = -1;
     var list_index = -1;
     var current_css_class = null;
     
-    // get article <p> tags.
-    article_paragraphs = this.get_paragraphs( element_id_IN );
-
-    // remove each class in p class list passed in.
-    list_length = p_class_list_IN.length;
-    for ( list_index = 0; list_index < list_length; list_index++ )
+    // loop over cleanup element name list
+    cleanup_element_list = SOURCENET.FindInText.cleanup_in_these_elements;
+    cleanup_element_count = cleanup_element_list.length;
+    for( cleanup_element_index = 0; cleanup_element_index < cleanup_element_count; cleanup_element_index++ )
     {
-
-        // get class from list.
-        current_css_class = p_class_list_IN[ list_index ];
         
-        // toggle class
-        article_paragraphs.toggleClass( current_css_class, false );
-
-    } //-- end loop over CSS classes --//
+        // get current cleanup element.
+        cleanup_element_name = cleanup_element_list[ cleanup_element_index ];
         
-    // set all paragraphs' html() back to their text()...
-    article_paragraphs.each( function()
+        // get article tags with that name.
+        article_elements = this.get_elements_by_name( element_id_IN, cleanup_element_name );
+    
+        // remove each class in wrapper class list passed in.
+        list_length = wrapper_class_list_IN.length;
+        for ( list_index = 0; list_index < list_length; list_index++ )
         {
-            // call static method to clear work matches.
-            SOURCENET.FindInText.clear_word_matches_in_element( this, word_class_list_IN )
-        } //-- END anonymous function called on each paragraph --//
-    );
-
+    
+            // get class from list.
+            current_css_class = wrapper_class_list_IN[ list_index ];
+            
+            // toggle class
+            article_elements.toggleClass( current_css_class, false );
+    
+        } //-- end loop over CSS classes --//
+            
+        // set all elements' html() back to their text()...
+        article_elements.each( function()
+            {
+                // call static method to clear work matches.
+                SOURCENET.FindInText.clear_word_matches_in_element( this, word_class_list_IN )
+            } //-- END anonymous function called on each element --//
+        );
+        
+    } //-- END loop over cleanup element names. --//
+    
 } //-- END function SOURCENET.clear_find_in_text_matches() --//
 
 
@@ -1009,6 +1031,35 @@ SOURCENET.FindInText.prototype.find_text_in_p_tag = function( p_tag_jquery_IN,
  *
  * Postconditions: None.
  */
+SOURCENET.FindInText.prototype.get_elements_by_name = function( look_in_element_id_IN, element_name_to_find_IN )
+{
+    
+    // return reference
+    var elements_OUT = null;
+    
+    // declare variables
+    var me = "SOURCENET.FindInText.prototype.get_elements_by_name";
+    var jquery_element = null;
+    
+    // retrieve element in which we should look (id/name = look_in_element_id_IN).
+    jquery_element = $( '#' + look_in_element_id_IN );
+    
+    // find all tags with name = element_name_to_find_IN.
+    grafs_OUT = jquery_element.find( element_name_to_find_IN );
+
+    return grafs_OUT;
+    
+} //-- END method get_elements_by_name() --//
+
+
+/**
+ * Retrieves all the <p> tags that make up the article text, returns them in a
+ *     list.  If none found, returns empty list.  If error, returns null.
+ *
+ * Preconditions: None.
+ *
+ * Postconditions: None.
+ */
 SOURCENET.FindInText.prototype.get_paragraphs = function( element_id_IN )
 {
     
@@ -1017,13 +1068,9 @@ SOURCENET.FindInText.prototype.get_paragraphs = function( element_id_IN )
     
     // declare variables
     var me = "SOURCENET.FindInText.prototype.get_paragraphs";
-    var jquery_element = null;
-    
-    // retrieve element in which we should look (id/name = element_id_IN).
-    jquery_element = $( '#' + element_id_IN );
-    
-    // find all <p> tags.
-    grafs_OUT = jquery_element.find( "p" );
+
+    // call get_elements_by_name() with "p".
+    grafs_OUT = self.get_elements_by_name( element_id_IN, "p" );
 
     return grafs_OUT;
     

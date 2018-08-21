@@ -93,3 +93,34 @@ td.page_layout
     margin: 0px;
     padding: 10px;
 }
+
+.foundInText
+{
+    background-color: #fcd889;
+}
+
+.foundInTextMatchedWords
+{
+    background-color: #fcac02;
+}
+
+.foundInTextRed
+{
+    background-color: #f08181;
+}
+
+.foundInTextMatchedWordsRed
+{
+    background-color: #e83434;
+}
+
+.foundInTextGreen
+{
+    background-color: #bdf9cb;
+}
+
+.foundInTextMatchedWordsGreen
+{
+    background-color: #22e40c;
+}
+
