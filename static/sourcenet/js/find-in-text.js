@@ -1313,6 +1313,10 @@ SOURCENET.FindInText.prototype.match_text = function( node, regex, callback, exc
                             $( node ).toggleClass( match_p_css_class, true );
                     
                         } //-- END check if found match? --//
+                        
+                        // call normalize() on parent to make sure adjacent text
+                        //     nodes are combined.
+                        child.parentNode.normalize()
                     }
                 );
                 
