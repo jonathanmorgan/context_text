@@ -324,9 +324,55 @@ SOURCENET.FindInText.create_regex = function( regex_string_IN, be_case_sensitive
 } //-- END method create_regex()
   
 
-//------------------------------------//
+SOURCENET.FindInText.is_text_ignored = function( text_IN )
+{
+    // based on https://stackoverflow.com/a/24718430
+    
+    // return reference
+    var is_ignored_OUT = false;
+
+    // declare variables
+    var me = "SOURCENET.FindInText.is_text_ignored";
+    var lower_case_ignore_list = null;
+    var lower_case_text = null;
+    var ignore_index = -1;
+
+    // convert ignore list to lower case - eventually, cache this or something.
+    lower_case_ignore_list = SOURCENET.FindInText.text_to_ignore_list.map(
+        function( value )
+        {
+            return value.toLowerCase();
+        }
+    );
+    
+    // convert text to lower case.
+    lower_case_text = text_IN.toLowerCase();
+    
+    // look for lower case text in lower case ignore list.
+    ignore_index = lower_case_ignore_list.indexOf( lower_case_text );
+
+    // is it in the ignore list?
+    if ( ignore_index < 0 )
+    {
+        // not found in list, so not ignored.
+        is_ignored_OUT = false;
+    }
+    else
+    {
+        // in list - ignored.
+        is_ignored_OUT = true;
+    }
+    
+    console.log( "In " + me + ": lower_case_text = " + lower_case_text + "; lower_case_ignore_list = " + lower_case_ignore_list + "; ignore_index = " + ignore_index )
+
+    return is_ignored_OUT;
+    
+} //-- END function is_text_ignored() --//
+
+
+//----------------------------------------------------------------------------//
 // !----> FindInText instance methods
-//------------------------------------//
+//----------------------------------------------------------------------------//
 
 
 /**
@@ -498,7 +544,7 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
     var work_text = "";
     var current_find_text = "";
     var current_find_regex = null;
-    var ignore_index = -1;
+    var is_ignored = false;
     var found_index = -1;
     var text_around_match_list = null;
     var match_html = "";
@@ -527,8 +573,8 @@ SOURCENET.FindInText.prototype.find_text_in_string = function( find_text_IN,
     current_find_text = find_text_IN;
     
     // is it something we ignore?
-    ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text );
-    if ( ignore_index < 0 )
+    is_ignored = SOURCENET.FindInText.is_text_ignored( current_find_text );
+    if ( is_ignored == false )
     {
         
         // look for text.
@@ -897,7 +943,7 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
     // declare variables - match_text function.
     var find_text_count = -1;
     var find_text_index = -1;
-    var ignore_index = -1;
+    var is_ignored = false;
     var current_find_text = null;
     var dom_element = null;
     var regex_flags = null;
@@ -938,8 +984,8 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
             SOURCENET.log_message( "In " + me + "(): current_find_text = \"" + current_find_text + "\"" );
 
             // is it something we ignore?
-            ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text.toLowerCase() )
-            if ( ignore_index < 0 )
+            is_ignored = SOURCENET.FindInText.is_text_ignored( current_find_text );
+            if ( is_ignored == false )
             {
                 
                 // set up call to match_text
