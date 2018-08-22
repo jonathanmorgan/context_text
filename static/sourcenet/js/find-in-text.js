@@ -938,7 +938,7 @@ SOURCENET.FindInText.prototype.find_text_in_element = function( jquery_element_I
             SOURCENET.log_message( "In " + me + "(): current_find_text = \"" + current_find_text + "\"" );
 
             // is it something we ignore?
-            ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text )
+            ignore_index = SOURCENET.FindInText.text_to_ignore_list.indexOf( current_find_text.toLowerCase() )
             if ( ignore_index < 0 )
             {
                 
@@ -1240,7 +1240,12 @@ SOURCENET.FindInText.prototype.match_text = function( node, regex, callback, exc
     
     // child
     child = node.firstChild;
-    child_node_type = child.nodeType;
+    if ( ( child !== undefined ) && ( child != null ) )
+    {
+                
+        child_node_type = child.nodeType;
+        
+    }
     
     // debug message
     debug_message = "In " + me + "():"
