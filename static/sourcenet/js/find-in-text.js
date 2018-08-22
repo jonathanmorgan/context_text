@@ -363,7 +363,7 @@ SOURCENET.FindInText.is_text_ignored = function( text_IN )
         is_ignored_OUT = true;
     }
     
-    console.log( "In " + me + ": lower_case_text = " + lower_case_text + "; lower_case_ignore_list = " + lower_case_ignore_list + "; ignore_index = " + ignore_index )
+    //console.log( "In " + me + ": lower_case_text = " + lower_case_text + "; lower_case_ignore_list = " + lower_case_ignore_list + "; ignore_index = " + ignore_index )
 
     return is_ignored_OUT;
     
