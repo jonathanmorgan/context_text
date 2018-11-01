@@ -18,11 +18,33 @@ var SOURCENET = SOURCENET || {};
 // DEBUG!
 SOURCENET.debug_flag = false;
 
+// Compress white space in values?
+SOURCENET.compress_white_space = true;
+SOURCENET.regex_compress_white_space = /\s+/g
+
 
 //----------------------------------------------------------------------------//
 // !====> function definitions
 //----------------------------------------------------------------------------//
 
+
+/**
+ * Accepts string, uses regular expression to compress runs of internal white
+ *     space to a single space, returns the result.
+ */
+SOURCENET.compress_internal_white_space = function( string_IN ) 
+{
+    // return reference
+    var string_OUT = null;
+    
+    // replace more than one contiguous internal white space
+    //     character with a single space.
+    string_OUT = string_IN.replace( SOURCENET.regex_compress_white_space, ' ' );
+    
+    return string_OUT;
+
+} //-- end function SOURCENET.compress_internal_white_space --//
+ 
 
 SOURCENET.decode_html = function( html_IN )
 {
@@ -323,6 +345,100 @@ SOURCENET.log_message = function( message_IN )
     } //-- END check to see if console.log() present. --//
     
 } //-- END function SOURCENET.log_message() --//
+
+
+/**
+ * Clears out coding form and status message area, and optionally displays a
+ *    status message if one passed in.
+ *
+ * @param {Array:string} status_message_array_IN - array of messages to place in status area.  If undefined, null, or [], no messages output and message area is cleared and hidden.
+ */
+SOURCENET.output_status_messages = function( status_message_array_IN )
+{
+    
+    // declare variables.
+    var me = "SOURCENET.output_status_messages";
+    var message_area_div_element = null;
+    var message_area_ul_id = "";
+    var message_area_ul_class = "";
+    var message_area_ul_empty_html = "";
+    var message_area_ul = null;
+    var message_count = -1;
+    var message_index = -1;
+    var current_message = "";
+    var message_li_element = null;
+    
+    // set variables
+    message_area_ul_id = "status-message-list";
+    message_area_ul_class = "statusMessageList";
+    message_area_ul_empty_html = '<ul id="' + message_area_ul_id + '" class="' + message_area_ul_class + '"></ul>';
+
+    // get <div id="status-message-area" class="statusMessageArea">
+    message_area_div_element = $( '#status-message-area' );
+    
+    // get <ul id="status-message-list" class="statusMessageList">
+    message_area_ul_element = message_area_div_element.find( '#status-message-list' );
+    
+    // got message array?
+    if ( ( status_message_array_IN !== undefined ) && ( status_message_array_IN != null ) && ( status_message_array_IN.length > 0 ) )
+    {
+        
+        // got messages.
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+        // make new <ul>.
+        message_area_ul_element = $( message_area_ul_empty_html );
+        
+        // add it to the <div>.
+        message_area_div_element.append( message_area_ul_element );
+        
+        // loop over messages
+        message_count = status_message_array_IN.length;
+        for( message_index = 0; message_index < message_count; message_index++ )
+        {
+            
+            // get message
+            current_message = status_message_array_IN[ message_index ];
+            
+            // create <li>, append to <ul>.
+            message_li_element = $( '<li>' + current_message + '</li>' );
+            message_li_element.attr( "id", "message-" + message_index );
+            
+            // append it to the message_area_ul_element
+            message_area_ul_element.append( message_li_element );
+            
+        } //-- END loop over messages --//
+        
+        // show the <div> if not already.
+        message_area_div_element.show();
+        
+    }
+    else //-- no messages --//
+    {
+        
+        // Hide the <div>.
+        message_area_div_element.hide();
+        
+        // got <ul>?
+        if ( message_area_ul_element.length > 0 )
+        {
+            
+            // remove the <ul>
+            message_area_ul_element.remove();
+            
+        } //-- END check to see if ul inside <div> --//
+        
+    } //-- END check to see if message array is populated.
+    
+} //-- END function SOURCENET.output_status_messages() --//
 
 
 /**
