@@ -10,3 +10,4 @@ django-taggit
 regex
 six
 ipykernel
+openpyxl
