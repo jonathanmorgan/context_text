@@ -1807,6 +1807,7 @@ SOURCENET.find_strings_in_article_text = function( find_text_list_IN, clear_exis
     var me = "SOURCENET.find_strings_in_article_text";
     var string_count = -1;
     var do_clear_matches = false;
+    var is_boolean_OK = false;
     var is_text_OK = false;
     var article_text_element = null;
     var article_paragraphs = null;
@@ -1823,10 +1824,11 @@ SOURCENET.find_strings_in_article_text = function( find_text_list_IN, clear_exis
      
     // clear any previous matches?
     do_clear_matches = clear_existing_matches_IN;
-    if ( do_clear_matches === undefined )
+    is_boolean_OK = SOURCENET.is_boolean_OK( do_clear_matches )
+    if ( is_boolean_OK == false )
     {
         
-        // default to false.
+        // default to true.
         do_clear_matches = true;
         
     }
@@ -2029,6 +2031,7 @@ SOURCENET.find_words_in_html_element = function( find_text_IN,
     // declare variables
     var me = "SOURCENET.find_words_in_html_element";
     var do_clear_matches = false;
+    var is_boolean_OK = false;
     var is_text_OK = false;
     var article_paragraphs = null;
     var saved_ignore_in_wrapper_element = "";
@@ -2041,10 +2044,11 @@ SOURCENET.find_words_in_html_element = function( find_text_IN,
     
     // clear any previous matches?
     do_clear_matches = clear_existing_matches_IN;
-    if ( do_clear_matches === undefined )
+    is_boolean_OK = SOURCENET.is_boolean_OK( do_clear_matches )
+    if ( is_boolean_OK == false )
     {
         
-        // default to false.
+        // default to true.
         do_clear_matches = true;
         
     }
