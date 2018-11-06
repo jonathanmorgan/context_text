@@ -1,4 +1,18 @@
 """
+Installation of "django-ajax-selects":
+- Use pip to install "django-ajax-selects" and dependencies.
+- In settings.py:
+
+    - add "ajax_select" to INSTALLED_APPS.
+    - Add:
+
+            # magically include jqueryUI/js/css
+            AJAX_SELECT_BOOTSTRAP = True
+            AJAX_SELECT_INLINES = 'inline'
+
+- Touch your project's wsgi.py file to load the "ajax_select" application.
+- Run "python manage.py collectstatic".
+
 To add a new ajax select:
 - Include the import for the model class you will be selecting from at the top of this file (put it in alphabetical order).
 - In this file, make a new class that extends LookupParent for the model you want to lookup using AJAX-selects (It is OK to just copy one of the other ones here).  Place it in alphabetical order in the file.
@@ -113,7 +127,15 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
 
 class LookupParent( LookupChannel ):
 
-    my_class = None
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( LookupParent, self ).__init__()
+        
+        # initialize variables
+        self.my_class = None
+        
+    #-- END method __init__() --#
 
     def format_result( self, instance_IN ):
 
@@ -245,7 +267,15 @@ class LookupParent( LookupChannel ):
 @register( "article" )
 class ArticleLookup( LookupParent ):
 
-    my_class = Article	
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( ArticleLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Article
+        
+    #-- END method __init__() --#
 
     def get_query( self, q, request ):
 
@@ -289,7 +319,15 @@ class ArticleLookup( LookupParent ):
 @register( "article_data" )
 class Article_DataLookup( LookupParent ):
 
-    my_class = Article_Data	
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( Article_DataLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Article_Data
+        
+    #-- END method __init__() --#
 
     def get_query( self, q, request ):
 
@@ -333,7 +371,15 @@ class Article_DataLookup( LookupParent ):
 @register( "newspaper" )
 class NewspaperLookup( LookupParent ):
 
-    my_class = Newspaper
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( NewspaperLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Newspaper
+        
+    #-- END method __init__() --#
 
     def get_query( self, q, request ):
 
@@ -377,7 +423,15 @@ class NewspaperLookup( LookupParent ):
 @register( "organization" )
 class OrganizationLookup( LookupParent ):
 
-    my_class = Organization
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( OrganizationLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Organization
+        
+    #-- END method __init__() --#
 
     def get_query( self, q, request ):
 
@@ -421,8 +475,16 @@ class OrganizationLookup( LookupParent ):
 @register( "person" )
 class PersonLookup( LookupParent ):
 
-    my_class = Person
-    
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( PersonLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Person
+        
+    #-- END method __init__() --#
+
     def get_query( self, q, request ):
 
         """
@@ -486,6 +548,14 @@ class ArticleCodingPersonLookup( PersonLookup ):
     just extending PersonLookup for now.
     '''
 
-    my_class = Person
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent's __init__()
+        super( ArticleCodingPersonLookup, self ).__init__()
+        
+        # initialize variables
+        self.my_class = Person
+        
+    #-- END method __init__() --#
 
 #-- END class ArticleCodingPersonLookup --#
