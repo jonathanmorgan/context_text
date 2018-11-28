@@ -18,18 +18,9 @@
 <div class="contentBox">
     <article class="contentLeft">
         
-        {# got page status message(s)? #}
-        {% if page_status_message_list %}
-            <div id="page-status-message-area" class="pageStatusMessageArea">
-                <h4>Status Messages</h4>
-                <ul>
-                {% for page_status_message in page_status_message_list %}
-                    <li>{{ page_status_message }}</li>
-                {% endfor %}
-                </ul>
-            </div>
-            <hr />
-        {% endif %}
+        <!-- ! include page status message list output -->
+        {# if status message(s), output? #}
+        {% include "sourcenet/shared/render_page_status_message_list.html" %}
 
         <div id="return-to-source" class="returnToSource">
             <ul>
@@ -79,34 +70,13 @@
             
         </div>
         
+        <!-- ! include render article -->
         {% if article_instance %}
         
             <hr />
             
-            <div id="article_view" name="article_view">
-                <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
-                <ul>
-                    <li><em>Section:</em> {{ article_instance.section }}</li>
-                    <li><em>Publication Date:</em> {{ article_instance.pub_date }}</li>
-                    {% if include_detail %}
-                    <li><em>Page:</em> {{ article_instance.page }}</li>                
-                    <li><em>Edition:</em> {{ article_instance.edition }}</li>                
-                    <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
-                    <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
-                    {% endif %}
-                    <li><em><strong>Byline:</strong></em> {{ article_instance.author_string }}</li>
-                </ul>
-                
-                {# are we outputting HTML <table>, or plain text? #}
-                {% if do_output_table_html %}
-                    {{ article_content | safe }}
-                {% else %}
-                    {{ article_text.get_content | safe }}
-                {% endif %}
+            {% include "sourcenet/articles/render_article.html" %}            
 
-                <p id="article_end" name="article_end" class="articleEnd">-- 30 --</p>
-            </div>
-            
             <hr />
             
         {% endif %}
@@ -230,31 +200,13 @@
                 </form>
             </div>
 
+            <!-- ! include FIT -->
+            {# Include find in article text? #}
             {% if include_find_in_article_text %}
-            <hr />
-            <p class="inputContainer" id="find-text-in-article-text" name="find-text-in-article-text">
-                <h4>Find in Article Text</h4>
-                <table>
-                    <tr>
-                        <td>
-                            Search for:
-                            <br />
-                            <input type="text" name="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" id="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" size="25" />
-                            <br />
-                            <input type="button" id="find-in-article-text" name="find-in-article-text" value="<== Find in Text" />
-                            <br />
-                            <input type="button" id="clear-find-in-article-text" name="clear-find-in-article-text" value="<== Clear Matches" />
-                        </td>
-                        <td>
-                            <input type="button" id="find-name-in-article-text" name="find-name-in-article-text" value="<== Fetch Name" />
-                            <br />
-                            <input type="button" id="find-last-name-in-article-text" name="find-last-name-in-article-text" value="<== Fetch Last Name" />
-                        </td>
-                    </tr>
-                </table>
-            </p>
-            {% else %}
-            <input type="hidden" name="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" id="{{ manual_article_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}" />
+
+                <hr />
+                {% include "sourcenet/articles/render_find_in_article_text.html" %}  
+                
             {% endif %}
 
         </div>

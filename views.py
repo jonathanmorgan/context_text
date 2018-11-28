@@ -160,6 +160,7 @@ INPUT_NAME_ARTICLE_ID = "article_id"
 INPUT_NAME_SOURCE = "source"
 INPUT_NAME_TAGS_IN_LIST = "tags_in_list"
 
+# other variables...
 NO_GRAF = "no_graf"
 
 def create_graf_to_subject_map( article_data_qs_IN ):
@@ -524,6 +525,345 @@ def person_lookup_and_filter_to_response(
     # return reference
     status_OUT = ""
     
+    # call method with proper name.
+    status_OUT = render_person_lookup_and_filter_to_response(
+        person_lookup_by_name_form_IN,
+        person_lookup_by_id_form_IN,
+        person_lookup_type_form_IN,
+        person_lookup_result_view_form_IN,
+        request_inputs_IN,
+        response_dictionary_IN,
+        *args,
+        **kwargs
+    )
+                    
+    return status_OUT
+
+#-- END method person_lookup_and_filter() --#
+
+
+def person_output_details_to_response( person_qs_IN, response_dictionary_IN, *args, **kwargs ):
+
+    '''
+    Backward compatibility wrapper for function
+        render_person_output_details_to_response().  See that function for
+        documentation.
+    '''
+    
+    # return reference
+    status_OUT = ""
+    
+    # call actual function
+    status_OUT = render_person_output_details_to_response( person_qs_IN, response_dictionary_IN, *args, **kwargs )
+
+    return status_OUT
+
+#-- END function person_output_details_to_response() --#
+
+
+def render_article_to_response( article_id_IN, response_dictionary_IN, config_application_IN = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE, *args, **kwargs ):
+
+    '''
+    Accepts the ID of an article we want to render and response dict to hold
+        output. 
+    Preconditions: expects response_dictionary_IN to already contain a dictionary.
+    Postconditions:  Returns a status message, None for no problems.  Adds the
+        following to the response dictionary:
+        - "article_instance" - reference to model instance of article being rendered.
+        - "article_text" - body text of article.
+        - "article_content" - body text of article, rendered as a table.
+        - "article_text_custom" - custom-proccessed article text (this function puts every line inside a <p> tag - you can update after the call if you want something else).
+        - "article_text_type" - value from "article_text.content_type".
+        - "article_text_render_type" - one of "table", "raw", "custom", or "pdf", loaded from django_config using Config_Property.get_property_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ), defaults to "raw" if nothing specified in Config.
+        - "article_text_is_preformatted" - not sure how this is used, defaults to False, loaded from django_config using Config_Property.get_property_boolean_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
+        - "article_text_wrap_in_p" - whether or not the entire article text block should be wrapped in a <p> tag.  Defaults to True, loaded from django_config using Config_Property.get_property_boolean_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )
+
+        Also updates the dictionary entry "page_status_message_list" with any error messages generated during processing.
+    '''
+    
+    # return reference
+    status_OUT = None
+    
+    # declare variables
+    me = "render_article_to_response"
+    page_status_message_list = None
+    page_status_message = None
+    debug_message = None
+    response_dictionary = None
+    config_application_name = None
+    article_id = None
+    article_qs = None
+    article_count = None
+    article_instance = None
+    article_text = None
+    article_content = None
+    article_text_type = None
+    article_content_line_list = None
+    article_text_custom = None
+    article_content_bs = None
+    p_tag_list = None
+    p_tag_count = None
+    rendered_article_html = None
+    paragraph_index = None
+    paragraph_number = None
+    p_tag_bs = None
+    p_tag_html = None
+
+    # got response dictionary?
+    if ( response_dictionary_IN is not None ):
+    
+        # initialize application name.
+        if ( ( config_application_IN is not None ) and ( config_application_IN != "" ) ):
+        
+            # application name passed - use it.
+            config_application_name = config_application_IN
+        
+        else:
+        
+            # no application name passed in.
+            config_application_name = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
+        
+        #-- END check to see if application passed in --#
+
+        # ! ---- initialize response dictionary
+        response_dictionary = response_dictionary_IN
+        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = None  # 'article_instance'
+        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = None  # 'article_text'
+        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = None  # 'article_content'
+        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = None  # 'article_text_custom'
+        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = None  # 'article_text_type'
+        
+        # for things that can be configured, only load if the property name is
+        #     not present in the dictionary.
+        
+        # 'article_text_render_type'
+        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE not in response_dictionary ):
+            
+            # one of "table", "raw", "custom", "pdf", stored in 'article_text_render_type'
+            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE ] = Config_Property.get_property_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ) 
+            
+        #-- END check to see if 'article_text_render_type' in response dict. --#
+        
+        # 'article_text_is_preformatted'
+        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED not in response_dictionary ):
+        
+            # 'article_text_is_preformatted'
+            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED ] = Config_Property.get_property_boolean_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
+            
+        #-- END check to see if 'article_text_is_preformatted' in response dict. --#
+
+        # 'article_text_wrap_in_p'
+        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P not in response_dictionary ):
+
+            # 'article_text_wrap_in_p'
+            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P ] = Config_Property.get_property_boolean_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )  # 
+        
+        #-- END check to see if 'article_text_wrap_in_p' in response dict. --#
+        
+        # get page_status_message_list
+        page_status_message_list = response_dictionary.get( SourcenetBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST, None )
+        if ( page_status_message_list is None ):
+        
+            # no message list.  Start one and store it in response.
+            page_status_message_list = []
+            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST ] = page_status_message_list
+            
+        #-- END check to see if status message list --#
+        
+        # got article ID?
+        if ( ( article_id_IN is not None ) and ( article_id_IN != "" ) and ( int( article_id_IN ) > 0 ) ):
+    
+            # get article ID.
+            article_id = int( article_id_IN )
+
+            # retrieve QuerySet that contains that article.
+            article_qs = Article.objects.filter( pk = article_id )
+
+            # get count of queryset return items
+            if ( ( article_qs != None ) and ( article_qs != "" ) ):
+
+                # get count of articles
+                article_count = article_qs.count()
+    
+                # should only be one.
+                if ( article_count == 1 ):
+                
+                    # get article instance
+                    article_instance = article_qs.get()
+                    
+                    # ! ---- retrieve article text.
+                    article_text = article_instance.article_text_set.get()
+                    
+                    # get content
+                    article_content = article_text.get_content()
+                    article_text_type = article_text.content_type
+                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = article_text_type
+                    
+                    # if not "text", want to make sure to not use "custom".
+                    
+                    # ! ------ create custom text
+                    article_content_line_list = article_content.split( "\n" )
+                    article_text_custom = "<p>" + "</p>\n<p>".join( article_content_line_list ) + "</p>"
+                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = article_text_custom
+                    
+                    # ! ------ table HTML
+                    # parse with beautifulsoup
+                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
+                    
+                    # get paragraph tag list
+                    p_tag_list = article_content_bs.find_all( 'p' )
+                    p_tag_count = len( p_tag_list )
+                    
+                    # got p-tags?
+                    if ( p_tag_count > 0 ):
+                    
+                        # yes.  create a table with two columns per row:
+                        # - paragraph number
+                        # - paragraph text
+                        rendered_article_html = '''
+                            <table class="gridtable">
+                                <tr>
+                                    <th>graf#</th>
+                                    <th>text</th>
+                                </tr>
+                        '''
+                    
+                        # for each paragraph, grab that <p> and place it in a table
+                        #    cell.
+                        for paragraph_index in range( p_tag_count ):
+                        
+                            # paragraph number is index + 1
+                            paragraph_number = paragraph_index + 1
+                            
+                            # get <p> tag with ID of paragraph_number
+                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
+                            
+                            # render row
+                            p_tag_html = p_tag_bs.prettify()
+                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
+                            debug_message = "p_tag_html type = " + str( type( p_tag_html ) )
+                            output_debug( debug_message, me, indent_with_IN = "====> " )
+
+                            # calling str() on any part of a string being
+                            #    concatenated causes all parts of the string to
+                            #    try to encode to default encoding ('ascii').
+                            #    This breaks if there are non-ascii characters.
+                            rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
+                        
+                        #-- END loop over <p> ids. --#
+                        
+                        rendered_article_html += "</table>"
+                    
+                    else:
+                    
+                        # no p-tags - just use article_text.
+                        rendered_article_html = article_content
+                        
+                    #-- END check to see if paragraph tags. --#
+                    
+                    # seed response dictionary.
+                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = article_instance
+                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = article_text
+                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = rendered_article_html
+                    
+                    # get paragraph list
+                    #article_paragraph_list = article_text.get_paragraph_list()
+                    
+                elif ( article_count > 1 ):
+
+                    # error - multiple articles found for ID. --#
+
+                    # create error message.
+                    page_status_message = "ERROR - lookup for article ID " + str( article_id ) + " returned " + str( article_count ) + " records.  Oh my..."
+                    
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> " )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # set status
+                    status_OUT = page_status_message
+
+                elif ( article_count == 0 ):
+
+                    # error - no articles found for ID. --#
+
+                    # create error message.
+                    page_status_message = "No article found for article ID " + str( article_id ) + "."
+
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> " )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+                    
+                    # set status
+                    status_OUT = page_status_message
+
+                else:
+                
+                    # unknown error. --#
+
+                    # create error message.
+                    page_status_message = "Unknown error encountered looking up article ID " + str( article_id ) + "."
+
+                    # log it...
+                    output_debug( page_status_message, me, indent_with_IN = "====> " )
+
+                    # ...and output it.
+                    page_status_message_list.append( page_status_message )
+
+                    # set status
+                    status_OUT = page_status_message
+
+                #-- END check to see if there is one or other than one. --#
+
+            else:
+            
+                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+
+                # create error message.
+                page_status_message = "ERROR - no QuerySet returned from call to filter().  This is odd."
+
+                # log it...
+                output_debug( page_status_message, me, indent_with_IN = "====> " )
+
+                # ...and output it.
+                page_status_message_list.append( page_status_message )
+
+                # set status
+                status_OUT = page_status_message
+
+            #-- END check to see if query set is None --#
+
+    else:
+
+        # no dictionary passed in.  Nothing to populate.
+        status_OUT = "ERROR - no dicationary passed in, can't render to nothing."
+        output_debug( status_OUT )
+
+    #-- END check to see whether or not form is valid. --#
+                    
+    return status_OUT
+
+#-- END function render_article_to_response() --#
+
+
+def render_person_lookup_and_filter_to_response(
+    person_lookup_by_name_form_IN,
+    person_lookup_by_id_form_IN,
+    person_lookup_type_form_IN,
+    person_lookup_result_view_form_IN,
+    request_inputs_IN,
+    response_dictionary_IN,
+    *args,
+    **kwargs
+):
+
+    # return reference
+    status_OUT = ""
+    
     # declare variables
     output_string = ""
     debug_message = ""
@@ -768,10 +1108,10 @@ def person_lookup_and_filter_to_response(
                     
     return status_OUT
 
-#-- END method person_lookup_and_filter() --#
+#-- END method render_person_lookup_and_filter_to_response() --#
 
 
-def person_output_details_to_response( person_qs_IN, response_dictionary_IN, *args, **kwargs ):
+def render_person_output_details_to_response( person_qs_IN, response_dictionary_IN, *args, **kwargs ):
 
     '''
     Accepts a QuerySet of person instances and a response dictionary.  Renders
@@ -925,7 +1265,7 @@ def person_output_details_to_response( person_qs_IN, response_dictionary_IN, *ar
 
     return status_OUT
 
-#-- END function render_person_details_to_response() --#
+#-- END function render_person_output_details_to_response() --#
 
 
 #===============================================================================
@@ -1092,6 +1432,7 @@ def article_code( request_IN ):
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
     response_dictionary[ 'manual_article_coder' ] = None
+    response_dictionary[ 'manual_coder' ] = None
     response_dictionary[ 'article_instance' ] = None
     response_dictionary[ 'article_text' ] = None
     response_dictionary[ 'base_simple_navigation' ] = True
@@ -1102,10 +1443,13 @@ def article_code( request_IN ):
     # response_dictionary[ 'person_type_author' ] = ManualArticleCoder.PERSON_TYPE_AUTHOR
     response_dictionary[ 'existing_data_store_json' ] = ""
     response_dictionary[ 'page_status_message_list' ] = page_status_message_list
+    response_dictionary[ 'fit_extra_html' ] = '<input type="button" id="find-name-in-article-text" name="find-name-in-article-text" value="<== Fetch Name" /><br /><input type="button" id="find-last-name-in-article-text" name="find-last-name-in-article-text" value="<== Fetch Last Name" />'
+
     
     # create article coder and place in response so we can access constants-ish.
     manual_article_coder = ManualArticleCoder()
     response_dictionary[ 'manual_article_coder' ] = manual_article_coder
+    response_dictionary[ 'manual_coder' ] = manual_article_coder
 
     # set my default rendering template
     default_template = 'sourcenet/articles/article-code.html'
@@ -1405,174 +1749,37 @@ def article_code( request_IN ):
         # process article lookup?
         if ( article_lookup_form.is_valid() == True ):
 
+            # ! ---- render Article body
             # retrieve article specified by the input parameter, then create
             #   HTML output of article plus Article_Text.
+            status_message = render_article_to_response(
+                article_id,
+                response_dictionary,
+                config_application_IN = ManualArticleCoder.CONFIG_APPLICATION
+            )
             
-            # get article ID.
-            # already populated above.
-            #article_id = request_IN.POST.get( "article_id", -1 )
-
-            # retrieve QuerySet that contains that article.
-            article_qs = Article.objects.filter( pk = article_id )
-
-            # get count of queryset return items
-            if ( ( article_qs != None ) and ( article_qs != "" ) ):
-
-                # get count of articles
-                article_count = article_qs.count()
-    
-                # should only be one.
-                if ( article_count == 1 ):
-                
-                    # get article instance
-                    article_instance = article_qs.get()
-                    
-                    # retrieve article text.
-                    article_text = article_instance.article_text_set.get()
-                    
-                    # get content
-                    article_content = article_text.get_content()
-                    
-                    # parse with beautifulsoup
-                    article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
-                    # get paragraph tag list
-                    p_tag_list = article_content_bs.find_all( 'p' )
-                    p_tag_count = len( p_tag_list )
-                    
-                    # got p-tags?
-                    if ( p_tag_count > 0 ):
-                    
-                        # yes.  create a table with two columns per row:
-                        # - paragraph number
-                        # - paragraph text
-                        rendered_article_html = '''
-                            <table class="gridtable">
-                                <tr>
-                                    <th>graf#</th>
-                                    <th>text</th>
-                                </tr>
-                        '''
-                    
-                        # for each paragraph, grab that <p> and place it in a table
-                        #    cell.
-                        for paragraph_index in range( p_tag_count ):
-                        
-                            # paragraph number is index + 1
-                            paragraph_number = paragraph_index + 1
-                            
-                            # get <p> tag with ID of paragraph_number
-                            p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
-                            # render row
-                            p_tag_html = p_tag_bs.prettify()
-                            #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
-                            debug_message = "p_tag_html type = " + str( type( p_tag_html ) )
-                            output_debug( debug_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                            # calling str() on any part of a string being
-                            #    concatenated causes all parts of the string to
-                            #    try to encode to default encoding ('ascii').
-                            #    This breaks if there are non-ascii characters.
-                            rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
-                        
-                        #-- END loop over <p> ids. --#
-                        
-                        rendered_article_html += "</table>"
-                    
-                    else:
-                    
-                        # no p-tags - just use article_text.
-                        rendered_article_html = article_content
-                        
-                    #-- END check to see if paragraph tags. --#
-                    
-                    # seed response dictionary.
-                    response_dictionary[ 'article_instance' ] = article_instance
-                    response_dictionary[ 'article_text' ] = article_text
-                    response_dictionary[ 'article_content' ] = rendered_article_html
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    response_dictionary[ 'person_lookup_form' ] = person_lookup_form
-                    response_dictionary[ 'coding_submit_form' ] = coding_submit_form
-                    response_dictionary[ 'base_include_django_ajax_selects' ] = True
-                    
-                    # loaded from config
-                    response_dictionary[ 'do_output_table_html' ] = config_do_output_table_html
-                    response_dictionary[ 'include_fix_person_name' ] = config_include_fix_person_name
-                    response_dictionary[ 'include_title_field' ] = config_include_title_field
-                    response_dictionary[ 'include_organization_field' ] = config_include_organization_field
-                    response_dictionary[ 'include_find_in_article_text' ] = config_include_find_in_article_text
-
-                    # get paragraph list
-                    #article_paragraph_list = article_text.get_paragraph_list()
-                    
-                elif ( article_count > 1 ):
-
-                    # error - multiple articles found for ID. --#
-
-                    # create error message.
-                    page_status_message = "ERROR - lookup for article ID " + str( article_id ) + " returned " + str( article_count ) + " records.  Oh my..."
-                    
-                    # log it...
-                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                    # ...and output it.
-                    page_status_message_list.append( page_status_message )
-
-                    # and pass on the form.
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-                elif ( article_count == 0 ):
-
-                    # error - multiple articles found for ID. --#
-
-                    # create error message.
-                    page_status_message = "No article found for article ID " + str( article_id ) + "."
-
-                    # log it...
-                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                    # ...and output it.
-                    page_status_message_list.append( page_status_message )
-
-                    # and pass on the form.
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-                else:
-                
-                    # unknown error. --#
-
-                    # create error message.
-                    page_status_message = "Unknown error encountered looking up article ID " + str( article_id ) + "."
-
-                    # log it...
-                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                    # ...and output it.
-                    page_status_message_list.append( page_status_message )
-
-                    # and pass on the form.
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
-                #-- END check to see if there is one or other than one. --#
-
-            else:
+            # got a status message?
+            if ( status_message is not None ):
             
-                # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
+                # ERROR - not sure what to do here.  Error should have been
+                #     stored in page_status_message_list.  Output debug.
+                debug_message = "ERROR - status from call to sourcenet.views.render_article_to_response(): {}".format( status_message )
+                output_debug( debug_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
-                    # create error message.
-                    page_status_message = "ERROR - no QuerySet returned from call to filter().  This is odd."
-
-                    # log it...
-                    output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-
-                    # ...and output it.
-                    page_status_message_list.append( page_status_message )
-
-                    # and pass on the form.
-                    response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-
-            #-- END check to see if query set is None --#
+            #-- END check to see if status message. --#
+                
+            # seed response dictionary.
+            response_dictionary[ 'article_lookup_form' ] = article_lookup_form
+            response_dictionary[ 'person_lookup_form' ] = person_lookup_form
+            response_dictionary[ 'coding_submit_form' ] = coding_submit_form
+            response_dictionary[ 'base_include_django_ajax_selects' ] = True
+            
+            # loaded from config
+            response_dictionary[ 'do_output_table_html' ] = config_do_output_table_html
+            response_dictionary[ 'include_fix_person_name' ] = config_include_fix_person_name
+            response_dictionary[ 'include_title_field' ] = config_include_title_field
+            response_dictionary[ 'include_organization_field' ] = config_include_organization_field
+            response_dictionary[ 'include_find_in_article_text' ] = config_include_find_in_article_text
 
         else:
 

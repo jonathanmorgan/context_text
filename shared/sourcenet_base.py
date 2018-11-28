@@ -38,20 +38,52 @@ class SourcenetBase( BasicRateLimited ):
 
 
     #---------------------------------------------------------------------------
-    # CONSTANTS-ish
+    # ! ==> CONSTANTS-ish
     #---------------------------------------------------------------------------
 
     # status constants
     STATUS_SUCCESS = "Success!"
     STATUS_ERROR_PREFIX = "Error: "
     
-    # django_config properties
+    # django_config properties - sourcenet-db-admin application
     DJANGO_CONFIG_APPLICATION_SOURCENET_DB_ADMIN = "sourcenet-db-admin"
     DJANGO_CONFIG_PROP_DB_USERNAME = "db_username"
     DJANGO_CONFIG_PROP_DB_PASSWORD = "db_password"
     DJANGO_CONFIG_PROP_DB_HOST = "db_host"
     DJANGO_CONFIG_PROP_DB_PORT = "db_port"
-    DJANGO_CONFIG_PROP_DB_NAME = "db_name"    
+    DJANGO_CONFIG_PROP_DB_NAME = "db_name"
+    
+    # django_config properties - sourcenet-UI-article-code application
+    DJANGO_CONFIG_APPLICATION_ARTICLE_CODE = "sourcenet-UI-article-code"
+    DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE = "article_text_render_type"
+    DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED = "article_text_is_preformatted"
+    DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P = "article_text_wrap_in_p"
+    
+    # django_config property values - article_text_render_type
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_TABLE = "table"
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_RAW = "raw"
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_CUSTOM = "custom"
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_PDF = "pdf"
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_DEFAULT = DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_RAW
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST = []
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_RAW )
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_TABLE )
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_CUSTOM )
+    DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_PDF )
+     
+    # View response dictionary keys
+    VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST = "page_status_message_list"
+    VIEW_RESPONSE_KEY_ARTICLE_INSTANCE = "article_instance"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT = "article_text"
+    VIEW_RESPONSE_KEY_ARTICLE_CONTENT = "article_content"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM = "article_text_custom"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE = "article_text_type"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE = "article_text_render_type"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED = "article_text_is_preformatted"
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P = "article_text_wrap_in_p"
+    
+    # View HTML INPUT IDs.
+    INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article"
     
     # defaults
     DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -129,7 +161,7 @@ class SourcenetBase( BasicRateLimited ):
 
 
     #============================================================================
-    # instance variables
+    # ! ==> instance variables
     #============================================================================
 
 
@@ -142,7 +174,7 @@ class SourcenetBase( BasicRateLimited ):
     
     
     #-----------------------------------------------------------------------------
-    # class methods
+    # ! ==> class methods
     #-----------------------------------------------------------------------------
 
 
@@ -357,7 +389,7 @@ class SourcenetBase( BasicRateLimited ):
 
 
     #---------------------------------------------------------------------------
-    # __init__() method
+    # ! ==> __init__() method
     #---------------------------------------------------------------------------
 
 
@@ -383,7 +415,7 @@ class SourcenetBase( BasicRateLimited ):
 
 
     #---------------------------------------------------------------------------
-    # instance methods, in alphabetical order
+    # ! ==> instance methods, in alphabetical order
     #---------------------------------------------------------------------------
 
 

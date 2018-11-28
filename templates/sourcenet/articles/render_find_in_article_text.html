@@ -1,0 +1,30 @@
+{# Inputs: #}
+{# - manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE #}
+
+{% if include_find_in_article_text %}
+<p class="inputContainer" id="find-text-in-article-text" name="find-text-in-article-text">
+    <h4><em>Find in Article Text</em></h4>
+    <table>
+        <tr>
+            <td>
+                Search for:
+                <br />
+                <input type="text" name="{% if manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE %}{{ manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}{% else %}text-to-find-in-article{% endif %}" id="{% if manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE %}{{ manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}{% else %}text-to-find-in-article{% endif %}" size="25" />
+                <br />
+                <input type="button" id="find-in-article-text" name="find-in-article-text" value="<== Find in Text" />
+                <br />
+                <input type="button" id="find-words-in-article-text" name="find-words-in-article-text" value="<== Find Words in Text" />
+                <br />
+                <input type="button" id="clear-find-in-article-text" name="clear-find-in-article-text" value="<== Clear Matches" />
+            </td>
+            {% if fit_extra_html %}
+                <td>    
+                    {{ fit_extra_html | safe }}
+                </td>   
+            {% endif %}
+        </tr>
+    </table>
+</p>
+{% else %}
+<input type="hidden" name="{% if manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE %}{{ manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}{% else %}text-to-find-in-article{% endif %}" id="{% if manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE %}{{ manual_coder.INPUT_ID_TEXT_TO_FIND_IN_ARTICLE }}{% else %}text-to-find-in-article{% endif %}" />
+{% endif %}

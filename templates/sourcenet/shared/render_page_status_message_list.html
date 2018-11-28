@@ -1,0 +1,12 @@
+{# got page status message(s)? #}
+{% if page_status_message_list %}
+    <div id="page-status-message-area" class="pageStatusMessageArea">
+        <h4>Status Messages</h4>
+        <ul>
+        {% for page_status_message in page_status_message_list %}
+            <li>{{ page_status_message }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    <hr />
+{% endif %}

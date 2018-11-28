@@ -1,0 +1,42 @@
+{% if article_instance %}
+
+    <div id="article_view" name="article_view">
+        <h3>Article {{ article_instance.id }} - {{ article_instance.headline }}</h3>
+        <ul>
+            {% if article_instance.section %}<li><em>Section:</em> {{ article_instance.section }}</li>{% endif %}
+            {% if article_instance.pub_date %}<li><em>Publication Date:</em> {{ article_instance.pub_date }}</li>{% endif %}
+            {% if article_instance.file_path %}<li><em>Original PDF:</em> <a target="_blank" href="/pdf/{{ article_instance.file_path }}">{{ article_instance.file_path }}</a></li>{% endif %}
+    
+            {% if include_detail %}
+            <li><em>Page:</em> {{ article_instance.page }}</li>                
+            <li><em>Edition:</em> {{ article_instance.edition }}</li>                
+            <li><em>Terms:</em> {{ article_instance.index_terms }}</li>                
+            <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
+            {% endif %}
+            {% if article_instance.author_string %}<li><em><strong>Byline:</strong></em> {{ article_instance.author_string }}</li>{% endif %}
+        </ul>
+        
+        {% if article_text_wrap_in_p %}<p>{% endif %}
+        {% if article_text_is_preformatted %}<pre>{% endif %}
+    
+        {# are we outputting HTML <table>, or plain text, custom, or PDF? #}
+        <!-- {{ article_text_render_type }} -->
+        {% if article_text_render_type == "table" %}
+            {{ article_content | safe }}
+        {% elif article_text_render_type == "custom" %}
+            {{ article_text_custom | safe }}
+        {% elif article_text_render_type == "pdf" %}
+            <iframe src="/pdf/{{ article_instance.file_path }}" width="630" height="820"></iframe>
+        {% elif do_output_table_html %}
+            {{ article_content | safe }}
+        {% else %}
+            {{ article_text.get_content | safe }}
+        {% endif %}
+    
+        {% if article_text_is_preformatted %}</pre>{% endif %}
+        {% if article_text_wrap_in_p %}</p>{% endif %}
+    
+        <p id="article_end" name="article_end" class="articleEnd">-- 30 --</p>
+    </div>
+    
+{% endif %}
