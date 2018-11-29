@@ -146,14 +146,14 @@ from sourcenet.shared.sourcenet_base import SourcenetBase
 
 # configuration properties
 # article_code view
-CONFIG_APPLICATION_ARTICLE_CODE = "sourcenet-UI-article-code"
+CONFIG_APPLICATION_ARTICLE_CODE = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
     
 # article_code config property names.
-CONFIG_PROP_DO_OUTPUT_TABLE_HTML = "do_output_table_html"
+CONFIG_PROP_DO_OUTPUT_TABLE_HTML = SourcenetBase.DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
 CONFIG_PROP_INCLUDE_FIX_PERSON_NAME = "include_fix_person_name"
 CONFIG_PROP_INCLUDE_TITLE_FIELD = "include_title_field"
 CONFIG_PROP_INCLUDE_ORGANIZATION_FIELD = "include_organization_field"
-CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT = "include_find_in_article_text"
+CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT = SourcenetBase.DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT
 
 # Form input names
 INPUT_NAME_ARTICLE_ID = "article_id"

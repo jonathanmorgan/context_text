@@ -60,6 +60,7 @@ class SourcenetBase( BasicRateLimited ):
     DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P = "article_text_wrap_in_p"
     
     # django_config property values - article_text_render_type
+    DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML = "do_output_table_html"
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_TABLE = "table"
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_RAW = "raw"
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_CUSTOM = "custom"
@@ -71,6 +72,13 @@ class SourcenetBase( BasicRateLimited ):
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_CUSTOM )
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_PDF )
      
+    # django_config property values - find in text (FIT)
+    DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT = "include_find_in_article_text"
+    DJANGO_CONFIG_NAME_DEFAULT_FIND_LOCATION = "default_find_location"
+    DJANGO_CONFIG_NAME_IGNORE_WORD_LIST = "ignore_word_list"
+    DJANGO_CONFIG_NAME_HIGHLIGHT_WORD_LIST = "highlight_word_list"
+    DJANGO_CONFIG_NAME_BE_CASE_SENSITIVE = "be_case_sensitive"
+
     # View response dictionary keys
     VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST = "page_status_message_list"
     VIEW_RESPONSE_KEY_ARTICLE_INSTANCE = "article_instance"
@@ -78,9 +86,19 @@ class SourcenetBase( BasicRateLimited ):
     VIEW_RESPONSE_KEY_ARTICLE_CONTENT = "article_content"
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM = "article_text_custom"
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE = "article_text_type"
-    VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE = "article_text_render_type"
-    VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED = "article_text_is_preformatted"
-    VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P = "article_text_wrap_in_p"
+    
+    # View response dictionary keys - article text
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE = DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED = DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED
+    VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P = DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P
+    VIEW_RESPONSE_KEY_DO_OUTPUT_TABLE_HTML = DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
+    
+    # View response dictionary keys - find in text (FIT)
+    VIEW_RESPONSE_KEY_INCLUDE_FIND_IN_ARTICLE_TEXT = DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT
+    VIEW_RESPONSE_KEY_DEFAULT_FIND_LOCATION = DJANGO_CONFIG_NAME_DEFAULT_FIND_LOCATION
+    VIEW_RESPONSE_KEY_IGNORE_WORD_LIST = DJANGO_CONFIG_NAME_IGNORE_WORD_LIST
+    VIEW_RESPONSE_KEY_HIGHLIGHT_WORD_LIST = DJANGO_CONFIG_NAME_HIGHLIGHT_WORD_LIST
+    VIEW_RESPONSE_KEY_BE_CASE_SENSITIVE = DJANGO_CONFIG_NAME_BE_CASE_SENSITIVE
     
     # View HTML INPUT IDs.
     INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article"
@@ -160,19 +178,6 @@ class SourcenetBase( BasicRateLimited ):
     CODER_TYPE_FILTER_TYPE_DEFAULT = CODER_TYPE_FILTER_TYPE_NONE
 
 
-    #============================================================================
-    # ! ==> instance variables
-    #============================================================================
-
-
-    # request variables
-    request = None
-    parameters = None
-    
-    # rate-limiting
-    is_rate_limited = False
-    
-    
     #-----------------------------------------------------------------------------
     # ! ==> class methods
     #-----------------------------------------------------------------------------
