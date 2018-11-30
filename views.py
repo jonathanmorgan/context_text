@@ -574,7 +574,7 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
         - "article_content" - body text of article, rendered as a table.
         - "article_text_custom" - custom-proccessed article text (this function puts every line inside a <p> tag - you can update after the call if you want something else).
         - "article_text_type" - value from "article_text.content_type".
-        - "article_text_render_type" - one of "table", "raw", "custom", or "pdf", loaded from django_config using Config_Property.get_property_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ), defaults to "raw" if nothing specified in Config.
+        - "article_text_render_type" - one of "table", "raw", "custom", or "pdf", loaded from django_config using Config_Property.get_property_value( config_application_IN, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ), defaults to "raw" if nothing specified in Config.
         - "article_text_is_preformatted" - not sure how this is used, defaults to False, loaded from django_config using Config_Property.get_property_boolean_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
         - "article_text_wrap_in_p" - whether or not the entire article text block should be wrapped in a <p> tag.  Defaults to True, loaded from django_config using Config_Property.get_property_boolean_value( ManualDataSetMentionsCoder.CONFIG_APPLICATION, ManualDataSetMentionsCoder.CONFIG_NAME_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )
 

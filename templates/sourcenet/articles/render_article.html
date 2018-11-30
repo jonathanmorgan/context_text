@@ -1,3 +1,14 @@
+{# Inputs: #}
+{# - article_instance - reference to Article model instance we want to output. #}
+{# - include_detail - True if we want to include additional detail like Page, Edition, Terms, and Source, False if not. #}
+{# - article_text_link_to_pdf - Boolean, True if we want to include a link to "/pdf/{{ article_instance.file_path }}", False if not. #}
+{# - article_text_wrap_in_p - Boolean, True if we want to wrap the whole thing in a <p> tag, False if not. #}
+{# - article_text_is_preformatted - Boolean, True if we want to wrap the whole thing in a <pre> tag, False if not. #}
+{# - article_text_render_type - one of "table", "raw", "custom", "pdf", how we want to render the article.  Defaults to "raw". #}
+{# - article_content - table HTML output of article. #}
+{# - article_text_custom - custom render of article, defaults to <p> per line in body of article. #}
+{# - article_text - Article_Text model instance that holds the publication's raw text (used for "raw"). #}
+    
 {% if article_instance %}
 
     <div id="article_view" name="article_view">
@@ -14,6 +25,7 @@
             <li><em>Source:</em> {{ article_instance.archive_source }} ( <em>id:</em> {{ article_instance.archive_id }} )</li>
             {% endif %}
             {% if article_instance.author_string %}<li><em><strong>Byline:</strong></em> {{ article_instance.author_string }}</li>{% endif %}
+            {% if article_text_link_to_pdf %}<li><a href="/pdf/{{ article_instance.file_path }}">Article PDF</a></li>{% endif %}
         </ul>
         
         {% if article_text_wrap_in_p %}<p>{% endif %}
