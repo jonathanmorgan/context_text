@@ -84,6 +84,9 @@ from python_utilities.logging.logging_helper import LoggingHelper
 # python_utilities - sequences
 from python_utilities.sequences.sequence_helper import SequenceHelper
 
+# context imports
+from context.models import Work_Log
+
 # sourcenet imports
 from sourcenet.shared.person_details import PersonDetails
 from sourcenet.shared.sourcenet_base import SourcenetBase
@@ -6344,6 +6347,7 @@ class Article_Data( models.Model ):
     
     # related projects:
     projects = models.ManyToManyField( Project, blank = True )
+    work_log = models.ForeignKey( Work_Log, on_delete = models.SET_NULL, blank = True, null = True )
 
     # Meta-data for this class.
     class Meta:
@@ -9356,6 +9360,14 @@ class Abstract_Selected_Text( models.Model ):
     #----------------------------------------------------------------------
 
 
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Abstract_Selected_Text, self ).__init__( *args, **kwargs )
+
+    #-- END method __init__() --#
+
+    
     def __str__( self ):
         
         # return reference
@@ -9521,6 +9533,82 @@ class Abstract_Selected_Text( models.Model ):
 
 
 #-- END abstract class Abstract_Selected_Text --#
+
+
+# AbstractArticleText model
+@python_2_unicode_compatible
+class AbstractArticleText( Abstract_Selected_Text ):
+
+    #----------------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------------
+
+    # associated article
+    article = models.ForeignKey( Article, on_delete = models.CASCADE, blank = True, null = True )
+    
+    # optional - who captured this at the article level?
+    article_data = models.ForeignKey( Article_Data, on_delete = models.CASCADE, blank = True, null = True )
+    
+    # work log reference.
+    work_log = models.ForeignKey( Work_Log, on_delete = models.SET_NULL, blank = True, null = True )
+        
+    # tags!
+    tags = TaggableManager( blank = True )
+
+    # Meta-data for this class.
+    class Meta:
+
+        abstract = True
+        
+    #-- END class Meta --#
+
+
+    #----------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( AbstractArticleText, self ).__init__( *args, **kwargs )
+
+    #-- END method __init__() --#
+
+    
+    def __str__( self ):
+        
+        # return reference
+        string_OUT = ""
+        
+        # declare variables
+        details_list = []
+        
+        # got id?
+        if ( self.id ):
+        
+            string_OUT = str( self.id )
+            
+        #-- END check for ID. --#
+
+        if ( self.publication ):
+        
+            string_OUT += " - Pub. ID: {}" + str( self.publication.id )
+        
+        #-- END check to see if publication. --#
+        
+        # got associated text?...
+        if ( self.value ):
+        
+            string_OUT += ": {}".format( self.value )
+                
+        #-- END check to see if we have text. --#
+        
+        return string_OUT
+
+    #-- END __str__() method --#
+    
+#= End AbstractArticleText Model ======================================================
 
 
 # Article_Subject_Mention model
