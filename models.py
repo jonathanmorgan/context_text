@@ -9537,7 +9537,7 @@ class Abstract_Selected_Text( models.Model ):
 
 # AbstractArticleText model
 @python_2_unicode_compatible
-class AbstractArticleText( Abstract_Selected_Text ):
+class AbstractSelectedArticleText( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
     # model fields and meta
@@ -9571,7 +9571,7 @@ class AbstractArticleText( Abstract_Selected_Text ):
     def __init__( self, *args, **kwargs ):
         
         # call parent __init()__ first.
-        super( AbstractArticleText, self ).__init__( *args, **kwargs )
+        super( AbstractSelectedArticleText, self ).__init__( *args, **kwargs )
 
     #-- END method __init__() --#
 
@@ -9608,7 +9608,7 @@ class AbstractArticleText( Abstract_Selected_Text ):
 
     #-- END __str__() method --#
     
-#= End AbstractArticleText Model ======================================================
+#= End AbstractSelectedArticleText Model ======================================================
 
 
 # Article_Subject_Mention model
