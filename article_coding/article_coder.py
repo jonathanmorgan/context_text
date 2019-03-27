@@ -763,11 +763,12 @@ class ArticleCoder( BasicRateLimited ):
     #-- END abstract method load_config_properties() --#
     
 
-    def lookup_article_data( self, article_IN, user_IN, article_data_id_IN = None ):
+    def lookup_article_data( self, article_IN, user_IN, article_data_id_IN = None, work_log_IN = None ):
         
         '''
-        Accepts article, user and optional Article_Data ID.  Tries to retrieve
-            Article_Data for article-user pair.  If multiple found and ID passed
+        Accepts article, user and optional Article_Data ID and work_log.  Tries
+            to retrieve Article_Data for article-user pair, also filtering on
+            work log if it is passed in.  If multiple found and ID passed
             in, then tried to filter on that ID to get a single match.
            
         Returns a dictionary that contains:
@@ -828,6 +829,14 @@ class ArticleCoder( BasicRateLimited ):
                 #    user and article.
                 article_data_qs = Article_Data.objects.filter( coder = user_IN )
                 article_data_qs = article_data_qs.filter( article = article_IN )
+                
+                # work log passed in?
+                if ( work_log_IN is not None ):
+                
+                    # yes - filter on work log, also.
+                    article_data_qs = article_data_qs.filter( work_log = work_log_IN )
+                    
+                #-- END check to see if work log passed in. --#
 
                 # How many matches?
                 try:
@@ -912,6 +921,13 @@ class ArticleCoder( BasicRateLimited ):
                     # get article for ID, store in Article_Data.
                     article_data_OUT.article = article_IN
                     article_data_OUT.coder = user_IN
+                    
+                    # if work_log_IN, add it.
+                    if ( work_log_IN is not None ):
+                    
+                        article_data_OUT.work_log = work_log_IN
+                        
+                    #-- END check to see if work log passed in. --#
                 
                     # Save off Aricle_Data instance - current_article_data.save()
                     article_data_OUT.save()
