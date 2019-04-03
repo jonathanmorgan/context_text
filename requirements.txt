@@ -11,3 +11,4 @@ regex
 six
 ipykernel
 openpyxl
+html5lib
