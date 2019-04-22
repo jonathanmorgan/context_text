@@ -1,5 +1,5 @@
 # imports
-from sourcenet.models import Article
+from context_text.models import Article
 from django.contrib.auth.models import User
 
 # declare variables - filter articles to delete

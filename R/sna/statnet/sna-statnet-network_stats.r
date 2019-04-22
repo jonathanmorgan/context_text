@@ -2,7 +2,7 @@
 #    For more details on that, see the files "functions-sna.r",
 #    "sna-load_data.r" and "sna-statnet_init.r".
 #
-# assumes that working directory for statnet is sourcenet/R/statnet.
+# assumes that working directory for statnet is context_text/R/sna/statnet.
 # setwd( ".." )
 # source( "functions-sna.r" )
 # source( "sna-load_data.r" )

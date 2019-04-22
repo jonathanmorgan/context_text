@@ -2,7 +2,7 @@
 #    For more details on that, see the files "functions-sna.r",
 #    "sna-load_data.r" and "sna-igraph_init.r".
 #
-# assumes that working directory for statnet is sourcenet/R/igraph
+# assumes that working directory for statnet is context_text/R/sna/igraph
 # setwd( ".." )
 # source( "functions-sna.r" )
 # source( "sna-load_data.r" )

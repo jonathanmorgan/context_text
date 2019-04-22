@@ -38,8 +38,8 @@ Interacting with a model that has tags:
 '''
 
 # imports
-from sourcenet.models import Article
-from sourcenet.article_coding.article_coding import ArticleCoding
+from context_text.models import Article
+from context_text.article_coding.article_coding import ArticleCoding
 
 # declare variables
 params = {}

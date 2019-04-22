@@ -505,16 +505,16 @@ INSERT INTO `django_content_type` (`id`, `name`, `app_label`, `model`) VALUES
 (8, 'poll', 'polls', 'poll'),
 (9, 'choice', 'polls', 'choice'),
 (10, 'log entry', 'admin', 'logentry'),
-(11, 'location', 'sourcenet', 'location'),
-(12, 'topic', 'sourcenet', 'topic'),
-(13, 'person', 'sourcenet', 'person'),
-(14, 'organization', 'sourcenet', 'organization'),
-(15, 'document', 'sourcenet', 'document'),
-(16, 'newspaper', 'sourcenet', 'newspaper'),
-(18, 'article_ author', 'sourcenet', 'article_author'),
-(19, 'article_ source', 'sourcenet', 'article_source'),
-(21, 'article', 'sourcenet', 'article'),
-(22, 'person_ organization', 'sourcenet', 'person_organization');
+(11, 'location', 'context_text', 'location'),
+(12, 'topic', 'context_text', 'topic'),
+(13, 'person', 'context_text', 'person'),
+(14, 'organization', 'context_text', 'organization'),
+(15, 'document', 'context_text', 'document'),
+(16, 'newspaper', 'context_text', 'newspaper'),
+(18, 'article_ author', 'context_text', 'article_author'),
+(19, 'article_ source', 'context_text', 'article_source'),
+(21, 'article', 'context_text', 'article'),
+(22, 'person_ organization', 'context_text', 'person_organization');
 
 -- --------------------------------------------------------
 
@@ -609,11 +609,11 @@ INSERT INTO `polls_poll` (`id`, `question`, `pub_date`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article`
+-- Table structure for table `context_text_article`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article` (
+DROP TABLE IF EXISTS `context_text_article`;
+CREATE TABLE IF NOT EXISTS `context_text_article` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `coder_id` int(11) NOT NULL,
   `newspaper_id` int(11) NOT NULL,
@@ -623,15 +623,15 @@ CREATE TABLE IF NOT EXISTS `sourcenet_article` (
   `headline` varchar(255) NOT NULL,
   `text` longtext NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_article_coder_id` (`coder_id`),
-  KEY `sourcenet_article_newspaper_id` (`newspaper_id`)
+  KEY `context_text_article_coder_id` (`coder_id`),
+  KEY `context_text_article_newspaper_id` (`newspaper_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 --
--- Dumping data for table `sourcenet_article`
+-- Dumping data for table `context_text_article`
 --
 
-INSERT INTO `sourcenet_article` (`id`, `coder_id`, `newspaper_id`, `pub_date`, `section`, `page`, `headline`, `text`) VALUES
+INSERT INTO `context_text_article` (`id`, `coder_id`, `newspaper_id`, `pub_date`, `section`, `page`, `headline`, `text`) VALUES
 (1, 1, 1, '2010-04-02', 'A', 3, 'Man charged in assault', ''),
 (2, 1, 1, '2010-04-02', 'A', 3, '40 years later, dying thief pays for stolen cigarettes - $100 sent anonymously to store owner''s grandson as way of atonement', ''),
 (3, 1, 1, '2010-04-02', 'A', 16, 'Freedom Christian seeks use of ball field', ''),
@@ -640,25 +640,25 @@ INSERT INTO `sourcenet_article` (`id`, `coder_id`, `newspaper_id`, `pub_date`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article_author`
+-- Table structure for table `context_text_article_author`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article_author`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article_author` (
+DROP TABLE IF EXISTS `context_text_article_author`;
+CREATE TABLE IF NOT EXISTS `context_text_article_author` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article_id` int(11) NOT NULL,
   `person_id` int(11) DEFAULT NULL,
   `author_type` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_article_author_article_id` (`article_id`),
-  KEY `sourcenet_article_author_person_id` (`person_id`)
+  KEY `context_text_article_author_article_id` (`article_id`),
+  KEY `context_text_article_author_person_id` (`person_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 --
--- Dumping data for table `sourcenet_article_author`
+-- Dumping data for table `context_text_article_author`
 --
 
-INSERT INTO `sourcenet_article_author` (`id`, `article_id`, `person_id`, `author_type`) VALUES
+INSERT INTO `context_text_article_author` (`id`, `article_id`, `person_id`, `author_type`) VALUES
 (1, 1, NULL, 'staff'),
 (2, 2, 1, 'staff'),
 (3, 3, NULL, 'staff'),
@@ -667,11 +667,11 @@ INSERT INTO `sourcenet_article_author` (`id`, `article_id`, `person_id`, `author
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article_locations`
+-- Table structure for table `context_text_article_locations`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article_locations`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article_locations` (
+DROP TABLE IF EXISTS `context_text_article_locations`;
+CREATE TABLE IF NOT EXISTS `context_text_article_locations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article_id` int(11) NOT NULL,
   `location_id` int(11) NOT NULL,
@@ -681,10 +681,10 @@ CREATE TABLE IF NOT EXISTS `sourcenet_article_locations` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 --
--- Dumping data for table `sourcenet_article_locations`
+-- Dumping data for table `context_text_article_locations`
 --
 
-INSERT INTO `sourcenet_article_locations` (`id`, `article_id`, `location_id`) VALUES
+INSERT INTO `context_text_article_locations` (`id`, `article_id`, `location_id`) VALUES
 (1, 1, 4),
 (2, 2, 7),
 (3, 3, 10),
@@ -693,11 +693,11 @@ INSERT INTO `sourcenet_article_locations` (`id`, `article_id`, `location_id`) VA
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article_source`
+-- Table structure for table `context_text_article_source`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article_source`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article_source` (
+DROP TABLE IF EXISTS `context_text_article_source`;
+CREATE TABLE IF NOT EXISTS `context_text_article_source` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `source_type` varchar(255) NOT NULL,
   `article_id` int(11) NOT NULL,
@@ -709,17 +709,17 @@ CREATE TABLE IF NOT EXISTS `sourcenet_article_source` (
   `localness` varchar(255) NOT NULL,
   `notes` longtext NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_article_source_article_id` (`article_id`),
-  KEY `sourcenet_article_source_person_id` (`person_id`),
-  KEY `sourcenet_article_source_organization_id` (`organization_id`),
-  KEY `sourcenet_article_source_document_id` (`document_id`)
+  KEY `context_text_article_source_article_id` (`article_id`),
+  KEY `context_text_article_source_person_id` (`person_id`),
+  KEY `context_text_article_source_organization_id` (`organization_id`),
+  KEY `context_text_article_source_document_id` (`document_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=7 ;
 
 --
--- Dumping data for table `sourcenet_article_source`
+-- Dumping data for table `context_text_article_source`
 --
 
-INSERT INTO `sourcenet_article_source` (`id`, `source_type`, `article_id`, `title`, `person_id`, `organization_id`, `document_id`, `source_capacity`, `localness`, `notes`) VALUES
+INSERT INTO `context_text_article_source` (`id`, `source_type`, `article_id`, `title`, `person_id`, `organization_id`, `document_id`, `source_capacity`, `localness`, `notes`) VALUES
 (1, 'anonymous', 1, 'Police', NULL, NULL, NULL, 'police', 'local', ''),
 (2, 'anonymous', 1, 'deputies', NULL, 5, NULL, 'police', 'local', ''),
 (3, 'individual', 2, 'deputy (retired)', 2, 7, NULL, 'individual', 'local', ''),
@@ -730,11 +730,11 @@ INSERT INTO `sourcenet_article_source` (`id`, `source_type`, `article_id`, `titl
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article_source_topics`
+-- Table structure for table `context_text_article_source_topics`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article_source_topics`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article_source_topics` (
+DROP TABLE IF EXISTS `context_text_article_source_topics`;
+CREATE TABLE IF NOT EXISTS `context_text_article_source_topics` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article_source_id` int(11) NOT NULL,
   `topic_id` int(11) NOT NULL,
@@ -744,18 +744,18 @@ CREATE TABLE IF NOT EXISTS `sourcenet_article_source_topics` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
--- Dumping data for table `sourcenet_article_source_topics`
+-- Dumping data for table `context_text_article_source_topics`
 --
 
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_article_topics`
+-- Table structure for table `context_text_article_topics`
 --
 
-DROP TABLE IF EXISTS `sourcenet_article_topics`;
-CREATE TABLE IF NOT EXISTS `sourcenet_article_topics` (
+DROP TABLE IF EXISTS `context_text_article_topics`;
+CREATE TABLE IF NOT EXISTS `context_text_article_topics` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article_id` int(11) NOT NULL,
   `topic_id` int(11) NOT NULL,
@@ -765,10 +765,10 @@ CREATE TABLE IF NOT EXISTS `sourcenet_article_topics` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=6 ;
 
 --
--- Dumping data for table `sourcenet_article_topics`
+-- Dumping data for table `context_text_article_topics`
 --
 
-INSERT INTO `sourcenet_article_topics` (`id`, `article_id`, `topic_id`) VALUES
+INSERT INTO `context_text_article_topics` (`id`, `article_id`, `topic_id`) VALUES
 (1, 1, 4),
 (2, 2, 17),
 (3, 3, 3),
@@ -778,32 +778,32 @@ INSERT INTO `sourcenet_article_topics` (`id`, `article_id`, `topic_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_document`
+-- Table structure for table `context_text_document`
 --
 
-DROP TABLE IF EXISTS `sourcenet_document`;
-CREATE TABLE IF NOT EXISTS `sourcenet_document` (
+DROP TABLE IF EXISTS `context_text_document`;
+CREATE TABLE IF NOT EXISTS `context_text_document` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` longtext NOT NULL,
   `organization_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_document_organization_id` (`organization_id`)
+  KEY `context_text_document_organization_id` (`organization_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 --
--- Dumping data for table `sourcenet_document`
+-- Dumping data for table `context_text_document`
 --
 
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_location`
+-- Table structure for table `context_text_location`
 --
 
-DROP TABLE IF EXISTS `sourcenet_location`;
-CREATE TABLE IF NOT EXISTS `sourcenet_location` (
+DROP TABLE IF EXISTS `context_text_location`;
+CREATE TABLE IF NOT EXISTS `context_text_location` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` longtext NOT NULL,
@@ -816,10 +816,10 @@ CREATE TABLE IF NOT EXISTS `sourcenet_location` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=11 ;
 
 --
--- Dumping data for table `sourcenet_location`
+-- Dumping data for table `context_text_location`
 --
 
-INSERT INTO `sourcenet_location` (`id`, `name`, `description`, `address`, `city`, `county`, `state`, `zip_code`) VALUES
+INSERT INTO `context_text_location` (`id`, `name`, `description`, `address`, `city`, `county`, `state`, `zip_code`) VALUES
 (1, '', '', '', 'Grand Rapids', '', 'MI', ''),
 (2, '', '', '', 'Lansing', '', 'MI', ''),
 (3, '', '', '', 'Detroit', '', 'MI', ''),
@@ -834,24 +834,24 @@ INSERT INTO `sourcenet_location` (`id`, `name`, `description`, `address`, `city`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_newspaper`
+-- Table structure for table `context_text_newspaper`
 --
 
-DROP TABLE IF EXISTS `sourcenet_newspaper`;
-CREATE TABLE IF NOT EXISTS `sourcenet_newspaper` (
+DROP TABLE IF EXISTS `context_text_newspaper`;
+CREATE TABLE IF NOT EXISTS `context_text_newspaper` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` longtext NOT NULL,
   `organization_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_newspaper_organization_id` (`organization_id`)
+  KEY `context_text_newspaper_organization_id` (`organization_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 --
--- Dumping data for table `sourcenet_newspaper`
+-- Dumping data for table `context_text_newspaper`
 --
 
-INSERT INTO `sourcenet_newspaper` (`id`, `name`, `description`, `organization_id`) VALUES
+INSERT INTO `context_text_newspaper` (`id`, `name`, `description`, `organization_id`) VALUES
 (1, 'Grand Rapids Press, The', '', 1),
 (2, 'Lansing State Journal, The', '', 2),
 (3, 'Detroit Free Press, The', '', 3),
@@ -860,24 +860,24 @@ INSERT INTO `sourcenet_newspaper` (`id`, `name`, `description`, `organization_id
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_organization`
+-- Table structure for table `context_text_organization`
 --
 
-DROP TABLE IF EXISTS `sourcenet_organization`;
-CREATE TABLE IF NOT EXISTS `sourcenet_organization` (
+DROP TABLE IF EXISTS `context_text_organization`;
+CREATE TABLE IF NOT EXISTS `context_text_organization` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` longtext NOT NULL,
   `location_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_organization_location_id` (`location_id`)
+  KEY `context_text_organization_location_id` (`location_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;
 
 --
--- Dumping data for table `sourcenet_organization`
+-- Dumping data for table `context_text_organization`
 --
 
-INSERT INTO `sourcenet_organization` (`id`, `name`, `description`, `location_id`) VALUES
+INSERT INTO `context_text_organization` (`id`, `name`, `description`, `location_id`) VALUES
 (1, 'Grand Rapids Press', '', 1),
 (2, 'Lansing State Journal', '', 2),
 (3, 'Detroit Free Press', '', 3),
@@ -890,11 +890,11 @@ INSERT INTO `sourcenet_organization` (`id`, `name`, `description`, `location_id`
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_person`
+-- Table structure for table `context_text_person`
 --
 
-DROP TABLE IF EXISTS `sourcenet_person`;
-CREATE TABLE IF NOT EXISTS `sourcenet_person` (
+DROP TABLE IF EXISTS `context_text_person`;
+CREATE TABLE IF NOT EXISTS `context_text_person` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `first_name` varchar(255) NOT NULL,
   `middle_name` varchar(255) NOT NULL,
@@ -906,10 +906,10 @@ CREATE TABLE IF NOT EXISTS `sourcenet_person` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 --
--- Dumping data for table `sourcenet_person`
+-- Dumping data for table `context_text_person`
 --
 
-INSERT INTO `sourcenet_person` (`id`, `first_name`, `middle_name`, `last_name`, `gender`, `title`, `notes`) VALUES
+INSERT INTO `context_text_person` (`id`, `first_name`, `middle_name`, `last_name`, `gender`, `title`, `notes`) VALUES
 (1, 'John', 'S.', 'Housman', 'male', '', ''),
 (2, 'Dennis', '', 'Porter', 'male', '', ''),
 (3, 'John', '', 'Agar', 'male', '', ''),
@@ -918,25 +918,25 @@ INSERT INTO `sourcenet_person` (`id`, `first_name`, `middle_name`, `last_name`, 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_person_organization`
+-- Table structure for table `context_text_person_organization`
 --
 
-DROP TABLE IF EXISTS `sourcenet_person_organization`;
-CREATE TABLE IF NOT EXISTS `sourcenet_person_organization` (
+DROP TABLE IF EXISTS `context_text_person_organization`;
+CREATE TABLE IF NOT EXISTS `context_text_person_organization` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `person_id` int(11) NOT NULL,
   `organization_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sourcenet_person_organization_person_id` (`person_id`),
-  KEY `sourcenet_person_organization_organization_id` (`organization_id`)
+  KEY `context_text_person_organization_person_id` (`person_id`),
+  KEY `context_text_person_organization_organization_id` (`organization_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=4 ;
 
 --
--- Dumping data for table `sourcenet_person_organization`
+-- Dumping data for table `context_text_person_organization`
 --
 
-INSERT INTO `sourcenet_person_organization` (`id`, `person_id`, `organization_id`, `title`) VALUES
+INSERT INTO `context_text_person_organization` (`id`, `person_id`, `organization_id`, `title`) VALUES
 (1, 1, 6, ''),
 (2, 3, 1, ''),
 (3, 4, 8, 'former vice president');
@@ -944,11 +944,11 @@ INSERT INTO `sourcenet_person_organization` (`id`, `person_id`, `organization_id
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sourcenet_topic`
+-- Table structure for table `context_text_topic`
 --
 
-DROP TABLE IF EXISTS `sourcenet_topic`;
-CREATE TABLE IF NOT EXISTS `sourcenet_topic` (
+DROP TABLE IF EXISTS `context_text_topic`;
+CREATE TABLE IF NOT EXISTS `context_text_topic` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` longtext NOT NULL,
@@ -957,10 +957,10 @@ CREATE TABLE IF NOT EXISTS `sourcenet_topic` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=18 ;
 
 --
--- Dumping data for table `sourcenet_topic`
+-- Dumping data for table `context_text_topic`
 --
 
-INSERT INTO `sourcenet_topic` (`id`, `name`, `description`, `last_modified`) VALUES
+INSERT INTO `context_text_topic` (`id`, `name`, `description`, `last_modified`) VALUES
 (1, 'military', '', '2010-04-07'),
 (2, 'politics', '', '2010-04-07'),
 (3, 'government', '', '2010-04-07'),

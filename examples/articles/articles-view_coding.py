@@ -1,5 +1,5 @@
 # imports
-from sourcenet.models import Article_Data
+from context_text.models import Article_Data
 from django.contrib.auth.models import User
 
 # declare variables

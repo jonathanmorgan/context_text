@@ -1,0 +1,216 @@
+{% extends "context_text/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Code Article{% endblock %}
+
+{% block inside-head %}
+<script src="https://code.jquery.com/jquery-latest.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.selection/1.0.1/jquery.selection.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{% static "context_text/css/article-coding/article-coding.css" %}" />
+<script src="{% static "context_text/js/context_text.js" %}"></script>
+<script src="{% static "context_text/js/find-in-text.js" %}"></script>
+<script src="{% static "context_text/js/article-coding/article-coding.js" %}"></script>
+{% if existing_data_store_json %}<script>CONTEXT_TEXT.data_store_json = '{{ existing_data_store_json }}';</script>{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="contentBox">
+    <article class="contentLeft">
+        
+        <!-- ! include page status message list output -->
+        {# if status message(s), output? #}
+        {% include "context_text/shared/render_page_status_message_list.html" %}
+
+        <div id="return-to-source" class="returnToSource">
+            <ul>
+                {# if source, persist tag list for return to coding list page #}
+                <li>
+                    <a href="{% url 'context_text-article_coding_list' %}{% if source %}?tags_in_list={{ tags_in_list }}{% endif %}">
+                        {% if source %}Return to {% endif %}Article Coding List
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <hr />
+
+        <h1>Code article</h1>
+        
+        <div id="article_form" name="article_form">
+            
+            <form action="" method="post">
+        
+                {# always include CSRF token #}
+                {% csrf_token %}
+                    
+                <p>
+                    <table class="gridtable">
+                        {# output article lookup form #}
+                        {{ article_lookup_form.as_table }}
+                    </table>
+                </p>
+                
+                {% if source %}
+                    <input type="hidden" name="source" value="{{ source }}" />
+                {% else %}
+                    <input type="hidden" name="source" value="" />
+                {% endif %}
+                
+                {% if tags_in_list %}
+                    <input type="hidden" name="tags_in_list" value="{{ tags_in_list }}" />
+                {% else %}
+                    <input type="hidden" name="tags_in_list" value="" />
+                {% endif %}
+                            
+                <p>
+                    <input type="submit" value="Load Article" />
+                </p>
+                
+            </form>
+            
+        </div>
+        
+        <!-- ! include render article -->
+        {% if article_instance %}
+        
+            <hr />
+            
+            {% include "context_text/articles/render_article.html" %}            
+
+            <hr />
+            
+        {% endif %}
+    </article>
+    <aside class="sidebarBox">
+        <div class="scrollingBox">
+            <h2>Record Article People</h2>
+            <!-- <form name="person-coding" id="person-coding"> -->
+            <div name="person-coding" id="person-coding">
+                <input type="hidden" name="{{ manual_article_coder.INPUT_ID_MATCHED_PERSON_ID }}" id="{{ manual_article_coder.INPUT_ID_MATCHED_PERSON_ID }}" />
+                <input type="hidden" name="{{ manual_article_coder.INPUT_ID_ARTICLE_PERSON_ID }}" id="{{ manual_article_coder.INPUT_ID_ARTICLE_PERSON_ID }}" />
+                <input type="hidden" name="{{ manual_article_coder.INPUT_ID_ORIGINAL_PERSON_TYPE }}" id="{{ manual_article_coder.INPUT_ID_ORIGINAL_PERSON_TYPE }}" />
+                <input type="hidden" name="{{ manual_article_coder.INPUT_ID_DATA_STORE_PERSON_INDEX }}" id="{{ manual_article_coder.INPUT_ID_DATA_STORE_PERSON_INDEX }}" />
+<!--
+                <input type="button" id="select-text" value="Get selected text" />:
+                <br />
+                <textarea id="selected-text" readonly="readonly" rows="4" cols="35"></textarea>
+                <br />
+-->
+                <p class="inputContainer" id="input-person-name" name="input-person-name">
+                    <input type="button" id="store-name" name="store-name" value="Name ==>" />: <textarea id="{{ manual_article_coder.INPUT_ID_PERSON_NAME }}" name="{{ manual_article_coder.INPUT_ID_PERSON_NAME }}" readonly="readonly"></textarea>
+                </p>
+                {% if include_fix_person_name %}
+                    <p class="inputContainer" id="fix-person-name-link" name="fix-person-name-link">
+                        <a href="#" onclick="CONTEXT_TEXT.fix_person_name(); return false;">--> Fix Name</a>
+                    </p>
+                    <p class="inputContainer hidden" id="fix-person-name" name="fix-person-name">
+                        <a href="#" onclick="CONTEXT_TEXT.cancel_fix_person_name(); return false;"><-- Cancel Fix Name</a>
+                        <br />
+                        <input type="button" id="fix-name" name="fix-name" value="==> Fix Name" />: <textarea id="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}" name="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}"></textarea>
+                    </p>
+                {% else %}
+                    <input type="hidden" name="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}" id="{{ manual_article_coder.INPUT_ID_FIXED_PERSON_NAME }}" />
+                {% endif %}
+                <p class="inputContainer" id="select-person-type">
+                    &nbsp;&nbsp;Person Type: <select name="{{ manual_article_coder.INPUT_ID_PERSON_TYPE }}" id="{{ manual_article_coder.INPUT_ID_PERSON_TYPE }}" onchange="CONTEXT_TEXT.process_selected_person_type()">
+                        <option value="" selected="selected" disabled="disabled">Choose Person Type</option>
+                        <option value="{{ manual_article_coder.PERSON_TYPE_SUBJECT }}">Subject (not quoted)</option>
+                        <option value="{{ manual_article_coder.PERSON_TYPE_SOURCE }}">Source (quoted)</option>
+                        <option value="{{ manual_article_coder.PERSON_TYPE_AUTHOR }}">Author</option>
+                    </select>
+                </p>
+
+                {% if include_organization_field %}
+                    <p class="inputContainer" id="textarea-title">
+                        <input type="button" id="store-organization" name="store-organization" value="Organization ==>" />:
+                        <br />
+                        <textarea id="{{ manual_article_coder.INPUT_ID_PERSON_ORGANIZATION }}" name="{{ manual_article_coder.INPUT_ID_PERSON_ORGANIZATION }}" rows="4" cols="35"></textarea>
+                    </p>
+                {% else %}
+                    <input type="hidden" name="{{ manual_article_coder.INPUT_ID_PERSON_ORGANIZATION }}" id="{{ manual_article_coder.INPUT_ID_PERSON_ORGANIZATION }}" />
+                {% endif %}
+
+                {% if include_title_field %}
+                    <p class="inputContainer" id="textarea-title">
+                        <input type="button" id="store-title" name="store-title" value="Title ==>" />:
+                        <br />
+                        <textarea id="{{ manual_article_coder.INPUT_ID_PERSON_TITLE }}" name="{{ manual_article_coder.INPUT_ID_PERSON_TITLE }}" rows="4" cols="35"></textarea>
+                    </p>
+                {% else %}
+                    <input type="hidden" name="{{ manual_article_coder.INPUT_ID_PERSON_TITLE }}" id="{{ manual_article_coder.INPUT_ID_PERSON_TITLE }}" />
+                {% endif %}
+                
+                <p class="inputContainer" id="textarea-source-quote-text">
+                    <input type="button" id="store-quote-text" name="store-quote-text" value="First Quote Text ==>" />:
+                    <br />
+                    <textarea id="{{ manual_article_coder.INPUT_ID_SOURCE_QUOTE_TEXT }}" name="{{ manual_article_coder.INPUT_ID_SOURCE_QUOTE_TEXT }}" readonly="readonly" rows="4" cols="35"></textarea>
+                </p>
+                <!--- <hr class="fieldSeparator" /> --->
+                <p class="inputContainer" id="lookup-person-id" name="lookup-person-id">
+                    <h4>Person lookup</h4>
+                    <div class="lookupPersonExistingId" id="lookup-person-existing-id" name="lookup-person-existing-id"></div>
+                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Fetch Name ==>" /> | <input type="button" id="clear-person-lookup" name="clear-person-lookup" value="Clear Person Lookup" />
+                    <br />
+                    <br />
+                    {{ person_lookup_form }}
+                </p>
+                <hr class="fieldSeparator" />
+                <p class="inputContainer" id="process-person-container">
+                    <input type="button" id="process-person" name="process-person" value="Process Person" onclick="CONTEXT_TEXT.process_person_coding()" />&nbsp;&nbsp;|&nbsp;&nbsp;<input type="button" id="clear-person-coding" name="clear-person-coding" value="Clear Person Coding" onclick="CONTEXT_TEXT.clear_coding_form( 'Person Coding Cleared' )" />
+                    <!--
+                    <br />
+                    <input type="button" id="clear-person-lookup" name="clear-person-lookup" value="Clear Person Lookup" onclick="CONTEXT_TEXT.clear_person_lookup_form( false, 'Person Lookup Form Cleared, matched ID remains.' )" />
+                    <br />
+                    <input type="button" id="clear-matched-id" name="clear-matched-id" value="Clear Previous Person Match" onclick="CONTEXT_TEXT.clear_matched_person_id( '' )" />
+                    <br />
+                    <input type="button" id="clear-person-lookup-and-matched-id" name="clear-person-lookup-and-matched-id" value="Clear Person Lookup and Matched ID" onclick="CONTEXT_TEXT.clear_person_lookup_form( true, 'Person Lookup Form and Matched ID Cleared.' )" />
+                    -->
+                </p>
+            </div>
+            <!-- </form> -->
+            <hr />
+            <div id="status-message-area" class="statusMessageArea">
+                <h4>Status Messages</h4>
+            </div>
+            <h3>Person List</h3>
+            <div id="person-list" class="personList">
+                <table id="person-list-table" class="personListTable"></table>
+                <form method="post" name="submit-article-coding" id="submit-article-coding" class="submitArticleCoding" onsubmit="do_submit = CONTEXT_TEXT.render_coding_form_inputs( this ); return do_submit;">
+                    {# always include CSRF token #}
+                    {% csrf_token %}
+                    {# output coding_submit_form if present #}
+                    {% if coding_submit_form %}
+                        {{ coding_submit_form }}
+                    {% endif %}
+                    <input type="hidden" name="article_id" id="submit-article-coding-article-id" value="{{ article_instance.id }}" />
+
+                    {% if source %}
+                        <input type="hidden" name="source" value="{{ source }}" />
+                    {% else %}
+                        <input type="hidden" name="source" value="" />
+                    {% endif %}
+                    
+                    {% if tags_in_list %}
+                        <input type="hidden" name="tags_in_list" value="{{ tags_in_list }}" />
+                    {% else %}
+                        <input type="hidden" name="tags_in_list" value="" />
+                    {% endif %}
+                            
+                    <input type="submit" value="Submit Article Coding" name="input-submit-article-coding" id="input-submit-article-coding" />
+                </form>
+            </div>
+
+            <!-- ! include FIT -->
+            {# Include find in article text? #}
+            {% if include_find_in_article_text %}
+
+                <hr />
+                {% include "context_text/articles/render_find_in_article_text.html" %}  
+                
+            {% endif %}
+
+        </div>
+    </aside>
+</div>
+
+{% endblock %}

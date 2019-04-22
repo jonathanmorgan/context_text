@@ -1,8 +1,8 @@
-# sourcenet
+# context_text
 
 <!-- TOC -->
 
-sourcenet is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7.  south_migrations are present, but they won't be updated going forward.
+context_text is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7.  south_migrations are present, but they won't be updated going forward.
 
 # Installation and configuration
 
@@ -43,17 +43,17 @@ if you are on a shared or complicated server (and who isn't, really?), using vir
 
 - restart your shell so these settings take effect.
 
-- use virtualenvwrapper to create a virtualenv for sourcenet:
+- use virtualenvwrapper to create a virtualenv for context_text:
 
         # for system python:
-        mkvirtualenv sourcenet --no-site-packages
+        mkvirtualenv context_text --no-site-packages
 
-        # if your system python is python 2, and you want to use python 3 (sourcenet supports both, and I am working in 3 now, so it will be more reliabily un-buggy):
-        mkvirtualenv sourcenet --no-site-packages -p /usr/bin/python3
+        # if your system python is python 2, and you want to use python 3 (context_text supports both, and I am working in 3 now, so it will be more reliabily un-buggy):
+        mkvirtualenv context_text --no-site-packages -p /usr/bin/python3
 
 - activate the virtualenv
 
-        workon sourcenet
+        workon context_text
         
 - now you are in a virtual python environment independent of the system's.  If you do this, in the examples below, you don't need to use `sudo` when you use pip, etc.
 
@@ -64,17 +64,17 @@ To start, the only Python package you need to install is django:
 - activate your virtualenv if you are using one.
 - install django using pip: `(sudo) pip install django`
 
-As you install the different github projects that make up sourcenet, you'll need to also install the Python packages they require.
+As you install the different github projects that make up context_text, you'll need to also install the Python packages they require.
 
-The most efficient way to do this is to use the `requirements.txt` file in each project.  For example, inside the sourcenet project, the requirements.txt file is a list of all the Python packages that sourcenet needs to function.  It is the up-to-date list of what you need.  It assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
+The most efficient way to do this is to use the `requirements.txt` file in each project.  For example, inside the context_text project, the requirements.txt file is a list of all the Python packages that context_text needs to function.  It is the up-to-date list of what you need.  It assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
 
 - activate your virtualenv if you are using one.
 - install django using pip: `(sudo) pip install django`
-- continue on in this guide until you have downloaded and installed sourcenet from github, then:
-- `(sudo) pip install -r sourcenet/requirements.txt`
-- you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt](https://github.com/jonathanmorgan/sourcenet/blob/master/requirements.txt)
+- continue on in this guide until you have downloaded and installed context_text from github, then:
+- `(sudo) pip install -r context_text/requirements.txt`
+- you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/context_text/blob/master/requirements.txt](https://github.com/jonathanmorgan/context_text/blob/master/requirements.txt)
 
-For reference, below are some of the main packages sourcenet uses, but this list is not up-to-date, and I'd recommend just using requirements.txt files to install packages, rather than installing them individually.
+For reference, below are some of the main packages context_text uses, but this list is not up-to-date, and I'd recommend just using requirements.txt files to install packages, rather than installing them individually.
 
 - required python packages (install with pip):
 
@@ -138,27 +138,27 @@ For reference, below are some of the main packages sourcenet uses, but this list
                 /research
                     settings.py
 
-## Install the actual sourcenet django application, plus dependencies
+## Install the actual context_text django application, plus dependencies
 
-- sourcenet
+- context_text
 
-    - cd into your django project directory, then clone the sourcenet application from github into your django project directory using the git program:
+    - cd into your django project directory, then clone the context_text application from github into your django project directory using the git program:
 
             cd research
-            git clone https://github.com/jonathanmorgan/sourcenet.git
+            git clone https://github.com/jonathanmorgan/context_text.git
             
         - at this point, if you only installed django and want to install the rest of the required Python packages using requirements.txt, do the following:
         
-            - cd into the "sourcenet" folder you just checked out: `cd sourcenet`
+            - cd into the "context_text" folder you just checked out: `cd context_text`
             - run the following `pip` command to install all packages listed in requirements.txt:
             
                     (sudo) pip install -r requirements.txt
                     
-            - or just run `(sudo) pip install -r sourcenet/requirements.txt`
+            - or just run `(sudo) pip install -r context_text/requirements.txt`
 
 - python_utilities
 
-    - You'll also need:python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
+    - You'll also need:python\_utilities.  Clone python\_utilities into the research folder alongside context_text:
 
             git clone https://github.com/jonathanmorgan/python_utilities.git
 
@@ -168,7 +168,7 @@ For reference, below are some of the main packages sourcenet uses, but this list
 
 - django_config
 
-    - And you'll need django\_config.  Clone django\_config into the research folder alongside sourcenet:
+    - And you'll need django\_config.  Clone django\_config into the research folder alongside context_text:
 
             git clone https://github.com/jonathanmorgan/django_config.git
 
@@ -178,7 +178,7 @@ For reference, below are some of the main packages sourcenet uses, but this list
 
 - django_messages
 
-    - And you'll need django\_messages.  Clone django\_messages into the research folder alongside sourcenet:
+    - And you'll need django\_messages.  Clone django\_messages into the research folder alongside context_text:
 
             git clone https://github.com/jonathanmorgan/django_messages.git
 
@@ -210,17 +210,17 @@ Edit the `research/research/settings.py` file and update it with details of your
         logging.basicConfig(
             level = logging.INFO,
             format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-            filename = '<log_folder>/django-sourcenet.log',
+            filename = '<log_folder>/django-context_text.log',
             filemode = 'w'
         )
 
-    - WHERE `<log_folder>` is a folder that any users that will be used to interact with sourcenet have access to.  This includes the user your web server runs as (for admins and other django web pages) and the user you use to develop, and so that might run things from the python shell.
+    - WHERE `<log_folder>` is a folder that any users that will be used to interact with context_text have access to.  This includes the user your web server runs as (for admins and other django web pages) and the user you use to develop, and so that might run things from the python shell.
 
         - the easiest way to get this working:
 
             - make the `<log_folder>` somewhere outside the web root.
             - set the permissions on `<log_folder>` to 777.
-            - create the file `django-sourcenet.log` there.
+            - create the file `django-context_text.log` there.
             - set its permissions also to 777.
 
         - This is not necessarily optimally secure, but truly securing this is beyond the scope of this README.
@@ -242,7 +242,7 @@ Edit the research/research/settings.py file and update it with details of your d
 
 In general, for any database other than sqlite3, in your database system of choice you'll need to:
 
-- create a database for django to use (I typically use `sourcenet`).
+- create a database for django to use (I typically use `context_text`).
 
     - postgresql - at the unix command line:
     
@@ -251,7 +251,7 @@ In general, for any database other than sqlite3, in your database system of choi
             
             # create the database at the unix shell
             #createdb <database_name>
-            createdb sourcenet
+            createdb context_text
 
 - create a database user for django to use that is not an admin (I typically use `django_user`).
 
@@ -271,9 +271,9 @@ An example for postgresql looks like this:
 
     DATABASES = {
         'default': {        
-            # PostgreSQL - sourcenet
+            # PostgreSQL - context_text
             'ENGINE': 'django.db.backends.postgresql', # Add 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-            'NAME': 'sourcenet',                      # Or path to database file if using sqlite3.
+            'NAME': 'context_text',                      # Or path to database file if using sqlite3.
             'USER': 'django_user',                      # Not used with sqlite3.
             'PASSWORD': '<db_password>',                  # Not used with sqlite3.
             'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -288,7 +288,7 @@ More information:
 
 ### applications
 
-Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_config`', '`django_messages`', and '`taggit`' to your list of INSTALLED\_APPS using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
+Edit the `research/research/settings.py` file and add '`context_text`', '`django_config`', '`django_messages`', and '`taggit`' to your list of INSTALLED\_APPS using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
 
     INSTALLED_APPS = [
         'django.contrib.auth',
@@ -301,7 +301,7 @@ Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_co
         'django.contrib.admin',
         # Uncomment the next line to enable admin documentation:
         # 'django.contrib.admindocs',
-        'sourcenet.apps.SourcenetConfig',
+        'context_text.apps.context_textConfig',
         'django_config.apps.Django_ConfigConfig',
         'django_messages.apps.DjangoMessagesConfig',
         'taggit',
@@ -320,7 +320,7 @@ Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_co
             'django.contrib.admin',
             # Uncomment the next line to enable admin documentation:
             # 'django.contrib.admindocs',
-            'sourcenet',
+            'context_text',
             'django_config',
             'django_messages',
             'taggit',
@@ -329,20 +329,20 @@ Edit the `research/research/settings.py` file and add '`sourcenet`', '`django_co
 - add settings properties that tell django how to log people in and out.  Example:
 
         # login configuration
-        LOGIN_URL = '<apache_URL_path_to_django_project>/research/sourcenet/accounts/login/'
-        LOGIN_REDIRECT_URL = '<apache_URL_path_to_django_project>/sourcenet/output/network/'
+        LOGIN_URL = '<apache_URL_path_to_django_project>/research/context_text/accounts/login/'
+        LOGIN_REDIRECT_URL = '<apache_URL_path_to_django_project>/context_text/output/network/'
         LOGOUT_URL = '/'
 
-    The following sample assumes that you'll follow the examples later on how to configure apache, and so serve the django sourcenet application from an apache directory named "sourcenet".  If you choose a different directory, you'll need to adjust these properties' values accordingly.
+    The following sample assumes that you'll follow the examples later on how to configure apache, and so serve the django context_text application from an apache directory named "context_text".  If you choose a different directory, you'll need to adjust these properties' values accordingly.
 
         # login configuration
-        LOGIN_URL = '/research/sourcenet/accounts/login/'
-        LOGIN_REDIRECT_URL = '/research/sourcenet/output/network/'
+        LOGIN_URL = '/research/context_text/accounts/login/'
+        LOGIN_REDIRECT_URL = '/research/context_text/output/network/'
         LOGOUT_URL = '/'
 
-- set the SESSION_COOKIE_NAME to sourcenet.
+- set the SESSION_COOKIE_NAME to context_text.
 
-        SESSION_COOKIE_NAME = 'sourcenet'
+        SESSION_COOKIE_NAME = 'context_text'
 
 - save the file.
     
@@ -422,7 +422,7 @@ Once the database tables are created, you'll want to make a django admin user at
             WHERE:
 
             - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
-            - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
+            - `<virtualenv_name>` is the name of the virtualenv you created for context_text.
 
         - Then, just after the line where the `DJANGO_SETTINGS_MODULE` environment variable is set, activate your virtualenv.  First, get the path to your activate_this.py file:
         
@@ -434,7 +434,7 @@ Once the database tables are created, you'll want to make a django admin user at
             WHERE (again):
 
             - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
-            - `<virtualenv_name>` is the name of the virtualenv you created for sourcenet.
+            - `<virtualenv_name>` is the name of the virtualenv you created for context_text.
 
             Then, execute the code in that file:
             
@@ -455,7 +455,7 @@ Once the database tables are created, you'll want to make a django admin user at
                     
                     #-- END open( activate_this ) --#
 
-        - assuming you named your virtualenv "sourcenet" and your django project "research", below are examples of how it all should look.
+        - assuming you named your virtualenv "context_text" and your django project "research", below are examples of how it all should look.
         
             - for Python 2:
             
@@ -694,19 +694,19 @@ Once the database tables are created, you'll want to make a django admin user at
 - configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
 
         WSGIApplicationGroup %{GLOBAL}
-        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
+        WSGIDaemonProcess context_text-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
 
         # Python 2:
-        #WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
+        #WSGIDaemonProcess context_text-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
 
-        # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess sourcenet-1 ... python-path=
+        # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess context_text-1 ... python-path=
         # no virualenv
         # ... python-path=<path_to_django_project_parent>/research
         # virtualenv, place the root of the virtualenv in a separate python-home property:
         # ... python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research
 
-        WSGIProcessGroup sourcenet-1
-        WSGIScriptAlias /sourcenet <path_to_django_project_parent>/research/research/wsgi.py process-group=sourcenet-1
+        WSGIProcessGroup context_text-1
+        WSGIScriptAlias /context_text <path_to_django_project_parent>/research/research/wsgi.py process-group=context_text-1
         
         <Directory <path_to_django_project_parent>/research/research>
             <Files wsgi.py>
@@ -726,17 +726,17 @@ Once the database tables are created, you'll want to make a django admin user at
     
     - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the python-path directive in addition to the site directory, with the paths separated by a colon (the example above is configured this way).  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
 
-    - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`.
+    - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-context_text`.
 
         - make sure to uncomment `Allow from all` in the file above, and comment out `Require all granted`.
         
     - If you are using apache 2.4 on ubuntu 13.10 or greater:
 
-        - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
+        - place this file in /etc/apache2/conf-available, naming it "django-context_text.conf".
         
         - enable it with the a2enconf command, then restart apache (just to be safe):
         
-                (sudo) a2enconf django-sourcenet
+                (sudo) a2enconf django-context_text
                 (sudo) service apache2 restart
 
 - More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
@@ -818,7 +818,7 @@ Once the database tables are created, you'll want to make a django admin user at
 
 - test by going to the URL:
 
-        http://<your_server>/sourcenet/admin/
+        http://<your_server>/context_text/admin/
 
 - and then logging in with the django superuser you created earlier.
 
@@ -838,13 +838,13 @@ Once the database tables are created, you'll want to make a django admin user at
                 'django.contrib.sessions',
                 'django.contrib.messages',
                 'django.contrib.staticfiles',
-                'sourcenet.apps.SourcenetConfig',
+                'context_text.apps.context_textConfig',
                 'django_config.apps.Django_ConfigConfig',
                 'taggit',
                 'ajax_select',
             ]
         
-    - if you are using django 1.6 or earlier (you shouldn't be, but...) add the following to the bottom of the `settings.py` file (if you are using django 1.7 or greater, it automatically finds the channels defined in sourcenet/lookups.py):
+    - if you are using django 1.6 or earlier (you shouldn't be, but...) add the following to the bottom of the `settings.py` file (if you are using django 1.7 or greater, it automatically finds the channels defined in context_text/lookups.py):
     
             AJAX_LOOKUP_CHANNELS = {
 
@@ -854,10 +854,10 @@ Once the database tables are created, you'll want to make a django admin user at
                 # specifying the model Track in the music app, and searching against the 'title' field
             
                 # or write a custom search channel and specify that using a TUPLE
-                'article' : ( 'sourcenet.ajax-select-lookups', 'ArticleLookup' ),
-                'organization' : ( 'sourcenet.ajax-select-lookups', 'OrganizationLookup' ),
-                'person' : ( 'sourcenet.ajax-select-lookups', 'PersonLookup' ),
-                # this specifies to look for the class `PersonLookup` in the `sourcenet.ajax-select-lookups` module
+                'article' : ( 'context_text.ajax-select-lookups', 'ArticleLookup' ),
+                'organization' : ( 'context_text.ajax-select-lookups', 'OrganizationLookup' ),
+                'person' : ( 'context_text.ajax-select-lookups', 'PersonLookup' ),
+                # this specifies to look for the class `PersonLookup` in the `context_text.ajax-select-lookups` module
 
             }
             
@@ -911,16 +911,16 @@ Once the database tables are created, you'll want to make a django admin user at
                 url( r'^admin/lookups/', include( ajax_select_urls ) ),
             ]
                         
-## Enable sourcenet application pages
+## Enable context_text application pages
 
 - get the admins working.
 - set up `django-ajax-selects`.
-- add a line to resesarch/urls.py to enable the sourcenet URLs (in `sourcenet.urls`) to the urlpatterns structure.
+- add a line to resesarch/urls.py to enable the context_text URLs (in `context_text.urls`) to the urlpatterns structure.
 
     - Add:
 
-            # sourcenet URLs:
-            url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+            # context_text URLs:
+            url( r'^context_text/', include( 'context_text.urls' ) ),
 
     - Result:
 
@@ -953,8 +953,8 @@ Once the database tables are created, you'll want to make a django admin user at
                 # django-ajax-select URLs
                 url( r'^admin/lookups/', include( ajax_select_urls ) ),
 
-                # sourcenet URLs:
-                url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+                # context_text URLs:
+                url( r'^context_text/', include( 'context_text.urls' ) ),
             ]
 
 ### Test!
@@ -965,18 +965,18 @@ Once the database tables are created, you'll want to make a django admin user at
 
 - test by going to the URL:
 
-        http://<your_server>/research/sourcenet/index
+        http://<your_server>/research/context_text/index
 
 - log in with your django superuser user.
-- You should see a home page for sourcenet with a welcome message and a header that lists out the pages in the sourcenet application.
+- You should see a home page for context_text with a welcome message and a header that lists out the pages in the context_text application.
 
 # Collecting Articles
 
-There is an example application in sourcenet/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
+There is an example application in context_text/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
 
 # Filtering and tagging articles:
 
-To filter and tag sets of articles, use the page: 'http://<your_server>/research/sourcenet/article/filter/'
+To filter and tag sets of articles, use the page: 'http://<your_server>/research/context_text/article/filter/'
 
 This page allows you to filter on:
 
@@ -993,18 +993,18 @@ Then either see a summary of articles that fit your filter, look at details on e
 
 # Coding articles:
 
-Sourcenet includes a set of pages that can be used to code articles by hand, and then view article coding:
+context_text includes a set of pages that can be used to code articles by hand, and then view article coding:
 
-- to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/research/sourcenet/article/code/`
+- to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/research/context_text/article/code/`
 
     - Setup:
     
         - make sure that any user you want to be able to code articles is configured in django as "staff" (and so able to access admins).  They don't need to actually have any access privileges, they just need to be "staff".
     
-    - See directions for coding in `sourcenet/protocol/protocol-capturing_people_in_articles.pdf`.
+    - See directions for coding in `context_text/protocol/protocol-capturing_people_in_articles.pdf`.
 
-- to view an article's meta-data and text: `http://<your_server>/research/sourcenet/article/view/`
-- to view an article's coding: `http://<your_server>/research/sourcenet/article/article_data/view/`
+- to view an article's meta-data and text: `http://<your_server>/research/context_text/article/view/`
+- to view an article's coding: `http://<your_server>/research/context_text/article/article_data/view/`
 
 You can also use the django admin pages, but the process is much more cumbersome - there are a lot of interrelated tables that are populated during the process of coding, and so it is better to use the coding form above and let the software deal with making all the correct underlying data.  It is helpful to use the admins for managing Article_Data, however, if you need to clear out coding for a coder, either because of an error or as part of testing.
 
@@ -1014,7 +1014,7 @@ You can also use the django admin pages, but the process is much more cumbersome
 
 Before you do automated coding, you'll need to create a django user named "automated" to which the coding can be attributed.  To do this:
 
-- Open the django admin: `http://<your_server>/sourcenet/admin/`
+- Open the django admin: `http://<your_server>/context_text/admin/`
 
 - Log in with the admin user you created when you initialized the database above.
 
@@ -1034,9 +1034,9 @@ To use the OpenCalais REST API to code articles, you'll need to first set up a f
 Create the following configuration properties, each with the Application value "OpenCalais_REST_API":
 
     - `open_calais_api_key` - should contain your Open Calais API key.  For more information on getting an Open Calais API key, see: [http://www.opencalais.com/APIkey](http://www.opencalais.com/APIkey)
-    - `submitter` - string that identifies the program that is invoking the API - should start with "sourcenet-", then identify more specifically your project. 
+    - `submitter` - string that identifies the program that is invoking the API - should start with "context_text-", then identify more specifically your project. 
     
-Then, the most reliable way to code large numbers of articles is to use the file `sourcenet/examples/articles/article_coding.py` as a template to set up and run a set of articles through the coder.
+Then, the most reliable way to code large numbers of articles is to use the file `context_text/examples/articles/article_coding.py` as a template to set up and run a set of articles through the coder.
 
 # Creating Network Data
 
@@ -1058,7 +1058,7 @@ Then, the most reliable way to code large numbers of articles is to use the file
 
 # Outputting Network Data
 
-Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
+Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/context_text/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
 
 - If you are generating multiple network slices across time periods, you will want to use the "Select People" section of the form (on the right) and enter a fancy date range that includes each date range for all of the slices you are making, so the matrices that result are of the same dimensions (same set of people for each - all people in all slices).
 
@@ -1179,7 +1179,7 @@ To add a new output type, do the following:
     - _see class `NDO_SimpleMatrix` in file `export/ndo_simple_matrix.py` for an example._
     - make sure to import the NetworkDataOutputter abstract class:
 
-            from sourcenet.export.network_data_output import NetworkDataOutput
+            from context_text.export.network_data_output import NetworkDataOutput
 
     - implement a `__init__()` method that calls parent method, and overrides fields specific to your output type, especially output type, mime type, and file extension.  Example from `NDO_CSVMatrix` (file `export/ndo_csv_matrix.py`):
 
@@ -1228,7 +1228,7 @@ To add a new output type, do the following:
 
 To work with network data into R, first you read either a CSV or tab-delimited network matrix in as a data frame.  Then, convert to an R matrix object.  From there, you can load the matrix into your SNA package of choice (examples for igraph and statnet below).
 
-For more detailed examples, see the `*.r` R source code files in `sourcenet/R/`.
+For more detailed examples, see the `*.r` R source code files in `context_text/R/`.
 
 ### Import a CSV file
 
@@ -1425,7 +1425,7 @@ To import data into UCINet:
 
 # Testing
 
-The sourcenet project has a small but growing set of unit tests that once can auto-run.  These tests use django's testing framework, based on the Python `unittest` package.
+The context_text project has a small but growing set of unit tests that once can auto-run.  These tests use django's testing framework, based on the Python `unittest` package.
 
 ## Unit Tests
 
@@ -1457,7 +1457,7 @@ In order to run unit tests, your database configuration in `settings.py` will ne
 
 To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
 
-    python manage.py test sourcenet.tests
+    python manage.py test context_text.tests
     
 Specific sets of tests:
 
@@ -1465,57 +1465,57 @@ Specific sets of tests:
 
     - test OpenCalais configuration:
 
-            python manage.py test sourcenet.tests.open_calais.test_open_calais_config
+            python manage.py test context_text.tests.open_calais.test_open_calais_config
 
     - test OpenCalais automated coding (assumes configuration tests passed):
 
-            python manage.py test sourcenet.tests.open_calais.test_open_calais_api 
+            python manage.py test context_text.tests.open_calais.test_open_calais_api 
 
 - ArticleCoder (using ManualArticleCoder)
 
     - test basic methods in ArticleCoder that are re-used by all coding methods:
 
-            python manage.py test sourcenet.tests.article_coder.test_article_coder
+            python manage.py test context_text.tests.article_coder.test_article_coder
 
 - ManualArticleCoder
             
     - test methods in ManualArticleCoder specific to manual coding:
 
-            python manage.py test sourcenet.tests.manual_article_coder.test_manual_article_coder
+            python manage.py test context_text.tests.manual_article_coder.test_manual_article_coder
             
-- sourcenet model instances:
+- context_text model instances:
 
     - test Article_Data model
     
-            python manage.py test sourcenet.tests.models.test_Article_Data_model
+            python manage.py test context_text.tests.models.test_Article_Data_model
 
     - test Person (and AbstractPerson) model
     
-            python manage.py test sourcenet.tests.models.test_Person_model
+            python manage.py test context_text.tests.models.test_Person_model
 
 ## Test data
 
 There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
 
-- **_`sourcenet_unittest_auth_data.json`_** - User data for article-coding comparison.
-- **_`sourcenet_unittest_django_config_data.json`_** - configuration properties for sourcenet (in particular, for external APIs).
-- **_`sourcenet_unittest_data.json`_** - actual sourcenet data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
-- **_`sourcenet_unittest_taggit_data.json`_** - tag data for sourcenet data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
+- **_`context_text_unittest_auth_data.json`_** - User data for article-coding comparison.
+- **_`context_text_unittest_django_config_data.json`_** - configuration properties for context_text (in particular, for external APIs).
+- **_`context_text_unittest_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
+- **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
 
 ### Using unittest data for development
 
-- create a database where the unit test data can live.  I usually call it the name of the main production database ("`sourcenet`") followed by "`_test`".  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
+- create a database where the unit test data can live.  I usually call it the name of the main production database ("`context_text`") followed by "`_test`".  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
 
-    - postgresql example, where production database name is "`sourcenet`" and database user is "`django_user`":
+    - postgresql example, where production database name is "`context_text`" and database user is "`django_user`":
 
-            CREATE DATABASE sourcenet_test;
-            GRANT ALL PRIVILEGES ON DATABASE sourcenet_test TO django_user;
+            CREATE DATABASE context_text_test;
+            GRANT ALL PRIVILEGES ON DATABASE context_text_test TO django_user;
 
-- update the DATABASES dictionary in settings.py of the application that contains sourcenet to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`sourcenet_test`" rather than "`sourcenet`".
+- update the DATABASES dictionary in settings.py of the application that contains context_text to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`context_text_test`" rather than "`context_text`".
 - cd into your django application's home directory, activate your virtualenv if you created one, then run "`python manage.py migrate`" to create all the tables in the database.
 
         cd <django_app_directory>
-        workon sourcenet
+        workon context_text
         python manage.py migrate
 
 - use the command "`python manage.py createsuperuser`" to make an admin user, for logging into the django admins.
@@ -1524,27 +1524,27 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 
 - load the unit test fixtures into the database:
 
-        python manage.py loaddata sourcenet_unittest_auth_data.json
-        python manage.py loaddata sourcenet_unittest_django_config_data.json
-        python manage.py loaddata sourcenet_unittest_data.json
-        python manage.py loaddata sourcenet_unittest_taggit_data.json
+        python manage.py loaddata context_text_unittest_auth_data.json
+        python manage.py loaddata context_text_unittest_django_config_data.json
+        python manage.py loaddata context_text_unittest_data.json
+        python manage.py loaddata context_text_unittest_taggit_data.json
 
 # License
 
 Copyright 2010-present (2016) Jonathan Morgan
 
-This file is part of [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).
+This file is part of [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).
 
-sourcenet is free software: you can redistribute it and/or modify
+context_text is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful,
+context_text is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).  If not, see
+along with [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).  If not, see
 [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).

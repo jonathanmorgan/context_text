@@ -7,8 +7,8 @@ from django.db.models.fields.related_descriptors import ReverseOneToOneDescripto
 from python_utilities.objects.object_helper import ObjectHelper
 from python_utilities.django_utils.django_model_helper import DjangoModelHelper
 
-from sourcenet.data.person_data import PersonData
-from sourcenet.models import Person
+from context_text.data.person_data import PersonData
+from context_text.models import Person
 
 # get list of reverse lookup sets in Person.
 reverse_lookup_name_list = PersonData.get_person_related_set_attribute_names()

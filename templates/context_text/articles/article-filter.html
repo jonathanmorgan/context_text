@@ -1,0 +1,125 @@
+{% extends "context_text/base.html" %}
+
+{% block title %}Filter and process articles{% endblock %}
+
+{% block content %}
+
+    <h1>Filter and process articles</h1>
+    
+    {# got an output_string? #}
+    {% if output_string %}
+    
+        <div id="article_message" name="article_message" class="pageStatusMessageArea">
+            <p>{{ output_string }}</p>
+        </div>
+    
+    {% endif %}
+    
+    <div id="article_form" name="article_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+                
+            <p>
+                <h2>Article filter criteria</h3>
+                <table class="gridtable">
+                    {# output article filter form #}
+                    {{ article_coding_article_filter_form.as_table }}
+                </table>
+            </p>
+            <hr />
+            <p>
+                <h2>What to do with results?</h3>
+                <table class="gridtable">
+                    {# output action form #}
+                    {{ process_selected_articles_form.as_table }}
+                </table>
+            </p>
+                
+            <p>
+                <input type="submit" />
+            </p>
+            
+        </form>
+        
+    </div>
+
+    <p>action = {{ action }}</p>
+    {% if action %}
+
+        <hr />
+        
+        {% if article_filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ article_filter_summary }}</p>
+        {% endif %}
+        
+        {% if action_summary %}
+            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+        {% endif %}
+        
+        {% if article_details_list %}
+            <p><strong>Selected Articles:</strong></p>
+            <table class="gridtable">
+                <tr>
+                    <th>index</th>
+                    <th>ID</th>
+                    <th>tags</th>
+                    <th>paper</th>
+                    <th>headline</th>
+                    <th>coded</th>
+                </tr>
+                {% for current_article in article_details_list %}
+                    <tr>
+                        <td>{{ current_article.index }}</td>
+                        <td><a href="{% url 'context_text-article_view_article_data_with_text' %}?article_id={{ current_article.article_instance.id }}">{{ current_article.article_instance.id }}</a></td>
+                        <td>
+                            {% if current_article.article_instance.tags.all %}
+                            <ul>
+                                {% for current_tag in current_article.article_instance.tags.all %}
+                                    <li>{{ current_tag }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
+                        <td>{{ current_article.article_instance.newspaper }}</td>
+                        <td>{{ current_article.article_instance.headline }}</td>
+                        <td>
+                            {% if current_article.article_instance.article_data_set.all %}
+                            <ul>
+                                {% for current_article_data in current_article.article_instance.article_data_set.all %}
+                                    <li>{{ current_article_data.id }} - {{ current_article_data.coder }} ( {{ current_article_data.coder_type }} ) - {{ current_article_data.create_date }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No articles selected.</td></tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
+            <ul>
+                {% for detail_item in action_detail_list %}
+                    <ul>{{ detail_item }}</ul>
+                {% empty %}
+                    <ul>No details returned...</ul>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    {% endif %}
+
+{% endblock %}

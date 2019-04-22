@@ -1,6 +1,6 @@
 # imports
-from sourcenet.models import Article
-from sourcenet.models import Article_Text
+from context_text.models import Article
+from context_text.models import Article_Text
 
 # get article
 test_article = Article.objects.filter( id = 90948 ).get()

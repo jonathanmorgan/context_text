@@ -13,13 +13,13 @@ import django.test
 # python utilities
 from python_utilities.json.json_helper import JSONHelper
 
-# sourcenet imports
-from sourcenet.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Subject
-from sourcenet.models import Person
-from sourcenet.tests.test_helper import TestHelper
+# context_text imports
+from context_text.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.models import Article_Subject
+from context_text.models import Person
+from context_text.tests.test_helper import TestHelper
 
 
 class ManualArticleCoderTest( django.test.TestCase ):

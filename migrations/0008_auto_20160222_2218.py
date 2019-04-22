@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('sourcenet', '0007_auto_20160210_2211'),
+        ('context_text', '0007_auto_20160210_2211'),
     ]
 
     operations = [

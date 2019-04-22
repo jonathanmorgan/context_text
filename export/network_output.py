@@ -4,18 +4,18 @@ from __future__ import division
 '''
 Copyright 2010-2017 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 '''
 The network_output module contains objects and code to parse and output social
-   network data from sourcenet in a variety of formats, and also generates
+   network data from context_text in a variety of formats, and also generates
    some descriptive statistics as it builds output.
    
 2014-05-16 - Jonathan Morgan - Updated so that this object now speaks in terms
@@ -51,26 +51,26 @@ from django.db.models import Q
 # python_utilities
 from python_utilities.parameters.param_container import ParamContainer
 
-# Import the classes for our SourceNet application
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
+# Import the classes for our context_text application
+from context_text.models import Article
+from context_text.models import Article_Data
 
-# Import sourcenet export classes.
-from sourcenet.export.csv_article_output import CsvArticleOutput
-from sourcenet.export.network_data_output import NetworkDataOutput
-from sourcenet.export.ndo_simple_matrix import NDO_SimpleMatrix
-from sourcenet.export.ndo_csv_matrix import NDO_CSVMatrix
-from sourcenet.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
+# Import context_text export classes.
+from context_text.export.csv_article_output import CsvArticleOutput
+from context_text.export.network_data_output import NetworkDataOutput
+from context_text.export.ndo_simple_matrix import NDO_SimpleMatrix
+from context_text.export.ndo_csv_matrix import NDO_CSVMatrix
+from context_text.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 
-# Import sourcenet shared classes.
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# Import context_text shared classes.
+from context_text.shared.context_text_base import ContextTextBase
 
 
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkOutput( SourcenetBase ):
+class NetworkOutput( ContextTextBase ):
 
 
     #---------------------------------------------------------------------------
@@ -119,17 +119,17 @@ class NetworkOutput( SourcenetBase ):
 
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
-        SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_ID_PRIORITY_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
-        SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
-        SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,        
-        SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,        
+        ContextTextBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING,
         PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_SOURCE_CAPACITY_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -142,16 +142,16 @@ class NetworkOutput( SourcenetBase ):
         PARAM_NETWORK_LABEL : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + PARAM_CODER_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_ID_PRIORITY_LIST : ParamContainer.PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
-        PARAM_PERSON_PREFIX + SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
+        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING
     }
 
@@ -229,8 +229,8 @@ class NetworkOutput( SourcenetBase ):
         self.m_article_coder_id_list = None
         self.m_person_coder_id_list = None
         
-        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
-        self.set_logger_name( "sourcenet.export.network_output" )
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
+        self.set_logger_name( "context_text.export.network_output" )
         
     #-- END method __init__() --#
 
@@ -537,20 +537,20 @@ class NetworkOutput( SourcenetBase ):
         my_logger = self.get_logger()
 
         # retrieve the incoming parameters
-        start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, '' )
-        end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, '' )
-        date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, '' )
-        publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST )
+        start_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_START_DATE, '' )
+        end_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_END_DATE, '' )
+        date_range_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_DATE_RANGE, '' )
+        publication_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_PUBLICATION_LIST )
 
         # use method to get coder ID list now that there are two fields.
         coder_id_list = self.get_coder_id_list( param_prefix_IN )
         
         coder_type_filter_type_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_FILTER_TYPE, '' )
         coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
-        topic_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TOPIC_LIST )
-        tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST )
-        unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST )
-        allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, SourcenetBase.CHOICE_NO )
+        topic_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TOPIC_LIST )
+        tag_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TAG_LIST )
+        unique_id_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_UNIQUE_ID_LIST )
+        allow_duplicate_articles_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_ALLOW_DUPLICATE_ARTICLES, ContextTextBase.CHOICE_NO )
 
         # get all articles to start
         query_set_OUT = Article_Data.objects.all()

@@ -9,9 +9,9 @@ from python_utilities.network.http_helper import Http_Helper
 # installation instructions: https://github.com/ubergrape/pycalais
 from calais.base.client import Calais
 
-# sourcenet imports
-from sourcenet.models import Article
-from sourcenet.models import Article_Text
+# context_text imports
+from context_text.models import Article
+from context_text.models import Article_Text
 
 # declare functions
 def print_calais_json( json_IN ):
@@ -63,7 +63,7 @@ def print_calais_json( json_IN ):
 # Direct call to Calais REST API
 calais_REST_API_URL = "http://api.opencalais.com/tag/rs/enrich"
 calais_api_key = "8dpcmw82wtpr4m3q5ju28ybw"
-calais_submitter = "sourcenet-testing"
+calais_submitter = "context_text-testing"
 
 # calais API package - pycalais
 my_calais_API = None
@@ -151,7 +151,7 @@ my_http_helper.set_http_header( "x-calais-licenseID", calais_api_key, None )
 my_http_helper.set_http_header( "Content-Type", "TEXT/RAW", None )
 
 my_http_helper.set_http_header( "outputformat", "Application/JSON", None )
-my_http_helper.set_http_header( "submitter", "sourcenet testing", None )
+my_http_helper.set_http_header( "submitter", "context_text testing", None )
 
 # request type
 my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST

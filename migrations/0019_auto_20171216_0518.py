@@ -10,44 +10,44 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sourcenet', '0018_auto_20160924_1704'),
+        ('context_text', '0018_auto_20160924_1704'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='alternate_name',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
         migrations.AlterField(
             model_name='article',
             name='newspaper',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Newspaper'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Newspaper'),
         ),
         migrations.AlterField(
             model_name='article_author',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
         migrations.AlterField(
             model_name='article_author',
             name='original_person',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sourcenet_article_author_original_person_set', to='sourcenet.Person'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='context_text_article_author_original_person_set', to='context_text.Person'),
         ),
         migrations.AlterField(
             model_name='article_subject',
             name='document',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Document'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Document'),
         ),
         migrations.AlterField(
             model_name='article_subject',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
         migrations.AlterField(
             model_name='article_subject',
             name='original_person',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sourcenet_article_subject_original_person_set', to='sourcenet.Person'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='context_text_article_subject_original_person_set', to='context_text.Person'),
         ),
         migrations.AlterField(
             model_name='articles_to_migrate',
@@ -57,26 +57,26 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='articles_to_migrate',
             name='newspaper',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Newspaper'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Newspaper'),
         ),
         migrations.AlterField(
             model_name='document',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
         migrations.AlterField(
             model_name='newspaper',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
         migrations.AlterField(
             model_name='organization',
             name='location',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Location'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Location'),
         ),
         migrations.AlterField(
             model_name='person',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sourcenet.Organization'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='context_text.Organization'),
         ),
     ]

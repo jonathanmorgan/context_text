@@ -1,9 +1,9 @@
 # django imports
 from django.contrib.auth.models import User
 
-# sourcenet imports
-from sourcenet.models import Article_Data
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# context_text imports
+from context_text.models import Article_Data
+from context_text.shared.context_text_base import ContextTextBase
 
 # declare variables - filter article data to clear
 selected_username = ""
@@ -34,7 +34,7 @@ do_delete = False
 #selected_user = User.objects.filter( username = selected_username ).get()
 
 # get automated coder user
-selected_user = SourcenetBase.get_automated_coding_user()
+selected_user = ContextTextBase.get_automated_coding_user()
 
 # find all Article_Data for selected user.
 article_data_qs = Article_Data.objects.filter( coder = selected_user )

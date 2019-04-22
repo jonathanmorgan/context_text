@@ -1,0 +1,189 @@
+{% extends "context_text/base.html" %}
+
+{% block title %}View article coding details{% endblock %}
+
+{% block content %}
+
+    <h1>View article coding details</h1>
+    
+    {# got an output_string? #}
+    {% if output_string %}
+    
+        <div id="article_message" name="article_message" style="background-color: yellow; border: 1px solid black;">
+            <p>{{ output_string }}</p>
+        </div>
+    
+    {% endif %}
+    
+    <div id="article_form" name="article_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+                
+            <p>
+                <table class="gridtable">
+                    {# output article lookup form #}
+                    {{ article_lookup_form.as_table }}
+                </table>
+            </p>
+
+            {% if article_data_select_form %}
+            <p>
+                <table class="gridtable">
+                    {# if there is an article selected, include form to select certain Article_Data instances #}
+                    {{ article_data_select_form.as_table }}
+                </table>
+            </p>
+            {% endif %}
+                    
+            <p>
+                <input type="submit" />
+            </p>
+            
+        </form>
+        
+    </div>
+    
+    {% if article_data_list %}
+    
+        <hr />
+        
+        {% for article_data in article_data_list %}
+        
+            <div id="article_data_view" name="article_data_view">
+                <h3>Article_Data {{ article_data.id }}</h3>
+                <h4>Fields:</h4>
+                <ul>
+                    <li>
+                        <strong><em>Article:</em></strong> {{ article_data.article }}
+                        <br />
+                        <ul>
+                            <li><strong><em>tags:</em></strong> {% for current_tag in article_data.article.tags.all %} {{ current_tag }} {% endfor %}</li>
+                            <li><a href="{% url 'context_text-article_view' %}?article_id={{ article_data.article.id }}">View article</a> | <a href="{% url 'context_text-article_view_article_data_with_text' %}?article_id={{ article_data.article.id }}">View article + coding</a></li>
+                        </ul>
+                        
+                    </li>
+                    <li><strong><em>status:</em></strong> {{ article_data.status }}</li>
+                    <li><strong><em>authors:</em></strong> {{ article_data.article_author_set.count }}</li>
+                    <li><strong><em>sources:</em></strong> {{ article_data.article_subject_set.count }}</li>
+                    <li><strong><em>coder:</em></strong> {{ article_data.coder }} ( {{ article_data.coder_type }} )</li>
+                </ul>
+                <h4>Article_Author(s)</h4>
+
+                <ul>
+
+                    {# loop over article_authors #}
+                    {% for article_author in article_data.article_author_set.all %}
+    
+                        <li>{{ article_author }}</li>
+
+                    {% endfor %}
+
+                </ul>
+                <h4>Article_Subject(s)</h4>
+                <ul>
+
+                    {# loop over source Article_Subject(s) #}
+                    {% for article_subject in article_data.article_subject_set.all %}
+
+                        <li>
+                            {{ article_subject }}{% if article_subject.title %} - <em>title "{{article_subject.title}}"</em> - {% endif %} ( quotes: {{ article_subject.article_subject_quotation_set.all.count }}; mentions: {{ article_subject.article_subject_mention_set.all.count }} )
+                            <br />==> Name: {{ article_subject.name }}
+                            <br />====> Verbatim Name: {{ article_subject.verbatim_name }}
+                            <br />====> Lookup Name: {{ article_subject.lookup_name }}
+                            <br />==> Alternate Matches: 
+                            {% if article_subject.alternate_subject_match_set.all %}
+                                <br />
+                                <ul>
+                                    {% for alternate_subject_match in article_subject.alternate_subject_match_set.all %}
+                                        <li>{{ alternate_subject_match }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                None
+                            {% endif %}
+                            <br />
+                            <br />
+                            <strong><em>Quotations</em></strong>
+                            <br />
+                            <table class="gridtable">
+                                <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>quote</th><th>notes</th></tr>
+                                {% for source_quotation in article_subject.article_subject_quotation_set.all %}
+                        
+                                    <tr>
+                                        <td align="center">{{ source_quotation.id }}</td>
+                                        <td align="center">{{ source_quotation.paragraph_number }}</td>
+                                        <td align="center">{{ source_quotation.value_word_number_start }}</td>
+                                        <td align="center">{{ source_quotation.value_word_number_end }}</td>
+                                        <td align="center">{{ source_quotation.value_index }}</td>
+                                        <td align="center">{{ source_quotation.canonical_index }}</td>                                        
+                                        <td align="center">{{ source_quotation.article_subject.person.id }}</td>
+                                        
+                                        {% if source_quotation.value_in_context %}
+                                        
+                                            <td>{{ source_quotation.value_in_context }}</td>
+                                            
+                                        {% else %}
+                                        
+                                            <td>{{ source_quotation.value }}
+                                                
+                                        {% endif %}
+                                        
+                                        <td>{{ source_quotation.notes }}</td>
+                                    </tr>
+                                    
+                                {% endfor %}
+                            </table>
+
+                            <br />
+                            <strong><em>Mentions</em></strong>
+                            <br />
+                            <table class="gridtable">
+                                <tr><th>id</th><th>graf#</th><th>from word</th><th>to word</th><th>index</th><th>c-index</th><th>person id</th><th>mention</th><th>notes</th></tr>
+                                {% for subject_mention in article_subject.article_subject_mention_set.all %}
+                        
+                                    <tr>
+                                        <td align="center">{{ subject_mention.id }}</td>
+                                        <td align="center">{{ subject_mention.paragraph_number }}</td>
+                                        <td align="center">{{ subject_mention.value_word_number_start }}</td>
+                                        <td align="center">{{ subject_mention.value_word_number_end }}</td>
+                                        <td align="center">{{ subject_mention.value_index }}</td>
+                                        <td align="center">{{ subject_mention.canonical_index }}</td>                                        
+                                        <td align="center">{{ subject_mention.article_subject.person.id }}</td>
+                                        
+                                        {% if subject_mention.value_in_context %}
+                                        
+                                            <td>{{ subject_mention.value_in_context }}</td>
+                                            
+                                        {% else %}
+                                        
+                                            <td>{{ subject_mention.value }}
+                                                
+                                        {% endif %}
+
+                                        <td>{{ subject_mention.notes }}</td>
+                                    </tr>
+                                    
+                                {% endfor %}
+                            </table>
+                            <br />
+                        </li>
+                        
+                    {% endfor %} {# END loop over source Article_Subject(s) #}
+                        
+                </ul>
+                    
+            </div>
+            <hr />
+        
+        {%empty %}
+        
+            <p>No Article_Data found for article {{ article_id }}.</p>
+        
+        {% endfor %}
+
+    {% endif %}
+
+{% endblock %}

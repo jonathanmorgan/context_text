@@ -3,16 +3,16 @@ from __future__ import unicode_literals
 '''
 Copyright 2010-2014 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 
 How to add a new ArticleCoder implementation:
-- make a class that extends sourcenet.article_coding.article_coder.ArticleCoder.
+- make a class that extends context_text.article_coding.article_coder.ArticleCoder.
 - add an import of that class to the imports section of this file, in the
    section commented as "# Import other Article coder classes".
 - Add a the coder to the article coder implementation choices below (preceded
@@ -55,24 +55,24 @@ from python_utilities.logging.summary_helper import SummaryHelper
 from python_utilities.parameters.param_container import ParamContainer
 from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 
-# Import the classes for our SourceNet application
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
+# Import the classes for our context_text application
+from context_text.models import Article
+from context_text.models import Article_Data
 
 # Import other Article coder classes
-from sourcenet.article_coding.article_coder import ArticleCoder
-from sourcenet.article_coding.open_calais_v1.open_calais_article_coder import OpenCalaisArticleCoder
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.article_coding.article_coder import ArticleCoder
+from context_text.article_coding.open_calais_v1.open_calais_article_coder import OpenCalaisArticleCoder
+from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 
-# Import sourcenet shared classes.
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# Import context_text shared classes.
+from context_text.shared.context_text_base import ContextTextBase
 
 
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class ArticleCoding( SourcenetBase ):
+class ArticleCoding( ContextTextBase ):
 
 
     #---------------------------------------------------------------------------
@@ -103,14 +103,14 @@ class ArticleCoding( SourcenetBase ):
 
     # Dictionary of parameters to their types, for use in debug method.
     PARAM_NAME_TO_TYPE_MAP = {
-        SourcenetBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
-        SourcenetBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
-        SourcenetBase.PARAM_SECTION_LIST : ParamContainer.PARAM_TYPE_LIST,
-        SourcenetBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
-        SourcenetBase.PARAM_ARTICLE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_SECTION_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_ARTICLE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE : ParamContainer.PARAM_TYPE_STRING,
     }
 
@@ -160,14 +160,14 @@ class ArticleCoding( SourcenetBase ):
         #my_exception_helper.set_logging_level( logging.DEBUG )
         self.set_exception_helper( my_exception_helper )
         
-        # ==> moved to parent class SourcenetBase
+        # ==> moved to parent class ContextTextBase
         #self.request = None
         #self.parameters = ParamContainer()
         # define parameters
         #self.define_parameters( ArticleCoding.PARAM_NAME_TO_TYPE_MAP )
         
-        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
-        self.set_logger_name( "sourcenet.article_coding.article_coding" )
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
+        self.set_logger_name( "context_text.article_coding.article_coding" )
         
         # flag to tell whether we want a single line per article printed.
         #     Defaults to False.
@@ -442,14 +442,14 @@ class ArticleCoding( SourcenetBase ):
         if ( params_IN ):
 
             # retrieve the incoming parameters
-            start_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_START_DATE, None )
-            end_date_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_END_DATE, None )
-            date_range_IN = self.get_param_as_str( param_prefix_IN + SourcenetBase.PARAM_DATE_RANGE, None )
-            publication_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_PUBLICATION_LIST, [] )
-            tag_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_TAG_LIST, [] )
-            unique_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_UNIQUE_ID_LIST, [] )
-            article_id_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_ARTICLE_ID_LIST, [] )
-            section_list_IN = self.get_param_as_list( param_prefix_IN + SourcenetBase.PARAM_SECTION_LIST, [] )
+            start_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_START_DATE, None )
+            end_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_END_DATE, None )
+            date_range_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_DATE_RANGE, None )
+            publication_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_PUBLICATION_LIST, [] )
+            tag_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TAG_LIST, [] )
+            unique_id_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_UNIQUE_ID_LIST, [] )
+            article_id_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_ARTICLE_ID_LIST, [] )
+            section_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_SECTION_LIST, [] )
             
             my_logger.info( "In " + me + ": unique_id_list_IN = " + str( unique_id_list_IN ) )            
             

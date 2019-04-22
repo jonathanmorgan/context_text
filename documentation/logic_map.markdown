@@ -1,36 +1,36 @@
-# Sourcenet Logic Map
+# context_text Logic Map
 
 <!-- TOC -->
 
 # Output Attention Network
 
-- When configured per README.md, accessed via [http://<your_server>/research/sourcenet/output/network](http://<your_server>/research/sourcenet/output/network).
+- When configured per README.md, accessed via [http://<your_server>/research/context/text/output/network](http://<your_server>/research/context/text/output/network).
 
 ## Files:
 
-- sourcenet/views.py - output_network()
-- sourcenet/export/network_output.py - class NetworkOutput
-- sourcenet/export/network_data_output.py - abstract class NetworkDataOutput
-- sourcenet/export/ndo_*.py - concrete NetworkDataOutput child classes:
+- context_text/views.py - output_network()
+- context_text/export/network_output.py - class NetworkOutput
+- context_text/export/network_data_output.py - abstract class NetworkDataOutput
+- context_text/export/ndo_*.py - concrete NetworkDataOutput child classes:
 
-    - sourcenet/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
+    - context_text/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
     
         - first format, for UCINet, not compatible with anything else.
     
-    - sourcenet/export/ndo_csv_matrix.py - class NDO_CSVMatrix
+    - context_text/export/ndo_csv_matrix.py - class NDO_CSVMatrix
     
         - CSV table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.
 
-    - sourcenet/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
+    - context_text/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
     
         - tab-delimited table, symmetric tie matrix where first row is IDs of people, then each subsequent row is the ties from that person to the people represented by each of the columns.
         - this is just a configuration container - extends NDO_CSVMatrix, adjusts configuration so it outputs tab-delimited rather than CSV.
 
-- sourcenet/models.py - class Article_Source
+- context_text/models.py - class Article_Source
 
 ## Logic Map
 
-- request handler = sourcenet/views.py - output_network()
+- request handler = context_text/views.py - output_network()
 
     - NetworkOutput.set_request()
     - NetworkOutput.create_network_query_set()
@@ -48,7 +48,7 @@
         - NetworkOutput.get_NDO_instance()
         - NetworkDataOutput.set_query_set( query_set_IN ) - QuerySet made by NetworkOutput.create_network_query_set() above.
         - NetworkDataOutput.set_person_dictionary( person_dictionary )
-        - NetworkDataOutput.get_param_container() - in SourcenetBase parent class
+        - NetworkDataOutput.get_param_container() - in ContextTextBase parent class
         - NetworkDataOutput.initialize_from_params( my_params )
         - NetworkDataOutput.render()
 
@@ -78,11 +78,11 @@
             
             - abstract NetworkDataOutput.render_network_data()
             
-                - implemented by one of the outputters in the sourcenet/export/ndo_*.py files
+                - implemented by one of the outputters in the context_text/export/ndo_*.py files
                 
-                    - sourcenet/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
-                    - sourcenet/export/ndo_csv_matrix.py - class NDO_CSVMatrix
-                    - sourcenet/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
+                    - context_text/export/ndo_simple_matrix.py - class NDO_SimpleMatrix
+                    - context_text/export/ndo_csv_matrix.py - class NDO_CSVMatrix
+                    - context_text/export/ndo_tab_delimited_matrix.py - class NDO_TabDelimitedMatrix
                 
                 - NDO_CSVMatrix
                 

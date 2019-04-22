@@ -1,0 +1,233 @@
+/*
+*
+{
+    padding: 0; margin: 0;
+}
+*/
+
+/* moved to context_text.css
+body
+{
+	margin: 0;
+	padding: 0;
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 10pt;
+	line-height: 150%;
+	border-top: 8px solid #106870;
+}
+ */
+
+.bodyWrapper
+{
+	margin: 0;
+	padding: 0;
+}
+
+.contentBox
+{
+	max-width: 960px;
+	margin: 30px auto 0 auto;
+}
+
+.contentLeft
+{
+	width: 640px;
+	height: 100%;
+	float: left;
+	text-align: justify;
+}
+
+.pageStatusMessageArea
+{
+	width: 620px; /* smaller than sidebar */
+	border: 1px solid green;
+	background-color: #c4e897;
+	padding: 5px;
+	margin: 5px 5px 15px 5px;
+	font-style: italic;
+	/* font-size: 100%; */
+	font-family: monospace;
+	display: block;
+}
+
+.pageStatusMessageArea h4
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+.pageStatusMessageArea ul
+{
+    padding: 0px;
+    margin: 0px 10px 0px;
+}
+
+.pageStatusMessageArea li
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+hr
+{
+    display: block;
+    padding: 0px;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    border: 2px solid black;
+}
+
+hr.fieldSeparator
+{
+    border: 1px solid gray;
+}
+
+.sidebarBox
+{
+	width: 300px; /* Replace with your sidebar width */
+	height: 100%;
+	float: right;
+	position: relative;
+	/* overflow-y: scroll; */
+}
+
+.scrollingBox
+{
+	width: 300px; /* Replace with the same width as sidebar */
+	height: 90%;
+	position: fixed;
+	top: 40px;
+	border: 2px solid black;
+	padding: 10px;
+	overflow: scroll;
+	/* overflow-y: hidden;
+	overflow-x: hidden;*/
+}
+
+p.inputContainer
+{
+    /* nothing to see here for now */
+    padding: 1px 0px;
+}
+
+p.inputContainer#textarea-source-quote-text
+{
+    /* default to not shown - show when "source" type selected. */
+    display: none;
+}
+
+/*
+hr.lookupPersonRule
+{
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid gray;
+}
+*/
+
+#fix-person-name-link
+{
+    margin-left: 10px;
+    padding: 5px;
+    border-left: 1px solid #d6cfcf;
+    border-bottom: 1px solid #d6cfcf;
+    border-right: 1px solid #d6cfcf;
+}
+
+#fix-person-name
+{
+    margin-left: 10px;
+    padding: 5px;
+    border-left: 1px solid #d6cfcf;
+    border-bottom: 1px solid #d6cfcf;
+    border-right: 1px solid #d6cfcf;
+}
+
+.statusMessageArea
+{
+	width: 280px; /* smaller than sidebar */
+	border: 1px solid green;
+	background-color: #c4e897;
+	padding: 5px;
+	margin: 5px;
+	font-style: italic;
+	/* font-size: 100%; */
+	font-family: monospace;
+	display: none;
+}
+
+.statusMessageArea h4
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+.statusMessageArea ul
+{
+    padding: 0px;
+    margin: 0px 10px 0px;
+}
+
+.statusMessageArea li
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+div.lookupPersonExistingId
+{
+    font-style: italic;
+	font-size: 90%;
+	margin-bottom: 10px;
+}
+
+table.personListTable
+{
+	border-collapse: collapse;
+	margin-bottom: 5px;
+}
+
+.personListTable th, td
+{
+	font-size: 80%;
+	border: 1px solid black;
+}
+
+.personListTable td
+{
+	padding: 5px;
+}
+
+.submitArticleCoding
+{
+    /* default to not shown - show one or more person coded. */
+    display: none;    
+}
+
+.articleEnd
+{
+    text-align: center;
+    font-weight: bold;
+    font-style: italic;
+}
+
+.foundInText
+{
+    background-color: #fcd889;
+}
+
+.foundInTextMatchedWords
+{
+    background-color: #fcac02;
+}
+
+.hidden
+{
+    /* default to not shown - show when "source" type selected. */
+    display: none;
+}

@@ -28,7 +28,7 @@ outputFile <- "mention_count_results.txt"
 queryString <- ""
 
 # build query string using person_type
-queryString <- "SELECT * FROM sourcenet_analysis_reliability_ties"
+queryString <- "SELECT * FROM context_analysis_reliability_ties"
 
 # got a filterOnLabel?
 if ( filterOnLabel != "" ) {

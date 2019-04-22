@@ -1,6 +1,6 @@
 # imports
-from sourcenet.models import Article_Data
-from sourcenet.models import Person
+from context_text.models import Article_Data
+from context_text.models import Person
 from django.contrib.auth.models import User
 import six
 

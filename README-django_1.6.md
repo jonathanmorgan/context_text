@@ -1,8 +1,8 @@
 <!-- TOC -->
 
-# sourcenet
+# context_text
 
-sourcenet is a django application for capturing and analyzing networks of news based on articles.
+context_text is a django application for capturing and analyzing networks of news based on articles.
 
 ## Installation and configuration
 
@@ -29,11 +29,11 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 /research
                     settings.py
 
-    - move sourcenet into your django application directory using the git program to clone it from github:
+    - move context_text into your django application directory using the git program to clone it from github:
 
-            git clone https://github.com/jonathanmorgan/sourcenet.git
+            git clone https://github.com/jonathanmorgan/context_text.git
 
-    - If you might want to try to run the newsbank collector, you'll also need python\_utilities.  Clone python\_utilities into the research folder alongside sourcenet:
+    - If you might want to try to run the newsbank collector, you'll also need python\_utilities.  Clone python\_utilities into the research folder alongside context_text:
 
             git clone https://github.com/jonathanmorgan/python_utilities.git
 
@@ -66,7 +66,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
     
         - In django 1.6, the django.contrib.admin application will already be uncommented by default, so you'll have to make an admin user at this point, as well.  You should do this now, make a note of username and password.  You'll need it later.
 
-    - add 'sourcenet' to your list of INSTALLED\_APPS:
+    - add 'context_text' to your list of INSTALLED\_APPS:
 
             INSTALLED_APPS = (
                 'django.contrib.auth',
@@ -80,12 +80,12 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
                 'south',
-                'sourcenet',
+                'context_text',
             )
 
-    - Initialize the sourcenet tables using south:
+    - Initialize the context_text tables using south:
     
-            python manage.py migrate sourcenet
+            python manage.py migrate context_text
 
 ### Enable django admins:
         
@@ -95,11 +95,11 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
         (sudo) apt-get install libapache2-mod-wsgi
 
-- configure your web server so it knows of research/research/wsgi.py.  If apache, add something like this to the apache config (in ubuntu, for example, I'd put it in `/etc/apache2/conf.d`, in a file named `django-sourcenet`):
+- configure your web server so it knows of research/research/wsgi.py.  If apache, add something like this to the apache config (in ubuntu, for example, I'd put it in `/etc/apache2/conf.d`, in a file named `django-context_text`):
 
-        WSGIDaemonProcess sourcenet-1 threads=10 display-name=%{GROUP}
-        WSGIProcessGroup sourcenet-1
-        WSGIScriptAlias /sourcenet <path_to_django_project>/research/research/wsgi.py
+        WSGIDaemonProcess context_text-1 threads=10 display-name=%{GROUP}
+        WSGIProcessGroup context_text-1
+        WSGIScriptAlias /context_text <path_to_django_project>/research/research/wsgi.py
         
         # Python path
         # no virualenv
@@ -119,13 +119,13 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - If you are using apache 2.4 on ubuntu 13.10:
 
-    - place this file in /etc/apache2/conf-available, naming it "django-sourcenet.conf".
+    - place this file in /etc/apache2/conf-available, naming it "django-context_text.conf".
     
     - make sure to uncomment `Require all granted` in the file above, and comment out `Allow from all`.
     
     - enable it with the a2enconf command:
 
-            (sudo) a2enconf django-sourcenet
+            (sudo) a2enconf django-context_text
 
 - Add a line that sets your python path to the wsgi.py file (<project_folder>/research/wsgi.py):
 
@@ -190,7 +190,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - test by going to the URL:
 
-        http://<your_server>/sourcenet/admin/
+        http://<your_server>/context_text/admin/
 
 ### Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
 
@@ -212,7 +212,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # Uncomment the next line to enable admin documentation:
                 # 'django.contrib.admindocs',
                 'south',
-                'sourcenet',
+                'context_text',
                 'django-ajax-selects',
             )
         
@@ -226,10 +226,10 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # specifying the model Track in the music app, and searching against the 'title' field
             
                 # or write a custom search channel and specify that using a TUPLE
-                'article' : ( 'sourcenet.ajax-select-lookups', 'ArticleLookup' ),
-                'organization' : ( 'sourcenet.ajax-select-lookups', 'OrganizationLookup' ),
-                'person' : ( 'sourcenet.ajax-select-lookups', 'PersonLookup' ),
-                # this specifies to look for the class `PersonLookup` in the `sourcenet.ajax-select-lookups` module
+                'article' : ( 'context_text.ajax-select-lookups', 'ArticleLookup' ),
+                'organization' : ( 'context_text.ajax-select-lookups', 'OrganizationLookup' ),
+                'person' : ( 'context_text.ajax-select-lookups', 'PersonLookup' ),
+                # this specifies to look for the class `PersonLookup` in the `context_text.ajax-select-lookups` module
 
             }
             
@@ -245,7 +245,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
             
         and
 
-            url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+            url( r'^context_text/', include( 'context_text.urls' ) ),
 
     - Example Result:
 
@@ -275,15 +275,15 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
             )
             
-### Enable sourcenet network data output pages
+### Enable context_text network data output pages
 
 - get the admins working.
 
-- add a line to resesarch/urls.py to enable the sourcenet URLs (in `research.sourcenet.urls`) to the urlpatterns structure.
+- add a line to resesarch/urls.py to enable the context_text URLs (in `research.context_text.urls`) to the urlpatterns structure.
 
     - Add:
 
-            url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+            url( r'^context_text/', include( 'context_text.urls' ) ),
 
     - Result:
 
@@ -291,7 +291,7 @@ sourcenet is a django application for capturing and analyzing networks of news b
                 # Examples:
                 # url(r'^$', 'research.views.home', name='home'),
                 # url(r'^research/', include('research.foo.urls')),
-                url( r'^sourcenet/', include( 'sourcenet.urls' ) ),
+                url( r'^context_text/', include( 'context_text.urls' ) ),
             
                 # Uncomment the admin/doc line below to enable admin documentation:
                 url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
@@ -304,17 +304,17 @@ sourcenet is a django application for capturing and analyzing networks of news b
 
 - test by going to the URL:
 
-        http://<your_server>/research/sourcenet/output/network
+        http://<your_server>/research/context_text/output/network
 
 ## Collecting Articles
 
-There is an example application in sourcenet/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
+There is an example application in context_text/collectors/newsbank that you can use as a template for how to gather data and then store it in the database.  It interacts with the newsbank web database, using BeautifulSoup to parse and extract article data.
 
 ## Coding articles:
 
-To code articles by hand, use the django admin pages (access to which should have been enabled once you configured your web server so it knows of the wsgi.py file above).  The article model's admin page has been implemented so it is relatively easy to use to code articles, and if you want to refine or alter what is collected, you can alter it in sourcenet/admins.py.
+To code articles by hand, use the django admin pages (access to which should have been enabled once you configured your web server so it knows of the wsgi.py file above).  The article model's admin page has been implemented so it is relatively easy to use to code articles, and if you want to refine or alter what is collected, you can alter it in context_text/admins.py.
 
-A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in sourcenet/protocol/sourcenet_CA_protocol.pdf.
+A draft content analysis protocol for assessing sources in a way that can be used to generate network data is in context_text/protocol/context_text_CA_protocol.pdf.
 
 ## Creating Network Data
 
@@ -336,7 +336,7 @@ A draft content analysis protocol for assessing sources in a way that can be use
 
 ## Outputting Network Data
 
-Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/sourcenet/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
+Once you have coded your articles, you can output network data from them by going to the web page `http://<your_server>/research/context_text/output/network`.  This page outputs a form that lets you select articles and people to include in your network, then will output network data based on what you select.
 
 - If you are generating multiple network slices across time periods, you will want to use the "Select People" section of the form (on the right) and enter a fancy date range that includes each date range for all of the slices you are making, so the matrices that result are of the same dimensions (same set of people for each - all people in all slices).
 
@@ -365,18 +365,18 @@ Once you have coded your articles, you can output network data from them by goin
 
 Copyright 2010-present (2014) Jonathan Morgan
 
-This file is part of [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).
+This file is part of [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).
 
-sourcenet is free software: you can redistribute it and/or modify
+context_text is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful,
+context_text is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).  If not, see
+along with [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).  If not, see
 [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).

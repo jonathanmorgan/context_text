@@ -28,7 +28,7 @@ queryReliabilityData <- function( personTypeIN, filterOnLabelIN = "" ) {
     queryString <- ""
 
     # build query string using personTypeIN
-    queryString <- paste( "SELECT * FROM sourcenet_analysis_reliability_names WHERE person_type = '", personTypeIN, "'", sep = "" )
+    queryString <- paste( "SELECT * FROM context_analysis_reliability_names WHERE person_type = '", personTypeIN, "'", sep = "" )
 
     # got a filterOnLabelIN?
     if ( filterOnLabelIN != "" ) {

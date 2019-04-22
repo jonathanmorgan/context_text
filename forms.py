@@ -3,23 +3,23 @@ from __future__ import unicode_literals
 '''
 Copyright 2010-2016 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 '''
-How to add a value to one of these sourcenet forms and then get that value
+How to add a value to one of these context_text forms and then get that value
 properly passed through to all the things that might use it:
 
 - 1) If your form input will have a set of values from which the user will
     choose, figure out what those values will be and make variables to hold the
     specific values and to hold a dictionary that maps values to display names
-    in the appropriate class in sourcenet.  For example:
+    in the appropriate class in context_text.  For example:
     - add parameters related to network output to the class NetworkOutput in
         file /export/network_output.py (though if those parameters will also be
         used by NetworkDataOutput, you should declare them there, then just
@@ -77,7 +77,7 @@ properly passed through to all the things that might use it:
 - 5) Into what function or method do I then update processing to include the
     new field?:
     - For network output, method that creates QuerySets from form parameters is
-        create_query_set(), in sourcenet/export/network_output.py,
+        create_query_set(), in context_text/export/network_output.py,
         NetworkOutput.create_query_set().  This method is called by both
         create_person_query_set() and create_network_query_set().  If you add
         a parameter to the article select and the person select, make sure
@@ -112,18 +112,20 @@ from python_utilities.django_utils.django_form_helper import ModelFormParent
 from python_utilities.lists.list_helper import ListHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 
-# import stuff from sourcenet
-#from mysite.sourcenet.export.network_output import NetworkOutput
-from sourcenet.export.csv_article_output import CsvArticleOutput
-from sourcenet.export.network_output import NetworkOutput
-#from sourcenet.export.network_data_output import NetworkDataOutput
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Subject
-from sourcenet.models import Newspaper
-from sourcenet.models import Person
-from sourcenet.models import Topic
-from sourcenet.shared.person_details import PersonDetails
+# context imports
+from context.shared.person_details import PersonDetails
+
+# import stuff from context_text
+#from mysite.context_text.export.network_output import NetworkOutput
+from context_text.export.csv_article_output import CsvArticleOutput
+from context_text.export.network_output import NetworkOutput
+#from context_text.export.network_data_output import NetworkDataOutput
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.models import Article_Subject
+from context_text.models import Newspaper
+from context_text.models import Person
+from context_text.models import Topic
 
 
 #===============================================================================
@@ -270,7 +272,7 @@ class ArticleCodingArticleFilterForm( forms.Form ):
         
         # declare variables
         me = "am_i_empty"
-        my_logger_name = "sourcenet.forms.ArticleCodingArticleFilterForm"
+        my_logger_name = "context_text.forms.ArticleCodingArticleFilterForm"
         debug_message = ""
         
         # use DjangoFormHelper method
@@ -552,7 +554,7 @@ class PersonLookupByIDForm( FormParent ):
         
         # declare variables
         me = "lookup_person_by_id"
-        my_logger_name = "sourcenet.forms.PersonLookupByIDForm"
+        my_logger_name = "context_text.forms.PersonLookupByIDForm"
         debug_message = ""
         request_inputs = None
         person_qs = None
@@ -790,7 +792,7 @@ class PersonLookupByNameForm( ModelFormParent ):
         
         # declare variables
         me = "lookup_person_by_name"
-        my_logger_name = "sourcenet.forms.PersonLookupByNameForm"
+        my_logger_name = "context_text.forms.PersonLookupByNameForm"
         debug_message = ""
         request_inputs = None
         lookup_type = ""

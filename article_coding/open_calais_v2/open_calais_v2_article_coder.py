@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 '''
 Copyright 2010-2015 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 '''
@@ -47,26 +47,26 @@ from python_utilities.network.http_helper import Http_Helper
 from python_utilities.sequences.sequence_helper import SequenceHelper
 from python_utilities.strings.string_helper import StringHelper
 
-# sourcenet classes
+# context imports
+from context.shared.person_details import PersonDetails
+
+# context_text classes
 
 # models
-from sourcenet.models import Alternate_Subject_Match
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Data_Notes
-from sourcenet.models import Article_Subject
-from sourcenet.models import Article_Subject_Mention
-from sourcenet.models import Article_Subject_Quotation
-from sourcenet.models import Article_Text
-from sourcenet.models import Person
-
-# person details
-from sourcenet.shared.person_details import PersonDetails
+from context_text.models import Alternate_Subject_Match
+from context_text.models import Article_Data
+from context_text.models import Article_Data_Notes
+from context_text.models import Article_Subject
+from context_text.models import Article_Subject_Mention
+from context_text.models import Article_Subject_Quotation
+from context_text.models import Article_Text
+from context_text.models import Person
 
 # parent abstract class.
-from sourcenet.article_coding.article_coder import ArticleCoder
+from context_text.article_coding.article_coder import ArticleCoder
 
 # class to help with parsing and processing OpenCalaisV2ApiResponse.
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
+from context_text.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
 
 #================================================================================
 # Package constants-ish
@@ -177,7 +177,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
     
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
         #    BasicRateLimited --> ArticleCoder --> OpenCalaisV2ArticleCoder).
-        self.set_logger_name( "sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder" )
+        self.set_logger_name( "context_text.article_coding.open_calais_v2.open_calais_v2_article_coder" )
         
         # items for processing a given JSON response - should be updated with
         #    every new article coded.
@@ -486,7 +486,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         my_open_calais_access_token = ""
         my_content_type = ""
         my_output_format = ""
-        my_submitter = "sourcenet"
+        my_submitter = "context_text"
         
         # update config properties with params passed in.
         self.update_config_properties( params_IN )
@@ -504,7 +504,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         my_output_format = self.get_output_format()
 
         # retrieve submitter
-        my_submitter = self.get_config_property( self.CONFIG_PROP_SUBMITTER, "sourcenet" )
+        my_submitter = self.get_config_property( self.CONFIG_PROP_SUBMITTER, "context_text" )
         
         # set http headers
         my_http_helper.set_http_header( self.HTTP_HEADER_NAME_X_AG_ACCESS_TOKEN, my_open_calais_access_token )

@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 # imports
 
-# sourcenet imports
-from sourcenet.data.person_data import PersonData
+# context_text imports
+from context_text.data.person_data import PersonData
 
 # constants-ish
 

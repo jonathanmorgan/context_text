@@ -9,7 +9,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sourcenet', '0016_auto_20160817_2009'),
+        ('context_text', '0016_auto_20160817_2009'),
     ]
 
     operations = [

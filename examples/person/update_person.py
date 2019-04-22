@@ -1,10 +1,10 @@
 # imports
 
-# sourcenet Person model
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Subject
-from sourcenet.models import Person
-from sourcenet.models import Person_Newspaper
+# context_text Person model
+from context_text.models import Article_Author
+from context_text.models import Article_Subject
+from context_text.models import Person
+from context_text.models import Person_Newspaper
 
 # constants-ish
 

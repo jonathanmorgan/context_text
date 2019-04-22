@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sourcenet', '0003_auto_20150915_0012'),
+        ('context_text', '0003_auto_20150915_0012'),
     ]
 
     operations = [

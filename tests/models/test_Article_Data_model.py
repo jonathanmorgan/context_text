@@ -1,5 +1,5 @@
 """
-This file contains tests of the sourcenet Article_Data model.
+This file contains tests of the context_text Article_Data model.
 
 Functions tested:
 - @classmethod Article_Data.make_deep_copy()
@@ -8,11 +8,11 @@ Functions tested:
 from __future__ import unicode_literals
 
 # imports
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Subject
-from sourcenet.shared.sourcenet_base import SourcenetBase
-from sourcenet.tests.test_helper import TestHelper
+from context_text.models import Article_Data
+from context_text.models import Article_Author
+from context_text.models import Article_Subject
+from context_text.shared.context_text_base import ContextTextBase
+from context_text.tests.test_helper import TestHelper
 
 # Django imports
 from django.contrib.auth.models import User
@@ -805,7 +805,7 @@ class Article_DataModelTest( django.test.TestCase ):
         original_article_data_id = 74
         
         # get user to copy to:
-        copy_to_coder_user = SourcenetBase.get_ground_truth_coding_user()
+        copy_to_coder_user = ContextTextBase.get_ground_truth_coding_user()
         copy_to_coder_user_id = copy_to_coder_user.id
 
         # make a copy.

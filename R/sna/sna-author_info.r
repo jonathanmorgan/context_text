@@ -1,7 +1,7 @@
 # For this to work, you'll need to have run either of the following, including
 #    all of the prerequisite files listed in each file:
-#    - sourcenet/R/igraph/sna-igraph-network_stats.r
-#    - sourcenet/R/statnet/sna-statnet-network_stats.r
+#    - context_text/R/sna/igraph/sna-igraph-network_stats.r
+#    - context_text/R/sna/statnet/sna-statnet-network_stats.r
 # Also assumes that you haven't re-ordered the <type>NetworkData data frames.
 
 #==============================================================================#
@@ -61,7 +61,7 @@ calaisAuthorsSharedMeanTieWeightGE1 <- mean( calaisAuthorsSharedNetworkData$mean
 
 #------------------------------------------------------------------------------#
 # first, set up data frames (from results of running python script:
-#    sourcenet/examples/analysis/analysis-person_info.py)
+#    context_text/examples/analysis/analysis-person_info.py)
 #------------------------------------------------------------------------------#
 
 # human coder, all authors.

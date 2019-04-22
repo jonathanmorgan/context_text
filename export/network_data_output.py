@@ -4,13 +4,13 @@ from __future__ import division
 '''
 Copyright 2010-2014 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 __author__="jonathanmorgan"
@@ -38,22 +38,22 @@ import six
 # python_utilities
 from python_utilities.parameters.param_container import ParamContainer
 
-# Import the classes for our SourceNet application
-#from sourcenet.models import Article
-#from sourcenet.models import Article_Author
-from sourcenet.models import Article_Subject
-#from sourcenet.models import Person
-#from sourcenet.models import Topic
+# Import the classes for our context_text application
+#from context_text.models import Article
+#from context_text.models import Article_Author
+from context_text.models import Article_Subject
+#from context_text.models import Person
+#from context_text.models import Topic
 
-# Import sourcenet shared classes.
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# Import context_text shared classes.
+from context_text.shared.context_text_base import ContextTextBase
 
 
 #===============================================================================
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NetworkDataOutput( SourcenetBase ):
+class NetworkDataOutput( ContextTextBase ):
 
     
     #---------------------------------------------------------------------------
@@ -110,10 +110,10 @@ class NetworkDataOutput( SourcenetBase ):
     ]
 
     # Filtering Article_Data on coder_type.
-    CODER_TYPE_FILTER_TYPE_NONE = SourcenetBase.CODER_TYPE_FILTER_TYPE_NONE
-    CODER_TYPE_FILTER_TYPE_AUTOMATED = SourcenetBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
-    CODER_TYPE_FILTER_TYPE_ALL = SourcenetBase.CODER_TYPE_FILTER_TYPE_ALL
-    CODER_TYPE_FILTER_TYPE_DEFAULT = SourcenetBase.CODER_TYPE_FILTER_TYPE_DEFAULT
+    CODER_TYPE_FILTER_TYPE_NONE = ContextTextBase.CODER_TYPE_FILTER_TYPE_NONE
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = ContextTextBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
+    CODER_TYPE_FILTER_TYPE_ALL = ContextTextBase.CODER_TYPE_FILTER_TYPE_ALL
+    CODER_TYPE_FILTER_TYPE_DEFAULT = ContextTextBase.CODER_TYPE_FILTER_TYPE_DEFAULT
     
     CODER_TYPE_FILTER_TYPE_CHOICES_LIST = [ 
         ( CODER_TYPE_FILTER_TYPE_NONE, "Do not filter" ),
@@ -212,8 +212,8 @@ class NetworkDataOutput( SourcenetBase ):
         # inclusion parameter holder
         self.inclusion_params = {}
 
-        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> SourcenetBase --> ArticleCoding).
-        self.set_logger_name( "sourcenet.export.network_data_output" )
+        # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
+        self.set_logger_name( "context_text.export.network_data_output" )
         
     #-- END method __init__() --#
 

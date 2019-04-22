@@ -1,13 +1,13 @@
 '''
 Copyright 2010-present (currently 2016) Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 # IMPORTANT!!! Any admin that contains a reference to an article should use
@@ -20,27 +20,27 @@ from ajax_select import make_ajax_form
 from ajax_select.admin import AjaxSelectAdmin
 
 # Import models
-from sourcenet.models import Project
-from sourcenet.models import Location
-from sourcenet.models import Topic
-from sourcenet.models import Person
-from sourcenet.models import Organization
-from sourcenet.models import Person_Newspaper
-from sourcenet.models import Person_Organization
-from sourcenet.models import Person_External_UUID
-from sourcenet.models import Document
-from sourcenet.models import Newspaper
-from sourcenet.models import Article_Author
-#from sourcenet.models import Article_Location
-from sourcenet.models import Article_Notes
-from sourcenet.models import Article_RawData
-from sourcenet.models import Article_Subject
-from sourcenet.models import Article_Text
-#from sourcenet.models import Article_Topic
-#from sourcenet.models import Source_Organization
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Data_Notes
+from context_text.models import Project
+from context_text.models import Location
+from context_text.models import Topic
+from context_text.models import Person
+from context_text.models import Organization
+from context_text.models import Person_Newspaper
+from context_text.models import Person_Organization
+from context_text.models import Person_External_UUID
+from context_text.models import Document
+from context_text.models import Newspaper
+from context_text.models import Article_Author
+#from context_text.models import Article_Location
+from context_text.models import Article_Notes
+from context_text.models import Article_RawData
+from context_text.models import Article_Subject
+from context_text.models import Article_Text
+#from context_text.models import Article_Topic
+#from context_text.models import Source_Organization
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.models import Article_Data_Notes
 
 from django.contrib import admin
 
@@ -126,7 +126,7 @@ class PersonAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Person, dict( organization = 'organization' ) )
 
     fieldsets = [
@@ -228,7 +228,7 @@ class ArticleAuthorInline( admin.StackedInline ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
 
     model = Article_Author
@@ -265,7 +265,7 @@ class ArticleSubjectInline( admin.StackedInline ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
 
     model = Article_Subject
@@ -301,7 +301,7 @@ class Article_ContentAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Text, dict( article = 'article' ) )
 
     fieldsets = [
@@ -338,7 +338,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Data, dict( article = 'article' ) )
 
     fieldsets = [
@@ -385,7 +385,7 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
 
     fieldsets = [
@@ -429,7 +429,7 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
 
     fieldsets = [
@@ -474,7 +474,7 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     #    dict of pairs of field names in the model in argument 1 (with no quotes
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in sourcenet.ajax-select-lookups.py
+    #    in this case, implemented in context_text.lookups.py
     form = make_ajax_form( Article_Text, dict( article = 'article' ) )
 
     fieldsets = [

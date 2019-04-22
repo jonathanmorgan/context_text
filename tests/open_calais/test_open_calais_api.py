@@ -10,14 +10,14 @@ import django.test
 # python_utilities imports
 from python_utilities.network.http_helper import Http_Helper
 
-# sourcenet imports
-from sourcenet.article_coding.article_coding import ArticleCoding
-from sourcenet.article_coding.article_coding import ArticleCoder
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.tests.test_helper import TestHelper
+# context_text imports
+from context_text.article_coding.article_coding import ArticleCoding
+from context_text.article_coding.article_coding import ArticleCoder
+from context_text.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
+from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.tests.test_helper import TestHelper
 
 
 class OpenCalaisTest( django.test.TestCase ):

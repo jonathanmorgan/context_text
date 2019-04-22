@@ -4,13 +4,13 @@ from __future__ import division
 '''
 Copyright 2010-2016 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 
@@ -90,11 +90,11 @@ from context.shared.models import Abstract_Organization
 from context.shared.models import Abstract_Person_Parent
 from context.shared.models import Abstract_Person
 from context.shared.models import Abstract_Related_Content
+from context.shared.person_details import PersonDetails
 from context.models import Work_Log
 
-# sourcenet imports
-from sourcenet.shared.person_details import PersonDetails
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# context_text imports
+from context_text.shared.context_text_base import ContextTextBase
 
 #================================================================================
 # Shared variables and functions
@@ -149,7 +149,7 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
             #print( my_message )
             
             # got a logger name?
-            my_logger_name = "sourcenet.models"
+            my_logger_name = "context_text.models"
             if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
             
                 # use logger name passed in.
@@ -217,7 +217,7 @@ def get_dict_value( dict_IN, name_IN, default_IN = None ):
 
 
 '''
-Models for SourceNet, including some that are specific to the Grand Rapids Press.
+Models for context_text, including some that are specific to the Grand Rapids Press.
 '''
 
 
@@ -898,37 +898,37 @@ class Article( models.Model ):
     #==================
 
     # newspaper filter (expects instance of Newspaper model)
-    PARAM_NEWSPAPER_ID = SourcenetBase.PARAM_NEWSPAPER_ID
-    PARAM_NEWSPAPER_NEWSBANK_CODE = SourcenetBase.PARAM_NEWSPAPER_NEWSBANK_CODE
-    PARAM_NEWSPAPER_INSTANCE = SourcenetBase.PARAM_NEWSPAPER_INSTANCE
-    PARAM_NEWSPAPER_ID_IN_LIST = SourcenetBase.PARAM_NEWSPAPER_ID_IN_LIST
-    PARAM_PUBLICATION_LIST = SourcenetBase.PARAM_PUBLICATION_LIST  # same as newspaper id in list, for compatibility.
+    PARAM_NEWSPAPER_ID = ContextTextBase.PARAM_NEWSPAPER_ID
+    PARAM_NEWSPAPER_NEWSBANK_CODE = ContextTextBase.PARAM_NEWSPAPER_NEWSBANK_CODE
+    PARAM_NEWSPAPER_INSTANCE = ContextTextBase.PARAM_NEWSPAPER_INSTANCE
+    PARAM_NEWSPAPER_ID_IN_LIST = ContextTextBase.PARAM_NEWSPAPER_ID_IN_LIST
+    PARAM_PUBLICATION_LIST = ContextTextBase.PARAM_PUBLICATION_LIST  # same as newspaper id in list, for compatibility.
 
     # date range filter parameters, for article lookup.
-    PARAM_START_DATE = SourcenetBase.PARAM_START_DATE
-    PARAM_END_DATE = SourcenetBase.PARAM_END_DATE
-    PARAM_SINGLE_DATE = SourcenetBase.PARAM_SINGLE_DATE
-    PARAM_DATE_RANGE = SourcenetBase.PARAM_DATE_RANGE
-    DEFAULT_DATE_FORMAT = SourcenetBase.DEFAULT_DATE_FORMAT   
+    PARAM_START_DATE = ContextTextBase.PARAM_START_DATE
+    PARAM_END_DATE = ContextTextBase.PARAM_END_DATE
+    PARAM_SINGLE_DATE = ContextTextBase.PARAM_SINGLE_DATE
+    PARAM_DATE_RANGE = ContextTextBase.PARAM_DATE_RANGE
+    DEFAULT_DATE_FORMAT = ContextTextBase.DEFAULT_DATE_FORMAT   
     
     # section selection parameters.
-    PARAM_SECTION_NAME = SourcenetBase.PARAM_SECTION_NAME
-    PARAM_SECTION_NAME_LIST = SourcenetBase.PARAM_SECTION_NAME_LIST
+    PARAM_SECTION_NAME = ContextTextBase.PARAM_SECTION_NAME
+    PARAM_SECTION_NAME_LIST = ContextTextBase.PARAM_SECTION_NAME_LIST
     PARAM_SECTION_NAME_IN_LIST = PARAM_SECTION_NAME_LIST
-    PARAM_SECTION_LIST = SourcenetBase.PARAM_SECTION_LIST
+    PARAM_SECTION_LIST = ContextTextBase.PARAM_SECTION_LIST
     PARAM_CUSTOM_SECTION_Q = "custom_section_q"
     PARAM_JUST_PROCESS_ALL = "just_process_all" # set to True if just want sum of all sections, not records for each individual section.  If False, processes each section individually, then generates the "all" record.
 
     # filter on tags.
-    PARAM_TAGS_IN_LIST = SourcenetBase.PARAM_TAGS_IN_LIST
-    PARAM_TAG_LIST = SourcenetBase.PARAM_TAG_LIST
-    PARAM_TAGS_NOT_IN_LIST = SourcenetBase.PARAM_TAGS_NOT_IN_LIST
+    PARAM_TAGS_IN_LIST = ContextTextBase.PARAM_TAGS_IN_LIST
+    PARAM_TAG_LIST = ContextTextBase.PARAM_TAG_LIST
+    PARAM_TAGS_NOT_IN_LIST = ContextTextBase.PARAM_TAGS_NOT_IN_LIST
     
     # other article parameters.
-    PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
-    PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
-    PARAM_CUSTOM_ARTICLE_Q = SourcenetBase.PARAM_CUSTOM_ARTICLE_Q
-    PARAM_GET_DISTINCT_RECORDS = SourcenetBase.PARAM_GET_DISTINCT_RECORDS
+    PARAM_UNIQUE_ID_IN_LIST = ContextTextBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
+    PARAM_ARTICLE_ID_IN_LIST = ContextTextBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
+    PARAM_CUSTOM_ARTICLE_Q = ContextTextBase.PARAM_CUSTOM_ARTICLE_Q
+    PARAM_GET_DISTINCT_RECORDS = ContextTextBase.PARAM_GET_DISTINCT_RECORDS
     
     # Django queryset parameters
     #===========================
@@ -1185,7 +1185,7 @@ class Article( models.Model ):
         if ( date_range != '' ):
 
             # first, break up the string into a list of start and end dates.
-            date_range_list = SourcenetBase.parse_multiple_date_range_string( date_range )
+            date_range_list = ContextTextBase.parse_multiple_date_range_string( date_range )
             date_range_q_list = []
 
             # loop over the date ranges, create a Q for each, and then store
@@ -1240,10 +1240,10 @@ class Article( models.Model ):
             - cls.PARAM_SECTION_NAME_IN_LIST ("section_name_list") - list of section names an article can have in our filtered article set.
             - cls.PARAM_TAGS_IN_LIST ("tags_in_list_IN") - tags articles in our set should have.
             - cls.PARAM_TAGS_NOT_IN_LIST ("tags_not_in_list_IN") - tags articles in our set should not have.
-            - cls.PARAM_UNIQUE_ID_IN_LIST = SourcenetBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
-            - cls.PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
-            - cls.PARAM_CUSTOM_ARTICLE_Q = SourcenetBase.PARAM_CUSTOM_ARTICLE_Q - Django django.db.models.Q instance to apply to filtered QuerySet.
-            - cls.PARAM_GET_DISTINCT_RECORDS = SourcenetBase.PARAM_GET_DISTINCT_RECORDS   # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
+            - cls.PARAM_UNIQUE_ID_IN_LIST = ContextTextBase.PARAM_UNIQUE_ID_LIST   # list of unique identifiers of articles whose data you want included.
+            - cls.PARAM_ARTICLE_ID_IN_LIST = ContextTextBase.PARAM_ARTICLE_ID_LIST   # list of ids of articles whose data you want included.
+            - cls.PARAM_CUSTOM_ARTICLE_Q = ContextTextBase.PARAM_CUSTOM_ARTICLE_Q - Django django.db.models.Q instance to apply to filtered QuerySet.
+            - cls.PARAM_GET_DISTINCT_RECORDS = ContextTextBase.PARAM_GET_DISTINCT_RECORDS   # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
 
         
         Preconditions: None.
@@ -1257,7 +1257,7 @@ class Article( models.Model ):
         
         # declare variables
         me = "filter_articles"
-        my_logger_name = "sourcenet.models.Article"
+        my_logger_name = "context_text.models.Article"
         my_logger = None
         
         # declare variables - input parameters
@@ -4301,18 +4301,18 @@ class Article_Data( models.Model ):
     STATUS_DEFAULT = STATUS_NEW
     
     # filter_records() parameters
-    PARAM_CODERS = SourcenetBase.PARAM_CODERS
-    PARAM_CODER_TYPE_FILTER_TYPE = SourcenetBase.PARAM_CODER_TYPE_FILTER_TYPE
-    PARAM_CODER_TYPES_LIST = SourcenetBase.PARAM_CODER_TYPES_LIST
-    PARAM_TAGS_IN_LIST = SourcenetBase.PARAM_TAGS_IN_LIST
-    PARAM_TAG_LIST = SourcenetBase.PARAM_TAG_LIST
-    PARAM_ARTICLE_ID_IN_LIST = SourcenetBase.PARAM_ARTICLE_ID_LIST
+    PARAM_CODERS = ContextTextBase.PARAM_CODERS
+    PARAM_CODER_TYPE_FILTER_TYPE = ContextTextBase.PARAM_CODER_TYPE_FILTER_TYPE
+    PARAM_CODER_TYPES_LIST = ContextTextBase.PARAM_CODER_TYPES_LIST
+    PARAM_TAGS_IN_LIST = ContextTextBase.PARAM_TAGS_IN_LIST
+    PARAM_TAG_LIST = ContextTextBase.PARAM_TAG_LIST
+    PARAM_ARTICLE_ID_IN_LIST = ContextTextBase.PARAM_ARTICLE_ID_LIST
     
     # Filtering Article_Data on coder_type.
-    CODER_TYPE_FILTER_TYPE_NONE = SourcenetBase.CODER_TYPE_FILTER_TYPE_NONE
-    CODER_TYPE_FILTER_TYPE_AUTOMATED = SourcenetBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
-    CODER_TYPE_FILTER_TYPE_ALL = SourcenetBase.CODER_TYPE_FILTER_TYPE_ALL
-    CODER_TYPE_FILTER_TYPE_DEFAULT = SourcenetBase.CODER_TYPE_FILTER_TYPE_DEFAULT
+    CODER_TYPE_FILTER_TYPE_NONE = ContextTextBase.CODER_TYPE_FILTER_TYPE_NONE
+    CODER_TYPE_FILTER_TYPE_AUTOMATED = ContextTextBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
+    CODER_TYPE_FILTER_TYPE_ALL = ContextTextBase.CODER_TYPE_FILTER_TYPE_ALL
+    CODER_TYPE_FILTER_TYPE_DEFAULT = ContextTextBase.CODER_TYPE_FILTER_TYPE_DEFAULT
 
 
     #----------------------------------------------------------------------
@@ -4382,7 +4382,7 @@ class Article_Data( models.Model ):
         if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
     
             # get automated coder.
-            automated_coder_user = SourcenetBase.get_automated_coding_user()
+            automated_coder_user = ContextTextBase.get_automated_coding_user()
                         
             # filter - either:
     
@@ -4425,7 +4425,7 @@ class Article_Data( models.Model ):
         current_query = None
         
         # get automated coder.
-        automated_coder_user = SourcenetBase.get_automated_coding_user()
+        automated_coder_user = ContextTextBase.get_automated_coding_user()
                         
         # just include those coded by automated coder.
         q_OUT = Q( coder = automated_coder_user )
@@ -4544,7 +4544,7 @@ class Article_Data( models.Model ):
         
         # declare variables
         me = "filter_records"
-        my_logger_name = "sourcenet.models.Article_Data"
+        my_logger_name = "context_text.models.Article_Data"
         my_logger = None
         
         # declare variables - input parameters
@@ -4890,7 +4890,7 @@ class Article_Data( models.Model ):
         # declare variables
         me = "make_deep_copy"
         debug_message = ""
-        my_logger_name = "sourcenet.models.Article_Data"
+        my_logger_name = "context_text.models.Article_Data"
         is_id_valid = -1
         copy_from_article_data = None
         copy_to_article_data = None
@@ -6131,7 +6131,7 @@ class Article_Author( Article_Person ):
         # declare variables
         me = "make_deep_copy"
         debug_message = ""
-        my_logger_name = "sourcenet.models.Article_Author"
+        my_logger_name = "context_text.models.Article_Author"
         is_id_valid = -1
         copy_from_article_author = None
         copy_to_article_author = None
@@ -6661,7 +6661,7 @@ class Article_Subject( Article_Person ):
         # declare variables
         me = "make_deep_copy"
         debug_message = ""
-        my_logger_name = "sourcenet.models.Article_Subject"
+        my_logger_name = "context_text.models.Article_Subject"
         is_id_valid = -1
         copy_from_article_subject = None
         copy_to_article_subject = None
@@ -8588,7 +8588,7 @@ class Temp_Section( models.Model ):
         
         # create SQL query string
         query_string = "SELECT COUNT( DISTINCT CONVERT( LEFT( author_varchar, LOCATE( ' / ', author_varchar ) ), CHAR ) ) as name_count"
-        query_string += " FROM sourcenet_article"
+        query_string += " FROM context_text_article"
         
         # add in ability to either look for "all" or a single section name.
         if ( self.name == Temp_Section.SECTION_NAME_ALL ):

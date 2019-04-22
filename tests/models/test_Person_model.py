@@ -1,5 +1,5 @@
 """
-This file contains tests of the sourcenet Person model (and by extension
+This file contains tests of the context_text Person model (and by extension
    Abstract_Person).
 
 Functions tested:
@@ -9,9 +9,9 @@ Functions tested:
 # django imports
 import django.test
 
-# sourcenet imports
-from sourcenet.models import Person
-from sourcenet.tests.test_helper import TestHelper
+# context_text imports
+from context_text.models import Person
+from context_text.tests.test_helper import TestHelper
 
 
 class PersonModelTest( django.test.TestCase ):

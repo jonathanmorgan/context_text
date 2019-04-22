@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('context', '0001_initial'),
-        ('sourcenet', '0021_article_file_path'),
+        ('context_text', '0021_article_file_path'),
     ]
 
     operations = [

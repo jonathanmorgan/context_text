@@ -3,17 +3,17 @@ from __future__ import unicode_literals
 '''
 Copyright 2010-2016 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 
 Configuration properties for it are stored in django's admins, in the
    django_config application.  The properties for the article_code view are stored in Application
-   "sourcenet-UI-article-code":
+   "context_text-UI-article-code":
    - include_fix_person_name - boolean flag, if true outputs additional field to correct name text from article.
 '''
 
@@ -92,52 +92,54 @@ from python_utilities.lists.list_helper import ListHelper
 from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.strings.string_helper import StringHelper
 
-# sourcenet
+# context imports
+from context.shared.person_details import PersonDetails
+
+# context_text
 
 # import class that actually processes requests for outputting networks.
-from sourcenet.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
+from context_text.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
 
 # import Person data helper class.
-from sourcenet.data.person_data import PersonData
+from context_text.data.person_data import PersonData
 
 # import class that actually processes requests for outputting networks.
-from sourcenet.export.network_output import NetworkOutput
+from context_text.export.network_output import NetworkOutput
 
 # Import Form classes
-from sourcenet.forms import Article_DataSelectForm
-from sourcenet.forms import ArticleCodingArticleFilterForm
-from sourcenet.forms import ArticleCodingForm
-from sourcenet.forms import ArticleCodingListForm
-from sourcenet.forms import ArticleCodingPersonAmbiguityForm
-from sourcenet.forms import ArticleCodingSubmitForm
-from sourcenet.forms import ArticleDataFilterForm
-from sourcenet.forms import ArticleDataProcessingForm
-from sourcenet.forms import ArticleLookupForm
-from sourcenet.forms import ArticleOutputTypeSelectForm
-from sourcenet.forms import ArticleSelectForm
-from sourcenet.forms import Person_LookupResultViewForm
-from sourcenet.forms import Person_MergeActionForm
-from sourcenet.forms import PersonLookupTypeForm
-from sourcenet.forms import PersonLookupByIDForm
-from sourcenet.forms import PersonLookupByNameForm
-from sourcenet.forms import PersonSelectForm
-from sourcenet.forms import ProcessSelectedArticlesForm
-from sourcenet.forms import NetworkOutputForm
-from sourcenet.forms import RelationSelectForm
+from context_text.forms import Article_DataSelectForm
+from context_text.forms import ArticleCodingArticleFilterForm
+from context_text.forms import ArticleCodingForm
+from context_text.forms import ArticleCodingListForm
+from context_text.forms import ArticleCodingPersonAmbiguityForm
+from context_text.forms import ArticleCodingSubmitForm
+from context_text.forms import ArticleDataFilterForm
+from context_text.forms import ArticleDataProcessingForm
+from context_text.forms import ArticleLookupForm
+from context_text.forms import ArticleOutputTypeSelectForm
+from context_text.forms import ArticleSelectForm
+from context_text.forms import Person_LookupResultViewForm
+from context_text.forms import Person_MergeActionForm
+from context_text.forms import PersonLookupTypeForm
+from context_text.forms import PersonLookupByIDForm
+from context_text.forms import PersonLookupByNameForm
+from context_text.forms import PersonSelectForm
+from context_text.forms import ProcessSelectedArticlesForm
+from context_text.forms import NetworkOutputForm
+from context_text.forms import RelationSelectForm
 
-# Import the classes for our SourceNet application
-from sourcenet.models import Alternate_Author_Match
-from sourcenet.models import Alternate_Subject_Match
-from sourcenet.models import Article
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Subject
-from sourcenet.models import Person
-#from sourcenet.models import Topic
+# Import the classes for our context_text application
+from context_text.models import Alternate_Author_Match
+from context_text.models import Alternate_Subject_Match
+from context_text.models import Article
+from context_text.models import Article_Author
+from context_text.models import Article_Data
+from context_text.models import Article_Subject
+from context_text.models import Person
+#from context_text.models import Topic
 
 # shared classes
-from sourcenet.shared.person_details import PersonDetails
-from sourcenet.shared.sourcenet_base import SourcenetBase
+from context_text.shared.context_text_base import ContextTextBase
 
 
 #================================================================================
@@ -146,14 +148,14 @@ from sourcenet.shared.sourcenet_base import SourcenetBase
 
 # configuration properties
 # article_code view
-CONFIG_APPLICATION_ARTICLE_CODE = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
+CONFIG_APPLICATION_ARTICLE_CODE = ContextTextBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
     
 # article_code config property names.
-CONFIG_PROP_DO_OUTPUT_TABLE_HTML = SourcenetBase.DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
+CONFIG_PROP_DO_OUTPUT_TABLE_HTML = ContextTextBase.DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
 CONFIG_PROP_INCLUDE_FIX_PERSON_NAME = "include_fix_person_name"
 CONFIG_PROP_INCLUDE_TITLE_FIELD = "include_title_field"
 CONFIG_PROP_INCLUDE_ORGANIZATION_FIELD = "include_organization_field"
-CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT = SourcenetBase.DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT
+CONFIG_PROP_INCLUDE_FIND_IN_ARTICLE_TEXT = ContextTextBase.DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT
 
 # Form input names
 INPUT_NAME_ARTICLE_ID = "article_id"
@@ -480,7 +482,7 @@ debugging code, shared across all models.
 '''
 
 DEBUG = True
-LOGGER_NAME = "sourcenet.views"
+LOGGER_NAME = "context_text.views"
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
     
@@ -561,7 +563,7 @@ def person_output_details_to_response( person_qs_IN, response_dictionary_IN, *ar
 #-- END function person_output_details_to_response() --#
 
 
-def render_article_to_response( article_id_IN, response_dictionary_IN, config_application_IN = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE, *args, **kwargs ):
+def render_article_to_response( article_id_IN, response_dictionary_IN, config_application_IN = ContextTextBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE, *args, **kwargs ):
 
     '''
     Accepts the ID of an article we want to render and response dict to hold
@@ -621,52 +623,52 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
         else:
         
             # no application name passed in.
-            config_application_name = SourcenetBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
+            config_application_name = ContextTextBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
         
         #-- END check to see if application passed in --#
 
         # ! ---- initialize response dictionary
         response_dictionary = response_dictionary_IN
-        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = None  # 'article_instance'
-        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = None  # 'article_text'
-        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = None  # 'article_content'
-        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = None  # 'article_text_custom'
-        response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = None  # 'article_text_type'
+        response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = None  # 'article_instance'
+        response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = None  # 'article_text'
+        response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = None  # 'article_content'
+        response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = None  # 'article_text_custom'
+        response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = None  # 'article_text_type'
         
         # for things that can be configured, only load if the property name is
         #     not present in the dictionary.
         
         # 'article_text_render_type'
-        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE not in response_dictionary ):
+        if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE not in response_dictionary ):
             
             # one of "table", "raw", "custom", "pdf", stored in 'article_text_render_type'
-            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE ] = Config_Property.get_property_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ) 
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE ] = Config_Property.get_property_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ) 
             
         #-- END check to see if 'article_text_render_type' in response dict. --#
         
         # 'article_text_is_preformatted'
-        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED not in response_dictionary ):
+        if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED not in response_dictionary ):
         
             # 'article_text_is_preformatted'
-            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED ] = Config_Property.get_property_boolean_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED ] = Config_Property.get_property_boolean_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
             
         #-- END check to see if 'article_text_is_preformatted' in response dict. --#
 
         # 'article_text_wrap_in_p'
-        if ( SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P not in response_dictionary ):
+        if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P not in response_dictionary ):
 
             # 'article_text_wrap_in_p'
-            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P ] = Config_Property.get_property_boolean_value( config_application_name, SourcenetBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )  # 
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P ] = Config_Property.get_property_boolean_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )  # 
         
         #-- END check to see if 'article_text_wrap_in_p' in response dict. --#
         
         # get page_status_message_list
-        page_status_message_list = response_dictionary.get( SourcenetBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST, None )
+        page_status_message_list = response_dictionary.get( ContextTextBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST, None )
         if ( page_status_message_list is None ):
         
             # no message list.  Start one and store it in response.
             page_status_message_list = []
-            response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST ] = page_status_message_list
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST ] = page_status_message_list
             
         #-- END check to see if status message list --#
         
@@ -697,14 +699,14 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
                     # get content
                     article_content = article_text.get_content()
                     article_text_type = article_text.content_type
-                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = article_text_type
+                    response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = article_text_type
                     
                     # if not "text", want to make sure to not use "custom".
                     
                     # ! ------ create custom text
                     article_content_line_list = article_content.split( "\n" )
                     article_text_custom = "<p>" + "</p>\n<p>".join( article_content_line_list ) + "</p>"
-                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = article_text_custom
+                    response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = article_text_custom
                     
                     # ! ------ table HTML
                     # parse with beautifulsoup
@@ -762,9 +764,9 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
                     #-- END check to see if paragraph tags. --#
                     
                     # seed response dictionary.
-                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = article_instance
-                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = article_text
-                    response_dictionary[ SourcenetBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = rendered_article_html
+                    response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = article_instance
+                    response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = article_text
+                    response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = rendered_article_html
                     
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
@@ -1419,7 +1421,7 @@ def article_code( request_IN ):
     coding_submit_form = None
 
     # set logger_name
-    logger_name = "sourcenet.views." + me
+    logger_name = "context_text.views." + me
     
     # ! ---- load configuration
     config_do_output_table_html = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_DO_OUTPUT_TABLE_HTML, False )
@@ -1452,7 +1454,7 @@ def article_code( request_IN ):
     response_dictionary[ 'manual_coder' ] = manual_article_coder
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-code.html'
+    default_template = 'context_text/articles/article-code.html'
 
     # init coding status variables
     # start with it being OK to process coding.
@@ -1763,7 +1765,7 @@ def article_code( request_IN ):
             
                 # ERROR - not sure what to do here.  Error should have been
                 #     stored in page_status_message_list.  Output debug.
-                debug_message = "ERROR - status from call to sourcenet.views.render_article_to_response(): {}".format( status_message )
+                debug_message = "ERROR - status from call to context_text.views.render_article_to_response(): {}".format( status_message )
                 output_debug( debug_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
             #-- END check to see if status message. --#
@@ -1846,7 +1848,7 @@ def article_coding_list( request_IN ):
     response_dictionary[ 'base_post_login_redirect' ] = reverse( article_coding_list )
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-code-list.html'
+    default_template = 'context_text/articles/article-code-list.html'
     
     # get current user
     current_user = request_IN.user
@@ -2030,7 +2032,7 @@ def article_coding_view_person_ambiguities( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/article_data/view_person_ambiguity.html'
+    default_template = 'context_text/article_data/view_person_ambiguity.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -2166,7 +2168,7 @@ def article_data_filter( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/article_data/article_data-filter.html'
+    default_template = 'context_text/article_data/article_data-filter.html'
     
     # get current user
     current_user = request_IN.user
@@ -2217,11 +2219,11 @@ def article_data_filter( request_IN ):
                 #         string the link.
                 
                 # retrieve the incoming parameters
-                coder_list_IN = request_inputs.getlist( SourcenetBase.PARAM_CODERS, None )
-                coder_type_filter_type_IN = request_inputs.get( SourcenetBase.PARAM_CODER_TYPE_FILTER_TYPE, None )
-                coder_types_list_IN = request_inputs.get( SourcenetBase.PARAM_CODER_TYPES_LIST, None )
-                tags_in_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_TAGS_IN_LIST, None )
-                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
+                coder_list_IN = request_inputs.getlist( ContextTextBase.PARAM_CODERS, None )
+                coder_type_filter_type_IN = request_inputs.get( ContextTextBase.PARAM_CODER_TYPE_FILTER_TYPE, None )
+                coder_types_list_IN = request_inputs.get( ContextTextBase.PARAM_CODER_TYPES_LIST, None )
+                tags_in_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_TAGS_IN_LIST, None )
+                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_ARTICLE_ID_LIST, None )
             
                 # get all Article_Data records to start
                 article_data_qs = Article_Data.objects.all()
@@ -2385,7 +2387,7 @@ def article_view( request_IN ):
     response_dictionary[ 'article_text' ] = None
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-view.html'
+    default_template = 'context_text/articles/article-view.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -2583,7 +2585,7 @@ def article_view_article_data( request_IN ):
     response_dictionary[ 'article_text' ] = None
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-view-article-data.html'
+    default_template = 'context_text/articles/article-view-article-data.html'
 
     # do we have output parameters?
     if ( request_IN.method == 'POST' ):
@@ -2754,7 +2756,7 @@ def article_view_article_data_with_text( request_IN ):
     response_dictionary[ 'article_text' ] = None
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-view-article-data-with-text.html'
+    default_template = 'context_text/articles/article-view-article-data-with-text.html'
 
     # do we have output parameters?
     if ( request_IN.method == 'POST' ):
@@ -3095,7 +3097,7 @@ def filter_articles( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/articles/article-filter.html'
+    default_template = 'context_text/articles/article-filter.html'
     
     # get current user
     current_user = request_IN.user
@@ -3146,14 +3148,14 @@ def filter_articles( request_IN ):
                 #         string the link.
                 
                 # retrieve the incoming parameters
-                start_date_IN = request_inputs.get( SourcenetBase.PARAM_START_DATE, None )
-                end_date_IN = request_inputs.get( SourcenetBase.PARAM_END_DATE, None )
-                date_range_IN = request_inputs.get( SourcenetBase.PARAM_DATE_RANGE, None )
-                publication_list_IN = request_inputs.getlist( SourcenetBase.PARAM_PUBLICATION_LIST, None )
-                tag_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_TAG_LIST, None )
-                unique_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_UNIQUE_ID_LIST, None )
-                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_ARTICLE_ID_LIST, None )
-                section_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_SECTION_LIST, None )
+                start_date_IN = request_inputs.get( ContextTextBase.PARAM_START_DATE, None )
+                end_date_IN = request_inputs.get( ContextTextBase.PARAM_END_DATE, None )
+                date_range_IN = request_inputs.get( ContextTextBase.PARAM_DATE_RANGE, None )
+                publication_list_IN = request_inputs.getlist( ContextTextBase.PARAM_PUBLICATION_LIST, None )
+                tag_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_TAG_LIST, None )
+                unique_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_UNIQUE_ID_LIST, None )
+                article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_ARTICLE_ID_LIST, None )
+                section_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_SECTION_LIST, None )
             
                 # get all articles to start
                 article_qs = Article.objects.all()
@@ -3232,7 +3234,7 @@ def filter_articles( request_IN ):
                                 elif ( action_IN == "apply_tags" ):
                                 
                                     # retrieve list of tags to apply.
-                                    apply_tags_list_IN = DictHelper.get_dict_value_as_list( request_inputs, SourcenetBase.PARAM_APPLY_TAGS_LIST, None )
+                                    apply_tags_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_APPLY_TAGS_LIST, None )
                                     if ( apply_tags_list_IN is not None ):
                                         
                                         apply_tags_count = len( apply_tags_list_IN )
@@ -3339,7 +3341,7 @@ def index( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/index.html'
+    default_template = 'context_text/index.html'
 
     # add on the "me" property.
     response_dictionary[ 'current_view' ] = me        
@@ -3355,7 +3357,7 @@ def index( request_IN ):
 def logout( request_IN ):
 
     # declare variables
-    me = "sourcenet.views.logout"
+    me = "context_text.views.logout"
     request_data = None
     redirect_path = ""
     
@@ -3404,7 +3406,7 @@ def output_articles( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/sourcenet_output_articles.html'
+    default_template = 'context_text/context_text_output_articles.html'
 
     # variables for building, populating person array that is used to control
     #    building of network data matrices.
@@ -3557,7 +3559,7 @@ def output_network( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my template
-    default_template = 'sourcenet/sourcenet_output_network.html'
+    default_template = 'context_text/context_text_output_network.html'
     
     # output parameters
  
@@ -3729,7 +3731,7 @@ def output_network( request_IN ):
                 # Create the HttpResponse object with the appropriate content
                 #    type and disposition.
                 response_OUT = HttpResponse( content = output_string, content_type = my_content_type )
-                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="sourcenet_data-' + current_date_time + '.' + my_file_extension + '"'
+                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="context_text_data-' + current_date_time + '.' + my_file_extension + '"'
             
             else:
 
@@ -3795,7 +3797,7 @@ def person_filter( request_IN ):
     # declare variables
     me = "person_filter"
     output_string = ""
-    my_logger_name = "sourcenet.views.person_filter"
+    my_logger_name = "context_text.views.person_filter"
     debug_message = ""
     current_user = None
     response_dictionary = {}
@@ -3828,7 +3830,7 @@ def person_filter( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/person/person_filter.html'
+    default_template = 'context_text/person/person_filter.html'
     
     # get current user
     current_user = request_IN.user
@@ -3930,7 +3932,7 @@ def person_merge( request_IN ):
     # declare variables
     me = "person_filter"
     output_string = ""
-    my_logger_name = "sourcenet.views.person_merge"
+    my_logger_name = "context_text.views.person_merge"
     debug_message = ""
     current_user = None
     response_dictionary = {}
@@ -3978,7 +3980,7 @@ def person_merge( request_IN ):
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
-    default_template = 'sourcenet/person/person_merge.html'
+    default_template = 'context_text/person/person_merge.html'
     
     # add a few CONSTANTS-ISH for rendering.
     response_dictionary[ "input_name_merge_from_prefix" ] = Person_MergeActionForm.INPUT_NAME_MERGE_FROM_PREFIX

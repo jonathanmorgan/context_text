@@ -1,5 +1,5 @@
 # imports
-from sourcenet.models import Article
+from context_text.models import Article
 
 # declare variables
 test_article_id = -1

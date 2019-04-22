@@ -11,11 +11,11 @@ from django.db.models import Q
 # imports - python_utilities
 from python_utilities.logging.logging_helper import LoggingHelper
 
-# imports - sourcenet
-from sourcenet.collectors.newsbank.newspapers.DTNB import DTNB
-from sourcenet.models import Article
-from sourcenet.models import Article_Text
-from sourcenet.models import Newspaper
+# imports - context_text
+from context_text.collectors.newsbank.newspapers.DTNB import DTNB
+from context_text.models import Article
+from context_text.models import Article_Text
+from context_text.models import Newspaper
 
 #==============================================================================#
 # ! declare variables

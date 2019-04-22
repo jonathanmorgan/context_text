@@ -1,0 +1,109 @@
+{% extends "context_text/base.html" %}
+
+{% block title %}Filter and process Article_Data{% endblock %}
+
+{% block content %}
+
+    <h1>Filter and process Article_Data</h1>
+    
+    {# got an output_string? #}
+    {% include "context_text/shared/output_status_message.html" %}
+    
+    <div id="article_data_form" name="article_data_form">
+        
+        <form action="" method="post">
+    
+            {# always include CSRF token #}
+            {% csrf_token %}
+                
+            <p>
+                <h2>Article_Data filter criteria</h3>
+                <table class="gridtable">
+                    {# output Article_Data filter form #}
+                    {{ article_data_filter_form.as_table }}
+                </table>
+            </p>
+            <hr />
+            <p>
+                <h2>What to do with results?</h3>
+                <table class="gridtable">
+                    {# output action form #}
+                    {{ article_data_processing_form.as_table }}
+                </table>
+            </p>
+                
+            <p>
+                <input type="submit" />
+            </p>
+            
+        </form>
+        
+    </div>
+
+    <p>action = {{ action }}</p>
+    {% if action %}
+
+        <hr />
+        
+        {% if filter_summary %}
+            <p><strong>Filter Summary:</strong> {{ filter_summary }}</p>
+        {% endif %}
+        
+        {% if action_summary %}
+            <p><strong>Action Summary:</strong> {{ action_summary }}</p>
+        {% endif %}
+        
+        {% if article_data_details_list %}
+            <p><strong>Selected Article_Data:</strong></p>
+            <table class="gridtable">
+                <tr>
+                    <th>index</th>
+                    <th>ID</th>
+                    <th>coder</th>
+                    <th>coder type</th>
+                    <th>article.tags</th>
+                    <th>article</th>
+                    <th>date</th>
+                </tr>
+                {% for current_article_data in article_data_details_list %}
+                    <tr>
+                        <td>{{ current_article_data.index }}</td>
+                        <td>{{ current_article_data.instance.id }}</td>
+                        <td>{{ current_article_data.instance.coder }}</td>
+                        <td>{{ current_article_data.instance.coder_type }}</td>
+                        <td>
+                            {% if current_article_data.instance.article.tags.all %}
+                            <ul>
+                                {% for current_tag in current_article_data.instance.article.tags.all %}
+                                    <li>{{ current_tag }}</li>
+                                {% empty %}
+                                    <li>No tags in tag set!</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            No tags!
+                            {% endif %}
+                        </td>
+                        <td><a href="{% url 'context_text-article_view_article_data_with_text' %}?article_id={{ current_article_data.instance.article.id }}">{{ current_article_data.instance.article }}</a></td>
+                        <td>{{ current_article_data.instance.create_date }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No Article_Data selected.</td></tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        
+        {% if action_detail_list %}
+            <p><strong>Action Details:</strong></p>
+            <ul>
+                {% for detail_item in action_detail_list %}
+                    <ul>{{ detail_item }}</ul>
+                {% empty %}
+                    <ul>No details returned...</ul>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    {% endif %}
+
+{% endblock %}

@@ -1,13 +1,13 @@
 '''
 Copyright 2010-2013 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 # Goal is to use nltk to detect parts of speech, then names, and then said verbs,
@@ -47,7 +47,7 @@ nltk.pos_tag(text)
 # First, basics - tokenizing paragraphs into sentences.
 
 # pull in an article.
-from sourcenet.models import Article, Temp_Section, Newspaper
+from context_text.models import Article, Temp_Section, Newspaper
 
 #================================================================================
 # Retrieve articles in our search range.
@@ -109,7 +109,7 @@ after_qs = ts_instance.append_shared_article_qs_params( article_qs, **date_param
 # Filter articles with Article.filter_articles()
 #--------------------------------------------------------------------------------
 
-from sourcenet.models import Article, Temp_Section, Newspaper
+from context_text.models import Article, Temp_Section, Newspaper
 
 # create parameters instance
 article_filter_params = {}

@@ -1,4 +1,4 @@
-INSERT INTO `sourcenet_topic` (`id`, `name`, `description`, `last_modified`) VALUES
+INSERT INTO `context_text_topic` (`id`, `name`, `description`, `last_modified`) VALUES
 (1, 'military', '', '2010-04-07'),
 (2, 'politics', '', '2010-04-07'),
 (3, 'government', '', '2010-04-07'),
@@ -18,20 +18,20 @@ INSERT INTO `sourcenet_topic` (`id`, `name`, `description`, `last_modified`) VAL
 (17, 'miscellaneous', '', '2010-04-07');# 17 row(s) affected.
 
 
-INSERT INTO `sourcenet_location` (`id`, `name`, `description`, `address`, `city`, `county`, `state`, `zip_code`) VALUES
+INSERT INTO `context_text_location` (`id`, `name`, `description`, `address`, `city`, `county`, `state`, `zip_code`) VALUES
 (1, '', '', '', 'Grand Rapids', '', 'MI', ''),
 (2, '', '', '', 'Lansing', '', 'MI', ''),
 (3, '', '', '', 'Detroit', '', 'MI', '');# 3 row(s) affected.
 
 
-INSERT INTO `sourcenet_organization` (`id`, `name`, `description`, `location_id`) VALUES
+INSERT INTO `context_text_organization` (`id`, `name`, `description`, `location_id`) VALUES
 (1, 'Grand Rapids Press', '', 1),
 (2, 'Lansing State Journal', '', 2),
 (3, 'Detroit Free Press', '', 3),
 (4, 'Detroit News', '', 3);# 4 row(s) affected.
 
 
-INSERT INTO `sourcenet_newspaper` (`id`, `name`, `description`, `organization_id`) VALUES
+INSERT INTO `context_text_newspaper` (`id`, `name`, `description`, `organization_id`) VALUES
 (1, 'Grand Rapids Press, The', '', 1),
 (2, 'Lansing State Journal, The', '', 2),
 (3, 'Detroit Free Press, The', '', 3),

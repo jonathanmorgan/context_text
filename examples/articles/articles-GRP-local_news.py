@@ -1,6 +1,6 @@
 # imports
-from sourcenet.models import Article
-from sourcenet.models import Newspaper
+from context_text.models import Article
+from context_text.models import Newspaper
 
 # declare variables - Grand Rapids Press
 grp_local_news_sections = []

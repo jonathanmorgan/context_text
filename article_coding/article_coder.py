@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 '''
 Copyright 2010-present (2016) Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 __author__ = "jonathanmorgan"
@@ -50,20 +50,22 @@ from python_utilities.rate_limited.basic_rate_limited import BasicRateLimited
 from python_utilities.sequences.sequence_helper import SequenceHelper
 from python_utilities.strings.string_helper import StringHelper
 
-# Import the classes for our SourceNet application
-from sourcenet.models import Article
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Person
-from sourcenet.models import Article_Subject
-from sourcenet.models import Article_Subject_Mention
-from sourcenet.models import Article_Subject_Quotation
-from sourcenet.models import Article_Text
-from sourcenet.models import Person
-from sourcenet.models import Person_External_UUID
-from sourcenet.models import Person_Newspaper
-from sourcenet.shared.person_details import PersonDetails
-from sourcenet.shared.sourcenet_base import SourcenetBase
+# context imports
+from context.shared.person_details import PersonDetails
+
+# Import the classes for our context_text application
+from context_text.models import Article
+from context_text.models import Article_Author
+from context_text.models import Article_Data
+from context_text.models import Article_Person
+from context_text.models import Article_Subject
+from context_text.models import Article_Subject_Mention
+from context_text.models import Article_Subject_Quotation
+from context_text.models import Article_Text
+from context_text.models import Person
+from context_text.models import Person_External_UUID
+from context_text.models import Person_Newspaper
+from context_text.shared.context_text_base import ContextTextBase
 
 #================================================================================
 # Shared variables and functions
@@ -102,7 +104,7 @@ class ArticleCoder( BasicRateLimited ):
     DEBUG_FLAG = True
     
     # logging
-    LOGGER_NAME = "sourcenet.article_coding.article_coder"
+    LOGGER_NAME = "context_text.article_coding.article_coder"
     
     # config parameters
     PARAM_AUTOPROC_ALL = "autoproc_all"
@@ -212,8 +214,8 @@ class ArticleCoder( BasicRateLimited ):
         # return reference
         user_OUT = None
 
-        # logic moved to SourcenetBase - call method there.
-        user_OUT = SourcenetBase.get_automated_coding_user( create_if_no_match_IN )
+        # logic moved to ContextTextBase - call method there.
+        user_OUT = ContextTextBase.get_automated_coding_user( create_if_no_match_IN )
 
         return user_OUT
         
@@ -1152,7 +1154,7 @@ class ArticleCoder( BasicRateLimited ):
               - PARAM_EXTERNAL_UUID_SOURCE = "external_uuid_source"
               - PARAM_EXTERNAL_UUID_NOTES = "external_uuid_notes"
               - PARAM_CAPTURE_METHOD = "capture_method"
-              - PARAM_TITLE = "title" - title text - if new person created, uses up to first 255 characters of this, if present, as the sourcenet_person "title" column value.
+              - PARAM_TITLE = "title" - title text - if new person created, uses up to first 255 characters of this, if present, as the context_text_person "title" column value.
               - PARAM_PERSON_ORGANIZATION = "person_organization"
               - PARAM_PERSON_ID = "person_id"
            - on_multiple_match_try_exact_lookup_IN - optional boolean, defaults 

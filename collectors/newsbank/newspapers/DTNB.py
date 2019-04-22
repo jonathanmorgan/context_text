@@ -4,14 +4,14 @@ from __future__ import unicode_literals
 '''
 Copyright 2016 - Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify
+context_text is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful,
+context_text is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
@@ -44,14 +44,14 @@ from python_utilities.strings.string_helper import StringHelper
 # imports - django_messages
 from django_messages.models import Message
 
-# imports - sourcenet.article_coding
-from sourcenet.article_coding.article_coder import ArticleCoder
+# imports - context_text.article_coding
+from context_text.article_coding.article_coder import ArticleCoder
 
-# imports - sourcenet.models
-from sourcenet.models import Article
-from sourcenet.models import Article_Notes
-from sourcenet.models import Article_Text
-from sourcenet.models import Newspaper
+# imports - context_text.models
+from context_text.models import Article
+from context_text.models import Article_Notes
+from context_text.models import Article_Text
+from context_text.models import Newspaper
 
 
 # define DTNB newspaper class.
@@ -121,7 +121,7 @@ class DTNB( LoggingHelper ):
     DEBUG_FLAG = True
     
     # logging
-    LOGGER_NAME = "sourcenet.collectors.newsbank.newspapers.DTNB"
+    LOGGER_NAME = "context_text.collectors.newsbank.newspapers.DTNB"
     
     # better anomaly detail
     AUTHOR_ANOMALY_DETAIL_ARTICLE_ID = "article_id"

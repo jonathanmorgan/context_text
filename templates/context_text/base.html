@@ -1,0 +1,65 @@
+{% load staticfiles %}
+<html>
+
+    <head>
+        <title>{% block title %}Context Text{% endblock %}</title>
+        <link rel="stylesheet" type="text/css" href="{% static "context_text/context_text.css" %}" />
+        {% if base_include_django_ajax_selects %}
+            <link href="{% static "ajax_select/css/ajax_select.css" %}" type="text/css" media="all" rel="stylesheet">
+            <script type="text/javascript" src="{% static "ajax_select/js/bootstrap.js" %}"></script>
+            <script type="text/javascript" src="{% static "ajax_select/js/ajax_select.js" %}"></script>
+        {% endif %}
+        {%block inside-head %}{% endblock %}
+    </head>
+
+    <body>
+
+        <div name="body_wrapper" id="body_wrapper" class="bodyWrapper">
+
+            {% if base_hide_navigation %}
+    
+                <!-- No navigation to see here. -->
+                
+            {% else %}
+            
+                {% if base_simple_navigation %}
+                
+                <header>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context_text-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+                </header>
+                
+                {% else %}
+    
+                <header>
+                    <h3>Context Text</h3>
+                    <p><strong>User:</strong> {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context_text-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+                    <ul>
+                        <li>
+                            View: <a href="{% url 'context_text-article_view' %}">an article</a> | <a href="{% url 'context_text-article_view_article_data_with_text' %}">article + coding</a> | <a href="{% url 'context_text-article_view_article_data' %}">article coding detail</a>
+                        </li>
+                        <li>
+                            Coding: <a href="{% url 'context_text-article_code' %}">Code an article</a> | <a href="{% url 'context_text-article_coding_list' %}">Article Coding List</a> | <a href="{% url 'context_text-article_coding_view_person_ambiguities' %}">Person Ambiguities</a>
+                        </li>
+                        <li>
+                            Data: <a href="{% url 'context_text-output_network' %}">network outputter</a> | <a href="{% url 'context_text-output_articles' %}">article outputter</a>
+                        </li>
+                        <li>
+                            Processing: <a href="{% url 'context_text-filter_articles' %}">Article</a> | <a href="{% url 'context_text-article_data_filter' %}">Article_Data</a>
+                        </li>
+                        <li>
+                            Person processing: <a href="{% url 'context_text-person_filter' %}">Filter</a> | <a href="{% url 'context_text-person_merge' %}">Merge</a>
+                        </li>
+                    </ul>
+                    <hr />
+                </header>
+                
+                {% endif %}    
+    
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+    </body>
+
+</html>

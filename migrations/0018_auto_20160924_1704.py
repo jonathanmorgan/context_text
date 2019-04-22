@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sourcenet', '0017_auto_20160924_1209'),
+        ('context_text', '0017_auto_20160924_1209'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='article_data',
             name='projects',
-            field=models.ManyToManyField(blank=True, to='sourcenet.Project'),
+            field=models.ManyToManyField(blank=True, to='context_text.Project'),
         ),
     ]

@@ -1,7 +1,7 @@
 # imports
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Subject
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.models import Article_Subject
 
 # Django imports
 from django.db.models import Q

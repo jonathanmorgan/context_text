@@ -27,18 +27,20 @@ import django.test
 from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.network.http_helper import Http_Helper
 
-# sourcenet imports
-from sourcenet.article_coding.article_coding import ArticleCoding
-from sourcenet.article_coding.article_coding import ArticleCoder
-from sourcenet.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
-from sourcenet.models import Article
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Data
-from sourcenet.models import Article_Subject
-from sourcenet.shared.person_details import PersonDetails
-from sourcenet.tests.test_helper import TestHelper
+# context imports
+from context.shared.person_details import PersonDetails
+
+# context_text imports
+from context_text.article_coding.article_coding import ArticleCoding
+from context_text.article_coding.article_coding import ArticleCoder
+from context_text.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
+from context_text.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
+from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.models import Article
+from context_text.models import Article_Author
+from context_text.models import Article_Data
+from context_text.models import Article_Subject
+from context_text.tests.test_helper import TestHelper
 
 
 class ArticleCoderTest( django.test.TestCase ):

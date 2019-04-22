@@ -9,10 +9,10 @@ import django.test
 # python_utilities imports
 from python_utilities.network.http_helper import Http_Helper
 
-# sourcenet imports
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
-from sourcenet.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
-from sourcenet.tests.test_helper import TestHelper
+# context_text imports
+from context_text.article_coding.open_calais_v2.open_calais_v2_api_response import OpenCalaisV2ApiResponse
+from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.tests.test_helper import TestHelper
 
 class OpenCalaisConfigTest( django.test.TestCase ):
     
@@ -164,7 +164,7 @@ class OpenCalaisConfigTest( django.test.TestCase ):
             my_http_helper.set_http_header( OpenCalaisV2ArticleCoder.HTTP_HEADER_NAME_X_AG_ACCESS_TOKEN, oc_api_access_token )
             my_http_helper.set_http_header( OpenCalaisV2ArticleCoder.HTTP_HEADER_NAME_CONTENT_TYPE, OpenCalaisV2ArticleCoder.CONTENT_TYPE_TEXT )
             my_http_helper.set_http_header( OpenCalaisV2ArticleCoder.HTTP_HEADER_NAME_OUTPUT_FORMAT, OpenCalaisV2ArticleCoder.OUTPUT_FORMAT_JSON )
-            my_http_helper.set_http_header( OpenCalaisV2ArticleCoder.HTTP_HEADER_NAME_SUBMITTER, "sourcenet_unit_test" )
+            my_http_helper.set_http_header( OpenCalaisV2ArticleCoder.HTTP_HEADER_NAME_SUBMITTER, "context_text_unit_test" )
         
             # set request type
             my_http_helper.request_type = Http_Helper.REQUEST_TYPE_POST

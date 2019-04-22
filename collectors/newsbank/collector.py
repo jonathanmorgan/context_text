@@ -1,13 +1,13 @@
 '''
 Copyright 2010-2013 Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
 '''
@@ -44,10 +44,10 @@ from python_utilities.email.email_helper import EmailHelper
 # django model for article
 #os.environ.setdefault( "DJANGO_SETTINGS_MODULE", "research.settings" )
 #sys.path.append( '/home/jonathanmorgan/Documents/django-dev/research' )
-#from sourcenet.models import Article
-#from sourcenet.models import Import_Error
-from sourcenet.models import Article
-from sourcenet.models import Import_Error
+#from context_text.models import Article
+#from context_text.models import Import_Error
+from context_text.models import Article
+from context_text.models import Import_Error
 
 #================================================================================
 # Package constants-ish
@@ -693,7 +693,7 @@ class Collector( object ):
             
                 elif ( my_output_type == self.ERROR_OUTPUT_DB ):
             
-                    self.output_debug( "\n\nError details written to sourcenet_import_error database table" )
+                    self.output_debug( "\n\nError details written to context_text_import_error database table" )
             
                 #-- END getting error output set up. --#
                 

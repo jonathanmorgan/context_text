@@ -1,0 +1,1 @@
+default_app_config = "context_text.apps.Context_TextConfig"

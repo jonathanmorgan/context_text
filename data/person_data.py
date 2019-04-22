@@ -3,17 +3,17 @@ from __future__ import unicode_literals
 '''
 Copyright 2016-present (2016) Jonathan Morgan
 
-This file is part of http://github.com/jonathanmorgan/sourcenet.
+This file is part of http://github.com/jonathanmorgan/context_text.
 
-sourcenet is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+context_text is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+context_text is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/sourcenet. If not, see http://www.gnu.org/licenses/.
+You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 
 Configuration properties for it are stored in django's admins, in the
    django_config application.  The properties for the article_code view are stored in Application
-   "sourcenet-UI-article-code":
+   "context_text-UI-article-code":
    - include_fix_person_name - boolean flag, if true outputs additional field to correct name text from article.
 '''
 
@@ -31,10 +31,10 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.objects.object_helper import ObjectHelper
 from python_utilities.status.status_container import StatusContainer
 
-# sourcenet models
-from sourcenet.models import Article_Author
-from sourcenet.models import Article_Subject
-from sourcenet.models import Person
+# context_text models
+from context_text.models import Article_Author
+from context_text.models import Article_Subject
+from context_text.models import Person
 
 
 class PersonData( object ):
@@ -47,7 +47,7 @@ class PersonData( object ):
 
     # DEBUG
     DEBUG_FLAG = False
-    LOGGER_NAME = "sourcenet.data.person_data.PersonData"
+    LOGGER_NAME = "context_text.data.person_data.PersonData"
     
     # Person related set attributes
     PERSON_RELATED_SET_ATTRIBUTE_NAMES = []
@@ -189,7 +189,7 @@ class PersonData( object ):
             able to differentiate between the different cases, or just needs to
             do nothing and return a warning explaining how to clean up.
             
-            From Sourcenet:
+            From context_text:
             - Alternate_Author_Match:
                 - alternate_author_match_set = ReverseManyToOneDescriptor
             - Alternate_Name
@@ -198,10 +198,10 @@ class PersonData( object ):
                 - alternate_subject_match_set = ReverseManyToOneDescriptor)
             - Article_Author
                 - article_author_set = ReverseManyToOneDescriptor
-                - sourcenet_article_author_original_person_set = ReverseManyToOneDescriptor
+                - context_text_article_author_original_person_set = ReverseManyToOneDescriptor
             - Article_Subject
                 - article_subject_set = ReverseManyToOneDescriptor
-                - sourcenet_article_subject_original_person_set = ReverseManyToOneDescriptor
+                - context_text_article_subject_original_person_set = ReverseManyToOneDescriptor
             - Person_External_UUID 
                 - person_external_uuid_set = ReverseManyToOneDescriptor
             - Person_Newspaper
@@ -209,7 +209,7 @@ class PersonData( object ):
             - Person_Organization
                 - person_organization_set = ReverseManyToOneDescriptor
 
-            From Sourcenet Analysis:
+            From context_text Analysis:
             - Reliabilty_Names
                 - reliability_names_set = ReverseManyToOneDescriptor
             - Reliability_Ties
@@ -221,7 +221,7 @@ class PersonData( object ):
         #     names are in lower case here, and are converted to lower case
         #     before lookup in get_merge_function().
 
-        # Sourcenet classes
+        # context_text classes
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "alternate_author_match" ] = cls.mf_do_nothing
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "alternate_name" ] = cls.mf_do_nothing
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "alternate_subject_match" ] = cls.mf_do_nothing
@@ -231,7 +231,7 @@ class PersonData( object ):
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "person_newspaper" ] = cls.mf_do_nothing
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "person_organization" ] = cls.mf_do_nothing
 
-        # Sourcenet Analysis classes
+        # context_text Analysis classes
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "reliability_names" ] = cls.mf_do_nothing
         cls.CLASS_NAME_TO_MERGE_FUNCTION_MAP[ "reliability_ties" ] = cls.mf_do_nothing
         
@@ -472,10 +472,10 @@ class PersonData( object ):
         - reliability_names_set
         - article_author_set
         - person_organization_set
-        - sourcenet_article_author_original_person_set
+        - context_text_article_author_original_person_set
         - person_newspaper_set
         - alternate_author_match_set
-        - sourcenet_article_subject_original_person_set
+        - context_text_article_subject_original_person_set
         - person_external_uuid_set
         - alternate_name_set
         - reliability_ties_to_set
@@ -819,8 +819,8 @@ class PersonData( object ):
         
             # find all Article_Subject and Article_Author records that refer the the FROM
             #    person.
-            article_author_qs = FROM_person.sourcenet_article_author_original_person_set.all()
-            article_subject_qs = FROM_person.sourcenet_article_subject_original_person_set.all()
+            article_author_qs = FROM_person.context_text_article_author_original_person_set.all()
+            article_subject_qs = FROM_person.context_text_article_subject_original_person_set.all()
             
             # got a TO_person (so only undoing a switch to a particular person,
             #     not undoing all switches to any and all persons ever)?

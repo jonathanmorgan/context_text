@@ -6,9 +6,9 @@ import json
 # installation instructions: http://www.alchemyapi.com/developers/getting-started-guide/using-alchemyapi-with-python/
 from alchemyapi_python.alchemyapi import AlchemyAPI
 
-# sourcenet imports
-from sourcenet.models import Article
-from sourcenet.models import Article_Text
+# context_text imports
+from context_text.models import Article
+from context_text.models import Article_Text
 
 # declare variables
 my_alchemy_API = None

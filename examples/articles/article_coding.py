@@ -2,9 +2,9 @@
 
 import six
 
-# sourcenet imports
-from sourcenet.models import Article
-from sourcenet.article_coding.article_coding import ArticleCoding
+# context_text imports
+from context_text.models import Article
+from context_text.article_coding.article_coding import ArticleCoding
 
 # declare variables
 

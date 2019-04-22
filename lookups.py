@@ -18,7 +18,7 @@ To add a new ajax select:
 - In this file, make a new class that extends LookupParent for the model you want to lookup using AJAX-selects (It is OK to just copy one of the other ones here).  Place it in alphabetical order in the file.
 - Modify the get_query() and get_objects() methods to reference the correct model, fields in that model.
 - If django 1.6 or earlier, in settings.py, add a line for your new channel to the AJAX_LOOKUP_CHANNELS property, like this, for person:
-    'person' : ('sourcenet.lookups', 'PersonLookup'),
+    'person' : ('context_text.lookups', 'PersonLookup'),
 - In admin.py, either add or edit a form attribute to include your channel, and to tell the admin which field to map to which AJAX lookup.  So, for example, in Article, there is the following line:
 
         form = make_ajax_form( Article_Subject, dict( person = 'person', ) )
@@ -40,12 +40,12 @@ import logging
 # django imports
 from django.db.models import Q
 
-# sourcenet imports
-from sourcenet.models import Article
-from sourcenet.models import Article_Data
-from sourcenet.models import Newspaper
-from sourcenet.models import Organization
-from sourcenet.models import Person
+# context_text imports
+from context_text.models import Article
+from context_text.models import Article_Data
+from context_text.models import Newspaper
+from context_text.models import Organization
+from context_text.models import Person
 
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
@@ -100,7 +100,7 @@ def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_I
             #print( my_message )
             
             # got a logger name?
-            my_logger_name = "sourcenet.lookups"
+            my_logger_name = "context_text.lookups"
             if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
             
                 # use logger name passed in.
@@ -503,7 +503,7 @@ class PersonLookup( LookupParent ):
         human_name = None
         
         # init logging info
-        my_logger_name = "sourcenet.lookups.PersonLookup"
+        my_logger_name = "context_text.lookups.PersonLookup"
         
         # store q in a real variable
         person_name = q

@@ -1,8 +1,8 @@
-# sourcenet imports
-from sourcenet.collectors.newsbank.newsbank_helper import NewsBankHelper
-from sourcenet.models import Article
-from sourcenet.models import Article_Content
-from sourcenet.models import Article_RawData
+# context_text imports
+from context_text.collectors.newsbank.newsbank_helper import NewsBankHelper
+from context_text.models import Article
+from context_text.models import Article_Content
+from context_text.models import Article_RawData
 
 # python utilities
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper

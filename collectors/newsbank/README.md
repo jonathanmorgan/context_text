@@ -2,7 +2,7 @@
 
 ## Introduction
 
-These Collector files are an example of how to pull articles from an external source and store them in the sourcenet database tables.
+These Collector files are an example of how to pull articles from an external source and store them in the context_text database tables.
 
 They are based on interacting with the NewsBank article repository's web interface.  This program interacts with the newsbank web database via HTTP, using BeautifulSoup to parse and extract article data from HTML.
 
@@ -14,7 +14,7 @@ https://github.com/jonathanmorgan/python_utilities
 
 See that repo for more information on downloading and installing (it is easy, though - just clone the repository and place it somewhere in your python path.)
 
-If you followed the directions in sourcenet's README.md file, clone python utilities into the research folder alongside sourcenet:
+If you followed the directions in context_text's README.md file, clone python utilities into the research folder alongside context_text:
 
         git clone https://github.com/jonathanmorgan/python_utilities.git
 
@@ -40,18 +40,18 @@ To run the collector:
 
 Copyright 2010-2013 Jonathan Morgan
 
-This file is part of [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).
+This file is part of [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).
 
-sourcenet is free software: you can redistribute it and/or modify
+context_text is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-sourcenet is distributed in the hope that it will be useful,
+context_text is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with [http://github.com/jonathanmorgan/sourcenet](http://github.com/jonathanmorgan/sourcenet).  If not, see
+along with [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).  If not, see
 [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
