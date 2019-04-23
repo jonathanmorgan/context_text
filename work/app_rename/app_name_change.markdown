@@ -70,6 +70,18 @@
             # pattern: grep -r -i -l "<old_name>\_" . | xargs sed -i 's/<old_name>\_/<new_name>\_/g'
             grep -r -i -l "sourcenet\_" . | xargs sed -i 's/sourcenet\_/context\_text\_/g'
         
+    - imports of SourcenetBase (after base import fix above):
+    
+            grep -r -i -l "from context\_text\.shared\.sourcenet\_base import SourcenetBase" .
+            grep -r -i -n "from context\_text\.shared\.sourcenet\_base import SourcenetBase" .
+            grep -r -i -l "from context\_text\.shared\.sourcenet\_base import SourcenetBase" . | xargs sed -i 's/from context\_text\.shared\.sourcenet\_base import SourcenetBase/from context\_text\.shared\.context\_text\_base import ContextTextBase/g'
+            
+    - mentions of SourcenetBase:
+    
+            grep -r -i -l "SourcenetBase" .
+            grep -r -i -n "SourcenetBase" .
+            grep -r -i -l "SourcenetBase" . | xargs sed -i 's/SourcenetBase/ContextTextBase/g'
+    
     - Update paths in "templates" and "static" folders, if you name-spaced your files with the name of the application (as you should).
 
         - If application is in git, use "git mv", not just "mv".
@@ -99,9 +111,59 @@
                 # pattern - grep -r -i -l "<old_name>." . | xargs sed -i 's/<old_name>\./<new_name>\./g'
                 grep -r -i -l "sourcenet\." . | xargs sed -i 's/sourcenet\./context_text\./g'
 
+    - URLS/paths:
+    
+        - make sure to convert URLs for `context_analysis` and `context_data` first.
+        - from /research/sourcenet/ to /research/context/text/
+
+                cd migrations
+                grep -r -i -l "\/research\/sourcenet\/" .
+                grep -r -i -n "\/research\/sourcenet\/" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "\/research\/sourcenet\/" . | xargs sed -i 's/\/research\/sourcenet\//\/research\/context\/text\//g'
+                
+        - `grep -r -i -l "sourcenet\/" .`
+        - sourcenet/R/ -> context_text/R/
+
+                grep -r -i -l "sourcenet\/R\/" .
+                grep -r -i -n "sourcenet\/R\/" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "sourcenet\/R\/" . | xargs sed -i 's/sourcenet\/R\//context_text\/R\//g'
+
+        - sourcenet/examples/ -> context_text/examples/
+
+                grep -r -i -l "sourcenet\/examples\/" .
+                grep -r -i -n "sourcenet\/examples\/" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "sourcenet\/examples\/" . | xargs sed -i 's/sourcenet\/examples\//context_text\/examples\//g'
+
+        - sourcenet/tests/ -> context_text/tests/
+
+                grep -r -i -l "sourcenet\/tests\/" .
+                grep -r -i -n "sourcenet\/tests\/" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "sourcenet\/tests\/" . | xargs sed -i 's/sourcenet\/tests\//context_text\/tests\//g'
+        
+    - SQL:
+    
+        - `grep -r -l " sourcenet\_" .`
+        - "FROM sourcenet\_" --> "FROM context\_text\_"
+        
+                grep -r -i -l "FROM sourcenet\_" .
+                grep -r -i -n "FROM sourcenet\_" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "FROM sourcenet\_" . | xargs sed -i 's/FROM sourcenet\_/FROM context\_text\_/g'
+
+        - "INNER JOIN sourcenet\_" --> "INNER JOIN context\_text\_"
+
+                grep -r -i -l "INNER JOIN sourcenet\_" .
+                grep -r -i -n "INNER JOIN sourcenet\_" .
+                # pattern - grep -r -i -l "<old>" . | xargs sed -i 's/<old>/<new>/g'
+                grep -r -i -l "INNER JOIN sourcenet\_" . | xargs sed -i 's/INNER JOIN sourcenet\_/INNER JOIN context\_text\_/g'
+
 8. For the next 4 steps (7, 8, 9 and 10), I built update_database.pg.sql and added it to the `work/app_rename` sub-directory. It's not a standard django thing, but each test copy and each production copy of the database was going to need the same set of steps.
 9. `UPDATE django_content_type SET app_label='<new_name>' WHERE app_label='<old_name>';`
-10. `UPDATE django_migrations SET app='<new_name>' WHERE app='<old_name>';
+10. `UPDATE django_migrations SET app='<new_name>' WHERE app='<old_name>';`
 11. Now... in your database (mine is PostgreSQL) there will be a bunch of tables that start with "<old_name>". You need to list all of these. In PostgreSQL, in addition to tables, there will be sequences for each AutoField, and many related indexes.
 
     - Indexes (do first, since it depends on name of table)
