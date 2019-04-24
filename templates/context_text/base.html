@@ -3,7 +3,7 @@
 
     <head>
         <title>{% block title %}Context Text{% endblock %}</title>
-        <link rel="stylesheet" type="text/css" href="{% static "context_text/context_text.css" %}" />
+        <link rel="stylesheet" type="text/css" href="{% static "context/context.css" %}" />
         {% if base_include_django_ajax_selects %}
             <link href="{% static "ajax_select/css/ajax_select.css" %}" type="text/css" media="all" rel="stylesheet">
             <script type="text/javascript" src="{% static "ajax_select/js/bootstrap.js" %}"></script>
@@ -25,14 +25,14 @@
                 {% if base_simple_navigation %}
                 
                 <header>
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context_text-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;User: {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
                 </header>
                 
                 {% else %}
     
                 <header>
                     <h3>Context Text</h3>
-                    <p><strong>User:</strong> {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context_text-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
+                    <p><strong>User:</strong> {{ request.user.username }}&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="{% url 'context-logout' %}{% if base_post_login_redirect %}?post_logout_redirect={{ base_post_login_redirect }}{% endif %}">Logout</a></p>
                     <ul>
                         <li>
                             View: <a href="{% url 'context_text-article_view' %}">an article</a> | <a href="{% url 'context_text-article_view_article_data_with_text' %}">article + coding</a> | <a href="{% url 'context_text-article_view_article_data' %}">article coding detail</a>
@@ -48,6 +48,9 @@
                         </li>
                         <li>
                             Person processing: <a href="{% url 'context_text-person_filter' %}">Filter</a> | <a href="{% url 'context_text-person_merge' %}">Merge</a>
+                        </li>
+                        <li>
+                            CONTEXT: <a href="{% url 'context-index' %}">Home</a> | <a href="{% url 'context_text-index' %}">Text</a> | <a href="{% url 'context_data-index' %}">Data</a> | <a href="{% url 'context_analysis-index' %}">Analysis</a>
                         </li>
                     </ul>
                     <hr />

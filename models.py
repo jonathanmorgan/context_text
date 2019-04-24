@@ -90,6 +90,7 @@ from context.shared.models import Abstract_Organization
 from context.shared.models import Abstract_Person_Parent
 from context.shared.models import Abstract_Person
 from context.shared.models import Abstract_Related_Content
+from context.shared.models import Abstract_UUID
 from context.shared.person_details import PersonDetails
 from context.models import Work_Log
 
@@ -742,60 +743,29 @@ class Newspaper( models.Model ):
 
 # Person_External_UUID model
 @python_2_unicode_compatible
-class Person_External_UUID( models.Model ):
+class Person_External_UUID( Abstract_UUID ):
 
     person = models.ForeignKey( Person, on_delete = models.CASCADE )
-    name = models.CharField( max_length = 255, null = True, blank = True )
-    uuid = models.TextField( blank = True, null = True )
-    source = models.CharField( max_length = 255, null = True, blank = True )
-    notes = models.TextField( blank = True, null = True )
+    #name = models.CharField( max_length = 255, null = True, blank = True )
+    #uuid = models.TextField( blank = True, null = True )
+    #source = models.CharField( max_length = 255, null = True, blank = True )
+    #notes = models.TextField( blank = True, null = True )
 
     #----------------------------------------------------------------------
     # methods
     #----------------------------------------------------------------------
 
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Person_External_UUID, self ).__init__( *args, **kwargs )
 
-    def __str__( self ):
+        # then, initialize variable.
+        self.bs_helper = None
         
-        # return reference
-        string_OUT = ""
-        
-        # declare variables
-        prefix_string = ""
-        
-        if ( self.id ):
-        
-            # yes. output.
-            string_OUT += str( self.id )
-            prefix_string = " - "
+    #-- END method __init__() --#
 
-        #-- END check to see if ID --#
-
-        if ( self.name ):
-        
-            string_OUT += prefix_string + self.name
-            prefix_string = " - "
-            
-        #-- END check to see if newspaper. --#
-            
-        if ( self.source ):
-        
-            string_OUT += prefix_string + " ( " + self.source + " )"
-            prefix_string = " - "
-            
-        #-- END check to see if source. --#
-            
-        if ( self.uuid ):
-        
-            string_OUT += prefix_string + self.uuid
-            prefix_string = " - "
-            
-        #-- END check to see if newspaper. --#
-            
-        return string_OUT
-        
-    #-- END method __str__() --#
-
+    # just use the parent stuff.
 
 #= End Person_External_UUID Model ======================================================
 

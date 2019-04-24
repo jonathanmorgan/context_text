@@ -82,10 +82,10 @@ urlpatterns = [
     #( r'^output/display$', 'mysite.context_text.views.output_display'),
 
     # link the default authentication page to the admin login page.
-    url( r'^accounts/login/$', auth_views.LoginView.as_view( template_name = "registration/login.html" ), name = "context_text-login" ),
+    #url( r'^accounts/login/$', auth_views.LoginView.as_view( template_name = "registration/login.html" ), name = "context_text-login" ),
     
     # created a view to log people out that redirects to server root.    
-    url( r'^accounts/logout/$', context_text.views.logout, name = "context_text-logout" ),
+    #url( r'^accounts/logout/$', context_text.views.logout, name = "context_text-logout" ),
 
     # article views
     url( r'^article/view/$', context_text.views.article_view, name = "context_text-article_view" ),
