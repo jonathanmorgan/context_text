@@ -15,9 +15,16 @@ You should have received a copy of the GNU Lesser General Public License along w
 #    the normal way of including a reference (a dropdown) will send the admin app
 #    out to lunch trying to pull in all the entries for the dropdown.
 
+# core django imports
+from django.contrib import admin
+from django.contrib.postgres import fields
+
 # import code for AJAX select
 from ajax_select import make_ajax_form
 from ajax_select.admin import AjaxSelectAdmin
+
+# django_json_widget imports
+from django_json_widget.widgets import JSONEditorWidget
 
 # Import models
 from context_text.models import Project
@@ -41,8 +48,6 @@ from context_text.models import Article_Text
 from context_text.models import Article
 from context_text.models import Article_Data
 from context_text.models import Article_Data_Notes
-
-from django.contrib import admin
 
 admin.site.register( Project )
 admin.site.register( Location )
@@ -189,6 +194,11 @@ class ArticleTextInline( admin.StackedInline ):
 #-------------------------------------------------------------------------------
 
 class ArticleAdmin( admin.ModelAdmin ):
+
+    formfield_overrides = {
+        fields.JSONField: {'widget': JSONEditorWidget},
+    }
+    
     fieldsets = [
         (
             None,
@@ -199,7 +209,7 @@ class ArticleAdmin( admin.ModelAdmin ):
         ( 
             "More details (Optional)",
             {
-                'fields' : [ 'index_terms', 'cleanup_status', 'file_path'  ],
+                'fields' : [ 'details_json', 'index_terms', 'cleanup_status', 'file_path'  ],
                 'classes' : ( "collapse", )
             }
         ),

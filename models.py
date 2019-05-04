@@ -85,6 +85,7 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.sequences.sequence_helper import SequenceHelper
 
 # context imports
+from context.shared.models import Abstract_Context_With_JSON
 from context.shared.models import Abstract_Location
 from context.shared.models import Abstract_Organization
 from context.shared.models import Abstract_Person_Parent
@@ -823,7 +824,7 @@ class Person_Newspaper( models.Model ):
 
 # Article model
 @python_2_unicode_compatible
-class Article( models.Model ):
+class Article( Abstract_Context_With_JSON ):
 
     #----------------------------------------------------------------------------
     # Constants-ish
@@ -949,16 +950,17 @@ class Article( models.Model ):
     # raw_html = models.TextField( blank = True, null = True ) - moved to related Article_RawData instance.
     # - to retrieve Article_RawData instance for this Article: self.article_rawdata_set.get()
 
-    # tags!
-    tags = TaggableManager( blank = True )
-
     status = models.CharField( max_length = 255, blank = True, null = True, default = STATUS_DEFAULT )
     cleanup_status = models.CharField( max_length = 255, blank = True, null = True, choices = CLEANUP_STATUS_CHOICES, default = CLEANUP_STATUS_DEFAULT )
     is_local_news = models.BooleanField( default = 0 )
     is_sports = models.BooleanField( default = 0 )
     is_local_author = models.BooleanField( default = 0 )
-    create_date = models.DateTimeField( auto_now_add = True )
-    last_modified = models.DateTimeField( auto_now = True )
+
+    # moved to Abstract_Context_With_JSON
+    # tags!
+    #tags = TaggableManager( blank = True )
+    #create_date = models.DateTimeField( auto_now_add = True )
+    #last_modified = models.DateTimeField( auto_now = True )
 
     # we have the option of adding these relations here, at an article level,
     #    but for now assuming they are to be coded in Article_Data, not here, so
