@@ -37,6 +37,7 @@ from context_text.models import Person_Organization
 from context_text.models import Person_External_UUID
 from context_text.models import Document
 from context_text.models import Newspaper
+from context_text.models import Article
 from context_text.models import Article_Author
 #from context_text.models import Article_Location
 from context_text.models import Article_Notes
@@ -45,27 +46,32 @@ from context_text.models import Article_Subject
 from context_text.models import Article_Text
 #from context_text.models import Article_Topic
 #from context_text.models import Source_Organization
-from context_text.models import Article
 from context_text.models import Article_Data
 from context_text.models import Article_Data_Notes
 
+# default admins
 admin.site.register( Project )
 admin.site.register( Location )
 admin.site.register( Topic )
 #admin.site.register( Person )
 #admin.site.register( Organization )
+#admin.site.register( Person_Newspaper )
+#admin.site.register( Person_Organization )
+#admin.site.register( Person_External_UUID )
 admin.site.register( Document )
 admin.site.register( Newspaper )
 #admin.site.register( Article )
 #admin.site.register( Article_Author )
+#admin.site.register( Article_Location )
 #admin.site.register( Article_Notes )
 #admin.site.register( Article_RawData )
 #admin.site.register( Article_Subject )
 #admin.site.register( Article_Text )
 #admin.site.register( Article_Topic )
 #admin.site.register( Source_Organization )
-#admin.site.register( Article_Location )
- 
+#admin.site.register( Article_Data )
+#admin.site.register( Article_Data_Notes )
+
 
 #-------------------------------------------------------------------------------
 # Organization admin definition
@@ -485,21 +491,32 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+    form = make_ajax_form( Article_Data_Notes, dict( article_data = 'article_data' ) )
 
+    formfield_overrides = {
+        fields.JSONField: {'widget': JSONEditorWidget},
+    }
+    
     fieldsets = [
         (
             None,
             {
-                'fields' : [ 'article_data', 'content', 'content_type', 'status' ]
+                'fields' : [ 'article_data', 'content', 'content_json', 'content_type', 'status', 'source', 'tags' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'note_type', 'source_identifier', 'content_description' ],
+                'classes' : ( "collapse", )
             }
         ),
     ]
 
-    list_display = ( 'id', 'last_modified', 'content_type', 'status', 'article_data' )
+    list_display = ( 'id', 'last_modified', 'content_type', 'status', 'article_data', 'source', 'note_type',  )
     list_display_links = ( 'id', 'article_data', )
-    list_filter = [ 'content_type', 'status' ]
-    search_fields = [ 'content', ]
+    list_filter = [ 'content_type', 'status', 'note_type' ]
+    search_fields = [ 'content', 'source', 'source_identifier', 'note_type' ]
     #date_hierarchy = 'pub_date'
 
 admin.site.register( Article_Data_Notes, Article_Data_NotesAdmin )

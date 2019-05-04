@@ -91,6 +91,7 @@ from context.shared.models import Abstract_Organization
 from context.shared.models import Abstract_Person_Parent
 from context.shared.models import Abstract_Person
 from context.shared.models import Abstract_Related_Content
+from context.shared.models import Abstract_Related_JSON_Content
 from context.shared.models import Abstract_UUID
 from context.shared.person_details import PersonDetails
 from context.models import Work_Log
@@ -5306,7 +5307,7 @@ class Article_Data( models.Model ):
 
 # Article_Content model
 @python_2_unicode_compatible
-class Article_Data_Notes( Abstract_Related_Content ):
+class Article_Data_Notes( Abstract_Related_JSON_Content ):
 
     #----------------------------------------------------------------------
     # model fields and meta
