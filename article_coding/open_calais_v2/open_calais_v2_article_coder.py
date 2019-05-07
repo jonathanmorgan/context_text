@@ -800,13 +800,17 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             # set values
                             my_json_note.article_data = article_data
                             my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                            my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
+                            my_json_note.content_json = JSONHelper.pretty_print_json( requests_response_json )
                             #my_json_note.status = ""
                             my_json_note.source = self.coder_type
-                            my_json_note.content_description = self.CONFIG_APPLICATION + " response JSON"
+                            my_json_note.content_description = "{} response JSON".format( self.CONFIG_APPLICATION )
+                            my_json_note.note_type = "{}_json".format( self.CONFIG_APPLICATION )
                             
                             # save note.
                             my_json_note.save()
+                            
+                            # add tag "OpenCalais_REST_API_v2_json"
+                            my_json_note.tags.add( my_json_note.note_type )
     
                         #-- END check to see if we save article data --#
                         

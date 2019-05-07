@@ -17,6 +17,7 @@ from context_text.article_coding.open_calais_v2.open_calais_v2_api_response impo
 from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 from context_text.models import Article
 from context_text.models import Article_Data
+from context_text.models import Article_Data_Notes
 from context_text.tests.test_helper import TestHelper
 
 
@@ -63,6 +64,7 @@ class OpenCalaisTest( django.test.TestCase ):
     def test_article_coding( self ):
         
         # declare variables
+        me = "test_article_coding"
         start_pub_date = None # should be datetime instance
         end_pub_date = None # should be datetime instance
         tag_in_list = []
@@ -80,6 +82,8 @@ class OpenCalaisTest( django.test.TestCase ):
         automated_username = ""
         automated_article_data_qs = None
         article_data_count = -1
+        article_data_notes_qs = None
+        article_data_notes_count = None
         
         # first, use filters to get a list of articles to code - set filter parameters
         
@@ -169,6 +173,21 @@ class OpenCalaisTest( django.test.TestCase ):
             
             # should also be 46
             self.assertEqual( article_data_count, 46 )
+            
+            # check Article_Data_Notes
+            article_data_notes_qs = Article_Data_Notes.objects.all()
+            article_data_notes_qs = article_data_notes_qs.filter( content_description = "OpenCalais_REST_API_v2 response JSON" )
+            article_data_notes_qs = article_data_notes_qs.filter( note_type = "OpenCalais_REST_API_v2_json" )
+            article_data_notes_qs = article_data_notes_qs.filter( tags__name = "OpenCalais_REST_API_v2_json" )
+            article_data_notes_qs = article_data_notes_qs.filter( content__isnull = True )
+            article_data_notes_qs = article_data_notes_qs.filter( content_json__isnull = False )
+            article_data_notes_count = article_data_notes_qs.count()
+
+            # should also be 46
+            test_value = article_data_notes_count
+            should_be = 46
+            error_string = "In " + me + "(): Article_Data_Notes count is " + str( test_value ) +", should be " + str( should_be )
+            self.assertEqual( test_value, should_be, error_string )
             
         else:
             

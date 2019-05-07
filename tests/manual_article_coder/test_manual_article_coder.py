@@ -17,6 +17,7 @@ from python_utilities.json.json_helper import JSONHelper
 from context_text.article_coding.manual_coding.manual_article_coder import ManualArticleCoder
 from context_text.models import Article
 from context_text.models import Article_Data
+from context_text.models import Article_Data_Notes
 from context_text.models import Article_Subject
 from context_text.models import Person
 from context_text.tests.test_helper import TestHelper
@@ -715,6 +716,9 @@ class ManualArticleCoderTest( django.test.TestCase ):
         test_article_subject = None
         test_quote_qs = None
         test_mention_qs = None
+        article_data_notes_qs = None
+        article_data_notes_count = None
+
         
         # declare variables - test update
         work_qs = None
@@ -973,6 +977,22 @@ class ManualArticleCoderTest( django.test.TestCase ):
             self.assertEqual( test_value, should_be, error_string )
             
             # ! - TODO - test position of mention.
+            
+            # check Article_Data_Notes
+            article_data_notes_qs = test_article_data.article_data_notes_set.all()
+            article_data_notes_qs = article_data_notes_qs.filter( content_description = "Manual_Article_Subject_Coding Data Store JSON (likely from manual coding via article-code view)." )
+            article_data_notes_qs = article_data_notes_qs.filter( note_type = "Manual_Article_Subject_Coding_data_store_json" )
+            article_data_notes_qs = article_data_notes_qs.filter( tags__name = "Manual_Article_Subject_Coding_data_store_json" )
+            article_data_notes_qs = article_data_notes_qs.filter( tags__name = "data_store_json" )
+            article_data_notes_qs = article_data_notes_qs.filter( content__isnull = True )
+            article_data_notes_qs = article_data_notes_qs.filter( content_json__isnull = False )
+            article_data_notes_count = article_data_notes_qs.count()
+
+            # should also be 1
+            test_value = article_data_notes_count
+            should_be = loop_counter
+            error_string = "In " + me + "(): counter = " + str( loop_counter ) + "; Article_Data_Notes count is " + str( test_value ) +", should be " + str( should_be )
+            self.assertEqual( test_value, should_be, error_string )
             
         #-- END loop over list of JSON documents. --#
 
