@@ -2247,7 +2247,7 @@ class Article( Abstract_Context_With_JSON ):
 
 # Article_Content model
 @python_2_unicode_compatible
-class Article_Content( Abstract_Related_Content ):
+class Article_Content( Abstract_Related_JSON_Content ):
 
     #----------------------------------------------------------------------
     # model fields and meta
