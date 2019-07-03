@@ -797,6 +797,9 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             
                             article_data.save()
                             
+                            # add coded tag to article.
+                            article_IN.tags.add( self.TAG_CODED_BY_ME )
+                            
                             # store the JSON in an Article_Data_Note.
                             my_json_note = Article_Data_Notes()
                             
