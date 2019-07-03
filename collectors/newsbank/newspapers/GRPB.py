@@ -108,16 +108,52 @@ class GRPB( LoggingHelper ):
     LOCAL_NEWS_SECTION_NAME_LIST = NEWS_SECTION_NAME_LIST
     
     # In-house author string patterns
-    # ! TODO - compile individual values.
-    AUTHOR_STRING_REGEX_BASE = re.compile( r'.* */ *THE GRAND RAPIDS PRESS$', re.IGNORECASE )
-    AUTHOR_STRING_REGEX_EDITOR = re.compile( r'.* */ *PRESS .* EDITOR$', re.IGNORECASE )
-    AUTHOR_STRING_REGEX_BUREAU = re.compile( r'.* */ *GRAND RAPIDS PRESS .* BUREAU$', re.IGNORECASE )
-    AUTHOR_STRING_REGEX_SPECIAL = re.compile( r'.* */ *SPECIAL TO THE PRESS$', re.IGNORECASE )
+    AUTHOR_STRING_REGEX_BASE = r'.* */ *THE GRAND RAPIDS PRESS$'
+    AUTHOR_STRING_REGEX_EDITOR = r'.* */ *PRESS .* EDITOR$'
+    AUTHOR_STRING_REGEX_BUREAU = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$'
+    AUTHOR_STRING_REGEX_SPECIAL = r'.* */ *SPECIAL TO THE PRESS$'
     
+    # make a list of the author string regular expressions
+    AUTHOR_STRING_IN_HOUSE_REGEX_LIST = []
+    AUTHOR_STRING_IN_HOUSE_REGEX_LIST.append( AUTHOR_STRING_REGEX_BASE )
+    AUTHOR_STRING_IN_HOUSE_REGEX_LIST.append( AUTHOR_STRING_REGEX_EDITOR )
+    AUTHOR_STRING_IN_HOUSE_REGEX_LIST.append( AUTHOR_STRING_REGEX_BUREAU )
+    AUTHOR_STRING_IN_HOUSE_REGEX_LIST.append( AUTHOR_STRING_REGEX_SPECIAL )
+    
+    # compile individual values.
+    AUTHOR_STRING_COMPILED_REGEX_BASE = re.compile( AUTHOR_STRING_REGEX_BASE, re.IGNORECASE )
+    AUTHOR_STRING_COMPILED_REGEX_EDITOR = re.compile( AUTHOR_STRING_REGEX_EDITOR, re.IGNORECASE )
+    AUTHOR_STRING_COMPILED_REGEX_BUREAU = re.compile( AUTHOR_STRING_REGEX_BUREAU, re.IGNORECASE )
+    AUTHOR_STRING_COMPILED_REGEX_SPECIAL = re.compile( AUTHOR_STRING_REGEX_SPECIAL, re.IGNORECASE )
+
     # ! TODO - add in misspellings and errors.
-    # ! TODO - build Q from compiled RE.
+
     #Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
-    Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BASE ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_EDITOR ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BUREAU ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_SPECIAL )
+    Q_IN_HOUSE_AUTHOR_STATIC = Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BASE ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_EDITOR ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BUREAU ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_SPECIAL )
+
+    # Build Q from list of in-house author_string regular expressions.
+    Q_IN_HOUSE_AUTHOR = None
+    q_current_regex = None
+    for author_string_regex in AUTHOR_STRING_IN_HOUSE_REGEX_LIST:
+    
+        # create Q()
+        q_current_regex = Q( author_varchar__iregex = author_string_regex )
+    
+        # anything in output variable?
+        if ( Q_IN_HOUSE_AUTHOR is None ):
+        
+            # empty - set to the first thing.
+            Q_IN_HOUSE_AUTHOR = q_current_regex
+            
+        else:
+        
+            # not empty - OR
+            Q_IN_HOUSE_AUTHOR = Q_IN_HOUSE_AUTHOR | q_current_regex
+            
+        #-- END check to see if there is already a Q. --#
+        
+    #-- END loop over in-house author_string regular expressions. --#
+        
     Q_GRP_IN_HOUSE_AUTHOR = Q_IN_HOUSE_AUTHOR
     
     # Columns are mixed in with news, you have to filter them out based on the
