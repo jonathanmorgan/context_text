@@ -171,6 +171,10 @@ class ArticleCoder( BasicRateLimited ):
 
     # subject_type to person type dictionary
     SUBJECT_TYPE_TO_PERSON_TYPE_MAP = PersonDetails.SUBJECT_TYPE_TO_PERSON_TYPE_MAP
+    
+    # Tags
+    TAG_CODED = "coded"
+    TAG_CODED_BY_ME = "coded-ArticleCoder"
 
 
     #----------------------------------------------------------------------------

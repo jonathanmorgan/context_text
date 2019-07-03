@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 '''
-Copyright 2016 - Jonathan Morgan
+Copyright 2019 - Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/context_text.
 
@@ -54,8 +54,8 @@ from context_text.models import Article_Text
 from context_text.models import Newspaper
 
 
-# define DTNB newspaper class.
-class DTNB( LoggingHelper ):
+# define GRPB newspaper class.
+class GRPB( LoggingHelper ):
 
 
     #===========================================================================
@@ -63,69 +63,72 @@ class DTNB( LoggingHelper ):
     #===========================================================================
 
 
-    NEWSPAPER_NAME = 'The Detroit News'
-    NEWSBANK_PLACE_CODE = 'DTNB'
-    NEWSPAPER_ID = 2
+    NEWSPAPER_NAME = 'The Grand Rapids Press'
+    NEWSBANK_PLACE_CODE = 'GRPB'
+    NEWSPAPER_ID = 1
     
     # name fragments for searching
-    STRING_DETROIT_NEWS = "Detroit News"
-    STRING_DETROIT_NEWS_LOWER = STRING_DETROIT_NEWS.lower()
+    STRING_PAPER_NAME = "Grand Rapids Press"
+    STRING_PAPER_NAME_LOWER = STRING_PAPER_NAME.lower()
     STRING_AUTHOR_SEPARATOR = " / "
     
     # affiliation strings - convert to regular expressions.
     # ! TODO - add in misspellings and errors.
-    AFFILIATION_REGEX_THE_DETROIT_NEWS = re.compile( r"The\s+Detroit\s+News", re.IGNORECASE )
-    AFFILIATION_REGEX_SPECIAL_TO = re.compile( r"Special\s+to\s+The\s+Detroit\s+News", re.IGNORECASE )
-    AFFILIATION_REGEX_BUREAU = re.compile( r"Detroit News\s+.*\s+Bureau", re.IGNORECASE )
-    AFFILIATION_REGEX_EDITOR = re.compile( r"Detroit News\s+.*\s+Editor", re.IGNORECASE )
+    AFFILIATION_REGEX_THE_GRAND_RAPIDS_PRESS = re.compile( r'THE\s+GRAND\s+RAPIDS\s+PRESS$', re.IGNORECASE )
+    AFFILIATION_REGEX_SPECIAL_TO = re.compile( r'SPECIAL\s+TO\s+THE\s+PRESS$', re.IGNORECASE )
+    AFFILIATION_REGEX_BUREAU = re.compile( r'GRAND\s+RAPIDS\s+PRESS\s+.*\s+BUREAU$', re.IGNORECASE )
+    AFFILIATION_REGEX_EDITOR = re.compile( r'PRESS\s+.*\s+EDITOR$', re.IGNORECASE )
     AFFILIATION_DEFAULT = NEWSPAPER_NAME
     
     # affiliation list is organized from most general to most specific, such
-    #     that last match should be used.  "Special to The Detroit News" is
-    #     after "The Detroit News" in the list, for example, so while "The
-    #     Detroit News" will match, so will "Special to The Detroit News"
-    #     subsequently.
+    #     that last match should be used.  "Special to The Grand Rapids Press"
+    #     is after "The Grand Rapids Press" in the list, for example, so while
+    #     "The Grand Rapids Press" will match, so will "Special to The Grand
+    #     Rapids Press" subsequently.
     STAFF_AFFILIATION_REGEX_LIST = [
-        AFFILIATION_REGEX_THE_DETROIT_NEWS,
+        AFFILIATION_REGEX_THE_GRAND_RAPIDS_PRESS,
         AFFILIATION_REGEX_SPECIAL_TO,
         AFFILIATION_REGEX_BUREAU,
         AFFILIATION_REGEX_EDITOR
     ]
 
     # collective author strings
-    AUTHOR_THE_DETROIT_NEWS = "The Detroit News"
-    AUTHOR_DETROIT_NEWS_STAFF = "Detroit News staff"
-    AUTHOR_THE_DETROIT_NEWS_STAFF = "The Detroit News Staff"
-    AUTHOR_STAFF_REPORTS = "Detroit News staff reports"
-    AUTHOR_STAFF_AND_WIRE = "Detroit News staff and wire reports"
-    AUTHOR_WIRE_REPORTS = "Detroit News wire reports"
-    AUTHOR_WIRE_SERVICES = "Detroit News wire services"
-    STAFF_AUTHOR_STRINGS_LIST = [ AUTHOR_THE_DETROIT_NEWS, AUTHOR_DETROIT_NEWS_STAFF, AUTHOR_THE_DETROIT_NEWS_STAFF, AUTHOR_STAFF_REPORTS, AUTHOR_STAFF_AND_WIRE, AUTHOR_WIRE_REPORTS, AUTHOR_WIRE_SERVICES ]
+    # ! TODO - add in all collective author strings.
+    AUTHOR_THE_GRAND_RAPIDS_PRESS = "The Grand Rapids Press"
+    STAFF_AUTHOR_STRINGS_LIST = [ AUTHOR_THE_GRAND_RAPIDS_PRESS ]
 
     # author info cleanup
     AUTHOR_INFO_CLEANUP_STATUS_ABORT_LIST = [ Article.CLEANUP_STATUS_AUTHOR_FIXED, Article.CLEANUP_STATUS_AUTHOR_AND_TEXT_FIXED, Article.CLEANUP_STATUS_COMPLETE ]
 
     # Sections
-    LOCAL_SECTION_NAME_LIST = [ "Business", "Metro", "Nation", "Sports" ]
-    NEWS_SECTION_NAME_LIST = [ "Business", "Metro", "Nation" ]
+    LOCAL_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "Sports", "State" ]
+    GRP_LOCAL_SECTION_NAME_LIST = LOCAL_SECTION_NAME_LIST
+    NEWS_SECTION_NAME_LIST = [ "Business", "City and Region", "Front Page", "Lakeshore", "Religion", "Special", "State" ]
+    GRP_NEWS_SECTION_NAME_LIST = NEWS_SECTION_NAME_LIST
+    LOCAL_NEWS_SECTION_NAME_LIST = NEWS_SECTION_NAME_LIST
     
     # In-house author string patterns
     # ! TODO - compile individual values.
+    AUTHOR_STRING_REGEX_BASE = re.compile( r'.* */ *THE GRAND RAPIDS PRESS$', re.IGNORECASE )
+    AUTHOR_STRING_REGEX_EDITOR = re.compile( r'.* */ *PRESS .* EDITOR$', re.IGNORECASE )
+    AUTHOR_STRING_REGEX_BUREAU = re.compile( r'.* */ *GRAND RAPIDS PRESS .* BUREAU$', re.IGNORECASE )
+    AUTHOR_STRING_REGEX_SPECIAL = re.compile( r'.* */ *SPECIAL TO THE PRESS$', re.IGNORECASE )
+    
     # ! TODO - add in misspellings and errors.
     # ! TODO - build Q from compiled RE.
-    Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.*\s*/\s*the\s*detroit\s*news$' ) | Q( author_varchar__iregex = r'.*\s*/\s*detroit\s*news\s*.*\s*bureau$' ) | Q( author_varchar__iregex = r'.*\s*/\s*special\s*to\s*the\s*detroit\s*news$' )
-
-    # Columns are mixed in with news, you have to filter them out by Columnist
-    #     name.
-    COLUMNIST_LAURA_BERMAN = "Laura Berman"
-    COLUMNIST_DANIEL_HOWES = "Daniel Howes"
-    COLUMNIST_NAME_LIST = [ COLUMNIST_LAURA_BERMAN, COLUMNIST_DANIEL_HOWES ]
+    #Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
+    Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BASE ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_EDITOR ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BUREAU ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_SPECIAL )
+    Q_GRP_IN_HOUSE_AUTHOR = Q_IN_HOUSE_AUTHOR
+    
+    # Columns are mixed in with news, you have to filter them out based on the
+    #     index_term column containing the string "Column".
+    # grp_article_qs = grp_article_qs.exclude( index_terms__icontains = "Column" )
 
     # DEBUG
     DEBUG_FLAG = True
     
     # logging
-    LOGGER_NAME = "context_text.collectors.newsbank.newspapers.DTNB"
+    LOGGER_NAME = "context_text.collectors.newsbank.newspapers.GRPB"
     
     # better anomaly detail
     AUTHOR_ANOMALY_DETAIL_ARTICLE_ID = "article_id"
@@ -251,7 +254,7 @@ class DTNB( LoggingHelper ):
     def __init__( self ):
 
         # call parent's __init__()
-        super( DTNB, self ).__init__()
+        super( GRPB, self ).__init__()
 
         # declare variables - logging
         self.logger_debug_flag = self.DEBUG_FLAG
@@ -284,12 +287,12 @@ class DTNB( LoggingHelper ):
         self.graf_1_no_by_yes_author_count = 0
         
         # init graf 2 summary info
-        self.graf_2_has_DN_count = 0
-        self.graf_2_has_DN_id_list = []
-        self.graf_2_has_DN_section_list = []
-        self.graf_2_no_DN_id_list = []
-        self.graf_2_no_DN_section_list = []
-        self.graf_2_no_DN_detail_list = []
+        self.graf_2_has_paper_name_count = 0
+        self.graf_2_has_paper_name_id_list = []
+        self.graf_2_has_paper_name_section_list = []
+        self.graf_2_no_paper_name_id_list = []
+        self.graf_2_no_paper_name_section_list = []
+        self.graf_2_no_paper_name_detail_list = []
         
         # audit case of author's name different in database, body of article.
         self.case_mismatch_article_list = []
@@ -376,7 +379,7 @@ class DTNB( LoggingHelper ):
             
         else:
         
-            # no - all Detroit News articles!
+            # no - all articles for this paper!
             newspaper_instance = Newspaper.objects.filter( newsbank_code = self.NEWSBANK_PLACE_CODE )
             article_qs = Article.objects.filter( newspaper = newspaper_instance )
             
@@ -421,8 +424,8 @@ class DTNB( LoggingHelper ):
             
                 # ! investigate value in author_string
                 
-                # contains "detroit news"?
-                if ( self.STRING_DETROIT_NEWS_LOWER in author_string_lower ):
+                # contains paper name?
+                if ( self.STRING_PAPER_NAME_LOWER in author_string_lower ):
                 
                     # already has paper name in it.  Is there a slash?
                     if ( "/" in author_string_lower ):
@@ -439,7 +442,7 @@ class DTNB( LoggingHelper ):
                             author_part_counter += 1
                             
                             # see if paper name is in this part.
-                            if ( self.STRING_DETROIT_NEWS_LOWER in author_part ):
+                            if ( self.STRING_PAPER_NAME_LOWER in author_part ):
                             
                                 # it is.
                                 debug_string = "Affiliation \"" + author_part + "\" found in author part " + str( author_part_counter ) + " of " + str( author_part_count )
@@ -464,7 +467,7 @@ class DTNB( LoggingHelper ):
                             author_part_counter += 1
                             
                             # see if paper name is in this part.
-                            if ( self.STRING_DETROIT_NEWS_LOWER in author_part ):
+                            if ( self.STRING_PAPER_NAME_LOWER in author_part ):
                             
                                 # it is.
                                 debug_string = "Affiliation \"" + author_part + "\" found in author part " + str( author_part_counter ) + " of " + str( author_part_count )
@@ -713,35 +716,35 @@ class DTNB( LoggingHelper ):
             
                 print( "====> Paragraph 2: " + graf_2 )
                 
-                # Does graf_2 contain the words "Detroit News"
-                if ( "detroit news" in graf_2_lower ):
+                # Does graf_2 contain the paper name?
+                if ( self.STRING_PAPER_NAME_LOWER in graf_2_lower ):
                 
                     # yes it does.  Increment counter
-                    self.graf_2_has_DN_count += 1
+                    self.graf_2_has_paper_name_count += 1
                     
                     # store article ID
-                    self.graf_2_has_DN_id_list.append( current_article_id )
+                    self.graf_2_has_paper_name_id_list.append( current_article_id )
             
                     # add section to list.
-                    if ( section_string not in self.graf_2_has_DN_section_list ):
+                    if ( section_string not in self.graf_2_has_paper_name_section_list ):
                     
                         # not there yet - add it.
-                        self.graf_2_has_DN_section_list.append( section_string )
+                        self.graf_2_has_paper_name_section_list.append( section_string )
                     
                     #-- END check to see if section already in list. --#
                     
-                    print( "========> Paragraph 2 contains \"detroit news\"!" )
+                    print( "========> Paragraph 2 contains \"{}\"!".format( self.STRING_PAPER_NAME_LOWER ) )
             
                 else:
                 
-                    # no "detroit news" in graf 2 - store article ID
-                    self.graf_2_no_DN_id_list.append( current_article_id )
+                    # no paper name in graf 2 - store article ID
+                    self.graf_2_no_paper_name_id_list.append( current_article_id )
             
                     # add section to list.
-                    if ( section_string not in self.graf_2_no_DN_section_list ):
+                    if ( section_string not in self.graf_2_no_paper_name_section_list ):
                     
                         # not there yet - add it.
-                        self.graf_2_no_DN_section_list.append( section_string )
+                        self.graf_2_no_paper_name_section_list.append( section_string )
                     
                     #-- END check to see if section already in list. --#
                     
@@ -753,9 +756,9 @@ class DTNB( LoggingHelper ):
                     error_detail_dict[ self.AUTHOR_ANOMALY_DETAIL_GRAF_2 ] = graf_2
                     
                     # not there yet - add it.
-                    self.graf_2_no_DN_detail_list.append( error_detail_dict )
+                    self.graf_2_no_paper_name_detail_list.append( error_detail_dict )
                         
-                #-- END check to see if contains "detroit news".
+                #-- END check to see if contains paper name.
                 
             else:
             
@@ -784,7 +787,7 @@ class DTNB( LoggingHelper ):
                              **kwargs ):
                                     
         '''
-        Accepts Detroit News Article pulled in from Newsbank, then tries to
+        Accepts Article pulled in from Newsbank, then tries to
             capture more detailed author information from the article's first
             two paragraphs.
             
@@ -868,7 +871,7 @@ class DTNB( LoggingHelper ):
         
         # declare variables - graf 2 - affiliation
         affiliation_value = ""
-        contains_detroit_news = False
+        contains_paper_name = False
         
         # init status
         status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
@@ -1200,9 +1203,9 @@ class DTNB( LoggingHelper ):
                     if ( is_collective_byline == False ):
                     
                         # check to see if the contents of graph 2 contain a known
-                        #     affiliation, or if it at least contains "detroit news".
+                        #     affiliation, or if it at least contains paper name.
                         affiliation_value = self.find_affiliation_in_string( graf_2 )
-                        contains_detroit_news = self.STRING_DETROIT_NEWS_LOWER in graf_2_lower
+                        contains_paper_name = self.STRING_PAPER_NAME_LOWER in graf_2_lower
                         
                         # Was an affiliation found?
                         if ( ( affiliation_value is not None ) and ( affiliation_value != "" ) ):
@@ -1235,7 +1238,7 @@ class DTNB( LoggingHelper ):
                         else:
                         
                             # note that no affiliation found in graf 2.
-                            notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) does not contain a known affiliation.  If it does contain \"detroit news\" ( contains_detroit_news = \"" + str( contains_detroit_news ) + "\" ), this could be an indicator of an affiliation variation we haven't encountered yet, or it could be that the affiliation string was in a sentence.  Since the 2nd is a possibilty, we err on the side of caution and don't use graf 2 as affiliation."
+                            notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) does not contain a known affiliation.  If it does contain paper name ( contains_paper_name = \"" + str( contains_paper_name ) + "\" ), this could be an indicator of an affiliation variation we haven't encountered yet, or it could be that the affiliation string was in a sentence.  Since the 2nd is a possibilty, we err on the side of caution and don't use graf 2 as affiliation."
                             notes_list.append( notes_message )
                             
                         #-- END check to see if affiliation found in graf 2 --#
@@ -1244,7 +1247,7 @@ class DTNB( LoggingHelper ):
                         if ( ( my_author_affiliation is None ) or ( my_author_affiliation == "" ) ):
                         
                             # no.  ERROR.
-                            notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\"; contains \"detroit_news\"?: " + str( contains_detroit_news ) + " ) does not contain a known affiliation.  This might not be an error, but it is non-standard."
+                            notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\"; contains paper name?: " + str( contains_paper_name ) + " ) does not contain a known affiliation.  This might not be an error, but it is non-standard."
                             
                             # do we require an affiliation?
                             if ( is_affiliation_required == True ):
@@ -1412,7 +1415,7 @@ class DTNB( LoggingHelper ):
                               **kwargs ):
                                     
         '''
-        Accepts Detroit News Article pulled in from Newsbank, then tries to
+        Accepts Article pulled in from Newsbank, then tries to
             clean up author string, remove author information from body of
             article, then update the article's database record to reflect actual
             author information.
@@ -1789,11 +1792,11 @@ class DTNB( LoggingHelper ):
         self.graf_1_no_by_yes_author_count = 0
         
         # init graf 2 summary info
-        self.graf_2_has_DN_count = 0
-        self.graf_2_has_DN_id_list = []
-        self.graf_2_has_DN_section_list = []
-        self.graf_2_no_DN_id_list = []
-        self.graf_2_no_DN_section_list = []
+        self.graf_2_has_paper_name_count = 0
+        self.graf_2_has_paper_name_id_list = []
+        self.graf_2_has_paper_name_section_list = []
+        self.graf_2_no_paper_name_id_list = []
+        self.graf_2_no_paper_name_section_list = []
         
         # audit case of author's name different in database, body of article.
         self.case_mismatch_article_list = []
@@ -1825,4 +1828,4 @@ class DTNB( LoggingHelper ):
     #-- END set_exception_helper() --#
 
 
-#-- END class DTNB --#
+#-- END class GRPB --#

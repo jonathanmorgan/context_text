@@ -164,6 +164,9 @@ class ContextTextBase( ContextBase ):
     CODER_TYPE_FILTER_TYPE_AUTOMATED = "automated"
     CODER_TYPE_FILTER_TYPE_ALL = "all"
     CODER_TYPE_FILTER_TYPE_DEFAULT = CODER_TYPE_FILTER_TYPE_NONE
+    
+    # Tags
+    TAG_LOCAL_HARD_NEWS = "local_hard_news"
 
 
     #-----------------------------------------------------------------------------

@@ -138,6 +138,9 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
     JSON_PROCESS_BY_BOTH = "by_both"
     JSON_DEFAULT_PROCESS_BY = JSON_PROCESS_BY_PERSON
     
+    # Associated tags
+    TAG_CODED_BY_ME = "coded-OpenCalaisV2ArticleCoder"
+    
 
     #============================================================================
     # NOT Instance variables
