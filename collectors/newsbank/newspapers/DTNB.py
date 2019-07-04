@@ -68,8 +68,8 @@ class DTNB( LoggingHelper ):
     NEWSPAPER_ID = 2
     
     # name fragments for searching
-    STRING_DETROIT_NEWS = "Detroit News"
-    STRING_DETROIT_NEWS_LOWER = STRING_DETROIT_NEWS.lower()
+    STRING_PAPER_NAME = "Detroit News"
+    STRING_PAPER_NAME_LOWER = STRING_PAPER_NAME.lower()
     STRING_AUTHOR_SEPARATOR = " / "
     
     # affiliation strings - convert to regular expressions.
@@ -108,13 +108,8 @@ class DTNB( LoggingHelper ):
     # Sections
     LOCAL_SECTION_NAME_LIST = [ "Business", "Metro", "Nation", "Sports" ]
     NEWS_SECTION_NAME_LIST = [ "Business", "Metro", "Nation" ]
+    LOCAL_NEWS_SECTION_NAME_LIST = NEWS_SECTION_NAME_LIST
     
-    # In-house author string patterns
-    # ! TODO - add in misspellings and errors.
-    # ! TODO - build Q from compiled RE.
-    #Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.*\s*/\s*the\s*detroit\s*news$' ) | Q( author_varchar__iregex = r'.*\s*/\s*detroit\s*news\s*.*\s*bureau$' ) | Q( author_varchar__iregex = r'.*\s*/\s*special\s*to\s*the\s*detroit\s*news$' )
-    Q_IN_HOUSE_AUTHOR_STATIC = Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BASE ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BUREAU ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_SPECIAL )
-
     # In-house author string patterns
     AUTHOR_STRING_REGEX_BASE = r'.*\s*/\s*the\s*detroit\s*news$'
     #AUTHOR_STRING_REGEX_EDITOR = r'.* */ *PRESS .* EDITOR$'
@@ -133,6 +128,11 @@ class DTNB( LoggingHelper ):
     #AUTHOR_STRING_COMPILED_REGEX_EDITOR = re.compile( AUTHOR_STRING_REGEX_EDITOR, re.IGNORECASE )
     AUTHOR_STRING_COMPILED_REGEX_BUREAU = re.compile( AUTHOR_STRING_REGEX_BUREAU, re.IGNORECASE )
     AUTHOR_STRING_COMPILED_REGEX_SPECIAL = re.compile( AUTHOR_STRING_REGEX_SPECIAL, re.IGNORECASE )
+
+    # ! TODO - add in misspellings and errors.
+    # ! TODO - build Q from compiled RE.
+    #Q_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.*\s*/\s*the\s*detroit\s*news$' ) | Q( author_varchar__iregex = r'.*\s*/\s*detroit\s*news\s*.*\s*bureau$' ) | Q( author_varchar__iregex = r'.*\s*/\s*special\s*to\s*the\s*detroit\s*news$' )
+    Q_IN_HOUSE_AUTHOR_STATIC = Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BASE ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_BUREAU ) | Q( author_varchar__iregex = AUTHOR_STRING_REGEX_SPECIAL )
 
     # Try to build Q from list of in-house author_string regular expressions.
     Q_IN_HOUSE_AUTHOR = None
@@ -464,7 +464,7 @@ class DTNB( LoggingHelper ):
                 # ! investigate value in author_string
                 
                 # contains "detroit news"?
-                if ( self.STRING_DETROIT_NEWS_LOWER in author_string_lower ):
+                if ( self.STRING_PAPER_NAME_LOWER in author_string_lower ):
                 
                     # already has paper name in it.  Is there a slash?
                     if ( "/" in author_string_lower ):
@@ -481,7 +481,7 @@ class DTNB( LoggingHelper ):
                             author_part_counter += 1
                             
                             # see if paper name is in this part.
-                            if ( self.STRING_DETROIT_NEWS_LOWER in author_part ):
+                            if ( self.STRING_PAPER_NAME_LOWER in author_part ):
                             
                                 # it is.
                                 debug_string = "Affiliation \"" + author_part + "\" found in author part " + str( author_part_counter ) + " of " + str( author_part_count )
@@ -506,7 +506,7 @@ class DTNB( LoggingHelper ):
                             author_part_counter += 1
                             
                             # see if paper name is in this part.
-                            if ( self.STRING_DETROIT_NEWS_LOWER in author_part ):
+                            if ( self.STRING_PAPER_NAME_LOWER in author_part ):
                             
                                 # it is.
                                 debug_string = "Affiliation \"" + author_part + "\" found in author part " + str( author_part_counter ) + " of " + str( author_part_count )
@@ -756,7 +756,7 @@ class DTNB( LoggingHelper ):
                 print( "====> Paragraph 2: " + graf_2 )
                 
                 # Does graf_2 contain the words "Detroit News"
-                if ( "detroit news" in graf_2_lower ):
+                if ( self.STRING_PAPER_NAME_LOWER in graf_2_lower ):
                 
                     # yes it does.  Increment counter
                     self.graf_2_has_DN_count += 1
@@ -772,7 +772,7 @@ class DTNB( LoggingHelper ):
                     
                     #-- END check to see if section already in list. --#
                     
-                    print( "========> Paragraph 2 contains \"detroit news\"!" )
+                    print( "========> Paragraph 2 contains \"" + self.STRING_PAPER_NAME_LOWER + "\"!" )
             
                 else:
                 
@@ -910,7 +910,7 @@ class DTNB( LoggingHelper ):
         
         # declare variables - graf 2 - affiliation
         affiliation_value = ""
-        contains_detroit_news = False
+        contains_paper_name = False
         
         # init status
         status_OUT.status_code = StatusContainer.STATUS_CODE_SUCCESS
@@ -1244,7 +1244,7 @@ class DTNB( LoggingHelper ):
                         # check to see if the contents of graph 2 contain a known
                         #     affiliation, or if it at least contains "detroit news".
                         affiliation_value = self.find_affiliation_in_string( graf_2 )
-                        contains_detroit_news = self.STRING_DETROIT_NEWS_LOWER in graf_2_lower
+                        contains_paper_name = self.STRING_PAPER_NAME_LOWER in graf_2_lower
                         
                         # Was an affiliation found?
                         if ( ( affiliation_value is not None ) and ( affiliation_value != "" ) ):
@@ -1277,7 +1277,7 @@ class DTNB( LoggingHelper ):
                         else:
                         
                             # note that no affiliation found in graf 2.
-                            notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) does not contain a known affiliation.  If it does contain \"detroit news\" ( contains_detroit_news = \"" + str( contains_detroit_news ) + "\" ), this could be an indicator of an affiliation variation we haven't encountered yet, or it could be that the affiliation string was in a sentence.  Since the 2nd is a possibilty, we err on the side of caution and don't use graf 2 as affiliation."
+                            notes_message = "graf 2 ( contents = \"" + graf_2 + "\" ) does not contain a known affiliation.  If it does contain paper name \"" + self.STRING_PAPER_NAME_LOWER + "\" ( contains_paper_name = \"" + str( contains_paper_name ) + "\" ), this could be an indicator of an affiliation variation we haven't encountered yet, or it could be that the affiliation string was in a sentence.  Since the 2nd is a possibilty, we err on the side of caution and don't use graf 2 as affiliation."
                             notes_list.append( notes_message )
                             
                         #-- END check to see if affiliation found in graf 2 --#
@@ -1286,7 +1286,7 @@ class DTNB( LoggingHelper ):
                         if ( ( my_author_affiliation is None ) or ( my_author_affiliation == "" ) ):
                         
                             # no.  ERROR.
-                            notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\"; contains \"detroit_news\"?: " + str( contains_detroit_news ) + " ) does not contain a known affiliation.  This might not be an error, but it is non-standard."
+                            notes_message = "WARNING - graf_2 ( contents = \"" + graf_2 + "\"; contains paper name \"" + self.STRING_PAPER_NAME_LOWER + "\"?: " + str( contains_paper_name ) + " ) does not contain a known affiliation.  This might not be an error, but it is non-standard."
                             
                             # do we require an affiliation?
                             if ( is_affiliation_required == True ):

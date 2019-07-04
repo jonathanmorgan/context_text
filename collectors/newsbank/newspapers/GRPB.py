@@ -58,6 +58,17 @@ from context_text.models import Newspaper
 class GRPB( LoggingHelper ):
 
 
+    '''
+    Based on DTNB.  Instance methods for finding affiliation in the 1st or
+        sometimes 2nd paragraph rather than the author string is still here, for
+        reference, but could be stripped out:
+        
+        - analyze_author_info()
+        - capture_author_info()
+        - clean_up_author_info()
+        - fix_author_info()
+    '''
+
     #===========================================================================
     # constants-ish
     #===========================================================================
@@ -201,6 +212,64 @@ class GRPB( LoggingHelper ):
     #===========================================================================
 
     
+    @classmethod
+    def derive_affiliation_from_author_string( cls, *args, **kwargs ):
+
+        '''
+        Method contains code used to originally populate the column
+            `author_affiliation` from `author_string` in original article data.
+        '''
+
+        # declare variables
+        grp_article_qs = None
+        article_count = None
+        article_counter = None
+        current_article = None
+        author_string = None
+        slash_index = None
+        affiliation = None
+
+        # populate author_affiliation in Article table for GR Press.
+        grp_article_qs = Article.objects.filter( newspaper = grp_newspaper )
+        grp_article_qs = grp_article_qs.filter( author_string__contains = "/" )
+        grp_article_qs = grp_article_qs.filter( author_affiliation__isnull = True )
+        
+        article_count = grp_article_qs.count()
+        article_counter = 0
+        for current_article in grp_article_qs:
+        
+            article_counter = article_counter + 1
+        
+            # output article.
+            print( "- Article " + str( article_counter ) + " of " + str( article_count ) + ": " + str( current_article ) )
+            
+            # get author_string
+            author_string = current_article.author_string
+            
+            # find "/"
+            slash_index = author_string.find( "/" )
+            
+            # got one?
+            if ( slash_index > -1 ):
+            
+                # yes.  get everything after the slash.
+                affiliation = author_string[ ( slash_index + 1 ) : ]
+                
+                # strip off white space
+                affiliation = affiliation.strip()
+                
+                print( "    - Affiliation = \"" + affiliation + "\"" )
+                
+                current_article.author_affiliation = affiliation
+                current_article.save()
+                
+            #-- END check to see if "/" present.
+            
+        #-- END loop over articles. --#
+        
+    #-- END class method derive_affiliation_from_author_string --#
+
+
     @classmethod
     def find_affiliation_in_string( cls, string_IN, default_affiliation_IN = None, return_all_matches_IN = False, *args, **kwargs ):
         
