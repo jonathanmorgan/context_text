@@ -74,6 +74,7 @@ from python_utilities.strings.string_helper import StringHelper
 
 # python_utilities - django
 from python_utilities.django_utils.django_model_helper import DjangoModelHelper
+from python_utilities.django_utils.queryset_helper import QuerySetHelper
 
 # python_utilities - dictionaries
 from python_utilities.dictionaries.dict_helper import DictHelper
@@ -1232,6 +1233,7 @@ class Article( Abstract_Context_With_JSON ):
         me = "filter_articles"
         my_logger_name = "context_text.models.Article"
         my_logger = None
+        is_queryset_evaluated = False
         
         # declare variables - input parameters
         my_params = None
@@ -1453,6 +1455,7 @@ class Article( Abstract_Context_With_JSON ):
     
         #-- END check to see if newspaper ID IN list is in arguments --#
 
+        
 
         #-------------------------------
         # ! ==> start_date and end_date
@@ -1644,6 +1647,12 @@ class Article( Abstract_Context_With_JSON ):
         # ! ==> filter with Q() list
         #-----------------------------------------------------------------------
 
+        my_logger.debug( "In {}(): article_id_in_list_IN = {}".format( me, article_id_in_list_IN ) )
+
+        # evaluated?
+        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        my_logger.debug( "----> In " + me + "(): before applying list of Q() objects, is QS evaluated?: {}".format( is_queryset_evaluated ) )
+        
         # now, add them all to the QuerySet - try a loop
         for query_item in query_list:
 
@@ -1651,6 +1660,10 @@ class Article( Abstract_Context_With_JSON ):
             qs_OUT = qs_OUT.filter( query_item )
 
         #-- END loop over query set items --#
+        
+        # evaluated?
+        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        my_logger.debug( "----> In " + me + "(): after applying list of Q() objects, is QS evaluated?: {}".format( is_queryset_evaluated ) )
         
         #-----------------------------------------------------------------------
         # ! ==> do DISTINCT?
@@ -1705,6 +1718,10 @@ class Article( Abstract_Context_With_JSON ):
             #-- END check to see if anything in ID list --#
 
         #-- END check to see if we do DISTINCT --#
+        
+        # evaluated?
+        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        my_logger.debug( "----> In " + me + "(): after potential DISTINCT check, is QS evaluated?: {}".format( is_queryset_evaluated ) )
 
         return qs_OUT
         
