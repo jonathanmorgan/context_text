@@ -108,6 +108,8 @@ class ArticleCoding( ContextTextBase ):
         ContextTextBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         ContextTextBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_TAGS_IN_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_TAGS_NOT_IN_LIST : ParamContainer.PARAM_TYPE_LIST,
         ContextTextBase.PARAM_SECTION_LIST : ParamContainer.PARAM_TYPE_LIST,
         ContextTextBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
         ContextTextBase.PARAM_ARTICLE_ID_LIST : ParamContainer.PARAM_TYPE_STRING,
@@ -427,6 +429,8 @@ class ArticleCoding( ContextTextBase ):
         date_range_IN = ''
         publication_list_IN = None
         tag_list_IN = None
+        tags_in_list_IN = None
+        tags_not_in_list_IN = None
         section_list_IN = None
         unique_id_list_IN = ''
         article_id_list_IN = ''
@@ -447,6 +451,8 @@ class ArticleCoding( ContextTextBase ):
             date_range_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_DATE_RANGE, None )
             publication_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_PUBLICATION_LIST, [] )
             tag_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TAG_LIST, [] )
+            tags_in_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TAGS_IN_LIST, [] )
+            tags_not_in_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TAGS_NOT_IN_LIST, [] )
             unique_id_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_UNIQUE_ID_LIST, [] )
             article_id_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_ARTICLE_ID_LIST, [] )
             section_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_SECTION_LIST, [] )
@@ -462,7 +468,21 @@ class ArticleCoding( ContextTextBase ):
             filter_articles_params[ Article.PARAM_END_DATE ] = end_date_IN
             filter_articles_params[ Article.PARAM_DATE_RANGE ] = date_range_IN
             filter_articles_params[ Article.PARAM_NEWSPAPER_ID_IN_LIST ] = publication_list_IN
-            filter_articles_params[ Article.PARAM_TAGS_IN_LIST ] = tag_list_IN
+
+            # got tags in list?
+            if ( ( tags_in_list_IN is not None ) and ( len( tags_in_list_IN ) > 0 ) ):
+
+                # yes, use it.
+                filter_articles_params[ Article.PARAM_TAGS_IN_LIST ] = tags_in_list_IN
+                
+            else:
+            
+                # use tags_list_IN
+                filter_articles_params[ Article.PARAM_TAGS_IN_LIST ] = tag_list_IN
+            
+            #-- END check of how to set Article.PRARAM_TAGS_IN_LIST --#
+
+            filter_articles_params[ Article.PARAM_TAGS_NOT_IN_LIST ] = tags_not_in_list_IN
             filter_articles_params[ Article.PARAM_UNIQUE_ID_IN_LIST ] = unique_id_list_IN
             filter_articles_params[ Article.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
             filter_articles_params[ Article.PARAM_SECTION_NAME_IN_LIST ] = section_list_IN

@@ -53,9 +53,12 @@ from context_text.models import Article_Notes
 from context_text.models import Article_Text
 from context_text.models import Newspaper
 
+# imports - newsbank newspapers
+from context_text.collectors.newsbank.newspapers.newsbank_newspaper import NewsbankNewspaper
+
 
 # define DTNB newspaper class.
-class DTNB( LoggingHelper ):
+class DTNB( NewsbankNewspaper ):
 
 
     #===========================================================================
@@ -75,6 +78,7 @@ class DTNB( LoggingHelper ):
     # affiliation strings - convert to regular expressions.
     # ! TODO - add in misspellings and errors.
     AFFILIATION_REGEX_THE_DETROIT_NEWS = re.compile( r"The\s+Detroit\s+News", re.IGNORECASE )
+    AFFILIATION_REGEX_PAPER_NAME = AFFILIATION_REGEX_THE_DETROIT_NEWS
     AFFILIATION_REGEX_SPECIAL_TO = re.compile( r"Special\s+to\s+The\s+Detroit\s+News", re.IGNORECASE )
     AFFILIATION_REGEX_BUREAU = re.compile( r"Detroit News\s+.*\s+Bureau", re.IGNORECASE )
     AFFILIATION_REGEX_EDITOR = re.compile( r"Detroit News\s+.*\s+Editor", re.IGNORECASE )
@@ -86,7 +90,7 @@ class DTNB( LoggingHelper ):
     #     Detroit News" will match, so will "Special to The Detroit News"
     #     subsequently.
     STAFF_AFFILIATION_REGEX_LIST = [
-        AFFILIATION_REGEX_THE_DETROIT_NEWS,
+        AFFILIATION_REGEX_PAPER_NAME,
         AFFILIATION_REGEX_SPECIAL_TO,
         AFFILIATION_REGEX_BUREAU,
         AFFILIATION_REGEX_EDITOR
@@ -195,96 +199,15 @@ class DTNB( LoggingHelper ):
 
 
     #===========================================================================
-    # static methods
+    # ! ==> static methods
     #===========================================================================
 
 
     #===========================================================================
-    # class methods
+    # ! ==> class methods
     #===========================================================================
 
     
-    @classmethod
-    def find_affiliation_in_string( cls, string_IN, default_affiliation_IN = None, return_all_matches_IN = False, *args, **kwargs ):
-        
-        '''
-        Loops through cls.STAFF_AFFILIATION_REGEX_LIST, returns the last match found
-            within the string passed in.  If optional parameter 
-            return_all_matches_IN is True, returns list of matches ordered from
-            most recent first ( [ 0 ] ) to least recent last.
-        '''
-        
-        # return reference
-        value_OUT = ""
-        
-        # call StringHelper regex function.
-        value_OUT = StringHelper.find_regex_matches( string_IN,
-                                                     cls.STAFF_AFFILIATION_REGEX_LIST,
-                                                     default_value_IN = default_affiliation_IN,
-                                                     return_all_matches_IN = return_all_matches_IN,
-                                                     *args,
-                                                     **kwargs )
-        
-        return value_OUT
-        
-    #-- END method find_affiliation_in_string() --#
-    
-
-    @classmethod
-    def is_collective_byline( cls, string_IN, *args, **kwargs ):
-        
-        '''
-        For now, looks for the author string passed in in the list of staff
-            author strings.
-        '''
-        
-        # return reference
-        value_OUT = ""
-        
-        # call StringHelper is_in_string_list() function.
-        value_OUT = StringHelper.is_in_string_list( string_IN, cls.STAFF_AUTHOR_STRINGS_LIST, ignore_case_IN = True )
-        
-        return value_OUT
-        
-    #-- END method is_collective_byline() --#
-    
-
-    @classmethod
-    def is_staff_author_string( cls, string_IN, *args, **kwargs ):
-        
-        '''
-        Uses find_affiliation_in_string() to look for affiliation in author
-            string.  If it finds one, returns true - that is likely a staff
-            author.  If it doesn't find one, returns False.
-        '''
-        
-        # return reference
-        value_OUT = ""
-        
-        # declare variables
-        affiliation_value = ""
-        
-        # call StringHelper regex function.
-        affiliation_value = cls.find_affiliation_in_string( cls,
-                                                            string_IN,
-                                                            default_value_IN = None,
-                                                            return_all_matches_IN = False,
-                                                            *args,
-                                                            **kwargs )
-                                                             
-        # got anything back?
-        if ( ( affiliation_value is not None ) and ( affiliation_value != "" ) ):
-        
-            # got something.
-            value_OUT = True
-            
-        #-- END check to see if found an affiliation --#
-        
-        return value_OUT
-        
-    #-- END method is_staff_author_string() --#
-    
-
     #===========================================================================
     # __init__() method
     #===========================================================================
@@ -1643,33 +1566,6 @@ class DTNB( LoggingHelper ):
     #-- END method clean_up_author_info() --#
                                 
 
-    def get_exception_helper( self ):
-
-        '''
-        Returns this instance's ExceptionHelper instance.  If no value, returns None.
-        '''
-        
-        # return reference
-        value_OUT = None
-
-        # declare variables
-
-        # get value.
-        value_OUT = self.exception_helper
-        
-        # got anything?
-        if ( ( value_OUT is None ) or ( value_OUT == "" ) ):
-        
-            # no - return None.
-            value_OUT = None
-            
-        #-- END check to see if we have a value. --#
-
-        return value_OUT
-
-    #-- END get_exception_helper() --#
-
-
     def fix_author_info( self, article_qs_IN, ignore_cleanup_status_IN = False, *args, **kwargs ):
         
         '''
@@ -1752,59 +1648,6 @@ class DTNB( LoggingHelper ):
     #-- END method fix_author_info() --#
 
 
-    def remove_affiliation_from_author_string( self, author_string_IN, *args, **kwargs ):
-
-        # return reference
-        value_OUT = ""
-        
-        # declare variables
-        author_string = ""
-        author_string_affiliation = ""
-        author_string_work = None
-
-        # got an author_string_IN?
-        if ( ( author_string_IN is not None ) and ( author_string_IN != "" ) ):
-            
-            author_string = author_string_IN
-            
-            # look for known affiliations in string passed in.
-            author_string_affiliation = self.find_affiliation_in_string( author_string )
-            if ( ( author_string_affiliation is not None )
-                and ( author_string_affiliation != "" ) ):
-                        
-                # author affiliation is in the author_string.                      
-                
-                # Remove author_string_affiliation from author_string...
-                author_string_work = author_string.replace( author_string_affiliation, "" )
-
-                # ...also remove any semi-colons...
-                author_string_work = author_string_work.replace( ";", "" )
-
-                # ...and remove white space.
-                author_string_work = author_string_work.strip()
-                
-                # return this.
-                value_OUT = author_string_work
-                
-            else:
-            
-                # no affiliations found.  return what was passed in.
-                value_OUT = author_string
-            
-            #-- END check to see if affiliation in author_string --#
-            
-        else:
-        
-            # nothing passed in.  Return it.
-            value_OUT = author_string_IN
-        
-        #-- END check to see if author_string passed in. --#
-        
-        return value_OUT
-
-    #-- END method remove_affiliation_from_author_string() --#
-
-    
     def reset_analysis_variables( self ):
         
         # clear out article count variables.
@@ -1844,27 +1687,4 @@ class DTNB( LoggingHelper ):
     #-- END method reset_analysis_variables() --#
 
     
-    def set_exception_helper( self, value_IN ):
-
-        '''
-        Accepts an ExceptionHelper instance, stores value passed in, returns the
-           value.
-        '''
-        
-        # return reference
-        value_OUT = None
-
-        # declare variables
-
-        # store value.
-        self.exception_helper = value_IN
-        
-        # get return value
-        value_OUT = self.get_exception_helper()
-
-        return value_OUT
-
-    #-- END set_exception_helper() --#
-
-
 #-- END class DTNB --#
