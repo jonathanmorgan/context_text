@@ -572,6 +572,10 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         do_save_article = True
         do_save_data = False
         my_json_note = None
+
+        # declare variables - exception handling
+        exception_details = None
+        exception_details_as_string = None
         
         # get logger
         my_logger = self.get_logger()
@@ -678,7 +682,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         
                             # ! problem parsing JSON - log body of article,
                             #     response, and exception.
-                            exception_message = "ValueError parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - raw response body: " + requests_raw_text
+                            exception_message = "ValueError parsing OpenCalais JSON for Article {} - raw response body: {}".format( article_IN.id, requests_raw_text )
                             print( exception_message )
                             
                             # log details
@@ -688,7 +692,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             my_exception_helper.process_exception( ve, exception_message )
                             
                             # set status on article data to service_error
-                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            article_data.set_status( Article_Data.STATUS_SERVICE_ERROR, exception_message )
+                            article_data.save()
                             
                             # let rest of program know it is not OK to proceed.
                             is_response_OK = False
@@ -709,14 +714,15 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                         
                             # unknown problem parsing JSON - log body of article,
                             #    response, and exception.
-                            exception_message = "Exception ( " + str( e ) + " ) parsing OpenCalais JSON for Article " + str( article_IN.id ) + " - " + requests_raw_text
+                            exception_message = "Exception ( {} ) parsing OpenCalais JSON for Article {} - raw response body: {}".format( e, article_IN.id, requests_raw_text )
                             my_logger.debug( "\n ! " + exception_message )
                             my_logger.debug( "\n ! article text:\n" + request_data )
                             my_logger.debug( "\n ! response text:\n" + requests_raw_text )
                             my_exception_helper.process_exception( e, exception_message )
                             
                             # set status on article data to service_error
-                            article_data.status = Article_Data.STATUS_SERVICE_ERROR
+                            article_data.set_status( Article_Data.STATUS_SERVICE_ERROR, exception_message )
+                            article_data.save()
                             
                             # let rest of program know it is not OK to proceed.
                             is_response_OK = False
@@ -832,8 +838,10 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     except Exception as e:
                     
                         # set status on article data to unknown_error and save().
-                        exception_message = "In OpenCalaisV2ArticleCoder." + me + "(): Unexpected exception caught while processing Article " + str( article_IN.id ) + ".  Exception: " + str( e )
-                        article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_message )
+                        exception_message = "In OpenCalaisV2ArticleCoder.{}(): Unexpected exception caught while processing Article {}.".format( me, article_IN.id )
+                        exception_details = my_exception_helper.build_exception_details( e, exception_message )
+                        exception_details_as_string = exception_details.get( my_exception_helper.DETAILS_AS_STRING, None )
+                        article_data.set_status( Article_Data.STATUS_UNKNOWN_ERROR, exception_details_as_string )
                         article_data.save()
                         
                         # unknown problem processing article
@@ -1346,7 +1354,16 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
             
             # then, call find_in_text (FIT) method on mention plus suffix (to
             #    make sure we get the right "he", for example).
-            find_string = mention_exact + mention_suffix
+            find_string = mention_exact
+            
+            # is suffix None?
+            if ( mention_suffix is not None ):
+                
+                # not None, add it.
+                find_string += mention_suffix
+                
+            #-- END check to see if suffix is None --#
+
             mention_FIT_values = article_text.find_in_text( find_string )
             
             # Validate results.
@@ -1405,7 +1422,16 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                 is_ok_to_update = True
 
                 # to start, make sure the text is in the article.
-                find_full_string = mention_prefix + mention_exact + mention_suffix
+                find_full_string = mention_prefix + mention_exact
+                
+                # is suffix None?
+                if ( mention_suffix is not None ):
+                    
+                    # not None, add it.
+                    find_full_string += mention_suffix
+                    
+                #-- END check to see if suffix is None --#
+
                 found_list = article_text.find_in_plain_text( find_full_string )
                 found_list_count = len( found_list )
                 if ( found_list_count == 1 ):
@@ -1420,7 +1446,16 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                     #-----------------------------------------------------------
 
                     # get actual plain text index (no prefix)
-                    find_string = mention_exact + mention_suffix
+                    find_string = mention_exact
+                    
+                    # is suffix None?
+                    if ( mention_suffix is not None ):
+                        
+                        # not None, add it.
+                        find_string += mention_suffix
+                        
+                    #-- END check to see if suffix is None --#
+                    
                     found_list = article_text.find_in_plain_text( find_string )
                     found_list_count = len( found_list )
                     if ( found_list_count == 1 ):

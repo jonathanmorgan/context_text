@@ -1266,6 +1266,7 @@ class Article( Abstract_Context_With_JSON ):
         query_item = None
         
         # do DISTINCT?
+        distinct_work_qs = None
         article_id_list = None
         duplicate_count = -1
         current_article = None
@@ -1650,7 +1651,7 @@ class Article( Abstract_Context_With_JSON ):
         my_logger.debug( "In {}(): article_id_in_list_IN = {}".format( me, article_id_in_list_IN ) )
 
         # evaluated?
-        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        is_queryset_evaluated = QuerySetHelper.is_queryset_evaluated( qs_OUT )
         my_logger.debug( "----> In " + me + "(): before applying list of Q() objects, is QS evaluated?: {}".format( is_queryset_evaluated ) )
         
         # now, add them all to the QuerySet - try a loop
@@ -1662,7 +1663,7 @@ class Article( Abstract_Context_With_JSON ):
         #-- END loop over query set items --#
         
         # evaluated?
-        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        is_queryset_evaluated = QuerySetHelper.is_queryset_evaluated( qs_OUT )
         my_logger.debug( "----> In " + me + "(): after applying list of Q() objects, is QS evaluated?: {}".format( is_queryset_evaluated ) )
         
         #-----------------------------------------------------------------------
@@ -1675,12 +1676,14 @@ class Article( Abstract_Context_With_JSON ):
             # do DISTINCT
             # qs_OUT.distinct() - doesn't work.
             
+            distinct_work_qs = qs_OUT.order_by( "id" )
+            
             # init ID set.
             article_id_list = []
             duplicate_count = 0
             
             # loop over results:
-            for current_article in qs_OUT:
+            for current_article in distinct_work_qs:
             
                 # get ID
                 current_article_id = current_article.id
@@ -1720,7 +1723,7 @@ class Article( Abstract_Context_With_JSON ):
         #-- END check to see if we do DISTINCT --#
         
         # evaluated?
-        is_queryset_evaluated = QuerysetHelper.is_queryset_evaluated( qs_OUT )
+        is_queryset_evaluated = QuerySetHelper.is_queryset_evaluated( qs_OUT )
         my_logger.debug( "----> In " + me + "(): after potential DISTINCT check, is QS evaluated?: {}".format( is_queryset_evaluated ) )
 
         return qs_OUT

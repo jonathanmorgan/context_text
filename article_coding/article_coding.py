@@ -195,20 +195,22 @@ class ArticleCoding( ContextTextBase ):
                ArticleCoder class for coder_type passed in, places the query set
                in it, sets up its instance variables appropriately according to
                the request, then codes the attribution in the articles using the
-               coder class.  Returns status message.  Results in Article_Data for
+               coder class.  Returns status message.  Results in Article_Data
+               for each article that then contains Article_Subject instances for
                each attribution detected by the coder in each article.  Checks
                for the attribution to already have been detected using article,
                paragraph number, etc.  If so, does not create an additional
-               Article_Data instance (could add a flag for this later if
+               Article_Subject instance (could add a flag for this later if
                needed...).
             Preconditions: assumes that we have a query set of Articles passed
                in that we can store in the instance.  If not, does nothing,
                returns empty string.
             Postconditions: Returns status message.  Results in Article_Data for
+               for each article that then contains Article_Subject instances for
                each attribution detected by the coder in each article.  Checks
                for the attribution to already have been detected using article,
                paragraph number, etc.  If so, does not create an additional
-               Article_Data instance (could add a flag for this later if
+               Article_Subject instance (could add a flag for this later if
                needed...).
 
             Parameters:
