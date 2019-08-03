@@ -175,8 +175,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         # rate-limiting
         self.do_manage_time = True
         #self.rate_limit_in_seconds = 0.25
-        self.rate_limit_in_seconds = 2  # API doc says you can make 4 requests per second, but if you do, you start to get errors about too many concurrent requests.  EVery 2 seconds seems to not result in errors.
-        self.rate_limit_daily_limit = 10000
+        self.rate_limit_in_seconds = 3  # API doc says you can make 4 requests per second, but if you do, you start to get errors about too many concurrent requests.  EVery 3 seconds seems to not result in errors.
+        self.rate_limit_daily_limit = 5000
     
         # set application string (for LoggingHelper parent class: (LoggingHelper -->
         #    BasicRateLimited --> ArticleCoder --> OpenCalaisV2ArticleCoder).
