@@ -59,7 +59,7 @@ admin.site.register( Topic )
 #admin.site.register( Person_Organization )
 #admin.site.register( Person_External_UUID )
 admin.site.register( Document )
-admin.site.register( Newspaper )
+#admin.site.register( Newspaper )
 #admin.site.register( Article )
 #admin.site.register( Article_Author )
 #admin.site.register( Article_Location )
@@ -101,6 +101,38 @@ class OrganizationAdmin( admin.ModelAdmin ):
 #-- END OrganizationAdmin admin model --#
 
 admin.site.register( Organization, OrganizationAdmin )
+
+
+#-------------------------------------------------------------------------------
+# Newspaper admin definition
+#-------------------------------------------------------------------------------
+
+
+class NewspaperAdmin( admin.ModelAdmin ):
+
+    fieldsets = [
+        (
+            None,
+            { 
+                'fields' : [ 'name', 'description', 'organization', 'newsbank_code', 'sections_local_news', 'sections_sports' ]
+            }
+        ),
+    ]
+
+    #inlines = [
+    #    Source_OrganizationInline,
+    #]
+
+    list_display = ( 'id', 'name', 'newsbank_code', 'description' )
+    #list_display_links = ( 'headline', )
+    #list_filter = [ 'location' ]
+    search_fields = [ 'name', 'description', 'newsbank_code', 'sections_local_news', 'sections_sports', 'id' ]
+    #date_hierarchy = 'pub_date'
+
+#-- END OrganizationAdmin admin model --#
+
+admin.site.register( Newspaper, NewspaperAdmin )
+
 
 #-------------------------------------------------------------------------------
 # Person admin definition
