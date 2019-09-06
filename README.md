@@ -6,87 +6,18 @@ context_text is a django application for capturing and analyzing networks of new
 
 # Installation and configuration
 
-## OS packages
+Below, there used to be detailed instructions for installing all the things to get django running on apache with a PostgreSQL database backend on an Ubuntu server (these are preserved for reference in `archive/README-manual_install.md`.  Now, I've created ansible scripts with all the steps that you can configure and run against Ubuntu 18.04 or 16.04 (VM, cloud server, or physical machine).
 
-If you want to make use of the "lxml" python package, you might need some operating system libraries installed so it will compile.
+These scripts are in my "ansible-patterns" repository: [https://github.com/jonathanmorgan/ansible-patterns](https://github.com/jonathanmorgan/ansible-patterns)
 
-On Ubuntu, for example, you'll need:
+These ansible scripts can also be used to just setup a server with virtualenvwrapper, postgresql, apache, django, jupyterhub, and R, without context.  See the readme for detailed instructions.
 
-- libxml2
-- libxml2-dev
-- libxslt1-dev
+Chances are I'll make dockerfile(s) for this eventually, too, but for now, there's ansible.
 
-to install:
-
-    sudo apt-get install libxml2 libxml2-dev libxslt1-dev
-
-If you want to use a YAML API, you'll also need to install libyaml and libyaml-dev. The easiest way to do this is to just install libyaml-dev, and let it pull in dependencies:
-
-    sudo apt-get install libyaml-dev
-
-## virtualenv and virtualenvwrapper
-
-if you are on a shared or complicated server (and who isn't, really?), using virtualenv and virtualenvwrapper to create isolated python environments for specific applications can save lots of headaches.  To do this:
-
-- Detailed documentation: [http://virtualenvwrapper.readthedocs.org/en/latest/install.html](http://virtualenvwrapper.readthedocs.org/en/latest/install.html)
-
-- first, install virtualenv and virtualenvwrapper in all the versions of python you might use:
-
-    - `(sudo) pip install virtualenv`
-    - `(sudo) pip install virtualenvwrapper`
-    
-- next, you'll need to update environment variables (assuming linux, for other OS, see documentation at link above).  Add the following to your shell startup file (on ubuntu, .bashrc is invoked by .profile, so I do this in .bashrc):
-
-        export WORKON_HOME=$HOME/.virtualenvs
-        export PROJECT_HOME=$HOME/work/vew-projects
-        source /usr/local/bin/virtualenvwrapper.sh
-
-- restart your shell so these settings take effect.
-
-- use virtualenvwrapper to create a virtualenv for context_text:
-
-        # for system python:
-        mkvirtualenv context_text --no-site-packages
-
-        # if your system python is python 2, and you want to use python 3 (context_text supports both, and I am working in 3 now, so it will be more reliabily un-buggy):
-        mkvirtualenv context_text --no-site-packages -p /usr/bin/python3
-
-- activate the virtualenv
-
-        workon context_text
-        
-- now you are in a virtual python environment independent of the system's.  If you do this, in the examples below, you don't need to use `sudo` when you use pip, etc.
+I've left in a few notes below, regarding different package and installation choices, but the best doc is the ansible repo.
 
 ## Python packages
 
-To start, the only Python package you need to install is django:
-
-- activate your virtualenv if you are using one.
-- install django using pip: `(sudo) pip install django`
-
-As you install the different github projects that make up context_text, you'll need to also install the Python packages they require.
-
-The most efficient way to do this is to use the `requirements.txt` file in each project.  For example, inside the context_text project, the requirements.txt file is a list of all the Python packages that context_text needs to function.  It is the up-to-date list of what you need.  It assumes you will use postgresql and so includes psycopg2.  To install requirements using requirements.txt from this repository:
-
-- activate your virtualenv if you are using one.
-- install django using pip: `(sudo) pip install django`
-- continue on in this guide until you have downloaded and installed context_text from github, then:
-- `(sudo) pip install -r context_text/requirements.txt`
-- you could also just grab requirements.txt from github on its own, then use the above command right now!: [https://github.com/jonathanmorgan/context_text/blob/master/requirements.txt](https://github.com/jonathanmorgan/context_text/blob/master/requirements.txt)
-
-For reference, below are some of the main packages context_text uses, but this list is not up-to-date, and I'd recommend just using requirements.txt files to install packages, rather than installing them individually.
-
-- required python packages (install with pip):
-
-    - django - `(sudo) pip install django` - 1.10.X - latest 1.4.X, 1.5.X, 1.6.X, 1.7.X, 1.8.X, or 1.9.X might work, too, but django moves fast, you'd be wise to try to get to current.  Migrations require 1.7.X or greater - south migrations are no longer being updated.
-    - nameparser - `(sudo) pip install nameparser`
-    - bleach - `(sudo) pip install bleach`
-    - beautiful soup 4 - `(sudo) pip install beautifulsoup4`
-    - django-ajax-selects - `(sudo) pip install django-ajax-selects`
-    - requests - `(sudo) pip install requests`
-    - django-taggit - `(sudo) pip install django-taggit`
-    - w3lib - `(sudo) pip install w3lib`
-    
 - depending on database:
 
     - postgresql - psycopg2 - Before you can connect to Postgresql with this code, you need to do the following (based on [http://initd.org/psycopg/install/](http://initd.org/psycopg/install/)):
@@ -100,11 +31,6 @@ For reference, below are some of the main packages context_text uses, but this l
 
             - install the MySQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libmysqlclient-dev) ( [source](http://codeinthehole.com/writing/how-to-set-up-mysql-for-python-on-ubuntu/) ).
             - install the mysqlclient python package using pip (`(sudo) pip install mysqlclient`).
-            
-        - OR pymysql (coming soon)
-        
-            - install the pymysql python package using pip (`(sudo) pip install pymysql`).
-
 
 - python packages that I find helpful:
 
@@ -123,72 +49,9 @@ For reference, below are some of the main packages context_text uses, but this l
         
         - You can also use python_utilities.network.http_helper.Http_Helper to connect directly (or requests package) see the sample code in /examples/NLP/OpenCalais_API.py for more details.
 
-## Install "research" django project
-
-- install a django project named "research" (or whatever you want, but I use "research" throughout as an example).
-
-    - In the folder where you want your project, run:
-
-            django-admin.py startproject research
-
-    - This creates the following folder structure and files (among others):
-
-            /research
-                manage.py
-                /research
-                    settings.py
-
-## Install the actual context_text django application, plus dependencies
-
-- context_text
-
-    - cd into your django project directory, then clone the context_text application from github into your django project directory using the git program:
-
-            cd research
-            git clone https://github.com/jonathanmorgan/context_text.git
-            
-        - at this point, if you only installed django and want to install the rest of the required Python packages using requirements.txt, do the following:
-        
-            - cd into the "context_text" folder you just checked out: `cd context_text`
-            - run the following `pip` command to install all packages listed in requirements.txt:
-            
-                    (sudo) pip install -r requirements.txt
-                    
-            - or just run `(sudo) pip install -r context_text/requirements.txt`
-
-- python_utilities
-
-    - You'll also need:python\_utilities.  Clone python\_utilities into the research folder alongside context_text:
-
-            git clone https://github.com/jonathanmorgan/python_utilities.git
-
-    - install requirements
-
-            (sudo) pip install -r python_utilities/requirements.txt
-
-- django_config
-
-    - And you'll need django\_config.  Clone django\_config into the research folder alongside context_text:
-
-            git clone https://github.com/jonathanmorgan/django_config.git
-
-    - install requirements
-
-            (sudo) pip install -r django_config/requirements.txt
-
-- django_messages
-
-    - And you'll need django\_messages.  Clone django\_messages into the research folder alongside context_text:
-
-            git clone https://github.com/jonathanmorgan/django_messages.git
-
-    - install requirements
-
-            (sudo) pip install -r django_messages/requirements.txt
-
 ## settings.py - Configure logging, database, applications:
 
-The following are all changes to the django settings file in your django project.  If  you created a project named "research", this will be located at `research/research/settings.py`.  You'll configure logging, database information, and applications, then you'll save the file and initialize the database.  Make sure to save the file once you are done making changes.
+The following are some django settings you might want to tweak in the settings.py file in your django project.  If you created a project named "research", this will be located at `research/research/settings.py`.
 
 ### logging
 
@@ -286,689 +149,127 @@ More information:
 - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
 - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
-### applications
+# Testing
 
-Edit the `research/research/settings.py` file and add '`context_text`', '`django_config`', '`django_messages`', and '`taggit`' to your list of INSTALLED\_APPS using the new django Config classes (stored by default in apps.py in the root of the application), rather than the app name:
-
-    INSTALLED_APPS = [
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.sites',
-        'django.contrib.messages',
-        'django.contrib.staticfiles',
-        # Uncomment the next line to enable the admin:
-        'django.contrib.admin',
-        # Uncomment the next line to enable admin documentation:
-        # 'django.contrib.admindocs',
-        'context_text.apps.context_textConfig',
-        'django_config.apps.Django_ConfigConfig',
-        'django_messages.apps.DjangoMessagesConfig',
-        'taggit',
-    ]
-
-- ARCHIVE - the old way, using just the application name:
-
-        INSTALLED_APPS = [
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django.contrib.sessions',
-            'django.contrib.sites',
-            'django.contrib.messages',
-            'django.contrib.staticfiles',
-            # Uncomment the next line to enable the admin:
-            'django.contrib.admin',
-            # Uncomment the next line to enable admin documentation:
-            # 'django.contrib.admindocs',
-            'context_text',
-            'django_config',
-            'django_messages',
-            'taggit',
-        ]
-
-- add settings properties that tell django how to log people in and out.  Example:
-
-        # login configuration
-        LOGIN_URL = '<apache_URL_path_to_django_project>/research/context_text/accounts/login/'
-        LOGIN_REDIRECT_URL = '<apache_URL_path_to_django_project>/context_text/output/network/'
-        LOGOUT_URL = '/'
-
-    The following sample assumes that you'll follow the examples later on how to configure apache, and so serve the django context_text application from an apache directory named "context_text".  If you choose a different directory, you'll need to adjust these properties' values accordingly.
-
-        # login configuration
-        LOGIN_URL = '/research/context_text/accounts/login/'
-        LOGIN_REDIRECT_URL = '/research/context_text/output/network/'
-        LOGOUT_URL = '/'
-
-- set the SESSION_COOKIE_NAME to context_text.
-
-        SESSION_COOKIE_NAME = 'context_text'
-
-- save the file.
-    
-### initialize the database
-
-Once you've made the changes above, save the `settings.py` file, then go into the `research` directory where manage.py is installed.
-
-First, to test if your database settings are correct, just try listing out pending database migrations:
-
-    python manage.py showmigrations
-
-If that fails, the error messages should tell you about any database configuration issues you need to address.  Once it succeeds and lists out migrations that need to run, run the migrations to create database tables:
-
-    python manage.py migrate
-
-Once the database tables are created, you'll want to make a django admin user at this point, as well, making a note of username and password.  You'll need it later.
-
-    python manage.py createsuperuser
-
-
-## Enable django admins:
-        
-- Install apache and mod-wsgi (as root):
-
-    - you need to install a web server on your machine (apache works well).
-
-            (sudo) apt-get install apache2
-
-    - configure it so it can run python WSGI applications.  For apache, install mod_wsgi:
-    
-        - for python 2:
-
-                (sudo) apt-get install libapache2-mod-wsgi
-
-        - for python 3:
-
-                (sudo) apt-get install libapache2-mod-wsgi-py3
-
-        then enable it (in recent versions of ubuntu, this might already have been done when it installed):
-
-            (sudo) a2enmod wsgi
-
-        and restart apache:
-
-            (sudo) service apache2 restart
-
-- Update your django project's `wsgi.py` file to reflect your Python environment:
-
-    - NOTE: the `wsgi.py` file lives in your django project's configuration folder.  This folder sits inside the project folder, and is named the same as the project folder.  So, if you followed the example above and named your django project "research", your wsgi.py file will be at path `<path_to_django_project_parent>/research/research/wsgi.py`.
-    - In `wsgi.py`, add a line that adds your project's directory to the python path:
-
-        - add an import of the `sys` package to the imports at the top:
-
-                import sys
-
-        - Add, just after the imports, add the project directory to the PYTHONPATH:
-
-                # Add the app's directory to the PYTHONPATH
-                sys.path.append( '<path_to_django_project_parent>/research' )
-            
-            WHERE:
-
-            - `<path_to_django_project_parent>` is the path of the folder where you used the `django-admin.py startproject research` command to create your django project.
-
-    - If you are using virtualenv:
-    
-        - import the `six` and `site` packages in the imports at the top:
-        
-                import site
-                import six
-                
-        - Just after the code where you added your project's path to the PYTHONPATH, add the `site-packages` of the desired virtualenv:
-                
-                # Add the site-packages of the desired virtualenv
-                site.addsitedir( '<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages' )
-        
-            WHERE:
-
-            - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
-            - `<virtualenv_name>` is the name of the virtualenv you created for context_text.
-
-        - Then, just after the line where the `DJANGO_SETTINGS_MODULE` environment variable is set, activate your virtualenv.  First, get the path to your activate_this.py file:
-        
-                # Activate your virtualenv
-                
-                # First get path to activate_this.py
-                activate_this = os.path.expanduser( "<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name>/bin/activate_this.py" )
-
-            WHERE (again):
-
-            - `<.virtualenvs_parent_dir>` is your operating system user's home folder, inside which virtualenvwrapper creates a `.virtualenvs` folder.
-            - `<virtualenv_name>` is the name of the virtualenv you created for context_text.
-
-            Then, execute the code in that file:
-            
-            - Python 2:
-        
-                    execfile( activate_env, dict( __file__ = activate_env ) )
-        
-            - Python 3:
-            
-                    # open and execute file manually... cuz Python 3.
-                    with open( activate_this ) as activate_this_file:
-                        
-                        # compile code
-                        activate_code = compile( activate_this_file.read(), activate_this, 'exec')
-                        
-                        # run the code
-                        exec( activate_code, dict( __file__ = activate_this ) )
-                    
-                    #-- END open( activate_this ) --#
-
-        - assuming you named your virtualenv "context_text" and your django project "research", below are examples of how it all should look.
-        
-            - for Python 2:
-            
-                    """
-                    WSGI config for research project.
-                    
-                    It exposes the WSGI callable as a module-level variable named ``application``.
-                    
-                    For more information on this file, see
-                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
-                    """
-                    
-                    '''
-                    # Uncomment this and comment out the rest of the file when getting:
-                    #    "RuntimeError: populate() isn't reentrant"
-                    import os
-                    def application(environ, start_response):
-                        if environ['mod_wsgi.process_group'] != '': 
-                            import signal
-                            os.kill(os.getpid(), signal.SIGINT)
-                        return ["killed"]
-                    '''
-                    
-                    # import
-                    import os
-                    import sys
-                    import site
-                    
-                    # declare variables
-                    virtualenv_parent_dir = ""
-                    path_to_django_project_parent = ""
-                    virtualenv_python2 = ""
-                    temp_path = ""
-                    
-                    # configure
-                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
-                    path_to_django_project_parent = "<path_to_django_project_parent>"
-                    virtualenv_python2 = "<virtualenv_python2>"
-                    
-                    # Add the app's directory to the PYTHONPATH
-                    temp_path = path_to_django_project_parent + "/research"
-                    sys.path.append( temp_path )
-                    
-                    # Set DJANGO_SETTINGS_MODULE
-                    os.environ.setdefault( "DJANGO_SETTINGS_MODULE", "research.settings" )
-                    
-                    # Add the site-packages of the desired virtualenv
-                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/local/lib/python2.7/site-packages"
-                    site.addsitedir( temp_path )
-                
-                    # Activate your virtualenv
-                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/bin/activate_this.py"
-                    activate_this = os.path.expanduser( temp_path )
-                
-                    # in Python 2, just use execfile()
-                    execfile( activate_this, dict( __file__ = activate_this ) )
-                    
-                    # import django stuff - it is installed in your virtualenv, so you must import
-                    #     after activating virtualenv.
-                    from django.core.wsgi import get_wsgi_application
-                    
-                    # load django application
-                    application = get_wsgi_application()
-
-            - for Python 3:
-
-                    """
-                    WSGI config for research project.
-                    
-                    It exposes the WSGI callable as a module-level variable named ``application``.
-                    
-                    For more information on this file, see
-                    https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
-                    """
-                    
-                    '''
-                    # Uncomment this and comment out the rest of the file when getting:
-                    #    "RuntimeError: populate() isn't reentrant"
-                    import os
-                    def application(environ, start_response):
-                        if environ['mod_wsgi.process_group'] != '': 
-                            import signal
-                            os.kill(os.getpid(), signal.SIGINT)
-                        return ["killed"]
-                    '''
-                    
-                    # import
-                    import os
-                    import sys
-                    import site
-                    
-                    # declare variables
-                    virtualenv_parent_dir = ""
-                    path_to_django_project_parent = ""
-                    virtualenv_python3 = ""
-                    temp_path = ""
-                    
-                    # configure
-                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
-                    path_to_django_project_parent = "<path_to_django_project_parent>"
-                    virtualenv_python3 = "<virtualenv_python3>"
-                    
-                    # Add the app's directory to the PYTHONPATH
-                    temp_path = path_to_django_project_parent + "/research"
-                    sys.path.append( temp_path )
-                    
-                    # Set DJANGO_SETTINGS_MODULE
-                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
-
-                    # Add the site-packages of the desired virtualenv
-                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/lib/python3.5/site-packages"
-                    site.addsitedir( temp_path )
-                
-                    # Activate your virtualenv
-                    temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/bin/activate_this.py"
-                    activate_this = os.path.expanduser( temp_path )
-
-                    # open and execute file manually... cuz Python 3.
-                    with open( activate_this ) as activate_this_file:
-                        
-                        # compile code
-                        activate_code = compile( activate_this_file.read(), activate_this, 'exec')
-                        
-                        # run the code
-                        exec( activate_code, dict( __file__ = activate_this ) )
-                    
-                    #-- END open( activate_this ) --#
-                    
-                    # import django stuff - it is installed in your virtualenv, so you must import
-                    #     after activating virtualenv.
-                    from django.core.wsgi import get_wsgi_application
-                    
-                    # load django application
-                    application = get_wsgi_application()
-
-            - and a bonus one that works with both Pythons 2 and 3 (the package `six` must be installed in your system's Python, not just in a virtualenv):
-        
-                    """
-                    WSGI config for research project.
-                    
-                    It exposes the WSGI callable as a module-level variable named ``application``.
-                    
-                    For more information on this file, see
-                    https://docs.djangoproject.com/en/1.10/howto/deployment/wsgi/
-                    """
-                    
-                    '''
-                    # Uncomment this and comment out the rest of the file when getting:
-                    #    "RuntimeError: populate() isn't reentrant"
-                    import os
-                    def application(environ, start_response):
-                        if environ['mod_wsgi.process_group'] != '': 
-                            import signal
-                            os.kill(os.getpid(), signal.SIGINT)
-                        return ["killed"]
-                    '''
-
-                    # imports
-                    import os
-                    import sys
-                    import site
-                    import six
-                    
-                    # declare variables
-                    virtualenv_parent_dir = ""
-                    path_to_django_project_parent = ""
-                    virtualenv_python2 = ""
-                    virtualenv_python3 = ""
-                    temp_path = ""
-                    
-                    # configure
-                    virtualenv_parent_dir = "<.virtualenvs_parent_dir>"
-                    path_to_django_project_parent = "<path_to_django_project_parent>"
-                    virtualenv_python2 = "<virtualenv_python2>"
-                    virtualenv_python3 = "<virtualenv_python3>"
-                    
-                    # Add the app's directory to the PYTHONPATH
-                    temp_path = path_to_django_project_parent + "/research"
-                    sys.path.append( temp_path )
-                    
-                    # Set DJANGO_SETTINGS_MODULE
-                    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "research.settings")
-                    
-                    # Activate your virtualenv - controlled by which mod_wsgi is
-                    #     installed - compiled for Python 2 or for Python 3.
-                    if ( six.PY2 == True ):
-                    
-                        # Add the site-packages of the desired virtualenv
-                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/local/lib/python2.7/site-packages"
-                        site.addsitedir( temp_path )
-                    
-                        # Activate your virtualenv
-                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python2 + "/bin/activate_this.py"
-                        activate_this = os.path.expanduser( temp_path )
-                    
-                        # in Python 2, just use execfile()
-                        execfile( activate_this, dict( __file__ = activate_this ) )
-                    
-                    elif ( six.PY3 == True ):
-                    
-                        # Add the site-packages of the desired virtualenv
-                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/lib/python3.5/site-packages"
-                        site.addsitedir( temp_path )
-                    
-                        # Activate your virtualenv
-                        temp_path = virtualenv_parent_dir + "/.virtualenvs/" + virtualenv_python3 + "/bin/activate_this.py"
-                        activate_this = os.path.expanduser( temp_path )
-                    
-                        # open and execute file manually... cuz Python 3.
-                        with open( activate_this ) as activate_this_file:
-                    
-                            # compile code
-                            activate_code = compile( activate_this_file.read(), activate_this, 'exec')
-                    
-                            # run the code
-                            exec( activate_code, dict( __file__ = activate_this ) )
-                    
-                        #-- END open( activate_this ) --#
-                    
-                    #-- END code to deal with execfile() being removed from python 2 --#
-                    
-                    # import django stuff - it is installed in your virtualenv, so you must import
-                    #     after activating virtualenv.
-                    from django.core.wsgi import get_wsgi_application
-                    
-                    # load django application
-                    application = get_wsgi_application()
-
-            If you use any of these samples, make sure to replace:
-
-            - `<.virtualenvs_parent_dir>` with the full path to the directory in which your virtualenvwrapper .virtualenvs folder lives (usually your user's home directory).
-            - `<path_to_django_project_parent>` with the full path to the directory in which you installed your django project.
-            - `<virtualenv_python2>` with the name of your Python 2 virtualenv.
-            - `<virtualenv_python3>` with the name of your Python 3 virtualenv.
-                    
-- configure your web server so it knows of research/research/wsgi.py.  You'll add something like the following to the apache config:
-
-        WSGIApplicationGroup %{GLOBAL}
-        WSGIDaemonProcess context_text-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
-
-        # Python 2:
-        #WSGIDaemonProcess context_text-1 threads=10 display-name=%{GROUP} python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research 
-
-        # set python path as part of WSGIDaemonProcess --> WSGIDaemonProcess context_text-1 ... python-path=
-        # no virualenv
-        # ... python-path=<path_to_django_project_parent>/research
-        # virtualenv, place the root of the virtualenv in a separate python-home property:
-        # ... python-home=<.virtualenvs_parent_dir>/.virtualenvs/<virtualenv_name> python-path=<path_to_django_project_parent>/research
-
-        WSGIProcessGroup context_text-1
-        WSGIScriptAlias /context_text <path_to_django_project_parent>/research/research/wsgi.py process-group=context_text-1
-        
-        <Directory <path_to_django_project_parent>/research/research>
-            <Files wsgi.py>
-                # apache 2.4:
-                Require all granted
-                # apache 2.2 or earlier:
-                #Order deny,allow
-                #Allow from all
-            </Files>
-        </Directory>
-
-    - WHERE:
-        
-        - `<path_to_django_project_parent>` is the directory in which you created the "research" django project.
-        
-        - `<.virtualenvs_parent_dir>` is usually the home directory of your user (`/home/<username>`).
-    
-    - If you are using virtualenv, make sure to add the path to your virtualenv's site-packages to the python-path directive in addition to the site directory, with the paths separated by a colon (the example above is configured this way).  If you use virtualenvwrapper, the path will be something like: `<home_dir>/.virtualenvs/<virtualenv_name>/local/lib/python2.7/site-packages`.
-
-    - If you are using apache 2.2 on ubuntu, I'd put it in `/etc/apache2/conf.d`, in a file named `django-context_text`.
-
-        - make sure to uncomment `Allow from all` in the file above, and comment out `Require all granted`.
-        
-    - If you are using apache 2.4 on ubuntu 13.10 or greater:
-
-        - place this file in /etc/apache2/conf-available, naming it "django-context_text.conf".
-        
-        - enable it with the a2enconf command, then restart apache (just to be safe):
-        
-                (sudo) a2enconf django-context_text
-                (sudo) service apache2 restart
-
-- More details on installing apache and mod_wsgi: [https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/](https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/)
-
-- open up the `settings.py` file in `<project_folder>/research` and:
-
-    - make sure the following are in the INSTALLED_APPS list to get the admins to work.
-
-            'django.contrib.admin',
-            'django.contrib.admindocs',
-            
-    - In django 1.6 and up, the django.contrib.admin line should already be present and uncommented, and you'll have to just add the admindocs line.
-            
-- if 'django.contrib.admin' was commented out and you uncommented it, you'll need to initialize the database for the admins - go into directory where manage.py is installed, and run `python manage.py migrate`.  Make a note of the admin username and password.  You'll need it to log in to the admins.
-    
-    - In django 1.6 and up, the django.contrib.admin application will already be uncommented by default, so you'll have done this above when you "`migrate`"-ed.
-
-- open up the `urls.py` file in the folder where settings.py lives and:
-
-    - in the imports at the top, import the `include` function from `django.conf.urls` if it isn't already imported:
-
-            from django.conf.urls import include
-
-    - add the following line to the urlpatterns variable to complete admin documentation setup:
-
-            url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
-    urls.py should look like the following once you are done:
-
-        """research URL Configuration
-
-        The `urlpatterns` list routes URLs to views. For more information please see:
-            https://docs.djangoproject.com/en/1.9/topics/http/urls/
-        Examples:
-        Function views
-            1. Add an import:  from my_app import views
-            2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-        Class-based views
-            1. Add an import:  from other_app.views import Home
-            2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-        Including another URLconf
-            1. Import the include() function: from django.conf.urls import url, include
-            2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
-        """
-        from django.conf.urls import url
-        from django.conf.urls import include
-        from django.contrib import admin
-
-        urlpatterns = [
-            url(r'^admin/', admin.site.urls),
-            url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-        ]
-
-### Static file support:
-
-- [https://docs.djangoproject.com/en/dev/howto/static-files/](https://docs.djangoproject.com/en/dev/howto/static-files/)
-
-- in your web root, create a folder named "static" directly in your webroot to hold static files for applications (in ubuntu 14.04 and greater, the default webroot is /var/www/html):
-
-        (sudo) mkdir static
-        
-- update the permissions on the static directory so you update them if not root.  You can either do this by making it world readable (potentially a security risk), or you can change the ownership to a group that your user is a member of, then change the permissions to 775 (so group writable, but not world-writable).
-
-        (sudo) chmod 777 static
-        
-        # OR
-        (sudo) chgrp <group_name> static
-        (sudo) chmod 775 static
-
-- open up the `settings.py` file in `<project_folder>/research` and update the STATIC_ROOT variable so it contains the path to the "static" directory you created in teh step above.  Ubuntu example:
-
-        STATIC_ROOT = '/var/www/html/static'
-    
-- run the following command to initialize static files for your applications (have to sudo if the folder is in webroot, owned by root if you changed permissions to 777, should not need `sudo`):
-
-        (sudo) python manage.py collectstatic
-        
-### Test!
+## Basic tests
 
 - test by going to the URL:
 
-        http://<your_server>/context_text/admin/
+        http://<your_server>/research/admin/
 
-- and then logging in with the django superuser you created earlier.
-
-## Enable django-ajax-selects for easy lookup of people, articles, and organizations in coding pages.
-
-- get the admins working.
-
-- add the following to resesarch/settings.py:
-
-    - add 'ajax_select' to your list of INSTALLED\_APPS.  Result:
-
-            INSTALLED_APPS = [
-                'django.contrib.admin',
-                'django.contrib.admindocs',
-                'django.contrib.auth',
-                'django.contrib.contenttypes',
-                'django.contrib.sessions',
-                'django.contrib.messages',
-                'django.contrib.staticfiles',
-                'context_text.apps.context_textConfig',
-                'django_config.apps.Django_ConfigConfig',
-                'taggit',
-                'ajax_select',
-            ]
-        
-    - if you are using django 1.6 or earlier (you shouldn't be, but...) add the following to the bottom of the `settings.py` file (if you are using django 1.7 or greater, it automatically finds the channels defined in context_text/lookups.py):
-    
-            AJAX_LOOKUP_CHANNELS = {
-
-                # the simplest case, pass a DICT with the model and field to search against :
-                #'track' : dict(model='music.track',search_field='title'),
-                # this generates a simple channel
-                # specifying the model Track in the music app, and searching against the 'title' field
-            
-                # or write a custom search channel and specify that using a TUPLE
-                'article' : ( 'context_text.ajax-select-lookups', 'ArticleLookup' ),
-                'organization' : ( 'context_text.ajax-select-lookups', 'OrganizationLookup' ),
-                'person' : ( 'context_text.ajax-select-lookups', 'PersonLookup' ),
-                # this specifies to look for the class `PersonLookup` in the `context_text.ajax-select-lookups` module
-
-            }
-            
-    - regardless of django version, add the following to the bottom of your settings.py file.
-            
-            # magically include jqueryUI/js/css
-            AJAX_SELECT_BOOTSTRAP = True
-            AJAX_SELECT_INLINES = 'inline'    
-
-- add the following to resesarch/urls.py to enable django-ajax-selects URL lookups.
-
-    - Add an import of `ajax_select_urls` from `ajax_select`:
-
-            # django-ajax-selects URLs
-            from ajax_select import urls as ajax_select_urls
-            
-        and add the actual `ajax_select` URLs:
-
-            # django-ajax-select URLs
-            url( r'^admin/lookups/', include( ajax_select_urls ) ),
-
-    - Example Result:
-
-            """research URL Configuration
-
-            The `urlpatterns` list routes URLs to views. For more information please see:
-                https://docs.djangoproject.com/en/1.9/topics/http/urls/
-            Examples:
-            Function views
-                1. Add an import:  from my_app import views
-                2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-            Class-based views
-                1. Add an import:  from other_app.views import Home
-                2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-            Including another URLconf
-                1. Import the include() function: from django.conf.urls import url, include
-                2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
-            """
-            from django.conf.urls import url
-            from django.conf.urls import include
-            from django.contrib import admin
-
-            # django-ajax-selects URLs
-            from ajax_select import urls as ajax_select_urls
-
-            urlpatterns = [
-                url(r'^admin/', admin.site.urls),
-                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
-                # django-ajax-select URLs
-                url( r'^admin/lookups/', include( ajax_select_urls ) ),
-            ]
-                        
-## Enable context_text application pages
-
-- get the admins working.
-- set up `django-ajax-selects`.
-- add a line to resesarch/urls.py to enable the context_text URLs (in `context_text.urls`) to the urlpatterns structure.
-
-    - Add:
-
-            # context_text URLs:
-            url( r'^context_text/', include( 'context_text.urls' ) ),
-
-    - Result:
-
-            """research URL Configuration
-
-            The `urlpatterns` list routes URLs to views. For more information please see:
-                https://docs.djangoproject.com/en/1.9/topics/http/urls/
-            Examples:
-            Function views
-                1. Add an import:  from my_app import views
-                2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-            Class-based views
-                1. Add an import:  from other_app.views import Home
-                2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-            Including another URLconf
-                1. Import the include() function: from django.conf.urls import url, include
-                2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
-            """
-            from django.conf.urls import url
-            from django.conf.urls import include
-            from django.contrib import admin
-
-            # django-ajax-selects URLs
-            from ajax_select import urls as ajax_select_urls
-
-            urlpatterns = [
-                url(r'^admin/', admin.site.urls),
-                url( r'^admin/doc/', include( 'django.contrib.admindocs.urls' ) ),
-
-                # django-ajax-select URLs
-                url( r'^admin/lookups/', include( ajax_select_urls ) ),
-
-                # context_text URLs:
-                url( r'^context_text/', include( 'context_text.urls' ) ),
-            ]
-
-### Test!
-
-- to make sure that your changes are loaded by apache and mod_wsgi, you need to update the modified time stamp on the file `research/wsgi.py`.  To do this, in a command prompt in your project folder:
-
-        touch research/wsgi.py
-
-- test by going to the URL:
+- and then logging in with the django superuser created by ansible scripts.
+- to test coding pages, test by going to the URL:
 
         http://<your_server>/research/context_text/index
 
 - log in with your django superuser user.
 - You should see a home page for context_text with a welcome message and a header that lists out the pages in the context_text application.
+
+## Unit Tests
+
+The context_text project has a small but growing set of unit tests that can be auto-run.  These tests use django's testing framework, based on the Python `unittest` package.
+
+### Configuration
+
+#### OpenCalais API configuration
+
+In order to run unit tests using OpenCalais's API, you'll need to:
+
+- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
+
+    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
+   
+- Get your API token ()
+
+    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
+    - click the "Login" button in the upper right.
+    - log in with your username and password.
+    - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
+
+- Store that token and only that token in a file named "`open_calais_access_token.txt`" in the root of your django project/site (the same folder where `manage.py` lives).
+
+#### Database configuration
+
+In order to run unit tests, your database configuration in `settings.py` will need to be connecting to the database with a user who is allowed to create databases.  When django runs unit tests, it creates a test database, then deletes it once testing is done.
+- _NOTE: This means the database user you use for unit testing SHOULD NOT be the user you'd use in production.  The production database user should not be able to do anything outside a given database._
+
+### Running unit tests
+
+To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
+
+    python manage.py test context_text.tests
+    
+Specific sets of tests:
+
+- OpenCalais API (v.2)
+
+    - test OpenCalais configuration:
+
+            python manage.py test context_text.tests.open_calais.test_open_calais_config
+
+    - test OpenCalais automated coding (assumes configuration tests passed):
+
+            python manage.py test context_text.tests.open_calais.test_open_calais_api 
+
+- ArticleCoder (using ManualArticleCoder)
+
+    - test basic methods in ArticleCoder that are re-used by all coding methods:
+
+            python manage.py test context_text.tests.article_coder.test_article_coder
+
+- ManualArticleCoder
+            
+    - test methods in ManualArticleCoder specific to manual coding:
+
+            python manage.py test context_text.tests.manual_article_coder.test_manual_article_coder
+            
+- context_text model instances:
+
+    - test Article_Data model
+    
+            python manage.py test context_text.tests.models.test_Article_Data_model
+
+    - test Person (and AbstractPerson) model
+    
+            python manage.py test context_text.tests.models.test_Person_model
+
+## Test data
+
+There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
+
+- **_`context_text_unittest_auth_data.json`_** - User data for article-coding comparison.
+- **_`context_text_unittest_django_config_data.json`_** - configuration properties for context_text (in particular, for external APIs).
+- **_`context_text_unittest_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
+- **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
+
+### Using unittest data for development
+
+### Using unittest data for development
+
+- create a database where the unit test data can live.  I usually call it the name of the main production database ("`research`") followed by "`_test`".  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
+
+    - postgresql example, where production database name is "`research`" and database user is "`django_user`":
+
+            CREATE DATABASE research_test;
+            GRANT ALL PRIVILEGES ON DATABASE research_test TO django_user;
+
+- update the DATABASES dictionary in settings.py of the application that contains context_text to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`research_test`" rather than "`research`".
+- cd into your django application's home directory, activate your virtualenv if you created one, then run "`python manage.py migrate`" to create all the tables in the database.
+
+        cd <django_app_directory>
+        workon research
+        python manage.py migrate
+
+- use the command "`python manage.py createsuperuser`" to make an admin user, for logging into the django admins.
+
+        python manage.py createsuperuser
+
+- load the unit test fixtures into the database:
+
+        python manage.py loaddata context_text_unittest_auth_data.json
+        python manage.py loaddata context_text_unittest_django_config_data.json
+        python manage.py loaddata context_text_unittest_data.json
+        python manage.py loaddata context_text_unittest_taggit_data.json
 
 # Collecting Articles
 
@@ -981,12 +282,12 @@ To filter and tag sets of articles, use the page: 'http://<your_server>/research
 This page allows you to filter on:
 
 - Start Date (YYYY-MM-DD)
-- End Date (YYYY-MM-DD):	
-- * Fancy date range:	
-- Publications:	
-- Article Tag List (comma-delimited):	
-- Unique Identifier List (comma-delimited):	
-- Article ID IN List (comma-delimited):	
+- End Date (YYYY-MM-DD):    
+- * Fancy date range:   
+- Publications: 
+- Article Tag List (comma-delimited):   
+- Unique Identifier List (comma-delimited): 
+- Article ID IN List (comma-delimited): 
 - String Section Name IN List (comma-delimited):
 
 Then either see a summary of articles that fit your filter, look at details on each matching article, or apply one or more tags to all of the articles matched by your filter criteria.
@@ -1422,112 +723,6 @@ To import data into UCINet:
 - Select and remove the bottom row for now (it is person types, not ties).
 - Click "Save" in the menu bar, then choose "Save active sheet as UCINET dataset".
 - Choose a name and location to save, and you are done!
-
-# Testing
-
-The context_text project has a small but growing set of unit tests that once can auto-run.  These tests use django's testing framework, based on the Python `unittest` package.
-
-## Unit Tests
-
-### Configuration
-
-#### OpenCalais API configuration
-
-In order to run unit tests using OpenCalais's API, you'll need to:
-
-- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
-
-    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
-   
-- Get your API token ()
-
-    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
-    - click the "Login" button in the upper right.
-    - log in with your username and password.
-    - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
-
-- Store that token and only that token in a file named "`open_calais_access_token.txt`" in the root of your django project/site (the same folder where `manage.py` lives).
-
-#### Database configuration
-
-In order to run unit tests, your database configuration in `settings.py` will need to be connecting to the database with a user who is allowed to create databases.  When django runs unit tests, it creates a test database, then deletes it once testing is done.
-- _NOTE: This means the database user you use for unit testing SHOULD NOT be the user you'd use in production.  The production database user should not be able to do anything outside a given database._
-
-### Running unit tests
-
-To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
-
-    python manage.py test context_text.tests
-    
-Specific sets of tests:
-
-- OpenCalais API (v.2)
-
-    - test OpenCalais configuration:
-
-            python manage.py test context_text.tests.open_calais.test_open_calais_config
-
-    - test OpenCalais automated coding (assumes configuration tests passed):
-
-            python manage.py test context_text.tests.open_calais.test_open_calais_api 
-
-- ArticleCoder (using ManualArticleCoder)
-
-    - test basic methods in ArticleCoder that are re-used by all coding methods:
-
-            python manage.py test context_text.tests.article_coder.test_article_coder
-
-- ManualArticleCoder
-            
-    - test methods in ManualArticleCoder specific to manual coding:
-
-            python manage.py test context_text.tests.manual_article_coder.test_manual_article_coder
-            
-- context_text model instances:
-
-    - test Article_Data model
-    
-            python manage.py test context_text.tests.models.test_Article_Data_model
-
-    - test Person (and AbstractPerson) model
-    
-            python manage.py test context_text.tests.models.test_Person_model
-
-## Test data
-
-There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
-
-- **_`context_text_unittest_auth_data.json`_** - User data for article-coding comparison.
-- **_`context_text_unittest_django_config_data.json`_** - configuration properties for context_text (in particular, for external APIs).
-- **_`context_text_unittest_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
-- **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
-
-### Using unittest data for development
-
-- create a database where the unit test data can live.  I usually call it the name of the main production database ("`context_text`") followed by "`_test`".  Easiest way to do this is to just create the database, then give the same user you use for your production database the same access they have for production for this test database as well.
-
-    - postgresql example, where production database name is "`context_text`" and database user is "`django_user`":
-
-            CREATE DATABASE context_text_test;
-            GRANT ALL PRIVILEGES ON DATABASE context_text_test TO django_user;
-
-- update the DATABASES dictionary in settings.py of the application that contains context_text to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`context_text_test`" rather than "`context_text`".
-- cd into your django application's home directory, activate your virtualenv if you created one, then run "`python manage.py migrate`" to create all the tables in the database.
-
-        cd <django_app_directory>
-        workon context_text
-        python manage.py migrate
-
-- use the command "`python manage.py createsuperuser`" to make an admin user, for logging into the django admins.
-
-        python manage.py createsuperuser
-
-- load the unit test fixtures into the database:
-
-        python manage.py loaddata context_text_unittest_auth_data.json
-        python manage.py loaddata context_text_unittest_django_config_data.json
-        python manage.py loaddata context_text_unittest_data.json
-        python manage.py loaddata context_text_unittest_taggit_data.json
 
 # License
 

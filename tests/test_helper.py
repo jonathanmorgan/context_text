@@ -12,11 +12,6 @@ context_text is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 '''
 
-__author__="jonathanmorgan"
-__date__ ="$January 07, 2016 4:03:35 PM$"
-
-if __name__ == "__main__":
-    print( "Hello World" )
 
 #===============================================================================
 # imports (in alphabetical order by package, then by name)
@@ -34,6 +29,9 @@ from django_config.models import Config_Property
 # python_utilities - logging
 from python_utilities.logging.logging_helper import LoggingHelper
 
+# context imports
+import context.tests.test_helper
+
 # context_text imports
 from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 
@@ -47,7 +45,7 @@ from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder imp
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class TestHelper( object ):
+class TestHelper( context.tests.test_helper.TestHelper ):
 
     
     #----------------------------------------------------------------------------
@@ -61,13 +59,20 @@ class TestHelper( object ):
     FIXTURE_UNIT_TEST_BASE_DATA = "context_text/fixtures/context_text_unittest_data.json"
     FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text/fixtures/context_text_unittest_taggit_data.json"
     
+    # list of fixtures, in order.
+    FIXTURE_LIST = []
+    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_AUTH_DATA )
+    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_CONFIG_PROPERTIES )
+    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_BASE_DATA )
+    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_TAGGIT_DATA )
+    
     # OpenCalais
     OPEN_CALAIS_ACCESS_TOKEN_FILE_NAME = "open_calais_access_token.txt"
 
     # Test user
-    TEST_USER_NAME = "test_user"
-    TEST_USER_EMAIL = "test@email.com"
-    TEST_USER_PASSWORD = "calliope"
+    #TEST_USER_NAME = "test_user"
+    #TEST_USER_EMAIL = "test@email.com"
+    #TEST_USER_PASSWORD = "calliope"
 
     # test authors
     TEST_AUTHOR_1 = "Nate Reems"
@@ -102,95 +107,6 @@ class TestHelper( object ):
     #-----------------------------------------------------------------------------
 
 
-    @classmethod
-    def create_test_user( cls, username_IN = "" ):
-
-        # return reference
-        user_OUT = None
-
-        # declare variables
-        test_user = None
-        test_username = ""
-
-        # do we want non-standard username?
-        if ( ( username_IN is not None ) and ( username_IN != "" ) ):
-
-            test_username = username_IN
-
-        else:
-
-            test_username = cls.TEST_USER_NAME
-
-        #-- END check to see if special user name. --#
-
-        # create new test user
-        test_user = User.objects.create_user( username = test_username,
-                                              email = cls.TEST_USER_EMAIL,
-                                              password = cls.TEST_USER_PASSWORD )
-        test_user.save()
-
-        user_OUT = test_user
-
-        return user_OUT
-
-    #-- END class method create_test_user() --#
-
-
-    @classmethod
-    def get_test_user( cls, username_IN = "" ):
-
-        # return reference
-        user_OUT = None
-
-        # declare variables
-        test_user = None
-        test_username = ""
-
-        # do we want non-standard username?
-        if ( ( username_IN is not None ) and ( username_IN != "" ) ):
-
-            test_username = username_IN
-
-        else:
-
-            test_username = cls.TEST_USER_NAME
-
-        #-- END check to see if special user name. --#
-
-        # try a lookup
-        try:
-
-            # by username
-            user_OUT = User.objects.get( username = test_username )
-        
-        except Exception as e:
-        
-            # create new test user
-            user_OUT = cls.create_test_user()
-
-        #-- END try to get existing test user. --#
-
-        return user_OUT
-
-    #-- END class method get_test_user() --#
-
-
-    @classmethod
-    def load_fixture( cls, fixture_path_IN = "", verbosity_IN = 0 ):
-        
-        # declare variables
-        
-        # got a fixture path?
-        if ( ( fixture_path_IN is not None ) and ( fixture_path_IN != "" ) ):
-        
-            # got a path - try to load it.
-            call_command( 'loaddata', fixture_path_IN, verbosity = verbosity_IN )
-            
-        #-- END check to make sure we have a path --#
-        
-    #-- END function load_fixture() --#
-    
-    
     @classmethod
     def load_open_calais_access_token( cls, directory_path_IN = "" ):
         
@@ -268,32 +184,6 @@ class TestHelper( object ):
     
     
     @classmethod
-    def output_debug( cls, message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
-        
-        '''
-        Accepts message string.  If debug is on, logs it.  If not,
-           does nothing for now.
-        '''
-        
-        # declare variables
-    
-        # got a message?
-        if ( message_IN ):
-        
-            # only print if debug is on.
-            if ( cls.DEBUG == True ):
-            
-                # use Logging Helper to log messages.
-                LoggingHelper.output_debug( message_IN, method_IN, indent_with_IN, logger_name_IN )
-            
-            #-- END check to see if debug is on --#
-        
-        #-- END check to see if message. --#
-    
-    #-- END method output_debug() --#
-    
-    
-    @classmethod
     def standardOpenCalaisSetUp( cls, test_case_IN = None ):
         
         """
@@ -339,99 +229,6 @@ class TestHelper( object ):
         print( "In TestHelper." + me + "(): standardOpenCalaisSetUp complete." )
 
     #-- END function standardOpenCalaisSetUp() --#
-        
-
-    @classmethod
-    def standardSetUp( cls, test_case_IN = None ):
-        
-        """
-        setup tasks.  Call function that we'll re-use.
-        """
-
-        # declare variables
-        me = "standardSetUp"
-        status_instance = None
-        current_fixture = ""
-        
-        print( "\nIn TestHelper." + me + "(): starting standardSetUp." )
-        
-        # see if test case passed in.  If so, set status variables on it.
-        if ( test_case_IN is not None ):
-        
-            # not None, set status variables on it.
-            status_instance = test_case_IN
-            
-        else:
-        
-            # no test case passed in.  Just set on self.
-            status_instance = self
-        
-        #-- END check to see if test case --#
-        
-        # janky way to add variables to instance since you can't override init.
-        status_instance.setup_error_count = 0
-        status_instance.setup_error_list = []
-        
-        # Load auth data fixture
-        current_fixture = cls.FIXTURE_UNIT_TEST_AUTH_DATA
-        try:
-        
-            cls.load_fixture( current_fixture )
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            status_instance.setup_error_count += 1
-            status_instance.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load config property data fixture
-        current_fixture = cls.FIXTURE_UNIT_TEST_CONFIG_PROPERTIES
-        try:
-        
-            cls.load_fixture( current_fixture )
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            status_instance.setup_error_count += 1
-            status_instance.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load base unit test data fixture
-        current_fixture = cls.FIXTURE_UNIT_TEST_BASE_DATA
-        try:
-        
-            cls.load_fixture( current_fixture )
-        
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            status_instance.setup_error_count += 1
-            status_instance.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        # Load taggit tag data fixture
-        current_fixture = cls.FIXTURE_UNIT_TEST_TAGGIT_DATA
-        try:
-        
-            cls.load_fixture( current_fixture )
-
-        except Exception as e:
-        
-            # looks like there was a problem.
-            status_instance.setup_error_count += 1
-            status_instance.setup_error_list.append( current_fixture )
-            
-        #-- END try/except --#
-        
-        print( "In TestHelper." + me + "(): standardSetUp complete." )
-
-    #-- END function standardSetUp() --#
         
 
     #----------------------------------------------------------------------------
