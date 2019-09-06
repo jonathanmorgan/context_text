@@ -726,7 +726,7 @@ To import data into UCINet:
 
 # License
 
-Copyright 2010-present (2016) Jonathan Morgan
+Copyright 2010-present (2019) Jonathan Morgan
 
 This file is part of [http://github.com/jonathanmorgan/context_text](http://github.com/jonathanmorgan/context_text).
 
