@@ -62,7 +62,7 @@ class ArticleCoderTest( django.test.TestCase ):
         """
 
         # call TestHelper.standardSetUp()
-        TestHelper.standardSetUp( self )
+        TestHelper.standardSetUp( self, TestHelper.FIXTURE_LIST )
 
         # create test user
         TestHelper.create_test_user()

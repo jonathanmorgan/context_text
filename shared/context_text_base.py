@@ -37,6 +37,7 @@ from context.shared.context_base import ContextBase
 # classes (in alphabetical order by name)
 #===============================================================================
 
+# object --> LoggingHelper --> ExceptionHelper --> BasicRateLimited --> ContextBase --> ContextTextBase
 class ContextTextBase( ContextBase ):
 
 

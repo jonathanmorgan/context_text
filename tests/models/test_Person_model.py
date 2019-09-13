@@ -33,7 +33,7 @@ class PersonModelTest( django.test.TestCase ):
         """
 
         # call TestHelper.standardSetUp()
-        TestHelper.standardSetUp( self )
+        TestHelper.standardSetUp( self, fixture_list_IN = TestHelper.FIXTURE_LIST )
 
     #-- END function setUp() --#
         

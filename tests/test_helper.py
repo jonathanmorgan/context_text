@@ -34,6 +34,8 @@ import context.tests.test_helper
 
 # context_text imports
 from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.models import Article
+from context_text.models import Newspaper
 
 
 #================================================================================
@@ -91,7 +93,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
     # test quotations
     TEST_QUOTATION_1 = "The snow-covered runs are a beautiful sight to snowboarders Alex McNamara and Justin VanderVelde."
     TEST_QUOTATION_2 = "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \"long\" summer and fall left them eager to bust out their boards."
-
+    
 
     #----------------------------------------------------------------------------
     # Class variables - overriden by __init__() per instance if same names, but
@@ -103,7 +105,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
 
 
     #-----------------------------------------------------------------------------
-    # class methods
+    # ! ==> class methods
     #-----------------------------------------------------------------------------
 
 
@@ -211,7 +213,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
         #-- END check to see if test case --#
 
         # call standardSetup.
-        cls.standardSetUp( status_instance )
+        cls.standardSetUp( status_instance, cls.FIXTURE_LIST )
         
         # Load OpenCalais Access Token.
         try:
@@ -232,7 +234,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
         
 
     #----------------------------------------------------------------------------
-    # __init__() method
+    # ! ==> __init__() method
     #----------------------------------------------------------------------------
 
 
@@ -245,7 +247,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
 
 
     #----------------------------------------------------------------------------
-    # instance methods, in alphabetical order
+    # ! ==> instance methods, in alphabetical order
     #----------------------------------------------------------------------------
 
 

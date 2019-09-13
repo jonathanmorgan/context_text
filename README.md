@@ -233,6 +233,12 @@ Specific sets of tests:
     
             python manage.py test context_text.tests.models.test_Person_model
 
+- export from context_text to context base:
+
+    - test basic export:
+    
+            python manage.py test context_text.tests.export.to_context_base.test_export_to_context
+
 ## Test data
 
 There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
