@@ -112,7 +112,7 @@ BS_PARSER = "html5lib"
 Debugging code, shared across all models.
 '''
 
-DEBUG = True
+DEBUG = False
 DEFAULT_LOGGER_NAME = "context_text.models"
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME ):
