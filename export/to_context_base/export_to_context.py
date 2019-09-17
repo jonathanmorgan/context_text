@@ -143,7 +143,12 @@ class ExportToContext( ContextTextBase ):
         id_type_instance = self.article_uuid_id_type
         
         # got anything?
-        if ( id_type_instance is None ):
+        if ( id_type_instance is not None ):
+        
+            # instance was already loaded.  Return it.
+            uuid_id_type_OUT = id_type_instance
+        
+        else:
         
             # no.  Try to retrieve type for nested name.
             id_type_name = self.article_uuid_id_type_name
@@ -157,7 +162,12 @@ class ExportToContext( ContextTextBase ):
             #-- END check to see if name set in instance. --#
             
             # got instance?
-            if ( id_type_instance is None ):
+            if ( id_type_instance is not None ):
+            
+                # not None - store it and return it.
+                uuid_id_type_OUT = self.set_article_uuid_id_type( id_type_instance )
+            
+            else:
             
                 # no.  Hmmm.  So, we have a default name passed in.  Try to use
                 #     that.
@@ -194,11 +204,6 @@ class ExportToContext( ContextTextBase ):
                     uuid_id_type_OUT = None
                     
                 #-- END check to see if default name returned a type. --#
-                
-            else:
-            
-                # not None - store it and return it.
-                uuid_id_type_OUT = self.set_article_uuid_id_type( id_type_instance )
             
             #-- END check to see if we found instance for name --#
         
@@ -291,6 +296,10 @@ class ExportToContext( ContextTextBase ):
             # got an entity?
             if ( entity_instance is not None ):
     
+                # make sure we return it at this point, since it has been
+                #    created and stored in database.
+                entity_OUT = entity_instance
+    
                 # ==> set entity traits
     
                 # ----> publication date
@@ -350,9 +359,9 @@ class ExportToContext( ContextTextBase ):
                     # archive ID and source present.  Create identifier.
                     identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
                     entity_instance.set_identifier( identifier_uuid,
-                                                name_IN = identifier_type.name,
-                                                source_IN = identifier_source,
-                                                entity_identifier_type_IN = identifier_type )
+                                                    name_IN = identifier_type.name,
+                                                    source_IN = identifier_source,
+                                                    entity_identifier_type_IN = identifier_type )
                                                 
                 #-- END check to see if generic archive ID. --#
                 
@@ -364,8 +373,8 @@ class ExportToContext( ContextTextBase ):
                     # permalink present.  Create identifier.
                     identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_PERMALINK )
                     entity_instance.set_identifier( identifier_uuid,
-                                                name_IN = identifier_type.name,
-                                                entity_identifier_type_IN = identifier_type )
+                                                    name_IN = identifier_type.name,
+                                                    entity_identifier_type_IN = identifier_type )
                 
                 #-- END check to see if permalink present. --#
     
@@ -373,9 +382,15 @@ class ExportToContext( ContextTextBase ):
                 
                 # no entity, can't add/update traits or identifiers
                 print( "no entity, can't add/update traits or identifiers" )
+                entity_OUT = None
                 
             #-- END check to make sure we have an entity --#
-            
+        
+        else:
+        
+            # Article instance passed in is None.  return None.
+            entity_OUT = None    
+        
         #-- END check to see if instance is None --#
         
         return entity_OUT

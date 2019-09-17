@@ -31,6 +31,9 @@ class ExportToContextTest( django.test.TestCase ):
     #----------------------------------------------------------------------------
 
 
+    # DEBUG
+    DEBUG = False
+
     # CLASS NAME
     CLASS_NAME = "ExportToContextTest"
 
@@ -61,10 +64,6 @@ class ExportToContextTest( django.test.TestCase ):
     
     # Identifier names
     TEST_IDENTIFIER_NAME = "nickname"
-    
-    # identifier type names
-    ID_TYPE_NAME_SOURCENET = "person_sourcenet_id"
-    ID_TYPE_NAME_OPENCALAIS = "person_open_calais_uuid"
     
     # test Article IDs
     TEST_ARTICLE_ID_1 = 21925
@@ -118,7 +117,7 @@ class ExportToContextTest( django.test.TestCase ):
         error_count = -1
         error_message = ""
         
-        print( '====> In {}.{}'.format( self.CLASS_NAME, me ) )
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
         # get setup error count
         setup_error_count = self.setup_error_count
@@ -149,19 +148,25 @@ class ExportToContextTest( django.test.TestCase ):
         type_count = None
         should_be = None
 
-        print( '====> In {}.{}'.format( self.CLASS_NAME, me ) )
+        # debug
+        debug_flag = self.DEBUG
+
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
         my_exporter = ExportToContext()
 
         # initialize
         id_type = my_exporter.set_article_uuid_id_type_name( ExportToContext.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
-        print( "--------> ID type: {}".format( id_type ) )
-        print( "All types:" )
-        for current_type in Entity_Identifier_Type.objects.all():
         
-            print( "- {}".format( current_type ) )
+        if ( debug_flag == True ):
+            print( "--------> ID type: {}".format( id_type ) )
+            print( "All types:" )
+            for current_type in Entity_Identifier_Type.objects.all():
             
-        #-- END loop over all types to test loading of fixture --#
+                print( "- {}".format( current_type ) )
+                
+            #-- END loop over all types to test loading of fixture --#
+        #-- END DEBUG --#
 
         # retrieve test article 1
         article_1_id = self.TEST_ARTICLE_ID_1
@@ -172,14 +177,14 @@ class ExportToContextTest( django.test.TestCase ):
         entity_1_id = entity_1_instance.id
         
         # do some tests.
-        id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID )
+        id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
         test_entity_instance = Entity.get_entity_for_identifier( article_1_id, id_type_IN = id_type )
         test_entity_id = test_entity_instance.id
         
         # returned entity should have same ID as entity_1_instance.
         should_be = entity_1_id
         error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( article_1_id, test_entity_id, should_be )
-        self.assertEqual( article_1_id, should_be, msg = error_string )
+        self.assertEqual( test_entity_id, should_be, msg = error_string )
         
         # check newspaper ID
         
@@ -194,17 +199,291 @@ class ExportToContextTest( django.test.TestCase ):
 
     def test_get_article_uuid_id_type( self ):
         
-        # ! TODO
-        pass
+        # declare variables
+        me = "test_get_article_uuid_id_type"
+        error_string = None
+        my_exporter = None
+        silly_type_name = None
+        my_type_name = None
+        my_type_instance = None
+        my_type_instance_id = None
+        returned_type_instance = None
+        returned_type_instance_id = None
+        stored_type_name = None
+        stored_type_instance = None
+        stored_type_instance_id = None
         
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
+                
+        # initialize - make exporter instance
+        my_exporter = ExportToContext()
+        
+        # initialize - set up type reference.
+        silly_type_name = self.IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST
+        my_type_name = self.IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID
+        my_type_instance = Entity_Identifier_Type.get_type_for_name( my_type_name )
+        my_type_instance_id = my_type_instance.id
+        
+        #----------------------------------------------------------------------#
+        # ----> first, try to retrieve instance with bad name, no default.
+        #----------------------------------------------------------------------#
+        print( "----> first, try to retrieve instance with bad name, no default." )
+
+        my_exporter.set_article_uuid_id_type_name( silly_type_name, do_get_instance_IN = False )
+        returned_type_instance = my_exporter.get_article_uuid_id_type( default_name_IN = None )
+        
+        # return should be None.
+        error_string = "Return of call to my_exporter.get_article_uuid_id_type() with default_name_IN set to None should have returned None, returned instead: {}".format( returned_type_instance )
+        self.assertIsNone( returned_type_instance, msg = error_string )
+        
+        # retrieve type instance from exporter should result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned None, returned instead: {}".format( stored_type_instance )
+        self.assertIsNone( stored_type_instance, msg = error_string )
+        
+        # retrieve type name from exporter should yield the name passed in.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = silly_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( should_be, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+        
+        #----------------------------------------------------------------------#
+        # ----> try to retrieve instance with bad name, good default, no update if default used.
+        #----------------------------------------------------------------------#
+        print( "----> try to retrieve instance with bad name, good default, no update if default used." )
+
+        returned_type_instance = my_exporter.get_article_uuid_id_type( default_name_IN = my_type_name, update_on_default_IN = False )
+        
+        # return should NOT be None.
+        error_string = "Return of call to my_exporter.get_article_uuid_id_type() with good default ( {} ) and update_on_default_IN = False  should have returned an instance, returned None instead: {}".format( my_type_name, returned_type_instance )
+        self.assertIsNotNone( returned_type_instance, msg = error_string )
+        
+        # returned instance ID should be same as my instance ID.
+        returned_type_instance_id = returned_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Returned id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( returned_type_instance_id, should_be )
+        self.assertEqual( returned_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type instance from exporter should result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned None, returned instead: {}".format( stored_type_instance )
+        self.assertIsNone( stored_type_instance, msg = error_string )
+        
+        # retrieve type name from exporter should yield the silly name passed in.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = silly_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( should_be, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+        returned_type_instance = my_exporter.set_article_uuid_id_type_name( silly_type_name, do_get_instance_IN = True )
+                
+        #----------------------------------------------------------------------#
+        # ----> try to retrieve instance with bad name, good default, update if default used.
+        #----------------------------------------------------------------------#
+        print( "----> try to retrieve instance with bad name, good default, update if default used." )
+
+        returned_type_instance = my_exporter.get_article_uuid_id_type( default_name_IN = my_type_name, update_on_default_IN = True )
+        
+        # return should NOT be None.
+        error_string = "Return of call to my_exporter.get_article_uuid_id_type() with good default ( {} ) and update_on_default_IN = True should have returned an instance, returned None instead: {}".format( my_type_name, returned_type_instance )
+        self.assertIsNotNone( returned_type_instance, msg = error_string )
+        
+        # returned instance ID should be same as my instance ID.
+        returned_type_instance_id = returned_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Returned id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( returned_type_instance_id, should_be )
+        self.assertEqual( returned_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type instance from exporter should also not result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned an instance, not None: {}".format( stored_type_instance )
+        self.assertIsNotNone( stored_type_instance, msg = error_string )
+        
+        # stored instance ID should also be same as my instance ID.
+        stored_type_instance_id = stored_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Stored id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( stored_type_instance_id, should_be )
+        self.assertEqual( stored_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type name from exporter should yield the default name passed in.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = my_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( my_type_name, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+        
+        #----------------------------------------------------------------------#
+        # ----> set to a valid name, don't get instance, try to get.
+        #----------------------------------------------------------------------#
+        print( "----> set to a valid name, don't get instance, try to get." )
+
+        # ==> store type name, don't retrieve instance.
+        my_exporter.article_uuid_id_type_name = None
+        my_exporter.article_uuid_id_type = None
+        my_exporter.set_article_uuid_id_type_name( my_type_name, do_get_instance_IN = False )
+
+        # retrieve type instance from exporter should result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned None, returned instead: {}".format( stored_type_instance )
+        self.assertIsNone( stored_type_instance, msg = error_string )
+        
+        # ==> get type instance, no default, so will fail if problem with stored name.
+        returned_type_instance = my_exporter.get_article_uuid_id_type( default_name_IN = None )
+
+        # return should NOT be None.
+        error_string = "Return of call to my_exporter.get_article_uuid_id_type() where no instance set, with no default and update_on_default_IN = True should have returned an instance, returned None instead: {}".format( returned_type_instance )
+        self.assertIsNotNone( returned_type_instance, msg = error_string )
+        
+        # returned instance ID should be same as my instance ID.
+        returned_type_instance_id = returned_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Returned id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( returned_type_instance_id, should_be )
+        self.assertEqual( returned_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type instance from exporter should also not result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned an instance, not None: {}".format( stored_type_instance )
+        self.assertIsNotNone( stored_type_instance, msg = error_string )
+        
+        # stored instance ID should also be same as my instance ID.
+        stored_type_instance_id = stored_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Stored id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( stored_type_instance_id, should_be )
+        self.assertEqual( stored_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type name from exporter should yield the stored name.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = my_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( my_type_name, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+
+        #----------------------------------------------------------------------#
+        # ----> set to a valid name, get instance, try to get.
+        #----------------------------------------------------------------------#
+        print( "----> set to a valid name, get instance, try to get." )
+
+        # ==> store type name, retrieve instance.
+        my_exporter.article_uuid_id_type_name = None
+        my_exporter.article_uuid_id_type = None
+        my_exporter.set_article_uuid_id_type_name( my_type_name, do_get_instance_IN = True )
+
+        # retrieve type instance from exporter should not result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned an instance, not None: {}".format( stored_type_instance )
+        self.assertIsNotNone( stored_type_instance, msg = error_string )
+        
+        # ==> get type instance, no default, so will fail if problem with stored name.
+        returned_type_instance = my_exporter.get_article_uuid_id_type( default_name_IN = None )
+
+        # return should NOT be None.
+        error_string = "Return of call to my_exporter.get_article_uuid_id_type() with no default and update_on_default_IN = True should have returned an instance, returned None instead: {}".format( returned_type_instance )
+        self.assertIsNotNone( returned_type_instance, msg = error_string )
+        
+        # returned instance ID should be same as my instance ID.
+        returned_type_instance_id = returned_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Returned id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( returned_type_instance_id, should_be )
+        self.assertEqual( returned_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type instance from exporter should also not result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned an instance, not None: {}".format( stored_type_instance )
+        self.assertIsNotNone( stored_type_instance, msg = error_string )
+        
+        # stored instance ID should also be same as my instance ID.
+        stored_type_instance_id = stored_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Stored id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( stored_type_instance_id, should_be )
+        self.assertEqual( stored_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type name from exporter should yield the stored name.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = my_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( my_type_name, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+
     #-- END test method test_get_article_uuid_id_type --#
         
     
     def test_set_article_uuid_id_type_name( self ):
         
-        # ! TODO
-        pass
+        # declare variables
+        me = "test_set_article_uuid_id_type_name"
+        error_string = None
+        my_exporter = None
+        silly_type_name = None
+        my_type_name = None
+        my_type_instance = None
+        my_type_instance_id = None
+        returned_type_instance = None
+        returned_type_instance_id = None
+        stored_type_name = None
+        stored_type_instance = None
+        stored_type_instance_id = None
         
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
+                
+        # initialize - make exporter instance
+        my_exporter = ExportToContext()
+        
+        # initialize - set up type reference.
+        silly_type_name = self.IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST
+        my_type_name = self.IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID
+        my_type_instance = Entity_Identifier_Type.get_type_for_name( my_type_name )
+        my_type_instance_id = my_type_instance.id
+
+        #----------------------------------------------------------------------#
+        # ----> first, set id type name, but don't create instance.
+        #----------------------------------------------------------------------#
+
+        returned_type_instance = my_exporter.set_article_uuid_id_type_name( silly_type_name, do_get_instance_IN = False )
+        
+        # return should be None.
+        error_string = "Return of call to my_exporter.set_article_uuid_id_type_name() for name_string {} with do_get_instance_IN set to False should have returned None, returned instead: {}".format( silly_type_name, returned_type_instance )
+        self.assertIsNone( returned_type_instance, msg = error_string )
+        
+        # retrieve type instance from exporter should result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned None, returned instead: {}".format( stored_type_instance )
+        self.assertIsNone( stored_type_instance, msg = error_string )
+        
+        # retrieve type name from exporter should yield the name passed in.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = silly_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( should_be, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+        
+        #----------------------------------------------------------------------#
+        # ----> Then, set id type name, DO create instance.
+        #----------------------------------------------------------------------#
+
+        returned_type_instance = my_exporter.set_article_uuid_id_type_name( my_type_name, do_get_instance_IN = True )
+        
+        # return should not be None.
+        error_string = "Return of call to my_exporter.set_article_uuid_id_type_name() for valid name_string {} with do_get_instance_IN set to True should have returned an instance, returned None instead: {}".format( my_type_name, returned_type_instance )
+        self.assertIsNotNone( returned_type_instance, msg = error_string )
+        
+        # returned instance ID should be same as my instance ID.
+        returned_type_instance_id = returned_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Returned id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( returned_type_instance_id, should_be )
+        self.assertEqual( returned_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type instance from exporter should also not result in None.
+        stored_type_instance = my_exporter.article_uuid_id_type
+        error_string = "Reference to my_exporter.article_uuid_id_type should have returned an instance, not None: {}".format( stored_type_instance )
+        self.assertIsNotNone( stored_type_instance, msg = error_string )
+        
+        # stored instance ID should also be same as my instance ID.
+        stored_type_instance_id = stored_type_instance.id
+        should_be = my_type_instance_id
+        error_string = "Stored id type instance ID ( {} ) should be the same as my_type_instance_id ( {} )".format( stored_type_instance_id, should_be )
+        self.assertEqual( stored_type_instance_id, should_be, msg = error_string )
+
+        # retrieve type name from exporter should yield the name passed in.
+        stored_type_name = my_exporter.article_uuid_id_type_name
+        should_be = my_type_name
+        error_string = "Reference to my_exporter.article_uuid_id_type_name should have returned {}, returned instead: {}".format( my_type_name, stored_type_name )
+        self.assertEqual( stored_type_name, should_be, msg = error_string )
+
     #-- END test method test_set_article_uuid_id_type_name --#
         
     
