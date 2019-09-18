@@ -11,11 +11,13 @@ import six
 
 # django imports
 import django.test
+from django.utils.text import slugify
 
 # context imports
 from context.models import Entity
 from context.models import Entity_Identifier
 from context.models import Entity_Identifier_Type
+from context.models import Entity_Type_Trait
 
 # context_text imports
 from context_text.export.to_context_base.export_to_context import ExportToContext
@@ -40,6 +42,8 @@ class ExportToContextTest( django.test.TestCase ):
     # identifier type names
     IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
     IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
+    IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
+    IDENTIFIER_TYPE_NAME_PERMALINK = "permalink"
     IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"    
     IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
     IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
@@ -50,6 +54,8 @@ class ExportToContextTest( django.test.TestCase ):
     IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID ] = 2
     IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID ] = 3
     IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID ] = 4
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERMALINK ] = 5
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER ] = 6
     
     # Entity Type slugs
     ENTITY_TYPE_SLUG_PERSON = "person"
@@ -137,8 +143,15 @@ class ExportToContextTest( django.test.TestCase ):
         my_exporter = None
         article_1_id = None
         article_1_instance = None
+        article_1_newspaper = None
+        article_1_newspaper_id = None
+        article_1_pub_date = None
+        article_1_unique_identifier = None
+        article_1_archive_source = None
+        article_1_archive_id = None
         entity_1_instance = None
         entity_1_id = None
+        entity_1_type = None
         test_entity_instance = None
         test_entity_id = None
         id_type = None
@@ -147,6 +160,18 @@ class ExportToContextTest( django.test.TestCase ):
         type_qs = None
         type_count = None
         should_be = None
+
+        # declare variables - loading traits
+        trait_name = None
+        trait_definition_qs = None
+        trait_definition = None
+        test_entity_trait = None
+        test_entity_trait_value = None
+        test_identifier_name = None
+        test_identifier_type = None
+        test_identifier = None
+        test_identifier_uuid = None
+        test_identifier_source = None
 
         # debug
         debug_flag = self.DEBUG
@@ -171,10 +196,19 @@ class ExportToContextTest( django.test.TestCase ):
         # retrieve test article 1
         article_1_id = self.TEST_ARTICLE_ID_1
         article_1_instance = Article.objects.get( id = article_1_id )
+        article_1_newspaper = article_1_instance.newspaper
+        article_1_newspaper_id = article_1_newspaper.id
+        article_1_pub_date = article_1_instance.pub_date
+        article_1_pub_date = article_1_pub_date.strftime( "%Y-%m-%d" )
+        article_1_unique_identifier = article_1_instance.unique_identifier
+        article_1_archive_source = article_1_instance.archive_source
+        article_1_archive_id = article_1_instance.archive_id
+        article_1_archive_permalink = article_1_instance.permalink
         
         # create entity for it.
         entity_1_instance = my_exporter.create_article_entity( article_1_instance )
         entity_1_id = entity_1_instance.id
+        entity_1_type = entity_1_instance.my_entity_types.get()
         
         # do some tests.
         id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
@@ -186,13 +220,110 @@ class ExportToContextTest( django.test.TestCase ):
         error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( article_1_id, test_entity_id, should_be )
         self.assertEqual( test_entity_id, should_be, msg = error_string )
         
-        # check newspaper ID
+        #----------------------------------------------------------------------#
+        # traits
+        #----------------------------------------------------------------------#        
         
-        # check unique_identifier
+        # ==> check pub_date trait, name = "pub_date"
+        trait_name = ExportToContext.TRAIT_NAME_PUB_DATE
+    
+        # initialize trait from predefined entity type trait "pub_date".
+        trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
+        trait_definition_qs = trait_definition_qs.filter( related_type = entity_1_type )
+        trait_definition = trait_definition_qs.get()
+
+        # retrieve trait
+        test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
+                                                                   entity_type_trait_IN = trait_definition )
+        test_entity_trait_value = test_entity_trait.value
         
-        # article_archive_identifier
+        # returned trait should have value that equals article pub_date string.
+        should_be = article_1_pub_date
+        error_string = "article trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+        self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
+       
+        # ==> check newspaper ID - trait, name = "sourcenet-Newspaper-ID"
+        trait_name = ExportToContext.TRAIT_NAME_SOURCENET_NEWSPAPER_ID
+        test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
+                                                                   slug_IN = slugify( trait_name ) )
+        test_entity_trait_value = int( test_entity_trait.value )
         
-        # newsbank ID
+        # returned trait should have value that equals newspaper ID.
+        should_be = article_1_newspaper_id
+        error_string = "article trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+        self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
+       
+        #----------------------------------------------------------------------#
+        # identifiers
+        #----------------------------------------------------------------------#
+
+        # ==> django ID
+        test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
+        test_identifier_name = test_identifier_type.name
+        test_identifier = test_entity_instance.get_identifier( test_identifier_name,
+                                                               id_type_IN = test_identifier_type )
+                                                               
+        # get value
+        test_identifier_value = int( test_identifier.uuid )
+        
+        # returned identifier should have uuid that equals article's ID.
+        found = test_identifier_value
+        should_be = article_1_id
+        error_string = "article identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
+        self.assertEqual( found, should_be, msg = error_string )
+        
+        # ==> check unique_identifier (newsbank ID)
+        test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID )
+        test_identifier_name = test_identifier_type.name
+        test_identifier = test_entity_instance.get_identifier( test_identifier_name,
+                                                               id_type_IN = test_identifier_type )
+                                                               
+        # get value
+        test_identifier_value = test_identifier.uuid
+        
+        # returned identifier should have uuid that equals article's ID.
+        found = test_identifier_value
+        should_be = article_1_unique_identifier
+        error_string = "article identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
+        self.assertEqual( found, should_be, msg = error_string )
+        
+        # ==> article_archive_identifier
+        test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER )
+        test_identifier_name = test_identifier_type.name
+        test_identifier_source = article_1_archive_source
+        test_identifier = test_entity_instance.get_identifier( test_identifier_name,
+                                                               id_source_IN = test_identifier_source,
+                                                               id_type_IN = test_identifier_type )
+                                                               
+        # get value
+        #test_identifier_value = test_identifier.uuid
+        
+        # returned identifier should have uuid that equals article's ID.
+        #found = test_identifier_value
+        #should_be = article_1_archive_id
+        #error_string = "article identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
+        #self.assertEqual( found, should_be, msg = error_string )
+
+        # retrieve identifier should result in None.
+        error_string = "article identifier {} should not be set, instead, is present: {}".format( test_identifier_name, test_identifier )
+        self.assertIsNone( test_identifier, msg = error_string )
+                        
+        # ==> permalink
+        test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_PERMALINK )
+        test_identifier_name = test_identifier_type.name
+        test_identifier = test_entity_instance.get_identifier( test_identifier_name,
+                                                               id_type_IN = test_identifier_type )
+                                                               
+        # get value
+        test_identifier_value = test_identifier.uuid
+        
+        # returned identifier should have uuid that equals article's ID.
+        found = test_identifier_value
+        should_be = article_1_archive_permalink
+        error_string = "article identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
+        self.assertEqual( found, should_be, msg = error_string )
+        
+        # ! TODO - article that has archive information (add it, then do a create).
         
     #-- END test method test_create_article_entity() --#
 

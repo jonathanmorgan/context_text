@@ -80,6 +80,9 @@ class ExportToContext( ContextTextBase ):
     # entity identifier types - default
     ENTITY_ID_TYPE_DEFAULT = ENTITY_ID_TYPE_PERMALINK
     
+    # trait names
+    TRAIT_NAME_PUB_DATE = "pub_date"
+    TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
     
 
     #============================================================================
@@ -303,7 +306,7 @@ class ExportToContext( ContextTextBase ):
                 # ==> set entity traits
     
                 # ----> publication date
-                trait_name = "pub_date"
+                trait_name = self.TRAIT_NAME_PUB_DATE
                 trait_value = article_instance.pub_date
                 trait_value = trait_value.strftime( "%Y-%m-%d" )
     
@@ -316,7 +319,7 @@ class ExportToContext( ContextTextBase ):
                                                   entity_type_trait_IN = trait_definition )
     
                 # ----> newspaper ID
-                trait_name = "sourcenet-Newspaper-ID"
+                trait_name = self.TRAIT_NAME_SOURCENET_NEWSPAPER_ID
                 trait_value = article_instance.newspaper.id
                 entity_instance.set_entity_trait( trait_name,
                                                   trait_value,
