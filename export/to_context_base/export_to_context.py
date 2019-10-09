@@ -292,7 +292,8 @@ class ExportToContext( ContextTextBase ):
             else:
                 
                 # more than one existing match.  Error.
-                print( "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id ) )
+                log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
+                self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
     
             #-- END check for existing entity. --#
             
@@ -345,6 +346,7 @@ class ExportToContext( ContextTextBase ):
                                                 
                 # ----> generic archive id
                 # is there an archive_id and archive_source?
+                identifier_type = None
                 identifier_uuid = article_instance.archive_id
                 identifier_source = article_instance.archive_source
                 if (
@@ -359,6 +361,10 @@ class ExportToContext( ContextTextBase ):
                     )
                 ):
                 
+                    # log archive identifier information
+                    log_message = "NOTE - Archive identifier: {}; source: {}".format( identifier_uuid, identifier_source )
+                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.DEBUG )
+                
                     # archive ID and source present.  Create identifier.
                     identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
                     entity_instance.set_identifier( identifier_uuid,
@@ -366,6 +372,12 @@ class ExportToContext( ContextTextBase ):
                                                     source_IN = identifier_source,
                                                     entity_identifier_type_IN = identifier_type )
                                                 
+                else:
+                
+                    # No archive identifier.
+                    log_message = "NOTE - No archive identifier or source."
+                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.DEBUG )
+                
                 #-- END check to see if generic archive ID. --#
                 
                 # ----> generic permalink
