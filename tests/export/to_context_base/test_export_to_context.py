@@ -150,6 +150,8 @@ class ExportToContextTest( django.test.TestCase ):
         article_unique_identifier = None
         article_archive_source = None
         article_archive_id = None
+        article_entity = None
+        article_entity_id = None
         entity_instance = None
         entity_id = None
         entity_type = None
@@ -215,9 +217,28 @@ class ExportToContextTest( django.test.TestCase ):
             # create entity for it.
             entity_instance = my_exporter.create_article_entity( article_instance )
             entity_id = entity_instance.id
-            entity_type = entity_instance.my_entity_types.get()
+            entity_type = entity_instance.add_entity_type( ExportToContext.ENTITY_TYPE_SLUG_ARTICLE )
             
-            # do some tests.
+            # entity ID in article should now be set to this entity's ID.
+            
+            # reload article
+            article_instance = Article.objects.get( id = article_id )
+            
+            # get nested entity's ID
+            article_entity = article_instance.entity
+            if ( article_entity is not None ):
+            
+                # entity present.  Get ID.
+                article_entity_id = article_entity.id
+
+            #-- END check to see if article has entity. --#
+            
+            # nested entity ID should be same as test entity ID.
+            should_be = article_entity_id
+            error_string = "article entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            self.assertEqual( entity_id, should_be, msg = error_string )
+
+            # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
             test_entity_instance = Entity.get_entity_for_identifier( article_id, id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
@@ -227,6 +248,7 @@ class ExportToContextTest( django.test.TestCase ):
             error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( article_id, test_entity_id, should_be )
             self.assertEqual( test_entity_id, should_be, msg = error_string )
             
+           
             #----------------------------------------------------------------------#
             # traits
             #----------------------------------------------------------------------#        

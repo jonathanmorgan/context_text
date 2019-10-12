@@ -95,6 +95,7 @@ from context.shared.models import Abstract_Related_Content
 from context.shared.models import Abstract_Related_JSON_Content
 from context.shared.models import Abstract_UUID
 from context.shared.person_details import PersonDetails
+from context.models import Entity
 from context.models import Work_Log
 
 # context_text imports
@@ -282,6 +283,7 @@ class Organization( Abstract_Organization ):
     #name = models.CharField( max_length = 255 )
     #description = models.TextField( blank = True )
     location = models.ForeignKey( Location, on_delete = models.SET_NULL, blank = True, null = True )
+    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     # Meta-data for this class.
     #class Meta:
@@ -327,6 +329,7 @@ class Person( Abstract_Person ):
     notes = models.TextField( blank = True )
     '''
     organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, blank = True, null = True )
+    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------
     # instance methods
@@ -652,6 +655,7 @@ class Newspaper( models.Model ):
     sections_sports = models.TextField( blank = True, null = True )
     
     #location = models.ForeignKey( Location, on_delete = models.SET_NULL, null = True, blank = True )
+    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     # Meta-data for this class.
     class Meta:
@@ -940,6 +944,7 @@ class Article( Abstract_Context_With_JSON ):
     #authors = models.ManyToManyField( Article_Author )
     #subjects = models.ManyToManyField( Article_Subject )
     #locations = models.ManyToManyField( Article_Location, blank = True )
+    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------------
     # Meta class

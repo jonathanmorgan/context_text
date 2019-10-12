@@ -80,6 +80,9 @@ class ExportToContext( ContextTextBase ):
     # entity identifier types - default
     ENTITY_ID_TYPE_DEFAULT = ENTITY_ID_TYPE_PERMALINK
     
+    # entity types
+    ENTITY_TYPE_SLUG_ARTICLE = "article"
+    
     # trait names
     TRAIT_NAME_PUB_DATE = "pub_date"
     TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
@@ -258,44 +261,63 @@ class ExportToContext( ContextTextBase ):
         article_instance = instance_IN
         if ( article_instance is not None ):
             
-            # check to see if already an article entity with this ID.
-            article_id = article_instance.id
+            # does article have an entity?
+            entity_instance = article_instance.entity
+            if ( entity_instance is None ):
             
-            # filter on identifier with type "article_sourcenet_id"...
-            entity_identifier_type = Entity_Identifier_Type.objects.get( name = identifier_type_name )
-            existing_entity_qs = Entity.objects.filter( entity_identifier__entity_identifier_type = entity_identifier_type )
-    
-            # ...and the ID of the article.
-            existing_entity_qs = existing_entity_qs.filter( entity_identifier__uuid = article_id )
-    
-            # what have we got?
-            existing_entity_count = existing_entity_qs.count()
-            if existing_entity_count == 0:
-            
-                # got an instance.  Create entity instance.
-                entity_instance = Entity()
-                entity_instance.name = "context_text-Article-{}".format( article_instance.id )
-                entity_instance.notes = "{}".format( article_instance )
-                entity_instance.save()
-    
-                # set type
-                entity_type = entity_instance.add_entity_type( "article" )
-    
-            elif existing_entity_count == 1:
+                # check to see if already an article entity with this ID.
+                article_id = article_instance.id
                 
-                # already exists. return it.
-                entity_instance = existing_entity_qs.get()
-    
-                # set type
-                entity_type = entity_instance.my_entity_types.get()
+                # filter on identifier with type "article_sourcenet_id"...
+                entity_identifier_type = Entity_Identifier_Type.objects.get( name = identifier_type_name )
+                existing_entity_qs = Entity.objects.filter( entity_identifier__entity_identifier_type = entity_identifier_type )
+        
+                # ...and the ID of the article.
+                existing_entity_qs = existing_entity_qs.filter( entity_identifier__uuid = article_id )
+        
+                # what have we got?
+                existing_entity_count = existing_entity_qs.count()
+                if existing_entity_count == 0:
+                
+                    # got an instance.  Create entity instance.
+                    entity_instance = Entity()
+                    entity_instance.name = "context_text-Article-{}".format( article_instance.id )
+                    entity_instance.notes = "{}".format( article_instance )
+                    entity_instance.save()
+        
+                    # set type
+                    entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
+                    
+                    # add to article
+                    article_instance.entity = entity_instance
+                    article_instance.save()
+        
+                elif existing_entity_count == 1:
+                    
+                    # already exists. return it.
+                    entity_instance = existing_entity_qs.get()
+        
+                    # get article entity type (won't duplicate if already added).
+                    entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
+                    
+                    # add to article
+                    article_instance.entity = entity_instance
+                    article_instance.save()
+        
+                else:
+                    
+                    # more than one existing match.  Error.
+                    log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
+                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
+        
+                #-- END query for existing entity. --#
                 
             else:
-                
-                # more than one existing match.  Error.
-                log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
-                self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
-    
-            #-- END check for existing entity. --#
+            
+                # get article entity type (won't duplicate if already added).
+                entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
+            
+            #-- END check for associated entity --#
             
             # got an entity?
             if ( entity_instance is not None ):
