@@ -2,7 +2,9 @@
 
 <!-- TOC -->
 
-context_text is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7.  south_migrations are present, but they won't be updated going forward.
+context_text is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7+.  south_migrations are present, but they won't be updated going forward.
+
+It is built upon and depends on the base context django application: [https://github.com/jonathanmorgan/context](https://github.com/jonathanmorgan/context)
 
 # Installation and configuration
 

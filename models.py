@@ -86,17 +86,18 @@ from python_utilities.logging.logging_helper import LoggingHelper
 from python_utilities.sequences.sequence_helper import SequenceHelper
 
 # context imports
-from context.shared.models import Abstract_Context_With_JSON
-from context.shared.models import Abstract_Location
-from context.shared.models import Abstract_Organization
-from context.shared.models import Abstract_Person_Parent
-from context.shared.models import Abstract_Person
-from context.shared.models import Abstract_Related_Content
-from context.shared.models import Abstract_Related_JSON_Content
-from context.shared.models import Abstract_UUID
-from context.shared.person_details import PersonDetails
+from context.models import Abstract_Context_With_JSON
+from context.models import Abstract_UUID
 from context.models import Entity
 from context.models import Work_Log
+from context.shared.entity_models import Abstract_Entity_Container
+from context.shared.entity_models import Abstract_Location
+from context.shared.entity_models import Abstract_Organization
+from context.shared.entity_models import Abstract_Person_Parent
+from context.shared.entity_models import Abstract_Person
+from context.shared.entity_models import Abstract_Related_Content
+from context.shared.entity_models import Abstract_Related_JSON_Content
+from context.shared.person_details import PersonDetails
 
 # context_text imports
 from context_text.shared.context_text_base import ContextTextBase
@@ -283,7 +284,7 @@ class Organization( Abstract_Organization ):
     #name = models.CharField( max_length = 255 )
     #description = models.TextField( blank = True )
     location = models.ForeignKey( Location, on_delete = models.SET_NULL, blank = True, null = True )
-    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
+    #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     # Meta-data for this class.
     #class Meta:
@@ -329,7 +330,7 @@ class Person( Abstract_Person ):
     notes = models.TextField( blank = True )
     '''
     organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, blank = True, null = True )
-    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
+    #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------
     # instance methods
@@ -645,7 +646,12 @@ class Document( models.Model ):
 
 # Newspaper model
 @python_2_unicode_compatible
-class Newspaper( models.Model ):
+class Newspaper( Abstract_Entity_Container ):
+
+    #----------------------------------------------------------------------
+    # ! ----> model fields and meta
+    #----------------------------------------------------------------------
+
 
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
@@ -655,16 +661,34 @@ class Newspaper( models.Model ):
     sections_sports = models.TextField( blank = True, null = True )
     
     #location = models.ForeignKey( Location, on_delete = models.SET_NULL, null = True, blank = True )
-    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
+    #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
+
+    #----------------------------------------------------------------------
+    # ! ----> Meta
+    #----------------------------------------------------------------------
+
 
     # Meta-data for this class.
     class Meta:
+
         ordering = [ 'name' ]
+        
+    #-- END Meta class --#
 
-    #----------------------------------------------------------------------
-    # methods
-    #----------------------------------------------------------------------
 
+    #---------------------------------------------------------------------------
+    # ! ----> overridden built-in methods
+    #---------------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Newspaper, self ).__init__( *args, **kwargs )
+
+    #-- END method __init__() --#
+
+    
     def __str__( self ):
         
         # return reference
@@ -692,6 +716,12 @@ class Newspaper( models.Model ):
         return string_OUT
         
     #-- END method __str__() --#
+
+
+    #----------------------------------------------------------------------
+    # ! ----> instance methods
+    #----------------------------------------------------------------------
+
 
 #= End Newspaper Model ======================================================
 
@@ -799,7 +829,7 @@ class Person_Newspaper( models.Model ):
 
 # Article model
 @python_2_unicode_compatible
-class Article( Abstract_Context_With_JSON ):
+class Article( Abstract_Entity_Container ):
 
     #----------------------------------------------------------------------------
     # Constants-ish
@@ -931,11 +961,12 @@ class Article( Abstract_Context_With_JSON ):
     is_sports = models.BooleanField( default = 0 )
     is_local_author = models.BooleanField( default = 0 )
 
-    # moved to Abstract_Context_With_JSON
+    # moved to Abstract_Entity_Container
     # tags!
     #tags = TaggableManager( blank = True )
     #create_date = models.DateTimeField( auto_now_add = True )
     #last_modified = models.DateTimeField( auto_now = True )
+    #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     # we have the option of adding these relations here, at an article level,
     #    but for now assuming they are to be coded in Article_Data, not here, so
@@ -944,7 +975,6 @@ class Article( Abstract_Context_With_JSON ):
     #authors = models.ManyToManyField( Article_Author )
     #subjects = models.ManyToManyField( Article_Subject )
     #locations = models.ManyToManyField( Article_Location, blank = True )
-    entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------------
     # Meta class
