@@ -75,7 +75,7 @@ Edit the `research/research/settings.py` file and update it with details of your
         logging.basicConfig(
             level = logging.INFO,
             format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-            filename = '<log_folder>/django-context_text.log',
+            filename = '<log_folder>/django-research.log',
             filemode = 'w'
         )
 
@@ -85,7 +85,7 @@ Edit the `research/research/settings.py` file and update it with details of your
 
             - make the `<log_folder>` somewhere outside the web root.
             - set the permissions on `<log_folder>` to 777.
-            - create the file `django-context_text.log` there.
+            - create the file `django-research.log` there.
             - set its permissions also to 777.
 
         - This is not necessarily optimally secure, but truly securing this is beyond the scope of this README.
@@ -107,7 +107,7 @@ Edit the research/research/settings.py file and update it with details of your d
 
 In general, for any database other than sqlite3, in your database system of choice you'll need to:
 
-- create a database for django to use (I typically use `context_text`).
+- create a database for django to use (I typically use `research`).
 
     - postgresql - at the unix command line:
     
@@ -116,7 +116,7 @@ In general, for any database other than sqlite3, in your database system of choi
             
             # create the database at the unix shell
             #createdb <database_name>
-            createdb context_text
+            createdb research
 
 - create a database user for django to use that is not an admin (I typically use `django_user`).
 
@@ -136,9 +136,9 @@ An example for postgresql looks like this:
 
     DATABASES = {
         'default': {        
-            # PostgreSQL - context_text
+            # PostgreSQL - research
             'ENGINE': 'django.db.backends.postgresql', # Add 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-            'NAME': 'context_text',                      # Or path to database file if using sqlite3.
+            'NAME': 'research',                      # Or path to database file if using sqlite3.
             'USER': 'django_user',                      # Not used with sqlite3.
             'PASSWORD': '<db_password>',                  # Not used with sqlite3.
             'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
