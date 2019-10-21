@@ -70,22 +70,22 @@ class ExportToContext( ContextTextBase ):
     # entity identifier types
 
     # entity identifier types - general
-    ENTITY_ID_TYPE_PERMALINK = "permalink"
+    ENTITY_ID_TYPE_PERMALINK = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
     
     # entity identifier types - articles
-    ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
-    ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
-    ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
+    ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
+    ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+    ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
     
     # entity identifier types - default
-    ENTITY_ID_TYPE_DEFAULT = ENTITY_ID_TYPE_PERMALINK
+    ENTITY_ID_TYPE_DEFAULT = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
     
     # entity types
-    ENTITY_TYPE_SLUG_ARTICLE = "article"
+    ENTITY_TYPE_SLUG_ARTICLE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ARTICLE
     
     # trait names
-    TRAIT_NAME_PUB_DATE = "pub_date"
-    TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
+    TRAIT_NAME_PUB_DATE = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
+    TRAIT_NAME_SOURCENET_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
     
 
     #============================================================================
@@ -122,10 +122,6 @@ class ExportToContext( ContextTextBase ):
         #self.logging_filename = self.LOGGING_DEFAULT_FILENAME
         #self.logging_filemode = self.LOGGING_DEFAULT_FILEMODE
         
-        # article export customization
-        self.article_uuid_id_type_name = None
-        self.article_uuid_id_type = None
-
     #-- END method __init__() --#
 
 
@@ -133,92 +129,6 @@ class ExportToContext( ContextTextBase ):
     # ! ==> instance methods, in alphabetical order
     #---------------------------------------------------------------------------
 
-
-    def get_article_uuid_id_type( self, default_name_IN = ENTITY_ID_TYPE_DEFAULT, update_on_default_IN = True ):
-        
-        # return reference
-        uuid_id_type_OUT = None
-        
-        # declare variables
-        me = "get_article_uuid_id_type"
-        log_message = None
-        id_type_name = None
-        id_type_instance = None
-        
-        # get instance
-        id_type_instance = self.article_uuid_id_type
-        
-        # got anything?
-        if ( id_type_instance is not None ):
-        
-            # instance was already loaded.  Return it.
-            uuid_id_type_OUT = id_type_instance
-        
-        else:
-        
-            # no.  Try to retrieve type for nested name.
-            id_type_name = self.article_uuid_id_type_name
-            
-            # got a name?
-            if ( ( id_type_name is not None ) and ( id_type_name != "" ) ):
-            
-                # yes.  Use it to lookup.
-                id_type_instance = Entity_Identifier_Type.get_type_for_name( id_type_name )
-                
-            #-- END check to see if name set in instance. --#
-            
-            # got instance?
-            if ( id_type_instance is not None ):
-            
-                # not None - store it and return it.
-                uuid_id_type_OUT = self.set_article_uuid_id_type( id_type_instance )
-            
-            else:
-            
-                # no.  Hmmm.  So, we have a default name passed in.  Try to use
-                #     that.
-                id_type_name = default_name_IN
-
-                # got a name?
-                if ( ( id_type_name is not None ) and ( id_type_name != "" ) ):
-                
-                    # yes.  Use it to lookup.
-                    id_type_instance = Entity_Identifier_Type.get_type_for_name( id_type_name )
-                    
-                #-- END check to see if name set in instance. --#
-            
-                # got an instance now?
-                if ( id_type_instance is not None ):
-                
-                    # yes.  return it.
-                    uuid_id_type_OUT = id_type_instance
-                    
-                    # do we store it and update the internal name and instance?
-                    if ( update_on_default_IN == True ):
-                    
-                        # we do.  update.
-                        self.set_article_uuid_id_type_name( id_type_name, False )
-                        uuid_id_type_OUT = self.set_article_uuid_id_type( id_type_instance )
-                    
-                    #-- END check to see if we update when we fall back to default --#
-                
-                else:
-                
-                    # no.  Hmmm.  At this point, log message, give up and return None.
-                    log_message = "ERROR - Could not find valid Entity_Identifier_Type instance ( self: {}; default: {} ).  Returning None.".format( self.article_uuid_id_type_name, id_type_name )
-                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
-                    uuid_id_type_OUT = None
-                    
-                #-- END check to see if default name returned a type. --#
-            
-            #-- END check to see if we found instance for name --#
-        
-        #-- END check to see if type stored in instance. --#
-        
-        return uuid_id_type_OUT
-        
-    #-- END method get_article_uuid_id_type() --#
-    
 
     def create_article_entity( self, instance_IN ):
         
@@ -234,194 +144,16 @@ class ExportToContext( ContextTextBase ):
         # declare variables
         article_instance = None
         
-        # declare variables - find existing.
-        article_id = None
-        identifier_type_name = None
-        entity_identifier_type = None
-        existing_entity_qs = None
-        existing_entity_count = -1
-        
         # declare variables - create new.
         entity_instance = None
-        entity_type = None
-        trait_name = None
-        trait_definition = None
-        trait_instance = None
-        trait_value = None
-        trait_type = None
-        identifier_type = None
-        identifier_instance = None
-        identifier_uuid = None
-        identifier_source = None
-        
-        # init
-        identifier_type_name = "article_sourcenet_id"
         
         # make sure an article was passed in.
         article_instance = instance_IN
         if ( article_instance is not None ):
-            
-            # does article have an entity?
-            entity_instance = article_instance.entity
-            if ( entity_instance is None ):
-            
-                # check to see if already an article entity with this ID.
-                article_id = article_instance.id
-                
-                # filter on identifier with type "article_sourcenet_id"...
-                entity_identifier_type = Entity_Identifier_Type.objects.get( name = identifier_type_name )
-                existing_entity_qs = Entity.objects.filter( entity_identifier__entity_identifier_type = entity_identifier_type )
-        
-                # ...and the ID of the article.
-                existing_entity_qs = existing_entity_qs.filter( entity_identifier__uuid = article_id )
-        
-                # what have we got?
-                existing_entity_count = existing_entity_qs.count()
-                if existing_entity_count == 0:
-                
-                    # got an instance.  Create entity instance.
-                    entity_instance = Entity()
-                    entity_instance.name = "context_text-Article-{}".format( article_instance.id )
-                    entity_instance.notes = "{}".format( article_instance )
-                    entity_instance.save()
-        
-                    # set type
-                    entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
-                    
-                    # add to article
-                    article_instance.entity = entity_instance
-                    article_instance.save()
-        
-                elif existing_entity_count == 1:
-                    
-                    # already exists. return it.
-                    entity_instance = existing_entity_qs.get()
-        
-                    # get article entity type (won't duplicate if already added).
-                    entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
-                    
-                    # add to article
-                    article_instance.entity = entity_instance
-                    article_instance.save()
-        
-                else:
-                    
-                    # more than one existing match.  Error.
-                    log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
-                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
-        
-                #-- END query for existing entity. --#
-                
-            else:
-            
-                # get article entity type (won't duplicate if already added).
-                entity_type = entity_instance.add_entity_type( self.ENTITY_TYPE_SLUG_ARTICLE )
-            
-            #-- END check for associated entity --#
-            
-            # got an entity?
-            if ( entity_instance is not None ):
-    
-                # make sure we return it at this point, since it has been
-                #    created and stored in database.
-                entity_OUT = entity_instance
-    
-                # ==> set entity traits
-    
-                # ----> publication date
-                trait_name = self.TRAIT_NAME_PUB_DATE
-                trait_value = article_instance.pub_date
-                trait_value = trait_value.strftime( "%Y-%m-%d" )
-    
-                # initialize trait from predefined entity type trait "pub_date".
-                trait_definition = entity_type.get_trait_spec( trait_name )
-    
-                # add trait
-                entity_instance.set_entity_trait( trait_name,
-                                                  trait_value,
-                                                  entity_type_trait_IN = trait_definition )
-    
-                # ----> newspaper ID
-                trait_name = self.TRAIT_NAME_SOURCENET_NEWSPAPER_ID
-                trait_value = article_instance.newspaper.id
-                entity_instance.set_entity_trait( trait_name,
-                                                  trait_value,
-                                                  slug_IN = slugify( trait_name ) )
-                                                  
-                # ! TODO - figure out other traits to add.
-    
-                # ==> add identifiers
-    
-                # ----> for django ID in this system.
-                identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID )
-                identifier_uuid = article_instance.id
-                entity_instance.set_identifier( identifier_uuid,
-                                                name_IN = identifier_type.name,
-                                                entity_identifier_type_IN = identifier_type )
-                
-                # ----> for unique identifier.
-                identifier_type = self.get_article_uuid_id_type( default_name_IN = self.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
-                identifier_uuid = article_instance.unique_identifier
-                entity_instance.set_identifier( identifier_uuid,
-                                                name_IN = identifier_type.name,
-                                                entity_identifier_type_IN = identifier_type )
-                                                
-                # ----> generic archive id
-                # is there an archive_id and archive_source?
-                identifier_type = None
-                identifier_uuid = article_instance.archive_id
-                identifier_source = article_instance.archive_source
-                if (
-                    (
-                        ( identifier_uuid is not None )
-                        and ( identifier_uuid != "" )
-                    )
-                    and
-                    (
-                        ( identifier_source is not None )
-                        and ( identifier_source != "" )
-                    )
-                ):
-                
-                    # log archive identifier information
-                    log_message = "NOTE - Archive identifier: {}; source: {}".format( identifier_uuid, identifier_source )
-                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.DEBUG )
-                
-                    # archive ID and source present.  Create identifier.
-                    identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
-                    entity_instance.set_identifier( identifier_uuid,
-                                                    name_IN = identifier_type.name,
-                                                    source_IN = identifier_source,
-                                                    entity_identifier_type_IN = identifier_type )
-                                                
-                else:
-                
-                    # No archive identifier.
-                    log_message = "NOTE - No archive identifier or source."
-                    self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.DEBUG )
-                
-                #-- END check to see if generic archive ID. --#
-                
-                # ----> generic permalink
-                # permalink set?
-                identifier_uuid = article_instance.permalink
-                if ( ( identifier_uuid is not None ) and ( identifier_uuid != "" ) ):
-                
-                    # permalink present.  Create identifier.
-                    identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_PERMALINK )
-                    entity_instance.set_identifier( identifier_uuid,
-                                                    name_IN = identifier_type.name,
-                                                    entity_identifier_type_IN = identifier_type )
-                
-                #-- END check to see if permalink present. --#
-    
-            else:
-                
-                # no entity, can't add/update traits or identifiers
-                print( "no entity, can't add/update traits or identifiers" )
-                entity_OUT = None
-                
-            #-- END check to make sure we have an entity --#
+
+            # ask the article to make its entity.
+            entity_instance = article_instance.update_entity()
+            entity_OUT = entity_instance
         
         else:
         

@@ -168,6 +168,27 @@ class ContextTextBase( ContextBase ):
     
     # Tags
     TAG_LOCAL_HARD_NEWS = "local_hard_news"
+    
+    # ! ----> Context
+    
+    # entity identifier types - general
+    CONTEXT_ENTITY_ID_TYPE_PERMALINK = "permalink"
+    
+    # entity identifier types - articles
+    CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
+    CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
+    CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
+    
+    # entity identifier types - default
+    CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
+    
+    # entity types
+    CONTEXT_ENTITY_TYPE_SLUG_ARTICLE = "article"
+    
+    # trait names
+    CONTEXT_TRAIT_NAME_PUB_DATE = "pub_date"
+    CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
+
 
 
     #-----------------------------------------------------------------------------

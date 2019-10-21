@@ -64,6 +64,7 @@ import django.db
 # django encoding imports (for supporting 2 and 3).
 import django.utils.encoding
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.text import slugify
 
 # python_utilities - text cleanup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
@@ -89,6 +90,7 @@ from python_utilities.sequences.sequence_helper import SequenceHelper
 from context.models import Abstract_Context_With_JSON
 from context.models import Abstract_UUID
 from context.models import Entity
+from context.models import Entity_Identifier_Type
 from context.models import Work_Log
 from context.shared.entity_models import Abstract_Entity_Container
 from context.shared.entity_models import Abstract_Location
@@ -116,6 +118,35 @@ Debugging code, shared across all models.
 
 DEBUG = False
 DEFAULT_LOGGER_NAME = "context_text.models"
+
+def output_log_message( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME, log_level_code_IN = logging.DEBUG, do_print_IN = False ):
+    
+    '''
+    Accepts message string.  If debug is on, logs it.  If not,
+       does nothing for now.
+    '''
+    
+    # declare variables
+    do_print = False
+
+    # got a message?
+    if ( message_IN ):
+    
+        # only print if debug is on.
+        do_print = DEBUG
+        
+        # call LoggingHelper method
+        LoggingHelper.log_message( message_IN,
+                                   method_IN = method_IN,
+                                   indent_with_IN = indent_with_IN,
+                                   logger_name_IN = logger_name_IN,
+                                   log_level_code_IN = log_level_code_IN,
+                                   do_print_IN = do_print_IN )
+    
+    #-- END check to see if message. --#
+
+#-- END method output_log_message() --#
+
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME ):
     
@@ -649,7 +680,7 @@ class Document( models.Model ):
 class Newspaper( Abstract_Entity_Container ):
 
     #----------------------------------------------------------------------
-    # ! ----> model fields and meta
+    # ! ==> model fields and meta
     #----------------------------------------------------------------------
 
 
@@ -664,7 +695,7 @@ class Newspaper( Abstract_Entity_Container ):
     #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
     #----------------------------------------------------------------------
-    # ! ----> Meta
+    # ! ==> Meta
     #----------------------------------------------------------------------
 
 
@@ -677,7 +708,7 @@ class Newspaper( Abstract_Entity_Container ):
 
 
     #---------------------------------------------------------------------------
-    # ! ----> overridden built-in methods
+    # ! ==> overridden built-in methods
     #---------------------------------------------------------------------------
 
 
@@ -719,7 +750,7 @@ class Newspaper( Abstract_Entity_Container ):
 
 
     #----------------------------------------------------------------------
-    # ! ----> instance methods
+    # ! ==> instance methods
     #----------------------------------------------------------------------
 
 
@@ -832,7 +863,7 @@ class Person_Newspaper( models.Model ):
 class Article( Abstract_Entity_Container ):
 
     #----------------------------------------------------------------------------
-    # Constants-ish
+    # ! ==> Constants-ish
     #----------------------------------------------------------------------------
     
     
@@ -870,8 +901,8 @@ class Article( Abstract_Entity_Container ):
     # author_string
     AUTHOR_STRING_DIVIDER = "/"
 
-    # filter (LOOKUP) parameters
-    #==================
+    #===========================================================================
+    # ! ----> filter (LOOKUP) parameters
 
     # newspaper filter (expects instance of Newspaper model)
     PARAM_NEWSPAPER_ID = ContextTextBase.PARAM_NEWSPAPER_ID
@@ -906,8 +937,8 @@ class Article( Abstract_Entity_Container ):
     PARAM_CUSTOM_ARTICLE_Q = ContextTextBase.PARAM_CUSTOM_ARTICLE_Q
     PARAM_GET_DISTINCT_RECORDS = ContextTextBase.PARAM_GET_DISTINCT_RECORDS
     
-    # Django queryset parameters
-    #===========================
+    #===========================================================================
+    # ! ----> Django queryset parameters
 
     # variables for building nuanced queries in django.
     # Will be specific to each paper, so using Grand Rapids Press as example.
@@ -918,12 +949,44 @@ class Article( Abstract_Entity_Container ):
     Q_GRP_IN_HOUSE_AUTHOR = Q( author_varchar__iregex = r'.* */ *THE GRAND RAPIDS PRESS$' ) | Q( author_varchar__iregex = r'.* */ *PRESS .* EDITOR$' ) | Q( author_varchar__iregex = r'.* */ *GRAND RAPIDS PRESS .* BUREAU$' ) | Q( author_varchar__iregex = r'.* */ *SPECIAL TO THE PRESS$' )
     
     
-    #----------------------------------------------------------------------------
-    # Model fields (persisted in database)
-    #----------------------------------------------------------------------------
+    #===========================================================================
+    # ! ----> Context
+
+    # Entity name prefix
+    ENTITY_NAME_PREFIX = "context_text-Article-"
+
+    # entity type
+    ENTITY_TYPE_SLUG_ARTICLE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ARTICLE
+
+    # entity identifier types - general
+    ENTITY_ID_TYPE_PERMALINK = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
+    
+    # entity identifier types - articles
+    ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
+    ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+    ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
+
+    # entity identifier types - default
+    UNIQUE_ID_TYPE_DEFAULT = ENTITY_ID_TYPE_PERMALINK
+
+    # choices for unique_identifier_type
+    UNIQUE_ID_TYPE_CHOICES = (
+        ( ENTITY_ID_TYPE_PERMALINK, ENTITY_ID_TYPE_PERMALINK ),
+        ( ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID, ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
+    )
+    
+    # trait names
+    CONTEXT_TRAIT_NAME_PUB_DATE = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
+    CONTEXT_TRAIT_NAME_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
+
+
+    #---------------------------------------------------------------------------
+    # ! ==> Model fields (persisted in database)
+    #---------------------------------------------------------------------------
 
     # ! TODO - need to figure out a way to actually make a unique identifier.
     unique_identifier = models.CharField( max_length = 255, blank = True )
+    unique_identifier_type = models.CharField( max_length = 255, blank = True, null = True, choices = UNIQUE_ID_TYPE_CHOICES, default = UNIQUE_ID_TYPE_DEFAULT )
     source_string = models.CharField( max_length = 255, blank = True, null = True )
     newspaper = models.ForeignKey( Newspaper, on_delete = models.SET_NULL, blank = True, null = True )
     pub_date = models.DateField()
@@ -977,7 +1040,7 @@ class Article( Abstract_Entity_Container ):
     #locations = models.ManyToManyField( Article_Location, blank = True )
 
     #----------------------------------------------------------------------------
-    # Meta class
+    # ! ==> Meta class
     #----------------------------------------------------------------------------
 
     # Meta-data for this class.
@@ -985,7 +1048,7 @@ class Article( Abstract_Entity_Container ):
         ordering = [ 'pub_date', 'section', 'page' ]
 
     #----------------------------------------------------------------------------
-    # class methods
+    # ! ==> class methods
     #----------------------------------------------------------------------------
 
 
@@ -1277,7 +1340,7 @@ class Article( Abstract_Entity_Container ):
         current_article_id = -1
         
         #-----------------------------------------------------------------------
-        # ! ==> init
+        # ! ----> init
         #-----------------------------------------------------------------------
 
         # init - get logger
@@ -1323,7 +1386,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if query set passed in --#
         
         #-----------------------------------------------------------------------
-        # ! ==> retrieve parameters
+        # ! ----> retrieve parameters
         #-----------------------------------------------------------------------
 
         newspaper_instance_IN = my_dict_helper.get_value( cls.PARAM_NEWSPAPER_INSTANCE, default_IN = None )
@@ -1381,7 +1444,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if flag passed in. --#
 
         #-----------------
-        # ! ==> newspaper
+        # ! ----> newspaper
         #-----------------
         
         newspaper_instance = None
@@ -1463,7 +1526,7 @@ class Article( Abstract_Entity_Container ):
         
 
         #-------------------------------
-        # ! ==> start_date and end_date
+        # ! ----> start_date and end_date
         #-------------------------------
 
         my_logger.debug( "In " + me + "(): start_date_IN = " + str( start_date_IN ) + "; end_date_IN = " + str( end_date_IN ) )
@@ -1482,7 +1545,7 @@ class Article( Abstract_Entity_Container ):
 
 
         #-------------------------------
-        # ! ==> date_range
+        # ! ----> date_range
         #-------------------------------
         
         my_logger.debug( "In " + me + "(): date_range_IN = " + str( date_range_IN ) )
@@ -1505,7 +1568,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if date range present.
 
         #----------------
-        # ! ==> sections
+        # ! ----> sections
         #----------------
 
         my_logger.debug( "In " + me + "(): section_name_list_IN = " + str( section_name_list_IN ) )
@@ -1527,7 +1590,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if start date in arguments --#
 
         #--------------------
-        # ! ==> tags IN list
+        # ! ----> tags IN list
         #--------------------
 
         my_logger.debug( "In " + me + "(): tags_in_list_IN = " + str( tags_in_list_IN ) )
@@ -1553,7 +1616,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if tags IN list is in arguments --#
 
         #------------------------
-        # ! ==> tags NOT IN list
+        # ! ----> tags NOT IN list
         #------------------------
 
         my_logger.debug( "In " + me + "(): tags_not_in_list_IN = " + str( tags_not_in_list_IN ) )
@@ -1576,7 +1639,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if tags IN list is in arguments --#
 
         #-------------------------
-        # ! ==> unique ID IN list
+        # ! ----> unique ID IN list
         #-------------------------
 
         my_logger.debug( "In " + me + "(): unique_id_in_list_IN = " + str( unique_id_in_list_IN ) )
@@ -1603,7 +1666,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if tags IN list is in arguments --#
 
         #--------------------------
-        # ! ==> article ID IN list
+        # ! ----> article ID IN list
         #--------------------------
 
         my_logger.debug( "In " + me + "(): article_id_in_list_IN = " + str( article_id_in_list_IN ) )
@@ -1630,7 +1693,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if tags IN list is in arguments --#
 
         #-------------------------------
-        # ! ==> custom-built Q() object
+        # ! ----> custom-built Q() object
         #-------------------------------
 
         # try to update QuerySet for selected sections.
@@ -1649,7 +1712,7 @@ class Article( Abstract_Entity_Container ):
         #-- END check to see if Custom Q argument present --#
         
         #-----------------------------------------------------------------------
-        # ! ==> filter with Q() list
+        # ! ----> filter with Q() list
         #-----------------------------------------------------------------------
 
         my_logger.debug( "In {}(): article_id_in_list_IN = {}".format( me, article_id_in_list_IN ) )
@@ -1671,7 +1734,7 @@ class Article( Abstract_Entity_Container ):
         my_logger.debug( "----> In " + me + "(): after applying list of Q() objects, is QS evaluated?: {}".format( is_queryset_evaluated ) )
         
         #-----------------------------------------------------------------------
-        # ! ==> do DISTINCT?
+        # ! ----> do DISTINCT?
         #-----------------------------------------------------------------------
         
         # do DISTINCT on ID?
@@ -1735,9 +1798,21 @@ class Article( Abstract_Entity_Container ):
     #-- END method filter_articles() --#
 
 
-    #----------------------------------------------------------------------------
-    # instance methods
-    #----------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    # ! ==> overridden built-in methods
+    #---------------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Article, self ).__init__( *args, **kwargs )
+
+        # then, initialize variable.
+        self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
+        self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_ARTICLE
+        
+    #-- END method __init__() --#
 
 
     def __str__( self ):
@@ -1790,6 +1865,11 @@ class Article( Abstract_Entity_Container ):
     #-- END method __str__() --#
     
     
+    #----------------------------------------------------------------------------
+    # ! ==> instance methods
+    #----------------------------------------------------------------------------
+
+
     def create_notes( self, text_IN = "", content_type_IN = "text", do_save_IN = True, *args, **kwargs ):
         
         '''
@@ -1918,6 +1998,113 @@ class Article( Abstract_Entity_Container ):
     
     #-- END method get_article_data_for_coder() --#
     
+
+    def load_entity( self, do_create_if_none_IN = True, *args, **kwargs ):
+        
+        '''
+        Tries to find the entity for this class instance in context.  If it
+            finds a match, stores it in instance, and returns it.  If not,
+            returns None.
+        Preconditions: None
+        Postconditions: returns entity for this instance.
+        '''
+        
+        # return reference
+        value_OUT = None
+        
+        # declare variables
+        entity_instance = None
+        article_id = None
+        identifier_type_name = None
+        entity_identifier_type = None
+        existing_entity_qs = None
+        existing_entity_count = None
+        entity_name_prefix = None
+        entity_type_slug = None
+        entity_type = None
+        
+        # init
+        identifier_type_name = self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+        
+        # does article have an entity?
+        entity_instance = self.entity
+        if ( entity_instance is None ):
+        
+            # no nested entity.  check to see if already an article entity with
+            #     this ID.
+            article_id = self.id
+            
+            # filter on identifier with type "article_sourcenet_id"...
+            entity_identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_type_name )
+            existing_entity_qs = Entity.objects.filter( entity_identifier__entity_identifier_type = entity_identifier_type )
+    
+            # ...and the ID of the article.
+            existing_entity_qs = existing_entity_qs.filter( entity_identifier__uuid = article_id )
+    
+            # what have we got?
+            existing_entity_count = existing_entity_qs.count()
+            if existing_entity_count == 1:
+                
+                # Found one. Store it and return it.
+                entity_instance = existing_entity_qs.get()
+                self.set_entity( entity_instance )
+                self.save()
+                value_OUT = self.get_entity()
+        
+            elif existing_entity_count == 0:
+            
+                # no match.
+                log_message = "No entities with identifier of type {}, uuid = {}".format( identifier_type_name, article_id )
+                output_log_message( log_message, log_level_code_IN = logging.INFO, do_print_IN = True )
+                
+                # create?
+                if ( do_create_if_none_IN == True ):
+                
+                    # got an instance.  Create entity instance.  Init:
+                    entity_name_prefix = self.my_entity_name_prefix
+                    entity_type_slug = self.my_entity_type_slug
+                    
+                    # create instance
+                    entity_instance = Entity()
+                    entity_instance.name = "{}{}".format( entity_name_prefix, self.id )
+                    entity_instance.notes = "{}".format( self )
+                    entity_instance.save()
+        
+                    # set type
+                    entity_type = entity_instance.add_entity_type( entity_type_slug )
+                    
+                    # add to article
+                    self.set_entity( entity_instance )
+                    self.save()
+                    value_OUT = self.get_entity()
+
+                else:
+                
+                    # do not create.
+                    value_OUT = None
+                    
+                #-- END check to see if we create when none found --#
+            
+            else:
+                
+                # more than one existing match.  Error.
+                log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
+                output_log_message( log_message, log_level_code_IN = logging.INFO, do_print_IN = True )
+                value_OUT = None
+    
+            #-- END query for existing entity. --#
+            
+        else:
+        
+            # something already loaded - return what is nested.
+            value_OUT = entity_instance
+        
+        #-- END check for associated entity --#
+                
+        return value_OUT
+
+    #-- END method load_entity() --#
+
 
     def rebuild_author_string( self, *args, **kwargs ):
         
@@ -2265,6 +2452,147 @@ class Article( Abstract_Entity_Container ):
 
     #-- END method set_text() --#
     
+
+    def update_entity( self ):
+        
+        '''
+        Accepts an Article instance, creates and populates an entity for the
+            Article based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables - create new.
+        entity_instance = None
+        entity_type = None
+        trait_name = None
+        trait_definition = None
+        trait_instance = None
+        trait_value = None
+        trait_type = None
+        identifier_type_name = None
+        identifier_type = None
+        identifier_instance = None
+        identifier_uuid = None
+        identifier_source = None
+        
+        # load entity for article.
+        entity_instance = self.load_entity( do_create_if_none_IN = True )
+
+        # got an entity?
+        if ( entity_instance is not None ):
+
+            # get entity type (won't duplicate if already added).
+            entity_type = entity_instance.add_entity_type( self.my_entity_type_slug )
+            
+            # make sure we return it at this point, since it has been
+            #    created and stored in database.
+            entity_OUT = entity_instance
+
+            # ==> set entity traits
+
+            # ----> publication date
+            trait_name = self.CONTEXT_TRAIT_NAME_PUB_DATE
+            trait_value = self.pub_date
+            trait_value = trait_value.strftime( "%Y-%m-%d" )
+
+            # initialize trait from predefined entity type trait "pub_date".
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ----> newspaper ID
+            trait_name = self.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
+            trait_value = self.newspaper.id
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+                                              
+            # ! TODO - figure out other traits to add.
+
+            # ==> add identifiers
+
+            # ----> for django ID in this system.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID )
+            identifier_uuid = self.id
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+            
+            # ----> for unique identifier.
+            identifier_type_name = self.unique_identifier_type
+            identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_type_name )
+            identifier_uuid = self.unique_identifier
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+                                            
+            # ----> generic archive id
+            # is there an archive_id and archive_source?
+            identifier_type = None
+            identifier_uuid = self.archive_id
+            identifier_source = self.archive_source
+            if (
+                (
+                    ( identifier_uuid is not None )
+                    and ( identifier_uuid != "" )
+                )
+                and
+                (
+                    ( identifier_source is not None )
+                    and ( identifier_source != "" )
+                )
+            ):
+            
+                # log archive identifier information
+                log_message = "NOTE - Archive identifier: {}; source: {}".format( identifier_uuid, identifier_source )
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+            
+                # archive ID and source present.  Create identifier.
+                identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
+                entity_instance.set_identifier( identifier_uuid,
+                                                name_IN = identifier_type.name,
+                                                source_IN = identifier_source,
+                                                entity_identifier_type_IN = identifier_type )
+                                            
+            else:
+            
+                # No archive identifier.
+                log_message = "NOTE - No archive identifier or source."
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+            
+            #-- END check to see if generic archive ID. --#
+            
+            # ----> generic permalink
+            # permalink set?
+            identifier_uuid = self.permalink
+            if ( ( identifier_uuid is not None ) and ( identifier_uuid != "" ) ):
+            
+                # permalink present.  Create identifier.
+                identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_PERMALINK )
+                entity_instance.set_identifier( identifier_uuid,
+                                                name_IN = identifier_type.name,
+                                                entity_identifier_type_IN = identifier_type )
+            
+            #-- END check to see if permalink present. --#
+
+        else:
+            
+            # no entity, can't add/update traits or identifiers
+            print( "no entity, can't add/update traits or identifiers" )
+            entity_OUT = None
+            
+        #-- END check to make sure we have an entity --#
+        
+        return entity_OUT
+        
+    #-- END method update_entity() --#
+
 
 #= End Article Model ============================================================
 
