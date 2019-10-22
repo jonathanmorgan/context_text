@@ -227,6 +227,10 @@ Specific sets of tests:
             
 - context_text model instances:
 
+    - test Article model
+    
+            python manage.py test context_text.tests.models.test_Article_model
+
     - test Article_Data model
     
             python manage.py test context_text.tests.models.test_Article_Data_model

@@ -1,5 +1,5 @@
 f"""
-This file contains tests of the context_text ExportToContext class.
+This file contains tests of the context_text Article model class.
 
 Functions tested:
 
@@ -20,13 +20,12 @@ from context.models import Entity_Identifier_Type
 from context.models import Entity_Type_Trait
 
 # context_text imports
-from context_text.export.to_context_base.export_to_context import ExportToContext
 from context_text.models import Article
 from context_text.shared.context_text_base import ContextTextBase
 from context_text.tests.test_helper import TestHelper
 
 
-class ExportToContextTest( django.test.TestCase ):
+class ArticleModelTest( django.test.TestCase ):
     
 
     #----------------------------------------------------------------------------
@@ -38,15 +37,15 @@ class ExportToContextTest( django.test.TestCase ):
     DEBUG = False
 
     # CLASS NAME
-    CLASS_NAME = "ExportToContextTest"
+    CLASS_NAME = "ArticleModelTest"
 
     # identifier type names
-    IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID = ExportToContext.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
-    IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID = ExportToContext.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
-    IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER = ExportToContext.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
-    IDENTIFIER_TYPE_NAME_PERMALINK = ExportToContext.ENTITY_ID_TYPE_PERMALINK
-    IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = ExportToContext.ENTITY_ID_TYPE_PERSON_OPEN_CALAIS_UUID
-    IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID = ExportToContext.ENTITY_ID_TYPE_PERSON_SOURCENET_ID
+    IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID = Article.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
+    IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID = Article.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+    IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER = Article.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
+    IDENTIFIER_TYPE_NAME_PERMALINK = Article.ENTITY_ID_TYPE_PERMALINK
+    IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID
+    IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID
     IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
 
     # map of identifier type names to test IDs
@@ -59,9 +58,9 @@ class ExportToContextTest( django.test.TestCase ):
     IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER ] = 6
     
     # Entity Type slugs
-    ENTITY_TYPE_SLUG_ARTICLE = ExportToContext.ENTITY_TYPE_SLUG_ARTICLE
-    ENTITY_TYPE_SLUG_NEWSPAPER = ExportToContext.ENTITY_TYPE_SLUG_NEWSPAPER
-    ENTITY_TYPE_SLUG_PERSON = ExportToContext.ENTITY_TYPE_SLUG_PERSON
+    ENTITY_TYPE_SLUG_ARTICLE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ARTICLE
+    ENTITY_TYPE_SLUG_NEWSPAPER = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
+    ENTITY_TYPE_SLUG_PERSON = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_PERSON
     
     # Entity Trait names
     TEST_ENTITY_TRAIT_NAME = "flibble_glibble_pants"
@@ -136,12 +135,11 @@ class ExportToContextTest( django.test.TestCase ):
     #-- END test method test_django_config_installed() --#
 
 
-    def test_create_article_entity( self ):
+    def test_load_entity( self ):
         
         # declare variables
-        me = "test_create_article"
+        me = "test_load_entity"
         error_string = None
-        my_exporter = None
         article_id_list = None
         article_id = None
         article_instance = None
@@ -159,7 +157,6 @@ class ExportToContextTest( django.test.TestCase ):
         test_entity_instance = None
         entity_id_qs = None
         test_entity_id = None
-        id_type = None
         type_slug_1 = None
         type_slug_2 = None
         type_qs = None
@@ -183,16 +180,12 @@ class ExportToContextTest( django.test.TestCase ):
 
         print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
-        my_exporter = ExportToContext()
-
         # initialize
-        id_type = my_exporter.set_article_uuid_id_type_name( ExportToContext.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
         article_id_list = []
         article_id_list.append( self.TEST_ARTICLE_ID_1 )
         article_id_list.append( self.TEST_ARTICLE_ID_2 )        
         
         if ( debug_flag == True ):
-            print( "--------> ID type: {}".format( id_type ) )
             print( "All types:" )
             for current_type in Entity_Identifier_Type.objects.all():
             
@@ -216,9 +209,154 @@ class ExportToContextTest( django.test.TestCase ):
             article_archive_permalink = article_instance.permalink
             
             # create entity for it.
-            entity_instance = my_exporter.create_article_entity( article_instance )
+            entity_instance = article_instance.load_entity()
             entity_id = entity_instance.id
-            entity_type = entity_instance.add_entity_type( ExportToContext.ENTITY_TYPE_SLUG_ARTICLE )
+            entity_type = entity_instance.add_entity_type( Article.ENTITY_TYPE_SLUG_ARTICLE )
+            
+            # ! ----> entity in article should now be set to new entity.
+
+            # get nested entity's ID
+            article_entity = article_instance.entity
+            if ( article_entity is not None ):
+            
+                # entity present.  Get ID.
+                article_entity_id = article_entity.id
+
+            #-- END check to see if article has entity. --#
+            
+            # nested entity ID should be same as test entity ID.
+            should_be = article_entity_id
+            error_string = "article entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            self.assertEqual( entity_id, should_be, msg = error_string )
+
+            # more tests.
+            id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
+            test_entity_instance = Entity.get_entity_for_identifier( article_id, id_type_IN = id_type )
+            test_entity_id = test_entity_instance.id
+            
+            # returned entity should have same ID as entity_instance.
+            should_be = entity_id
+            error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( article_id, test_entity_id, should_be )
+            self.assertEqual( test_entity_id, should_be, msg = error_string )
+            
+            # ! ----> if article.entity is emptied, should load same entity again.
+            
+            # reload article
+            article_instance = Article.objects.get( id = article_id )
+            
+            # clear out entity field.
+            article_instance.entity = None
+            article_instance.save()
+            
+            # try call to load_entity
+            article_instance.load_entity()
+            
+            # get nested entity's ID
+            article_entity = article_instance.entity
+            if ( article_entity is not None ):
+            
+                # entity present.  Get ID.
+                article_entity_id = article_entity.id
+
+            #-- END check to see if article has entity. --#
+            
+            # nested entity ID should be same as test entity ID.
+            should_be = article_entity_id
+            error_string = "article entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            self.assertEqual( entity_id, should_be, msg = error_string )
+
+            # more tests.
+            id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
+            test_entity_instance = Entity.get_entity_for_identifier( article_id, id_type_IN = id_type )
+            test_entity_id = test_entity_instance.id
+            
+            # returned entity should have same ID as entity_instance.
+            should_be = entity_id
+            error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( article_id, test_entity_id, should_be )
+            self.assertEqual( test_entity_id, should_be, msg = error_string )
+                        
+        #-- END loop over test article IDs. --#
+        
+    #-- END test method test_load_entity() --#
+
+
+    def test_update_entity( self ):
+        
+        # declare variables
+        me = "test_update_entity"
+        error_string = None
+        article_id_list = None
+        article_id = None
+        article_instance = None
+        article_newspaper = None
+        article_newspaper_id = None
+        article_pub_date = None
+        article_unique_identifier = None
+        article_archive_source = None
+        article_archive_id = None
+        article_entity = None
+        article_entity_id = None
+        entity_instance = None
+        entity_id = None
+        entity_type = None
+        test_entity_instance = None
+        entity_id_qs = None
+        test_entity_id = None
+        type_slug_1 = None
+        type_slug_2 = None
+        type_qs = None
+        type_count = None
+        should_be = None
+
+        # declare variables - loading traits
+        trait_name = None
+        trait_definition_qs = None
+        trait_definition = None
+        test_entity_trait = None
+        test_entity_trait_value = None
+        test_identifier_name = None
+        test_identifier_type = None
+        test_identifier = None
+        test_identifier_uuid = None
+        test_identifier_source = None
+
+        # debug
+        debug_flag = self.DEBUG
+
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
+        
+        # initialize
+        article_id_list = []
+        article_id_list.append( self.TEST_ARTICLE_ID_1 )
+        article_id_list.append( self.TEST_ARTICLE_ID_2 )        
+        
+        if ( debug_flag == True ):
+            print( "All types:" )
+            for current_type in Entity_Identifier_Type.objects.all():
+            
+                print( "- {}".format( current_type ) )
+                
+            #-- END loop over all types to test loading of fixture --#
+        #-- END DEBUG --#
+
+        # loop over test articles
+        for article_id in article_id_list:
+        
+            # load article information.
+            article_instance = Article.objects.get( id = article_id )
+            article_newspaper = article_instance.newspaper
+            article_newspaper_id = article_newspaper.id
+            article_pub_date = article_instance.pub_date
+            article_pub_date = article_pub_date.strftime( "%Y-%m-%d" )
+            article_unique_identifier = article_instance.unique_identifier
+            article_archive_source = article_instance.archive_source
+            article_archive_id = article_instance.archive_id
+            article_archive_permalink = article_instance.permalink
+            
+            # create entity for it.
+            entity_instance = article_instance.update_entity()
+            entity_id = entity_instance.id
+            entity_type = entity_instance.add_entity_type( Article.ENTITY_TYPE_SLUG_ARTICLE )
             
             # entity ID in article should now be set to this entity's ID.
             
@@ -255,7 +393,7 @@ class ExportToContextTest( django.test.TestCase ):
             #----------------------------------------------------------------------#        
             
             # ==> check pub_date trait, name = "pub_date"
-            trait_name = ExportToContext.TRAIT_NAME_PUB_DATE
+            trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
         
             # initialize trait from predefined entity type trait "pub_date".
             trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
@@ -273,7 +411,7 @@ class ExportToContextTest( django.test.TestCase ):
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
            
             # ==> check newspaper ID - trait, name = "sourcenet-Newspaper-ID"
-            trait_name = ExportToContext.TRAIT_NAME_SOURCENET_NEWSPAPER_ID
+            trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
                                                                        slug_IN = slugify( trait_name ) )
             test_entity_trait_value = int( test_entity_trait.value )
@@ -383,7 +521,7 @@ class ExportToContextTest( django.test.TestCase ):
             
         #-- END loop over test article IDs. --#
         
-    #-- END test method test_create_article_entity() --#
+    #-- END test method test_update_entity() --#
 
 
-#-- END test class ExportToContextTest --#
+#-- END test class ArticleModelTest --#

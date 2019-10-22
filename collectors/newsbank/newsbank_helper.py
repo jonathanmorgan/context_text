@@ -59,6 +59,9 @@ from python_utilities.strings.string_helper import StringHelper
 from context_text.models import Article
 from context_text.models import Article_Text
 
+# other context_text
+from context_text.shared.context_text_base import ContextTextBase
+
 #================================================================================
 # Package constants-ish
 #================================================================================
@@ -596,6 +599,9 @@ class NewsBankHelper( object ):
             
         #-- END check to see if ID passed in --#
         
+        # set the unique_identifier_type
+        article_instance.unique_idnetifier_type = Article.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
+        
         article_OUT = article_instance
 
         return article_OUT
@@ -1094,6 +1100,7 @@ class NewsBankHelper( object ):
                     # Now, only set if we save, after saving.
                     #article_instance.raw_html = contents_IN
                     article_instance.unique_identifier = id_IN
+                    article_instance.unique_identifier_type = Article.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
                     article_instance.archive_source = SOURCE_NEWS_BANK
                     
                     # got a related newspaper to nest?

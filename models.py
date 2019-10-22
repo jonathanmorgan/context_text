@@ -986,7 +986,7 @@ class Article( Abstract_Entity_Container ):
 
     # ! TODO - need to figure out a way to actually make a unique identifier.
     unique_identifier = models.CharField( max_length = 255, blank = True )
-    unique_identifier_type = models.CharField( max_length = 255, blank = True, null = True, choices = UNIQUE_ID_TYPE_CHOICES, default = UNIQUE_ID_TYPE_DEFAULT )
+    unique_identifier_type = models.CharField( max_length = 255, blank = True, null = True, choices = UNIQUE_ID_TYPE_CHOICES, default = None )
     source_string = models.CharField( max_length = 255, blank = True, null = True )
     newspaper = models.ForeignKey( Newspaper, on_delete = models.SET_NULL, blank = True, null = True )
     pub_date = models.DateField()
@@ -1811,6 +1811,7 @@ class Article( Abstract_Entity_Container ):
         # then, initialize variable.
         self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
         self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_ARTICLE
+        self.my_base_entity_id_type = self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
         
     #-- END method __init__() --#
 
@@ -1998,113 +1999,6 @@ class Article( Abstract_Entity_Container ):
     
     #-- END method get_article_data_for_coder() --#
     
-
-    def load_entity( self, do_create_if_none_IN = True, *args, **kwargs ):
-        
-        '''
-        Tries to find the entity for this class instance in context.  If it
-            finds a match, stores it in instance, and returns it.  If not,
-            returns None.
-        Preconditions: None
-        Postconditions: returns entity for this instance.
-        '''
-        
-        # return reference
-        value_OUT = None
-        
-        # declare variables
-        entity_instance = None
-        article_id = None
-        identifier_type_name = None
-        entity_identifier_type = None
-        existing_entity_qs = None
-        existing_entity_count = None
-        entity_name_prefix = None
-        entity_type_slug = None
-        entity_type = None
-        
-        # init
-        identifier_type_name = self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
-        
-        # does article have an entity?
-        entity_instance = self.entity
-        if ( entity_instance is None ):
-        
-            # no nested entity.  check to see if already an article entity with
-            #     this ID.
-            article_id = self.id
-            
-            # filter on identifier with type "article_sourcenet_id"...
-            entity_identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_type_name )
-            existing_entity_qs = Entity.objects.filter( entity_identifier__entity_identifier_type = entity_identifier_type )
-    
-            # ...and the ID of the article.
-            existing_entity_qs = existing_entity_qs.filter( entity_identifier__uuid = article_id )
-    
-            # what have we got?
-            existing_entity_count = existing_entity_qs.count()
-            if existing_entity_count == 1:
-                
-                # Found one. Store it and return it.
-                entity_instance = existing_entity_qs.get()
-                self.set_entity( entity_instance )
-                self.save()
-                value_OUT = self.get_entity()
-        
-            elif existing_entity_count == 0:
-            
-                # no match.
-                log_message = "No entities with identifier of type {}, uuid = {}".format( identifier_type_name, article_id )
-                output_log_message( log_message, log_level_code_IN = logging.INFO, do_print_IN = True )
-                
-                # create?
-                if ( do_create_if_none_IN == True ):
-                
-                    # got an instance.  Create entity instance.  Init:
-                    entity_name_prefix = self.my_entity_name_prefix
-                    entity_type_slug = self.my_entity_type_slug
-                    
-                    # create instance
-                    entity_instance = Entity()
-                    entity_instance.name = "{}{}".format( entity_name_prefix, self.id )
-                    entity_instance.notes = "{}".format( self )
-                    entity_instance.save()
-        
-                    # set type
-                    entity_type = entity_instance.add_entity_type( entity_type_slug )
-                    
-                    # add to article
-                    self.set_entity( entity_instance )
-                    self.save()
-                    value_OUT = self.get_entity()
-
-                else:
-                
-                    # do not create.
-                    value_OUT = None
-                    
-                #-- END check to see if we create when none found --#
-            
-            else:
-                
-                # more than one existing match.  Error.
-                log_message = "ERROR - more than one entity ( {} ) with identifier of type {}, uuid = {}".format( existing_entity_count, identifier_type_name, article_id )
-                output_log_message( log_message, log_level_code_IN = logging.INFO, do_print_IN = True )
-                value_OUT = None
-    
-            #-- END query for existing entity. --#
-            
-        else:
-        
-            # something already loaded - return what is nested.
-            value_OUT = entity_instance
-        
-        #-- END check for associated entity --#
-                
-        return value_OUT
-
-    #-- END method load_entity() --#
-
 
     def rebuild_author_string( self, *args, **kwargs ):
         
@@ -2459,6 +2353,11 @@ class Article( Abstract_Entity_Container ):
         Accepts an Article instance, creates and populates an entity for the
             Article based on the contents of the instance, returns the entity
             instance.
+            
+        If you just want to get a fully-populated ID loaded into this instance,
+            call this method, not load_entity().  load_entity() will create a
+            new instance if one doesn't exist, but it does not fill in all of
+            the details - because this method does!
         '''
         
         # return reference
@@ -2491,9 +2390,9 @@ class Article( Abstract_Entity_Container ):
             #    created and stored in database.
             entity_OUT = entity_instance
 
-            # ==> set entity traits
+            # ! ----> set entity traits
 
-            # ----> publication date
+            # ! --------> publication date
             trait_name = self.CONTEXT_TRAIT_NAME_PUB_DATE
             trait_value = self.pub_date
             trait_value = trait_value.strftime( "%Y-%m-%d" )
@@ -2506,7 +2405,7 @@ class Article( Abstract_Entity_Container ):
                                               trait_value,
                                               entity_type_trait_IN = trait_definition )
 
-            # ----> newspaper ID
+            # ! --------> newspaper ID
             trait_name = self.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
             trait_value = self.newspaper.id
             entity_instance.set_entity_trait( trait_name,
@@ -2515,16 +2414,16 @@ class Article( Abstract_Entity_Container ):
                                               
             # ! TODO - figure out other traits to add.
 
-            # ==> add identifiers
+            # ! ----> add identifiers
 
-            # ----> for django ID in this system.
+            # ! --------> for django ID in this system.
             identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID )
             identifier_uuid = self.id
             entity_instance.set_identifier( identifier_uuid,
                                             name_IN = identifier_type.name,
                                             entity_identifier_type_IN = identifier_type )
             
-            # ----> for unique identifier.
+            # ! --------> for unique identifier.
             identifier_type_name = self.unique_identifier_type
             identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_type_name )
             identifier_uuid = self.unique_identifier
@@ -2532,7 +2431,7 @@ class Article( Abstract_Entity_Container ):
                                             name_IN = identifier_type.name,
                                             entity_identifier_type_IN = identifier_type )
                                             
-            # ----> generic archive id
+            # ! --------> generic archive id
             # is there an archive_id and archive_source?
             identifier_type = None
             identifier_uuid = self.archive_id
