@@ -1,5 +1,7 @@
 # context_text
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523269.svg)](https://doi.org/10.5281/zenodo.3523269)
+
 <!-- TOC -->
 
 context_text is a django application for capturing and analyzing networks of news based on articles.  In order for database migrations to work, you need to use 1.7+.  south_migrations are present, but they won't be updated going forward.
