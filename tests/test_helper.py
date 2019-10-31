@@ -56,10 +56,10 @@ class TestHelper( context.tests.test_helper.TestHelper ):
 
 
     # fixtures paths, in order they should be loaded.
-    FIXTURE_UNIT_TEST_AUTH_DATA = "context_text/fixtures/context_text_unittest_auth_data.json"
-    FIXTURE_UNIT_TEST_CONFIG_PROPERTIES = "context_text/fixtures/context_text_unittest_django_config_data.json"
-    FIXTURE_UNIT_TEST_BASE_DATA = "context_text/fixtures/context_text_unittest_data.json"
-    FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text/fixtures/context_text_unittest_taggit_data.json"
+    FIXTURE_UNIT_TEST_AUTH_DATA = "context_text_unittest_auth_data.json"
+    FIXTURE_UNIT_TEST_CONFIG_PROPERTIES = "context_text_unittest_django_config_data.json"
+    FIXTURE_UNIT_TEST_BASE_DATA = "context_text_unittest_data.json"
+    FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text_unittest_taggit_data.json"
     
     # list of fixtures, in order.
     FIXTURE_LIST = []

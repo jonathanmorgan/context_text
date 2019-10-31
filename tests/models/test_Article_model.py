@@ -76,11 +76,11 @@ class ArticleModelTest( django.test.TestCase ):
     TEST_ARTICLE_ID_2 = 21409
 
     # local fixtures
-    FIXTURE_UNIT_TEST_AUTH_DATA = "context_text/fixtures/context_text_unittest_export_auth_data.json"
+    FIXTURE_UNIT_TEST_AUTH_DATA = "context_text_unittest_export_auth_data.json"
     FIXTURE_UNIT_TEST_CONFIG_PROPERTIES = TestHelper.FIXTURE_UNIT_TEST_CONFIG_PROPERTIES
-    FIXTURE_UNIT_TEST_BASE_DATA = "context_text/fixtures/context_text_unittest_export_data.json"
-    FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text/fixtures/context_text_unittest_export_taggit_data.json"
-    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context/fixtures/context-sourcenet_entities_and_relations.json"
+    FIXTURE_UNIT_TEST_BASE_DATA = "context_text_unittest_export_data.json"
+    FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text_unittest_export_taggit_data.json"
+    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context-sourcenet_entities_and_relations.json"
 
     # list of fixtures, in order.
     FIXTURE_LIST = []

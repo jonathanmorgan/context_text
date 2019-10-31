@@ -25,7 +25,15 @@ class OpenCalaisTest( django.test.TestCase ):
     
     
     #----------------------------------------------------------------------------
-    # instance methods
+    # ! ==> CONSTANTS-ish
+    #----------------------------------------------------------------------------
+
+
+    TEST_ARTICLE_TOTAL_COUNT = 46
+
+
+    #----------------------------------------------------------------------------
+    # ! ==> instance methods
     #----------------------------------------------------------------------------
 
 
@@ -69,6 +77,7 @@ class OpenCalaisTest( django.test.TestCase ):
         end_pub_date = None # should be datetime instance
         tag_in_list = []
         paper_id_in_list = []
+        limit_to = None
         params = {}
         my_article_coding = None
         article_qs = None
@@ -78,12 +87,15 @@ class OpenCalaisTest( django.test.TestCase ):
         do_coding = True
         
         # test variables
+        expected_article_count = None
         automated_user = None
         automated_username = ""
         automated_article_data_qs = None
         article_data_count = -1
         article_data_notes_qs = None
         article_data_notes_count = None
+        
+        # ! ==> filter articles
         
         # first, use filters to get a list of articles to code - set filter parameters
         
@@ -121,9 +133,6 @@ class OpenCalaisTest( django.test.TestCase ):
         #article_qs = my_article_coding.create_article_query_set()
         article_qs = Article.objects.all()
         
-        # limit to one for an initial test?
-        #article_qs = article_qs[ : 1 ]
-        
         # filter on related article IDs?
         #article_id_in_list = [ 360962 ]
         #article_id_in_list = [ 28598 ]
@@ -137,11 +146,34 @@ class OpenCalaisTest( django.test.TestCase ):
         
         #-- END check to see if filter on specific IDs. --#
         
+        # order by ID
+        article_qs = article_qs.order_by( "id" )
+
+        # limit to?
+        limit_to = 5
+        if ( ( limit_to is not None ) and ( limit_to > 0 ) ):
+
+            # limit to
+            article_qs = article_qs[ : limit_to ]
+            expected_article_count = limit_to
+            
+        else:
+        
+            # no limit
+            expected_article_count = self.TEST_ARTICLE_TOTAL_COUNT
+            
+        #-- END check to see if limit_to --#
+
+        # ! ==> run test
+        
         # make sure we have at least one article
         article_count = article_qs.count()
         
-        # should be 46
-        self.assertEqual( article_count, 46 )
+        # should be expected_article_count, either 46 or limit specified.
+        test_value = article_count
+        should_be = expected_article_count
+        error_string = "In " + me + "(): Article count is " + str( test_value ) +", should be " + str( should_be )
+        self.assertEqual( test_value, should_be, error_string )
         
         # Do coding?
         if ( do_coding == True ):
@@ -161,18 +193,25 @@ class OpenCalaisTest( django.test.TestCase ):
             
             # automated user created?
             automated_user = ArticleCoder.get_automated_coding_user( False )
-            self.assertIsNotNone( automated_user )
+            error_string = "In " + me + "(): Automated user not created."
+            self.assertIsNotNone( automated_user, error_string )
             
             # make sure username is correct
             automated_username = automated_user.username
-            self.assertEqual( automated_username, "automated" )
+            test_value = automated_username
+            should_be = "automated"
+            error_string = "In " + me + "(): automated username is " + str( test_value ) +", should be " + str( should_be )
+            self.assertEqual( test_value, should_be, error_string )
             
             # count number of articles coded by automated user
             automated_article_data_qs = Article_Data.objects.filter( coder = automated_user )
             article_data_count = automated_article_data_qs.count()
             
-            # should also be 46
-            self.assertEqual( article_data_count, 46 )
+            # should also be expected_article_count, either 46 or limit specified.
+            test_value = article_data_count
+            should_be = expected_article_count
+            error_string = "In " + me + "(): Article_Data count is " + str( test_value ) +", should be " + str( should_be )
+            self.assertEqual( test_value, should_be, error_string )
             
             # check Article_Data_Notes
             article_data_notes_qs = Article_Data_Notes.objects.all()
@@ -183,9 +222,9 @@ class OpenCalaisTest( django.test.TestCase ):
             article_data_notes_qs = article_data_notes_qs.filter( content_json__isnull = False )
             article_data_notes_count = article_data_notes_qs.count()
 
-            # should also be 46
+            # should also be expected_article_count, either 46 or limit specified.
             test_value = article_data_notes_count
-            should_be = 46
+            should_be = expected_article_count
             error_string = "In " + me + "(): Article_Data_Notes count is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
             
