@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+recursive-include context_text/docs *
+recursive-include context_text/documentation *
+recursive-include context_text/build_files *
+recursive-include context_text/fixtures *
+recursive-include context_text/protocol *
+recursive-include context_text/R *
+recursive-include context_text/static *
+recursive-include context_text/templates *
