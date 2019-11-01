@@ -679,6 +679,32 @@ class Document( models.Model ):
 @python_2_unicode_compatible
 class Newspaper( Abstract_Entity_Container ):
 
+
+    #----------------------------------------------------------------------------
+    # ! ==> Constants-ish
+    #----------------------------------------------------------------------------
+    
+    
+    #===========================================================================
+    # ! ----> Context
+
+    # Entity name prefix
+    ENTITY_NAME_PREFIX = "context_text-Newspaper-"
+
+    # entity type
+    ENTITY_TYPE_SLUG_NEWSPAPER = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
+
+    # entity identifier types - general
+    ENTITY_ID_TYPE_PERMALINK = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
+    
+    # entity identifier types - articles
+    ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+    ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE
+    
+    # trait names
+    CONTEXT_TRAIT_NAME_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
+
+
     #----------------------------------------------------------------------
     # ! ==> model fields and meta
     #----------------------------------------------------------------------
@@ -717,6 +743,11 @@ class Newspaper( Abstract_Entity_Container ):
         # call parent __init()__ first.
         super( Newspaper, self ).__init__( *args, **kwargs )
 
+        # then, initialize variable.
+        self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
+        self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_NEWSPAPER
+        self.my_base_entity_id_type = self.ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+        
     #-- END method __init__() --#
 
     

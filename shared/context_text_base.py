@@ -171,6 +171,9 @@ class ContextTextBase( ContextBase ):
     
     # ! ----> Context
     
+    # entity identifier types - testing
+    CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
+
     # entity identifier types - general
     CONTEXT_ENTITY_ID_TYPE_PERMALINK = "permalink"
     
@@ -178,9 +181,14 @@ class ContextTextBase( ContextBase ):
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
+
+    # entity identifier types - person
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
-    CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
+
+    # entity identifier types - newspaper
+    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
+    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
     
     # entity identifier types - default
     CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
