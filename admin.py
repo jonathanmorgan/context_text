@@ -124,7 +124,7 @@ class NewspaperAdmin( admin.ModelAdmin ):
     #]
 
     list_display = ( 'id', 'name', 'newsbank_code', 'description' )
-    #list_display_links = ( 'headline', )
+    list_display_links = ( 'id', 'name', 'newsbank_code' )
     #list_filter = [ 'location' ]
     search_fields = [ 'name', 'description', 'newsbank_code', 'sections_local_news', 'sections_sports', 'id' ]
     #date_hierarchy = 'pub_date'

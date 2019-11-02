@@ -237,6 +237,10 @@ Specific sets of tests:
     
             python manage.py test context_text.tests.models.test_Article_Data_model
 
+    - test Newspaper model
+    
+            python manage.py test context_text.tests.models.test_Newspaper_model
+
     - test Person (and AbstractPerson) model
     
             python manage.py test context_text.tests.models.test_Person_model

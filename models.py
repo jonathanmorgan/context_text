@@ -702,8 +702,12 @@ class Newspaper( Abstract_Entity_Container ):
     ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE
     
     # trait names
-    CONTEXT_TRAIT_NAME_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
-
+    TRAIT_NAME_DESCRIPTION = ContextTextBase.CONTEXT_TRAIT_NAME_DESCRIPTION
+    TRAIT_NAME_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_NAME
+    TRAIT_NAME_ORGANIZATION_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID
+    TRAIT_NAME_SECTIONS_LOCAL_NEWS = ContextTextBase.CONTEXT_TRAIT_NAME_SECTIONS_LOCAL_NEWS
+    TRAIT_NAME_SECTIONS_SPORTS = ContextTextBase.CONTEXT_TRAIT_NAME_SECTIONS_SPORTS
+    
 
     #----------------------------------------------------------------------
     # ! ==> model fields and meta
@@ -783,6 +787,135 @@ class Newspaper( Abstract_Entity_Container ):
     #----------------------------------------------------------------------
     # ! ==> instance methods
     #----------------------------------------------------------------------
+
+
+    def update_entity( self ):
+        
+        '''
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
+            instance.
+            
+        If you just want to get a fully-populated ID loaded into this instance,
+            call this method, not load_entity().  load_entity() will create a
+            new instance if one doesn't exist, but it does not fill in all of
+            the details - because this method does!
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables - create new.
+        entity_instance = None
+        entity_type = None
+        trait_name = None
+        trait_definition = None
+        trait_instance = None
+        trait_value = None
+        trait_type = None
+        identifier_type_name = None
+        identifier_type = None
+        identifier_instance = None
+        identifier_uuid = None
+        identifier_source = None
+        
+        # load entity for article.
+        entity_instance = self.load_entity( do_create_if_none_IN = True )
+
+        # got an entity?
+        if ( entity_instance is not None ):
+
+            # get entity type (won't duplicate if already added).
+            entity_type = entity_instance.add_entity_type( self.my_entity_type_slug )
+            
+            # make sure we return it at this point, since it has been
+            #    created and stored in database.
+            entity_OUT = entity_instance
+
+            #------------------------------------------------------------------#
+            # ! ----> set entity traits
+
+            # ! --------> name
+            trait_name = self.TRAIT_NAME_NAME
+            trait_value = self.name
+
+            # initialize trait from predefined entity type trait "pub_date".
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ! --------> description
+            trait_name = self.TRAIT_NAME_DESCRIPTION
+            trait_value = self.description
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> organization_id
+            trait_instance = self.organization
+            trait_name = self.TRAIT_NAME_ORGANIZATION_ID
+
+            # is there an organization?
+            if ( trait_instance is not None ):
+
+                trait_value = trait_instance.id
+                
+            else:
+            
+                # no organization, set it to None.
+                trait_value = None
+                
+            #-- END check to see if organization present. --#
+            
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+            
+            # ! --------> sections_local_news
+            trait_name = self.TRAIT_NAME_SECTIONS_LOCAL_NEWS
+            trait_value = self.sections_local_news
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> sections_sports
+            trait_name = self.TRAIT_NAME_SECTIONS_SPORTS
+            trait_value = self.sections_sports
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            #------------------------------------------------------------------#
+            # ! ----> add identifiers
+
+            # ! --------> for django ID in this system.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID )
+            identifier_uuid = self.id
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+            
+            # ! --------> for newsbank code.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE )
+            identifier_uuid = self.newsbank_code
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+                                            
+        else:
+            
+            # no entity, can't add/update traits or identifiers
+            print( "no entity, can't add/update traits or identifiers" )
+            entity_OUT = None
+            
+        #-- END check to make sure we have an entity --#
+        
+        return entity_OUT
+        
+    #-- END method update_entity() --#
 
 
 #= End Newspaper Model ======================================================
@@ -2381,10 +2514,10 @@ class Article( Abstract_Entity_Container ):
     def update_entity( self ):
         
         '''
-        Accepts an Article instance, creates and populates an entity for the
-            Article based on the contents of the instance, returns the entity
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
             instance.
-            
+                        
         If you just want to get a fully-populated ID loaded into this instance,
             call this method, not load_entity().  load_entity() will create a
             new instance if one doesn't exist, but it does not fill in all of
@@ -2421,6 +2554,7 @@ class Article( Abstract_Entity_Container ):
             #    created and stored in database.
             entity_OUT = entity_instance
 
+            #------------------------------------------------------------------#
             # ! ----> set entity traits
 
             # ! --------> publication date
@@ -2445,6 +2579,7 @@ class Article( Abstract_Entity_Container ):
                                               
             # ! TODO - figure out other traits to add.
 
+            #------------------------------------------------------------------#
             # ! ----> add identifiers
 
             # ! --------> for django ID in this system.

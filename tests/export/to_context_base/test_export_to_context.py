@@ -39,29 +39,6 @@ class ExportToContextTest( django.test.TestCase ):
 
     # CLASS NAME
     CLASS_NAME = "ExportToContextTest"
-
-    # identifier type names
-    IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID = ExportToContext.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
-    IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID = ExportToContext.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
-    IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER = ExportToContext.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
-    IDENTIFIER_TYPE_NAME_PERMALINK = ExportToContext.ENTITY_ID_TYPE_PERMALINK
-    IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = ExportToContext.ENTITY_ID_TYPE_PERSON_OPEN_CALAIS_UUID
-    IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID = ExportToContext.ENTITY_ID_TYPE_PERSON_SOURCENET_ID
-    IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
-
-    # map of identifier type names to test IDs
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP = {}
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID ] = 1
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID ] = 2
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID ] = 3
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID ] = 4
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERMALINK ] = 5
-    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER ] = 6
-    
-    # Entity Type slugs
-    ENTITY_TYPE_SLUG_ARTICLE = ExportToContext.ENTITY_TYPE_SLUG_ARTICLE
-    ENTITY_TYPE_SLUG_NEWSPAPER = ExportToContext.ENTITY_TYPE_SLUG_NEWSPAPER
-    ENTITY_TYPE_SLUG_PERSON = ExportToContext.ENTITY_TYPE_SLUG_PERSON
     
     # Entity Trait names
     TEST_ENTITY_TRAIT_NAME = "flibble_glibble_pants"
@@ -76,20 +53,6 @@ class ExportToContextTest( django.test.TestCase ):
     TEST_ARTICLE_ID_1 = 21925
     TEST_ARTICLE_ID_2 = 21409
 
-    # local fixtures
-    FIXTURE_UNIT_TEST_AUTH_DATA = "context_text_unittest_export_auth_data.json"
-    FIXTURE_UNIT_TEST_CONFIG_PROPERTIES = TestHelper.FIXTURE_UNIT_TEST_CONFIG_PROPERTIES
-    FIXTURE_UNIT_TEST_BASE_DATA = "context_text_unittest_export_data.json"
-    FIXTURE_UNIT_TEST_TAGGIT_DATA = "context_text_unittest_export_taggit_data.json"
-    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context-sourcenet_entities_and_relations.json"
-
-    # list of fixtures, in order.
-    FIXTURE_LIST = []
-    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_AUTH_DATA )
-    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_CONFIG_PROPERTIES )
-    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_BASE_DATA )
-    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_TAGGIT_DATA )
-    FIXTURE_LIST.append( FIXTURE_UNIT_TEST_CONTEXT_BASE )
     
     #----------------------------------------------------------------------
     # ! ----> class methods
@@ -108,7 +71,7 @@ class ExportToContextTest( django.test.TestCase ):
         """
 
         # call TestHelper.standardSetUp()
-        TestHelper.standardSetUp( self, fixture_list_IN = self.FIXTURE_LIST )
+        TestHelper.standardSetUp( self, fixture_list_IN = TestHelper.EXPORT_FIXTURE_LIST )
 
     #-- END function setUp() --#
         
@@ -240,7 +203,7 @@ class ExportToContextTest( django.test.TestCase ):
             self.assertEqual( entity_id, should_be, msg = error_string )
 
             # more tests.
-            id_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
+            id_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID )
             test_entity_instance = Entity.get_entity_for_identifier( article_id, id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
@@ -298,7 +261,7 @@ class ExportToContextTest( django.test.TestCase ):
             #-- END loop over entity's identifiers --#
     
             # ==> django ID
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID )
+            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
                                                                    id_type_IN = test_identifier_type )
@@ -313,7 +276,7 @@ class ExportToContextTest( django.test.TestCase ):
             self.assertEqual( found, should_be, msg = error_string )
             
             # ==> check unique_identifier (newsbank ID)
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID )
+            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
                                                                    id_type_IN = test_identifier_type )
@@ -328,7 +291,7 @@ class ExportToContextTest( django.test.TestCase ):
             self.assertEqual( found, should_be, msg = error_string )
             
             # ==> article_archive_identifier
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER )
+            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
             test_identifier_name = test_identifier_type.name
             test_identifier_source = article_archive_source
             print( "Trying to retrieve identifier with name = {}; source = {}; and type = {}".format( test_identifier_name, test_identifier_source, test_identifier_type ) )
@@ -367,7 +330,7 @@ class ExportToContextTest( django.test.TestCase ):
             #-- END check to see if archive identifier is set. --#
                             
             # ==> permalink
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.IDENTIFIER_TYPE_NAME_PERMALINK )
+            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
                                                                    id_type_IN = test_identifier_type )

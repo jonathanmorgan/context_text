@@ -179,16 +179,16 @@ class ContextTextBase( ContextBase ):
     
     # entity identifier types - articles
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
-    CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
+    CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
 
     # entity identifier types - person
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
 
     # entity identifier types - newspaper
-    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
     CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
+    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
     
     # entity identifier types - default
     CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
@@ -198,9 +198,17 @@ class ContextTextBase( ContextBase ):
     CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER = "newspaper"
     CONTEXT_ENTITY_TYPE_SLUG_PERSON = "person"
     
-    # trait names
+    # ! --------> trait names
+    CONTEXT_TRAIT_NAME_DESCRIPTION = "description"
+    CONTEXT_TRAIT_NAME_FIRST_NAME = "first_name"
+    CONTEXT_TRAIT_NAME_LAST_NAME = "last_name"
+    CONTEXT_TRAIT_NAME_MIDDLE_NAME = "middle_name"
+    CONTEXT_TRAIT_NAME_NAME = "name"
     CONTEXT_TRAIT_NAME_PUB_DATE = "pub_date"
+    CONTEXT_TRAIT_NAME_SECTIONS_LOCAL_NEWS = "sections_local_news"
+    CONTEXT_TRAIT_NAME_SECTIONS_SPORTS = "sections_sports"
     CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
+    CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID = "sourcenet-Organization-ID"
 
 
 

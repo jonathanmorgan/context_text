@@ -20,12 +20,12 @@ from context.models import Entity_Identifier_Type
 from context.models import Entity_Type_Trait
 
 # context_text imports
-from context_text.models import Article
+from context_text.models import Newspaper
 from context_text.shared.context_text_base import ContextTextBase
 from context_text.tests.test_helper import TestHelper
 
 
-class ArticleModelTest( django.test.TestCase ):
+class NewspaperModelTest( django.test.TestCase ):
     
 
     #----------------------------------------------------------------------------
@@ -37,25 +37,32 @@ class ArticleModelTest( django.test.TestCase ):
     DEBUG = False
 
     # CLASS NAME
-    CLASS_NAME = "ArticleModelTest"
+    CLASS_NAME = "NewspaperModelTest"
+    
+    # Entity Trait names
+    ENTITY_TRAIT_NAME_NAME = Newspaper.TRAIT_NAME_NAME
+    ENTITY_TRAIT_NAME_DESCRIPTION = Newspaper.TRAIT_NAME_DESCRIPTION
+    ENTITY_TRAIT_NAME_NAME = Newspaper.TRAIT_NAME_ORGANIZATION_ID
+    ENTITY_TRAIT_NAME_NAME = Newspaper.TRAIT_NAME_SECTIONS_LOCAL_NEWS
+    ENTITY_TRAIT_NAME_NAME = Newspaper.TRAIT_NAME_SECTIONS_SPORTS
 
     # Identifier names
     TEST_IDENTIFIER_NAME = TestHelper.TEST_IDENTIFIER_NAME
     
-    # test Article IDs
-    TEST_ID_1 = 21925
-    TEST_ID_2 = 21409
+    # test Newspaper IDs
+    TEST_ID_1 = 1  # Grand Rapids PRess
+    TEST_ID_2 = 2  # Detroit News
     
     # ! --------> Configuration
     
     # Entity Type
-    MY_ENTITY_TYPE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ARTICLE
+    MY_ENTITY_TYPE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
 
     # Identifier names
-    MY_ENTITY_ID_TYPE_NAME = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+    MY_ENTITY_ID_TYPE_NAME = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
     
     # Class
-    MY_CLASS = Article
+    MY_CLASS = Newspaper
     
     #----------------------------------------------------------------------
     # ! ----> class methods
@@ -110,12 +117,13 @@ class ArticleModelTest( django.test.TestCase ):
         my_id_list = None
         my_id = None
         my_instance = None
-        article_newspaper = None
-        article_newspaper_id = None
-        article_pub_date = None
-        article_unique_identifier = None
-        article_archive_source = None
-        article_archive_id = None
+        newspaper_name = None
+        newspaper_description = None
+        newspaper_organization = None
+        newspaper_organization_id = None
+        newspaper_newsbank_code = None
+        newspaper_sections_local_news = None
+        newspaper_sections_sports = None
         my_entity = None
         my_entity_id = None
         entity_instance = None
@@ -129,7 +137,7 @@ class ArticleModelTest( django.test.TestCase ):
         type_qs = None
         type_count = None
         should_be = None
-
+        
         # declare variables - loading traits
         trait_name = None
         trait_definition_qs = None
@@ -166,21 +174,22 @@ class ArticleModelTest( django.test.TestCase ):
         
             # load instance information.
             my_instance = self.MY_CLASS.objects.get( id = my_id )
-            article_newspaper = my_instance.newspaper
-            article_newspaper_id = article_newspaper.id
-            article_pub_date = my_instance.pub_date
-            article_pub_date = article_pub_date.strftime( "%Y-%m-%d" )
-            article_unique_identifier = my_instance.unique_identifier
-            article_archive_source = my_instance.archive_source
-            article_archive_id = my_instance.archive_id
-            article_archive_permalink = my_instance.permalink
+            newspaper_name = my_instance.name
+            newspaper_description = my_instance.description
+            newspaper_organization = my_instance.organization
+            if ( newspaper_organization is not None ):
+                newspaper_organization_id = newspaper_organization.id
+            #-- END check if organization. --#
+            newspaper_newsbank_code = my_instance.newsbank_code
+            newspaper_sections_local_news = my_instance.sections_local_news
+            newspaper_sections_sports = my_instance.sections_sports
             
             # create entity for it.
             entity_instance = my_instance.load_entity()
             entity_id = entity_instance.id
             entity_type = entity_instance.add_entity_type( self.MY_ENTITY_TYPE )
             
-            # ! ----> entity in article should now be set to new entity.
+            # ! ----> entity in instance should now be set to new entity.
 
             # get nested entity's ID
             my_entity = my_instance.entity
@@ -189,26 +198,26 @@ class ArticleModelTest( django.test.TestCase ):
                 # entity present.  Get ID.
                 my_entity_id = my_entity.id
 
-            #-- END check to see if article has entity. --#
+            #-- END check to see if instance has entity. --#
             
             # nested entity ID should be same as test entity ID.
             should_be = my_entity_id
-            error_string = "article entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            error_string = "newspaper entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
             self.assertEqual( entity_id, should_be, msg = error_string )
 
             # more tests.
-            id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
+            id_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID )
             test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
             should_be = entity_id
-            error_string = "entity loaded by ID: instance id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
+            error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
             self.assertEqual( test_entity_id, should_be, msg = error_string )
             
             # ! ----> if article.entity is emptied, should load same entity again.
             
-            # reload article
+            # reload instance
             my_instance = self.MY_CLASS.objects.get( id = my_id )
             
             # clear out entity field.
@@ -225,11 +234,11 @@ class ArticleModelTest( django.test.TestCase ):
                 # entity present.  Get ID.
                 my_entity_id = my_entity.id
 
-            #-- END check to see if article has entity. --#
+            #-- END check to see if instance has entity. --#
             
             # nested entity ID should be same as test entity ID.
             should_be = my_entity_id
-            error_string = "instance entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            error_string = "newspaper entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
             self.assertEqual( entity_id, should_be, msg = error_string )
 
             # more tests.
@@ -239,10 +248,10 @@ class ArticleModelTest( django.test.TestCase ):
             
             # returned entity should have same ID as entity_instance.
             should_be = entity_id
-            error_string = "entity loaded by ID: instance id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
+            error_string = "newspaper entity 1: Newspaper id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
             self.assertEqual( test_entity_id, should_be, msg = error_string )
                         
-        #-- END loop over test IDs. --#
+        #-- END loop over test instance IDs. --#
         
     #-- END test method test_load_entity() --#
 
@@ -255,12 +264,13 @@ class ArticleModelTest( django.test.TestCase ):
         my_id_list = None
         my_id = None
         my_instance = None
-        article_newspaper = None
-        article_newspaper_id = None
-        article_pub_date = None
-        article_unique_identifier = None
-        article_archive_source = None
-        article_archive_id = None
+        newspaper_name = None
+        newspaper_description = None
+        newspaper_organization = None
+        newspaper_organization_id = None
+        newspaper_newsbank_code = None
+        newspaper_sections_local_news = None
+        newspaper_sections_sports = None
         my_entity = None
         my_entity_id = None
         entity_instance = None
@@ -311,15 +321,16 @@ class ArticleModelTest( django.test.TestCase ):
         
             # ! ==> load instance information.
             my_instance = self.MY_CLASS.objects.get( id = my_id )
-            article_newspaper = my_instance.newspaper
-            article_newspaper_id = article_newspaper.id
-            article_pub_date = my_instance.pub_date
-            article_pub_date = article_pub_date.strftime( "%Y-%m-%d" )
-            article_unique_identifier = my_instance.unique_identifier
-            article_archive_source = my_instance.archive_source
-            article_archive_id = my_instance.archive_id
-            article_archive_permalink = my_instance.permalink
-            
+            newspaper_name = my_instance.name
+            newspaper_description = my_instance.description
+            newspaper_organization = my_instance.organization
+            if ( newspaper_organization is not None ):
+                newspaper_organization_id = newspaper_organization.id
+            #-- END check if organization. --#
+            newspaper_newsbank_code = my_instance.newsbank_code
+            newspaper_sections_local_news = my_instance.sections_local_news
+            newspaper_sections_sports = my_instance.sections_sports
+                        
             # create entity for it.
             entity_instance = my_instance.update_entity()
             entity_id = entity_instance.id
@@ -337,7 +348,7 @@ class ArticleModelTest( django.test.TestCase ):
                 # entity present.  Get ID.
                 my_entity_id = my_entity.id
 
-            #-- END check to see if instance has entity. --#
+            #-- END check to see if article has entity. --#
             
             # nested entity ID should be same as test entity ID.
             should_be = my_entity_id
@@ -359,9 +370,9 @@ class ArticleModelTest( django.test.TestCase ):
             # ! ==> traits
             #----------------------------------------------------------------------#        
             
-            # ! ----> pub_date
-            # ==> check pub_date trait, name = "pub_date"
-            trait_name = Article.CONTEXT_TRAIT_NAME_PUB_DATE
+            # ! ----> name
+            # check name trait, name = "name"
+            trait_name = Newspaper.TRAIT_NAME_NAME
         
             # initialize trait from predefined entity type trait "pub_date".
             trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
@@ -373,22 +384,72 @@ class ArticleModelTest( django.test.TestCase ):
                                                                        entity_type_trait_IN = trait_definition )
             test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
             
-            # returned trait should have value that equals article pub_date string.
-            should_be = article_pub_date
-            error_string = "isntance trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+            # returned trait should have value that equals name string.
+            should_be = newspaper_name
+            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
            
-            # ! ----> newspaper.id
-            # ==> check newspaper ID - trait, name = "sourcenet-Newspaper-ID"
-            trait_name = Article.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
+            # ! ----> description
+            # ==> check description trait, name = "description"
+            trait_name = Newspaper.TRAIT_NAME_DESCRIPTION
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
                                                                        slug_IN = slugify( trait_name ) )
-            test_entity_trait_value = test_entity_trait.get_trait_value_as_int()
+            test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
             
-            # returned trait should have value that equals newspaper ID.
-            should_be = article_newspaper_id
-            error_string = "instance trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+            # returned trait should have value that equals newspaper description.
+            should_be = newspaper_description
+            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
+           
+            # ! ----> organization ID
+            # ! TODO - test behavior if None.
+
+            # ==> check organization ID trait, name = "sourcenet-Organization-ID"
+            trait_name = Newspaper.TRAIT_NAME_ORGANIZATION_ID
+            test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
+                                                                       slug_IN = slugify( trait_name ) )
+            test_entity_trait_value = test_entity_trait.get_trait_value()
+                
+            # is there an organization?
+            if ( newspaper_organization is not None ):
+
+                # returned trait should have value that equals newspaper organization's id.
+                test_entity_trait_value = int( test_entity_trait_value )
+                should_be = newspaper_organization_id
+                
+            else:
+            
+                # no organization, value should be None.
+                should_be = None
+                
+            #-- END check to see if organization --#
+            
+            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+            self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
+
+            # ! ----> sections_local_news
+            # ==> check sections_local_news trait, name = "sections_local_news"
+            trait_name = Newspaper.TRAIT_NAME_SECTIONS_LOCAL_NEWS
+            test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
+                                                                       slug_IN = slugify( trait_name ) )
+            test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
+            
+            # returned trait should have value that equals newspaper sections local news.
+            should_be = newspaper_sections_local_news
+            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+            self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
+           
+            # ! ----> sections_sports
+            # ==> check sections_sports trait, name = "sections_sports"
+            trait_name = Newspaper.TRAIT_NAME_SECTIONS_SPORTS
+            test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
+                                                                       slug_IN = slugify( trait_name ) )
+            test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
+            
+            # returned trait should have value that equals newspaper sections sports.
+            should_be = newspaper_sections_sports
+            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
+            self.assertEqual( test_entity_trait_value, should_be, msg = error_string )            
            
             #----------------------------------------------------------------------#
             # ! ==> identifiers
@@ -400,7 +461,7 @@ class ArticleModelTest( django.test.TestCase ):
             
                 # print the ID.
                 entity_id_counter += 1
-                print( "----> Instance {} Entity ID # {}: {}".format( my_id, entity_id_counter, test_entity_id ) )
+                print( "----> instance {} Entity ID # {}: {}".format( my_id, entity_id_counter, test_entity_id ) )
                 
             #-- END loop over entity's identifiers --#
     
@@ -419,8 +480,8 @@ class ArticleModelTest( django.test.TestCase ):
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
             
-            # ! ----> check unique_identifier (newsbank ID)
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
+            # ! ----> check newsbank code (newsbank_code)
+            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
                                                                    id_type_IN = test_identifier_type )
@@ -430,67 +491,13 @@ class ArticleModelTest( django.test.TestCase ):
             
             # returned identifier should have uuid that equals article's ID.
             found = test_identifier_value
-            should_be = article_unique_identifier
+            should_be = newspaper_newsbank_code
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
-            
-            # ! ----> article_archive_identifier
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
-            test_identifier_name = test_identifier_type.name
-            test_identifier_source = article_archive_source
-            print( "Trying to retrieve identifier with name = {}; source = {}; and type = {}".format( test_identifier_name, test_identifier_source, test_identifier_type ) )
-            test_identifier = test_entity_instance.get_identifier( test_identifier_name,
-                                                                   id_source_IN = test_identifier_source,
-                                                                   id_type_IN = test_identifier_type )
-    
-            # are article archive identifier and source set?
-            if (
-                (
-                    ( article_archive_id is not None )
-                    and ( article_archive_id != "" )
-                )
-                and
-                (
-                    ( article_archive_source is not None )
-                    and ( article_archive_source != "" )
-                )
-            ):
-                    
-                # get value
-                test_identifier_value = test_identifier.uuid
-                
-                # returned identifier should have uuid that equals article's ID.
-                found = test_identifier_value
-                should_be = article_archive_id
-                error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
-                self.assertEqual( found, should_be, msg = error_string )
-                
-            else:
-            
-                # no archive identifier set, so should return None.
-                error_string = "instance identifier {} should not be set, instead, is present: {}".format( test_identifier_name, test_identifier )
-                self.assertIsNone( test_identifier, msg = error_string )
-                
-            #-- END check to see if archive identifier is set. --#
-                            
-            # ! ----> permalink
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK )
-            test_identifier_name = test_identifier_type.name
-            test_identifier = test_entity_instance.get_identifier( test_identifier_name,
-                                                                   id_type_IN = test_identifier_type )
-                                                                   
-            # get value
-            test_identifier_value = test_identifier.uuid
-            
-            # returned identifier should have uuid that equals article's ID.
-            found = test_identifier_value
-            should_be = article_archive_permalink
-            error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
-            self.assertEqual( found, should_be, msg = error_string )
-            
-        #-- END loop over test IDs. --#
+                        
+        #-- END loop over test isntance IDs. --#
         
     #-- END test method test_update_entity() --#
 
 
-#-- END test class ArticleModelTest --#
+#-- END test class NewspaperModelTest --#
