@@ -1,8 +1,11 @@
 f"""
-This file contains tests of the context_text Article model class.
+This file contains tests of the context_text Newspaper model class.
 
 Functions tested:
 
+- has_entity()
+- load_entity() - inherited from Abstract_Entity_Container.
+- update_entity()
 
 """
 
@@ -106,7 +109,167 @@ class NewspaperModelTest( django.test.TestCase ):
         error_message = ";".join( self.setup_error_list )
         self.assertEqual( setup_error_count, 0, msg = error_message )
         
-    #-- END test method test_django_config_installed() --#
+    #-- END test method test_setup() --#
+
+
+    def test_has_entity( self ):
+        
+        # declare variables
+        me = "test_has_entity"
+        error_string = None
+        my_id_list = None
+        my_id = None
+        my_instance = None
+        newspaper_name = None
+        newspaper_description = None
+        newspaper_organization = None
+        newspaper_organization_id = None
+        newspaper_newsbank_code = None
+        newspaper_sections_local_news = None
+        newspaper_sections_sports = None
+        my_has_entity = None
+        my_entity = None
+        my_entity_id = None
+        entity_instance = None
+        entity_id = None
+        entity_type = None
+        test_entity_instance = None
+        entity_id_qs = None
+        test_entity_id = None
+        type_slug_1 = None
+        type_slug_2 = None
+        type_qs = None
+        type_count = None
+        should_be = None
+        
+        # declare variables - loading traits
+        trait_name = None
+        trait_definition_qs = None
+        trait_definition = None
+        test_entity_trait = None
+        test_entity_trait_value = None
+        test_identifier_name = None
+        test_identifier_type = None
+        test_identifier = None
+        test_identifier_uuid = None
+        test_identifier_source = None
+
+        # debug
+        debug_flag = self.DEBUG
+
+        print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
+        
+        # initialize
+        my_id_list = []
+        my_id_list.append( self.TEST_ID_1 )
+        my_id_list.append( self.TEST_ID_2 )        
+        
+        if ( debug_flag == True ):
+            print( "All types:" )
+            for current_type in Entity_Identifier_Type.objects.all():
+            
+                print( "- {}".format( current_type ) )
+                
+            #-- END loop over all types to test loading of fixture --#
+        #-- END DEBUG --#
+
+        # loop over test ids
+        for my_id in my_id_list:
+        
+            # load instance information.
+            my_instance = self.MY_CLASS.objects.get( id = my_id )
+            newspaper_name = my_instance.name
+            newspaper_description = my_instance.description
+            newspaper_organization = my_instance.organization
+            if ( newspaper_organization is not None ):
+                newspaper_organization_id = newspaper_organization.id
+            #-- END check if organization. --#
+            newspaper_newsbank_code = my_instance.newsbank_code
+            newspaper_sections_local_news = my_instance.sections_local_news
+            newspaper_sections_sports = my_instance.sections_sports
+            
+            # check if entity. Should not be.
+            my_has_entity = my_instance.has_entity()
+            should_be = False
+            error_string = "instance already has entity ( {} - {} ), should not yet.".format( my_has_entity, my_instance.get_entity() )
+            self.assertEqual( my_has_entity, should_be, msg = error_string )            
+            
+            # create entity for it.
+            entity_instance = my_instance.load_entity()
+            entity_id = entity_instance.id
+            entity_type = entity_instance.add_entity_type( self.MY_ENTITY_TYPE )
+            
+            # ! ----> entity in instance should now be set to new entity.
+
+            # check if entity. Now, should be one.
+            my_has_entity = my_instance.has_entity()
+            should_be = True
+            error_string = "instance does not have entity instance, but it should ( {} ).".format( my_has_entity )
+            self.assertEqual( my_has_entity, should_be, msg = error_string )            
+            
+            # get nested entity's ID
+            my_entity = my_instance.entity
+            if ( my_entity is not None ):
+            
+                # entity present.  Get ID.
+                my_entity_id = my_entity.id
+
+            #-- END check to see if instance has entity. --#
+            
+            # nested entity ID should be same as test entity ID.
+            should_be = my_entity_id
+            error_string = "newspaper entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            self.assertEqual( entity_id, should_be, msg = error_string )
+
+            # more tests.
+            id_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_id = test_entity_instance.id
+            
+            # returned entity should have same ID as entity_instance.
+            should_be = entity_id
+            error_string = "article entity 1: Article id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
+            self.assertEqual( test_entity_id, should_be, msg = error_string )
+            
+            # ! ----> if article.entity is emptied, should load same entity again.
+            
+            # reload instance
+            my_instance = self.MY_CLASS.objects.get( id = my_id )
+            
+            # clear out entity field.
+            my_instance.entity = None
+            my_instance.save()
+            
+            # try call to load_entity
+            my_instance.load_entity()
+            
+            # get nested entity's ID
+            my_entity = my_instance.entity
+            if ( my_entity is not None ):
+            
+                # entity present.  Get ID.
+                my_entity_id = my_entity.id
+
+            #-- END check to see if instance has entity. --#
+            
+            # nested entity ID should be same as test entity ID.
+            should_be = my_entity_id
+            error_string = "newspaper entity ID {} != the ID of entity returned by method {}".format( should_be, entity_id )
+            self.assertEqual( entity_id, should_be, msg = error_string )
+
+            # more tests.
+            id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_id = test_entity_instance.id
+            
+            # returned entity should have same ID as entity_instance.
+            should_be = entity_id
+            error_string = "newspaper entity 1: Newspaper id: {} --> retrieved entity ID: {}; should be ID: {}".format( my_id, test_entity_id, should_be )
+            self.assertEqual( test_entity_id, should_be, msg = error_string )
+                        
+        #-- END loop over test instance IDs. --#
+        
+    #-- END test method test_has_entity() --#
 
 
     def test_load_entity( self ):

@@ -2541,6 +2541,10 @@ class Article( Abstract_Entity_Container ):
         identifier_uuid = None
         identifier_source = None
         
+        # related newspaper entity
+        newspaper_instance = None
+        paper_has_entity = None
+        
         # load entity for article.
         entity_instance = self.load_entity( do_create_if_none_IN = True )
 
@@ -2572,11 +2576,35 @@ class Article( Abstract_Entity_Container ):
 
             # ! --------> newspaper ID
             trait_name = self.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
-            trait_value = self.newspaper.id
+            
+            # do we hvae a newspaper?
+            if ( self.newspaper is not None ):
+            
+                # there is a related newspaper.  It's ID is value.
+                newspaper_instance = self.newspaper
+                trait_value = newspaper_instance.id
+                
+                # and check if newspaper has an entity.  If not, create one.
+                paper_has_entity = newspaper_instance.has_entity()
+                if ( paper_has_entity == False ):
+                
+                    # create one.
+                    newspaper_instance.update_entity()
+                
+                #-- END check to see if paper has entity. --#
+                
+            else:
+            
+                # No newspaper, set trait to None.
+                trait_value = None
+                
+            #-- END check to see if Newspaper. --#
+                
+            # store 
             entity_instance.set_entity_trait( trait_name,
                                               trait_value,
                                               slug_IN = slugify( trait_name ) )
-                                              
+                                                                                            
             # ! TODO - figure out other traits to add.
 
             #------------------------------------------------------------------#
