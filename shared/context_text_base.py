@@ -169,6 +169,7 @@ class ContextTextBase( ContextBase ):
     # Tags
     TAG_LOCAL_HARD_NEWS = "local_hard_news"
     
+    #--------------------------------------------------------------------------#
     # ! ----> Context
     
     # entity identifier types - testing
@@ -182,33 +183,43 @@ class ContextTextBase( ContextBase ):
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
 
-    # entity identifier types - person
-    CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"
-    CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
-
     # entity identifier types - newspaper
     CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
     CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
     
+    # entity identifier types - organization
+    CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID = "organization_sourcenet_id"
+
+    # entity identifier types - person
+    CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"
+    CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
+
     # entity identifier types - default
     CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
     
     # Entity Type slugs
     CONTEXT_ENTITY_TYPE_SLUG_ARTICLE = "article"
     CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER = "newspaper"
+    CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION = "organization"    
     CONTEXT_ENTITY_TYPE_SLUG_PERSON = "person"
     
     # ! --------> trait names
     CONTEXT_TRAIT_NAME_DESCRIPTION = "description"
     CONTEXT_TRAIT_NAME_FIRST_NAME = "first_name"
+    CONTEXT_TRAIT_NAME_FULL_NAME = "full_name"
+    CONTEXT_TRAIT_NAME_GENDER = "gender"
     CONTEXT_TRAIT_NAME_LAST_NAME = "last_name"
     CONTEXT_TRAIT_NAME_MIDDLE_NAME = "middle_name"
     CONTEXT_TRAIT_NAME_NAME = "name"
+    CONTEXT_TRAIT_NAME_NAME_PREFIX = "name_prefix"
+    CONTEXT_TRAIT_NAME_NAME_SUFFIX = "name_suffix"
     CONTEXT_TRAIT_NAME_PUB_DATE = "pub_date"
     CONTEXT_TRAIT_NAME_SECTIONS_LOCAL_NEWS = "sections_local_news"
     CONTEXT_TRAIT_NAME_SECTIONS_SPORTS = "sections_sports"
+    CONTEXT_TRAIT_NAME_SOURCENET_LOCATION_ID = "sourcenet-Location-ID"
     CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
     CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID = "sourcenet-Organization-ID"
+    CONTEXT_TRAIT_NAME_TITLE = "title"
 
 
 

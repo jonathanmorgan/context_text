@@ -49,9 +49,13 @@ class ExportToContextTest( django.test.TestCase ):
     # Identifier names
     TEST_IDENTIFIER_NAME = "nickname"
     
-    # test Article IDs
-    TEST_ARTICLE_ID_1 = 21925
-    TEST_ARTICLE_ID_2 = 21409
+    # test IDs
+    TEST_ID_1 = 21925
+    TEST_ID_2 = 21409
+    
+    TEST_ID_LIST = []
+    TEST_ID_LIST.append( TEST_ID_1 )
+    TEST_ID_LIST.append( TEST_ID_2 )
 
     
     #----------------------------------------------------------------------
@@ -150,9 +154,7 @@ class ExportToContextTest( django.test.TestCase ):
 
         # initialize
         id_type = my_exporter.set_article_uuid_id_type_name( ExportToContext.ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
-        article_id_list = []
-        article_id_list.append( self.TEST_ARTICLE_ID_1 )
-        article_id_list.append( self.TEST_ARTICLE_ID_2 )        
+        article_id_list = self.TEST_ID_LIST
         
         if ( debug_flag == True ):
             print( "--------> ID type: {}".format( id_type ) )

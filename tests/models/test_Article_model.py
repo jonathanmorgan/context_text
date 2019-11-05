@@ -49,6 +49,10 @@ class ArticleModelTest( django.test.TestCase ):
     TEST_ID_1 = 21925
     TEST_ID_2 = 21409
     
+    TEST_ID_LIST = []
+    TEST_ID_LIST.append( TEST_ID_1 )
+    TEST_ID_LIST.append( TEST_ID_2 )
+    
     # ! --------> Configuration
     
     # Entity Type
@@ -113,12 +117,6 @@ class ArticleModelTest( django.test.TestCase ):
         my_id_list = None
         my_id = None
         my_instance = None
-        article_newspaper = None
-        article_newspaper_id = None
-        article_pub_date = None
-        article_unique_identifier = None
-        article_archive_source = None
-        article_archive_id = None
         my_has_entity = None
         my_entity = None
         my_entity_id = None
@@ -146,15 +144,21 @@ class ArticleModelTest( django.test.TestCase ):
         test_identifier_uuid = None
         test_identifier_source = None
 
+        # declare variables - class-specific trait variables.
+        article_newspaper = None
+        article_newspaper_id = None
+        article_pub_date = None
+        article_unique_identifier = None
+        article_archive_source = None
+        article_archive_id = None
+
         # debug
         debug_flag = self.DEBUG
 
         print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
         # initialize
-        my_id_list = []
-        my_id_list.append( self.TEST_ID_1 )
-        my_id_list.append( self.TEST_ID_2 )        
+        my_id_list = self.TEST_ID_LIST
         
         if ( debug_flag == True ):
             print( "All types:" )
@@ -271,12 +275,6 @@ class ArticleModelTest( django.test.TestCase ):
         my_id_list = None
         my_id = None
         my_instance = None
-        article_newspaper = None
-        article_newspaper_id = None
-        article_pub_date = None
-        article_unique_identifier = None
-        article_archive_source = None
-        article_archive_id = None
         my_entity = None
         my_entity_id = None
         entity_instance = None
@@ -303,15 +301,21 @@ class ArticleModelTest( django.test.TestCase ):
         test_identifier_uuid = None
         test_identifier_source = None
 
+        # declare variables - class-specific trait variables.
+        article_newspaper = None
+        article_newspaper_id = None
+        article_pub_date = None
+        article_unique_identifier = None
+        article_archive_source = None
+        article_archive_id = None
+
         # debug
         debug_flag = self.DEBUG
 
         print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
         # initialize
-        my_id_list = []
-        my_id_list.append( self.TEST_ID_1 )
-        my_id_list.append( self.TEST_ID_2 )        
+        my_id_list = self.TEST_ID_LIST
         
         if ( debug_flag == True ):
             print( "All types:" )
@@ -416,12 +420,6 @@ class ArticleModelTest( django.test.TestCase ):
         my_id_list = None
         my_id = None
         my_instance = None
-        article_newspaper = None
-        article_newspaper_id = None
-        article_pub_date = None
-        article_unique_identifier = None
-        article_archive_source = None
-        article_archive_id = None
         my_entity = None
         my_entity_id = None
         entity_instance = None
@@ -449,15 +447,21 @@ class ArticleModelTest( django.test.TestCase ):
         test_identifier_source = None
         related_has_entity = None
 
+        # declare variables - class-specific trait variables.
+        article_newspaper = None
+        article_newspaper_id = None
+        article_pub_date = None
+        article_unique_identifier = None
+        article_archive_source = None
+        article_archive_id = None
+
         # debug
         debug_flag = self.DEBUG
 
         print( '\n====> In {}.{}'.format( self.CLASS_NAME, me ) )
         
         # initialize
-        my_id_list = []
-        my_id_list.append( self.TEST_ID_1 )
-        my_id_list.append( self.TEST_ID_2 )        
+        my_id_list = self.TEST_ID_LIST
         
         if ( debug_flag == True ):
             print( "All types:" )
@@ -522,13 +526,16 @@ class ArticleModelTest( django.test.TestCase ):
             #----------------------------------------------------------------------#        
             
             # ! ----> pub_date
+            
             # ==> check pub_date trait, name = "pub_date"
             trait_name = Article.CONTEXT_TRAIT_NAME_PUB_DATE
+            should_be = article_pub_date
         
-            # initialize trait from predefined entity type trait "pub_date".
-            trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
-            trait_definition_qs = trait_definition_qs.filter( related_type = entity_type )
-            trait_definition = trait_definition_qs.get()
+            # initialize trait from predefined entity type trait for trait_name.
+            #trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
+            #trait_definition_qs = trait_definition_qs.filter( related_type = entity_type )
+            #trait_definition = trait_definition_qs.get()
+            trait_definition = entity_type.get_trait_spec( trait_name )
     
             # retrieve trait
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
@@ -536,19 +543,21 @@ class ArticleModelTest( django.test.TestCase ):
             test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
             
             # returned trait should have value that equals article pub_date string.
-            should_be = article_pub_date
             error_string = "instance trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
            
             # ! ----> newspaper.id
+            
             # ==> check newspaper ID - trait, name = "sourcenet-Newspaper-ID"
             trait_name = Article.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
+            should_be = article_newspaper_id
+    
+            # retrieve value
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
                                                                        slug_IN = slugify( trait_name ) )
             test_entity_trait_value = test_entity_trait.get_trait_value_as_int()
             
             # returned trait should have value that equals newspaper ID.
-            should_be = article_newspaper_id
             error_string = "instance trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
             
@@ -574,6 +583,7 @@ class ArticleModelTest( django.test.TestCase ):
             #-- END loop over entity's identifiers --#
     
             # ! ----> django ID
+            should_be = my_id
             test_identifier_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
@@ -584,11 +594,11 @@ class ArticleModelTest( django.test.TestCase ):
             
             # returned identifier should have uuid that equals article's ID.
             found = test_identifier_value
-            should_be = my_id
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
             
             # ! ----> check unique_identifier (newsbank ID)
+            should_be = article_unique_identifier
             test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
@@ -599,7 +609,6 @@ class ArticleModelTest( django.test.TestCase ):
             
             # returned identifier should have uuid that equals article's ID.
             found = test_identifier_value
-            should_be = article_unique_identifier
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
             
@@ -643,6 +652,7 @@ class ArticleModelTest( django.test.TestCase ):
             #-- END check to see if archive identifier is set. --#
                             
             # ! ----> permalink
+            should_be = article_archive_permalink
             test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK )
             test_identifier_name = test_identifier_type.name
             test_identifier = test_entity_instance.get_identifier( test_identifier_name,
@@ -653,7 +663,6 @@ class ArticleModelTest( django.test.TestCase ):
             
             # returned identifier should have uuid that equals article's ID.
             found = test_identifier_value
-            should_be = article_archive_permalink
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
             

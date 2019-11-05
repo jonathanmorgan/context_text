@@ -92,8 +92,8 @@ class OrganizationAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'name', 'location', 'description' )
-    #list_display_links = ( 'headline', )
+    list_display = ( 'id', 'name', 'location', 'description', 'create_date', 'last_modified' )
+    list_display_links = ( 'id', 'name' )
     list_filter = [ 'location' ]
     search_fields = [ 'name', 'location', 'description', 'id' ]
     #date_hierarchy = 'pub_date'

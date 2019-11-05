@@ -1,5 +1,5 @@
 f"""
-This file contains tests of the context_text Newspaper model class.
+This file contains tests of the context_text Organization model class.
 
 Functions tested:
 
@@ -23,12 +23,12 @@ from context.models import Entity_Identifier_Type
 from context.models import Entity_Type_Trait
 
 # context_text imports
-from context_text.models import Newspaper
+from context_text.models import Organization
 from context_text.shared.context_text_base import ContextTextBase
 from context_text.tests.test_helper import TestHelper
 
 
-class NewspaperModelTest( django.test.TestCase ):
+class OrganizationModelTest( django.test.TestCase ):
     
 
     #----------------------------------------------------------------------------
@@ -40,21 +40,19 @@ class NewspaperModelTest( django.test.TestCase ):
     DEBUG = False
 
     # CLASS NAME
-    CLASS_NAME = "NewspaperModelTest"
+    CLASS_NAME = "OrganizationModelTest"
     
     # Entity Trait names
-    ENTITY_TRAIT_NAME_NAME = Newspaper.TRAIT_NAME_NAME
-    ENTITY_TRAIT_NAME_DESCRIPTION = Newspaper.TRAIT_NAME_DESCRIPTION
-    ENTITY_TRAIT_NAME_ORGANIZATION_ID = Newspaper.TRAIT_NAME_ORGANIZATION_ID
-    ENTITY_TRAIT_NAME_SECTIONS_LOCAL_NEWS = Newspaper.TRAIT_NAME_SECTIONS_LOCAL_NEWS
-    ENTITY_TRAIT_NAME_SECTIONS_SPORTS = Newspaper.TRAIT_NAME_SECTIONS_SPORTS
+    ENTITY_TRAIT_NAME_NAME = Organization.TRAIT_NAME_NAME
+    ENTITY_TRAIT_NAME_DESCRIPTION = Organization.TRAIT_NAME_DESCRIPTION
+    ENTITY_TRAIT_NAME_LOCATION_ID = Organization.TRAIT_NAME_LOCATION_ID
 
     # Identifier names
     TEST_IDENTIFIER_NAME = TestHelper.TEST_IDENTIFIER_NAME
     
-    # test IDs
-    TEST_ID_1 = 1  # Grand Rapids Press
-    TEST_ID_2 = 2  # Detroit News
+    # test Newspaper IDs
+    TEST_ID_1 = 55  # Grand Action
+    TEST_ID_2 = 59  # Wolverine World Wide
     
     TEST_ID_LIST = []
     TEST_ID_LIST.append( TEST_ID_1 )
@@ -63,13 +61,13 @@ class NewspaperModelTest( django.test.TestCase ):
     # ! --------> Configuration
     
     # Entity Type
-    MY_ENTITY_TYPE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
+    MY_ENTITY_TYPE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION
 
     # Identifier names
-    MY_ENTITY_ID_TYPE_NAME = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+    MY_ENTITY_ID_TYPE_NAME = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID
     
     # Class
-    MY_CLASS = Newspaper
+    MY_CLASS = Organization
     
     #----------------------------------------------------------------------
     # ! ----> class methods
@@ -152,13 +150,10 @@ class NewspaperModelTest( django.test.TestCase ):
         test_identifier_source = None
 
         # declare variables - class-specific trait variables.
-        newspaper_name = None
-        newspaper_description = None
-        newspaper_organization = None
-        newspaper_organization_id = None
-        newspaper_newsbank_code = None
-        newspaper_sections_local_news = None
-        newspaper_sections_sports = None
+        organization_name = None
+        organization_description = None
+        organization_location = None
+        organization_location_id = None
 
         # debug
         debug_flag = self.DEBUG
@@ -182,15 +177,12 @@ class NewspaperModelTest( django.test.TestCase ):
         
             # load instance information.
             my_instance = self.MY_CLASS.objects.get( id = my_id )
-            newspaper_name = my_instance.name
-            newspaper_description = my_instance.description
-            newspaper_organization = my_instance.organization
-            if ( newspaper_organization is not None ):
-                newspaper_organization_id = newspaper_organization.id
-            #-- END check if organization. --#
-            newspaper_newsbank_code = my_instance.newsbank_code
-            newspaper_sections_local_news = my_instance.sections_local_news
-            newspaper_sections_sports = my_instance.sections_sports
+            organization_name = my_instance.name
+            organization_description = my_instance.description
+            organization_location = my_instance.location
+            if ( organization_location is not None ):
+                organization_location_id = organization_location.id
+            #-- END check if location. --#
             
             # check if entity. Should not be.
             my_has_entity = my_instance.has_entity()
@@ -311,13 +303,10 @@ class NewspaperModelTest( django.test.TestCase ):
         test_identifier_source = None
 
         # declare variables - class-specific trait variables.
-        newspaper_name = None
-        newspaper_description = None
-        newspaper_organization = None
-        newspaper_organization_id = None
-        newspaper_newsbank_code = None
-        newspaper_sections_local_news = None
-        newspaper_sections_sports = None
+        organization_name = None
+        organization_description = None
+        organization_location = None
+        organization_location_id = None
 
         # debug
         debug_flag = self.DEBUG
@@ -341,15 +330,12 @@ class NewspaperModelTest( django.test.TestCase ):
         
             # load instance information.
             my_instance = self.MY_CLASS.objects.get( id = my_id )
-            newspaper_name = my_instance.name
-            newspaper_description = my_instance.description
-            newspaper_organization = my_instance.organization
-            if ( newspaper_organization is not None ):
-                newspaper_organization_id = newspaper_organization.id
-            #-- END check if organization. --#
-            newspaper_newsbank_code = my_instance.newsbank_code
-            newspaper_sections_local_news = my_instance.sections_local_news
-            newspaper_sections_sports = my_instance.sections_sports
+            organization_name = my_instance.name
+            organization_description = my_instance.description
+            organization_location = my_instance.location
+            if ( organization_location is not None ):
+                organization_location_id = organization_location.id
+            #-- END check if location. --#
             
             # create entity for it.
             entity_instance = my_instance.load_entity()
@@ -458,13 +444,10 @@ class NewspaperModelTest( django.test.TestCase ):
         test_identifier_source = None
 
         # declare variables - class-specific trait variables.
-        newspaper_name = None
-        newspaper_description = None
-        newspaper_organization = None
-        newspaper_organization_id = None
-        newspaper_newsbank_code = None
-        newspaper_sections_local_news = None
-        newspaper_sections_sports = None
+        organization_name = None
+        organization_description = None
+        organization_location = None
+        organization_location_id = None
 
         # debug
         debug_flag = self.DEBUG
@@ -488,15 +471,14 @@ class NewspaperModelTest( django.test.TestCase ):
         
             # ! ==> load instance information.
             my_instance = self.MY_CLASS.objects.get( id = my_id )
-            newspaper_name = my_instance.name
-            newspaper_description = my_instance.description
-            newspaper_organization = my_instance.organization
-            if ( newspaper_organization is not None ):
-                newspaper_organization_id = newspaper_organization.id
-            #-- END check if organization. --#
-            newspaper_newsbank_code = my_instance.newsbank_code
-            newspaper_sections_local_news = my_instance.sections_local_news
-            newspaper_sections_sports = my_instance.sections_sports
+            organization_name = my_instance.name
+            organization_description = my_instance.description
+            organization_location = my_instance.location
+            if ( organization_location is not None ):
+                organization_location_id = organization_location.id
+            else:
+                organization_location_id = None
+            #-- END check if location. --#
                         
             # create entity for it.
             entity_instance = my_instance.update_entity()
@@ -539,17 +521,17 @@ class NewspaperModelTest( django.test.TestCase ):
             
             # ! ----> name
 
-            # check name trait, name = "name"
-            trait_name = Newspaper.TRAIT_NAME_NAME
-            should_be = newspaper_name
+            # check pre-defined name trait.
+            trait_name = Organization.TRAIT_NAME_NAME
+            should_be = organization_name
         
-            # initialize trait from predefined entity type trait for trait_name.
+            # initialize trait from predefined entity type for trait_name.
             #trait_definition_qs = Entity_Type_Trait.objects.filter( slug = trait_name )
             #trait_definition_qs = trait_definition_qs.filter( related_type = entity_type )
             #trait_definition = trait_definition_qs.get()
             trait_definition = entity_type.get_trait_spec( trait_name )
     
-            # retrieve trait
+            # retrieve value
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
                                                                        entity_type_trait_IN = trait_definition )
             test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
@@ -559,9 +541,10 @@ class NewspaperModelTest( django.test.TestCase ):
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
            
             # ! ----> description
+
             # ==> check description trait, name = "description"
-            trait_name = Newspaper.TRAIT_NAME_DESCRIPTION
-            should_be = newspaper_description
+            trait_name = Organization.TRAIT_NAME_DESCRIPTION
+            should_be = organization_description
 
             # retrieve value
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
@@ -572,69 +555,33 @@ class NewspaperModelTest( django.test.TestCase ):
             error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
            
-            # ! ----> organization ID
+            # ! ----> location ID
 
-            # ==> check organization ID trait, name = "sourcenet-Organization-ID"
-            trait_name = Newspaper.TRAIT_NAME_ORGANIZATION_ID
+            # ==> check location ID trait, name = "sourcenet-Location-ID"
+            trait_name = Organization.TRAIT_NAME_LOCATION_ID
 
             # retrieve value
             test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
                                                                        slug_IN = slugify( trait_name ) )
             test_entity_trait_value = test_entity_trait.get_trait_value()
-                
+            
             # set should_be - is there an organization?
-            if ( newspaper_organization is not None ):
+            if ( organization_location is not None ):
 
-                # returned trait should have value that equals newspaper organization's id.
+                # returned trait should have value that equals organization's location id.
                 test_entity_trait_value = int( test_entity_trait_value )
-                should_be = newspaper_organization_id
+                should_be = organization_location_id
                 
             else:
             
-                # no organization, value should be None.
+                # no location, value should be None.
                 should_be = None
                 
-            #-- END check to see if organization --#
-
-            # test            
+            #-- END check to see if location --#
+            
+            # test
             error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
             self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
-
-            # make sure that the organization has an entity, also.
-            if ( newspaper_organization is not None ):
-
-                related_has_entity = newspaper_organization.has_entity()
-                should_be = True
-                error_string = "instance related organization ( {} ) does not have an associated entity, Newspaper update_entity() should have created one.".format( newspaper_organization )
-                self.assertEqual( related_has_entity, should_be, msg = error_string )
-                
-            #-- END check to see if related organization --#
-
-            # ! ----> sections_local_news
-            # ==> check sections_local_news trait, name = "sections_local_news"
-            trait_name = Newspaper.TRAIT_NAME_SECTIONS_LOCAL_NEWS
-            test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
-                                                                       slug_IN = slugify( trait_name ) )
-            test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
-            
-            # returned trait should have value that equals newspaper sections local news.
-            should_be = newspaper_sections_local_news
-            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
-            self.assertEqual( test_entity_trait_value, should_be, msg = error_string )
-           
-            # ! ----> sections_sports
-            # ==> check sections_sports trait, name = "sections_sports"
-            trait_name = Newspaper.TRAIT_NAME_SECTIONS_SPORTS
-            should_be = newspaper_sections_sports
-
-            # retrieve value
-            test_entity_trait = test_entity_instance.get_entity_trait( trait_name,
-                                                                       slug_IN = slugify( trait_name ) )
-            test_entity_trait_value = test_entity_trait.get_trait_value_as_str()
-            
-            # returned trait should have value that equals newspaper sections sports.
-            error_string = "trait {} has value {}, should have value {}".format( trait_name, test_entity_trait_value, should_be )
-            self.assertEqual( test_entity_trait_value, should_be, msg = error_string )            
            
             #----------------------------------------------------------------------#
             # ! ==> identifiers
@@ -665,24 +612,9 @@ class NewspaperModelTest( django.test.TestCase ):
             error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
             self.assertEqual( found, should_be, msg = error_string )
             
-            # ! ----> check newsbank code (newsbank_code)
-            should_be = newspaper_newsbank_code
-            test_identifier_type = Entity_Identifier_Type.get_type_for_name( ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE )
-            test_identifier_name = test_identifier_type.name
-            test_identifier = test_entity_instance.get_identifier( test_identifier_name,
-                                                                   id_type_IN = test_identifier_type )
-                                                                   
-            # get value
-            test_identifier_value = test_identifier.uuid
-            
-            # returned identifier should have uuid that equals newsbank code.
-            found = test_identifier_value
-            error_string = "instance identifier {} has value {}, should have value {}".format( test_identifier_name, found, should_be )
-            self.assertEqual( found, should_be, msg = error_string )
-                        
         #-- END loop over test isntance IDs. --#
         
     #-- END test method test_update_entity() --#
 
 
-#-- END test class NewspaperModelTest --#
+#-- END test class OrganizationModelTest --#
