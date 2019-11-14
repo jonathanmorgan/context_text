@@ -42,6 +42,8 @@ from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder imp
 from context_text.collectors.newsbank.newspapers.GRPB import GRPB
 from context_text.collectors.newsbank.newspapers.DTNB import DTNB
 from context_text.models import Article
+from context_text.models import Article_Author
+from context_text.models import Article_Data
 from context_text.models import Article_Subject
 from context_text.models import Newspaper
 from context_text.shared.context_text_base import ContextTextBase
@@ -145,30 +147,398 @@ class ExportToContext( ContextTextBase ):
         # return reference
         entity_OUT = None
         
+        # call the standard method
+        entity_OUT = self.create_entity_container_entity( instance_IN )
+        
+        return entity_OUT
+        
+    #-- END method create_article_entity() --#
+
+
+    def create_article_relations( article_entity_IN,
+                                  author_entity_list_IN = None,
+                                  subject_entity_list_IN = None,
+                                  source_entity_list_IN = None ):
+                          
+        # return reference
+        status_OUT = None
+        
         # declare variables
-        article_instance = None
+        me = "create_article_relations"
+        status_message = None
+        status_code = None
+        article_entity = None
+        newspaper_instance = None
+        newspaper_entity = None
+        result_status = None
+        result_status_is_error = None
+        
+        # init status container
+        status_OUT = StatusContainer()
+        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        
+        # first, see if article passed in.
+        if ( article_IN is not None ):
+        
+            # first, get article entity.
+            article_entity = article_IN.get_entity()
+            if ( article_entity is not None ):
+            
+                # next, get newspaper entity.
+                newspaper_instance = article_IN.newspaper
+                if ( newspaper_instance is not None ):
+                
+                    # got a newspaper - try to retrieve entity.
+                    newspaper_entity = newspaper_instance.get_entity()
+                    
+                else:
+                
+                    # no newspaper, so no newspaper entity.
+                    status_message = "no newspaper for article {}, so no newspaper relations.".format( article_IN )
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
+                    status_OUT.add_message( status_message )
+                    
+                #-- END check to see if associated newspaper. --#
+                
+                # now we start creating relations.
+                
+                # if newspaper entity, we create a set of newspaper relations.
+                if ( newspaper_entity is not None ):
+                
+                    # create newspaper relations
+                    result_status = self.create_newspaper_relations( newspaper_entity,
+                                                                     article_entity,
+                                                                     author_entity_list_IN,
+                                                                     subject_entity_list_IN,
+                                                                     source_entity_list_IN )
+                    result_status_is_error = result_status.is_error()
+                    
+                    # errors?
+                    if ( result_status_is_error == True ):
+                    
+                        # set status to error, add a message, then nest the
+                        #     StatusContainer instance.
+                        status_message = "ERROR - errors processing newspaper relations.  See nested StatusContainer for more details."
+                        self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                        status_code = StatusContainer.STATUS_CODE_ERROR
+                        status_OUT.set_status( status_code )
+                        status_OUT.add_message( status_message )
+                        status_OUT.add_status_container( result_status )
+                    
+                    #-- END check to see if errors. --#
+                    
+                    # and create article-based relations.
+                    result_status = self.create_article_relations( article_entity,
+                                                                   author_entity_list_IN,
+                                                                   subject_entity_list_IN,
+                                                                   source_entity_list_IN )                
+                    result_status_is_error = result_status.is_error()
+                    
+                    # errors?
+                    if ( result_status_is_error == True ):
+                    
+                        # set status to error, add a message, then nest the
+                        #     StatusContainer instance.
+                        status_message = "ERROR - errors processing article-based relations.  See nested StatusContainer for more details."
+                        self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                        status_code = StatusContainer.STATUS_CODE_ERROR
+                        status_OUT.set_status( status_code )
+                        status_OUT.add_message( status_message )
+                        status_OUT.add_status_container( result_status )
+                    
+                    #-- END check to see if errors. --#
+                    
+                else:
+                
+                    # no newspaper entity, so no newspaper relations.
+                    status_message = "no newspaper entity, so no newspaper relations.".format( article_IN )
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
+                    status_OUT.add_message( status_message )
+
+                #-- END check to see if newspaper entity. --#
+                
+                # create article-based relations.
+            
+            else:
+            
+                # ERROR - no article entity.
+                status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_IN )
+                self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                status_code = StatusContainer.STATUS_CODE_ERROR
+                status_OUT.set_status( status_code )
+                status_OUT.add_message( status_message )            
+            
+            #-- END check to see if article entity present --#
+        
+        else:
+        
+            # ERROR - no article passed in.
+            status_message = "ERROR - no article passed in, so no relations to create."
+            self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+            status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.set_status( status_code )
+            status_OUT.add_message( status_message )
+        
+        #-- END check to see if article entity passed in. --#
+        
+        return status_OUT                  
+                          
+    #-- END method create_article_relations() --#
+
+
+    def create_entity_container_entity( self, entity_container_IN ):
+        
+        '''
+        Accepts an AbstractEntityContainer child instance, creates and populates
+            an entity based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables
+        entity_container = None
         
         # declare variables - create new.
         entity_instance = None
         
-        # make sure an article was passed in.
-        article_instance = instance_IN
-        if ( article_instance is not None ):
+        # make sure an isntance was passed in.
+        entity_container = entity_container_IN
+        if ( entity_container is not None ):
 
-            # ask the article to make its entity.
-            entity_instance = article_instance.update_entity()
+            # ask the instance to make its entity.
+            entity_instance = entity_container.update_entity()
             entity_OUT = entity_instance
         
         else:
         
-            # Article instance passed in is None.  return None.
+            # instance passed in is None.  return None.
             entity_OUT = None    
         
         #-- END check to see if instance is None --#
         
         return entity_OUT
         
-    #-- END method create_article_entity() --#
+    #-- END method create_entity_container_entity() --#
+
+
+    def create_newspaper_relations( newspaper_entity_IN,
+                                    article_entity_IN,
+                                    author_entity_list_IN = None,
+                                    subject_entity_list_IN = None,
+                                    source_entity_list_IN = None ):
+                          
+        # return reference
+        status_OUT = None
+        
+        # declare variables
+        me = "create_newspaper_relations"
+        status_message = None
+        status_code = None
+        result_status = None
+        result_status_is_error = None
+        relation_type = None
+        trait_dict = None
+        entity_trait = None
+        trait_value = None
+        trait_name = None
+        relation = None
+        
+        # init status container
+        status_OUT = StatusContainer()
+        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        
+        # first, see if newspaper entity passed in.
+        if ( newspaper_entity_IN is not None ):
+        
+            # ! ----> newspaper_article
+        
+            # got article entity?
+            if ( article_entity_IN is not None ):
+            
+                # Make trait dictionary
+                trait_dict = {}
+                
+                # add pub_date from article
+                trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
+                entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+                trait_value = entity_trait.get_trait_value()
+                trait_dict[ trait_name ] = trait_value
+                
+                # get type
+                relation_type = Entity_Relation_Type.objects.get( slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE )
+                
+                # create relation
+                relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
+                                                                   to_IN = article_entity_IN,
+                                                                   type_IN = relation_type,
+                                                                   trait_name_to_value_map_IN = trait_dict )                
+            
+            #-- END check to see if article entity. --#
+        
+        else:
+        
+            # ERROR - no newspaper entity passed in.
+            status_message = "ERROR - no newspaper entity in, so no relations to create."
+            self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+            status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.set_status( status_code )
+            status_OUT.add_message( status_message )
+        
+        #-- END check to see if article entity passed in. --#
+        
+        return status_OUT                  
+                          
+    #-- END method create_newspaper_relations() --#
+
+
+    def create_person_entity( self, instance_IN ):
+        
+        '''
+        Accepts a Person instance, creates and populates an entity for the
+            Person based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # call the standard method
+        entity_OUT = self.create_entity_container_entity( instance_IN )
+        
+        return entity_OUT
+                
+    #-- END method create_person_entity() --#
+
+
+    def create_relations( article_IN,
+                          author_entity_list_IN = None,
+                          subject_entity_list_IN = None,
+                          source_entity_list_IN = None ):
+                          
+        # return reference
+        status_OUT = None
+        
+        # declare variables
+        me = "create_relations"
+        status_message = None
+        status_code = None
+        article_entity = None
+        newspaper_instance = None
+        newspaper_entity = None
+        result_status = None
+        result_status_is_error = None
+        
+        # init status container
+        status_OUT = StatusContainer()
+        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        
+        # first, see if article passed in.
+        if ( article_IN is not None ):
+        
+            # first, get article entity.
+            article_entity = article_IN.get_entity()
+            if ( article_entity is not None ):
+            
+                # next, get newspaper entity.
+                newspaper_instance = article_IN.newspaper
+                if ( newspaper_instance is not None ):
+                
+                    # got a newspaper - try to retrieve entity.
+                    newspaper_entity = newspaper_instance.get_entity()
+                    
+                else:
+                
+                    # no newspaper, so no newspaper entity.
+                    status_message = "no newspaper for article {}, so no newspaper relations.".format( article_IN )
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
+                    status_OUT.add_message( status_message )
+                    
+                #-- END check to see if associated newspaper. --#
+                
+                # now we start creating relations.
+                
+                # if newspaper entity, we create a set of newspaper relations.
+                if ( newspaper_entity is not None ):
+                
+                    # create newspaper relations
+                    result_status = self.create_newspaper_relations( newspaper_entity,
+                                                                     article_entity,
+                                                                     author_entity_list_IN,
+                                                                     subject_entity_list_IN,
+                                                                     source_entity_list_IN )
+                    result_status_is_error = result_status.is_error()
+                    
+                    # errors?
+                    if ( result_status_is_error == True ):
+                    
+                        # set status to error, add a message, then nest the
+                        #     StatusContainer instance.
+                        status_message = "ERROR - errors processing newspaper relations.  See nested StatusContainer for more details."
+                        self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                        status_code = StatusContainer.STATUS_CODE_ERROR
+                        status_OUT.set_status( status_code )
+                        status_OUT.add_message( status_message )
+                        status_OUT.add_status_container( result_status )
+                    
+                    #-- END check to see if errors. --#
+                    
+                else:
+                
+                    # no newspaper entity, so no newspaper relations.
+                    status_message = "no newspaper entity, so no newspaper relations.".format( article_IN )
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
+                    status_OUT.add_message( status_message )
+
+                #-- END check to see if newspaper entity. --#
+                
+                # and create article-based relations.
+                result_status = self.create_article_relations( article_entity,
+                                                               author_entity_list_IN,
+                                                               subject_entity_list_IN,
+                                                               source_entity_list_IN )                
+                result_status_is_error = result_status.is_error()
+                
+                # errors?
+                if ( result_status_is_error == True ):
+                
+                    # set status to error, add a message, then nest the
+                    #     StatusContainer instance.
+                    status_message = "ERROR - errors processing article-based relations.  See nested StatusContainer for more details."
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                    status_code = StatusContainer.STATUS_CODE_ERROR
+                    status_OUT.set_status( status_code )
+                    status_OUT.add_message( status_message )
+                    status_OUT.add_status_container( result_status )
+                
+                #-- END check to see if errors. --#
+                    
+            else:
+            
+                # ERROR - no article entity.
+                status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_IN )
+                self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                status_code = StatusContainer.STATUS_CODE_ERROR
+                status_OUT.set_status( status_code )
+                status_OUT.add_message( status_message )            
+            
+            #-- END check to see if article entity present --#
+        
+        else:
+        
+            # ERROR - no article passed in.
+            status_message = "ERROR - no article passed in, so no relations to create."
+            self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+            status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.set_status( status_code )
+            status_OUT.add_message( status_message )
+        
+        #-- END check to see if article entity passed in. --#
+        
+        return status_OUT                  
+                          
+    #-- END method create_relations() --#
 
 
     def process_articles( self, article_qs_IN ):
@@ -178,10 +548,26 @@ class ExportToContext( ContextTextBase ):
         article_qs = None
         current_article = None
         current_article_id = None
+        coder_type_list = None
+        article_data_q = None
         article_data_qs = None
         article_data_count = None
         article_data_instance = None
         article_entity = None
+        current_newspaper = None
+        newspaper_entity = None
+        author_qs = None
+        article_author = None
+        subject_qs = None
+        article_subject = None
+        current_person = None
+        subject_type = None
+        person_entity = None
+        
+        # declare variables - relations
+        author_entity_list = None
+        subject_entity_list = None
+        source_entity_list = None
         
         # declare variables - auditing
         good_counter = None
@@ -192,6 +578,12 @@ class ExportToContext( ContextTextBase ):
         # initialization
         article_qs = article_qs_IN
         automated_coder_user = ArticleCoder.get_automated_coding_user()
+
+        # initialization - retrieve a Q to filter Article_Data on automated
+        #     coder with type for OpenCalais V2.
+        coder_type_list = []
+        coder_type_list.append( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION )
+        article_data_q = Article_Data.create_q_only_automated( coder_type_list )
         
         # loop over articles
         good_counter = 0
@@ -205,12 +597,11 @@ class ExportToContext( ContextTextBase ):
             # create article entity?  For now, no, only those with coding.
             # article_entity = self.create_article_entity( current_article )
             
-            # retrieve Article_Data created by automated coder...
-            article_data_qs = current_article.article_data_set.filter( coder = automated_coder_user )
+            # ! ----> Article_Data
+
+            # retrieve Article_Data by automated coder, type OpenCalais V2.
+            article_data_qs = current_article.article_data_set.filter( article_data_q )
         
-            # ...and specifically coded using OpenCalais V2...
-            article_data_qs = article_data_qs.filter( coder_type = OpenCalaisV2ArticleCoder.CONFIG_APPLICATION )
-            
             # article_data_count
             article_data_count = article_data_qs.count()
             
@@ -221,8 +612,75 @@ class ExportToContext( ContextTextBase ):
                 good_counter += 1
                 article_data_instance = article_data_qs.get()
                 
+                # ! ----> Entities
+                
+                # ! --------> Article and Newspaper
                 # create article entity.
                 article_entity = self.create_article_entity( current_article )
+                
+                # lookup the associated newspaper's entity
+                current_newspaper = current_article.newspaper
+                newspaper_entity = current_newspaper.entity
+                
+                # retrieve the people who are referenced in the Article_Data.
+                
+                # ! --------> Authors (Person)
+                # start with authors
+                author_entity_list = []
+                author_qs = article_data_instance.article_author_set
+                for article_author in author_qs:
+                
+                    # get nested person.
+                    current_person = article_author.person
+
+                    # create their entity.
+                    person_entity = self.create_person_entity( current_person )
+                    
+                    # store entity for making relations.
+                    author_entity_list.append( person_entity )
+
+                #-- END loop over authors --#
+
+                # ! --------> Subjects (Person)
+                # subjects
+                subject_entity_list = []
+                source_entity_list = []
+                subject_qs = article_data_instance.article_subject_set
+                for article_subject in subject_qs:
+                
+                    # get nested person.
+                    current_person = article_subject.person
+                    subject_type = article_subject.subject_type
+
+                    # create their entity.
+                    person_entity = self.create_person_entity( current_person )
+                    
+                    # store based on subject_type so we can make relations.
+                    if ( subject_type == Article_Subject.SUBJECT_TYPE_MENTIONED ):
+                    
+                        # simple subject, not quoted
+                        subject_entity_list.append( person_entity )
+                        
+                    elif ( subject_type == Article_Subject.SUBJECT_TYPE_QUOTED ):
+                    
+                        # source
+                        source_entity_list.append( person_entity )
+                        
+                    else:
+                    
+                        # unknown or empty subject type.  Assume simple subject.
+                        subject_entity_list.append( person_entity )
+                        
+                    #-- END check subject_type --#
+
+                #-- END loop over subjects --#
+                
+                # now we have entities for article, newspaper, authors,
+                #     subjects, and sources.  Time to make relations.
+                self.create_relations( current_article,
+                                       author_entity_list,
+                                       subject_entity_list,
+                                       source_entity_list )
                 
             elif ( article_data_count > 1 ):
                 

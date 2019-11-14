@@ -172,6 +172,8 @@ class ContextTextBase( ContextBase ):
     #--------------------------------------------------------------------------#
     # ! ----> Context
     
+    # ! --------> Entities
+    
     # entity identifier types - testing
     CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
 
@@ -221,7 +223,25 @@ class ContextTextBase( ContextBase ):
     CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID = "sourcenet-Organization-ID"
     CONTEXT_TRAIT_NAME_TITLE = "title"
 
+    # ! --------> Relations
+    
+    # Entity_Relation_Type slugs - FROM NEWSPAPER
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE = "newspaper_article"    # FROM newspaper TO article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_REPORTER = "newspaper_reporter"  # FROM newspaper TO person (reporter) THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SOURCE = "newspaper_source"      # FROM newspaper TO person (source) THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SUBJECT = "newspaper_subject"    # FROM newspaper TO person (subject, including sources) THROUGH article.
 
+    # Entity_Relation_Type slugs - FROM ARTICLE
+    CONTEXT_RELATION_TYPE_SLUG_AUTHOR = "author"    # FROM article TO reporter.
+    CONTEXT_RELATION_TYPE_SLUG_SOURCE = "source"    # FROM article TO source person.
+    CONTEXT_RELATION_TYPE_SLUG_SUBJECT = "subject"  # FROM article TO subject person.
+    
+    # Entity_Relation_Type slugs - THROUGH ARTICLE    
+    CONTEXT_RELATION_TYPE_SLUG_MENTIONED = "mentioned"                          # FROM reporter/author TO subject THROUGH article (includes subjects and sources).
+    CONTEXT_RELATION_TYPE_SLUG_QUOTED = "quoted"                                # FROM reporter TO source THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SOURCES = "same_article_sources"    # FROM source person TO source person THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SUBJECTS = "same_article_subjects"  # FROM subject person TO subject person THROUGH article (includes subjects and sources).
+    CONTEXT_RELATION_TYPE_SLUG_SHARED_BYLINE = "shared_byline"                  # FROM author TO author THROUGH article.
 
     #-----------------------------------------------------------------------------
     # ! ==> class methods

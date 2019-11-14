@@ -5180,6 +5180,8 @@ class Article_Text( Unique_Article_Content ):
 class Article_Data( models.Model ):
 
     # declaring a few "constants"
+    DEBUG = True
+    
     ARTICLE_TYPE_NEWS_TO_ID_MAP = {
         'news' : 1,
         'sports' : 2,
@@ -5260,7 +5262,7 @@ class Article_Data( models.Model ):
     #----------------------------------------------------------------------
 
     @classmethod
-    def create_q_filter_automated_by_coder_type( cls, coder_type_in_list_IN = None ):
+    def create_q_filter_automated_by_coder_type( cls, coder_type_in_list_IN = None, include_non_automated_coders_IN = True ):
         
         '''
         Accepts list of coder types we want included in Article_Data instances
@@ -5277,6 +5279,8 @@ class Article_Data( models.Model ):
         q_OUT = None
         
         # declare variables
+        me = "create_q_filter_automated_by_coder_type"
+        log_message = None
         automated_coder_user = None
         current_query = None
         
@@ -5285,14 +5289,25 @@ class Article_Data( models.Model ):
     
             # get automated coder.
             automated_coder_user = ContextTextBase.get_automated_coding_user()
+            
+            if cls.DEBUG == True:
+                log_message = "automated coder user: {} - {}".format( automated_coder_user.id, automated_coder_user )
+                output_log_message( log_message, me, do_print_IN = True )
+            #-- END DEBUG --#
                         
             # filter - either:
     
             # ( coder = automated_coder AND coder_type = automated_coder_type )
-            current_query = Q( coder = automated_coder_user ) & Q ( coder_type__in = coder_type_in_list_IN )
+            current_query = Q( coder = automated_coder_user ) & Q( coder_type__in = coder_type_in_list_IN )
     
-            # OR coder != automated_coder
-            current_query = ~Q( coder = automated_coder_user ) | current_query
+            # just filtering automated, but not excluding non-automated?
+            #    Said another way, include non-automated coder, as well?
+            if ( include_non_automated_coders_IN == True ):
+    
+                # OR coder != automated_coder
+                current_query = ~Q( coder = automated_coder_user ) | current_query
+                
+            #-- END check to see if we include non-automated coder, as well --#
             
             # return the query
             q_OUT = current_query
@@ -5336,7 +5351,7 @@ class Article_Data( models.Model ):
         if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
     
             # yes - filter to only those with coder_type in list passed in.
-            current_query = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN )
+            current_query = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN, include_non_automated_coders_IN = False )
             
             # add the filter to the Q() we will return.
             q_OUT = q_OUT & current_query
