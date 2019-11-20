@@ -167,113 +167,318 @@ class ExportToContext( ContextTextBase ):
         me = "create_article_relations"
         status_message = None
         status_code = None
-        article_entity = None
-        newspaper_instance = None
-        newspaper_entity = None
         result_status = None
         result_status_is_error = None
+        relation_type = None
+        trait_dict = None
+        entity_trait = None
+        trait_value = None
+        trait_name = None
+        entity_identifier = None
+        identifier_type = None
+        identifier_name = None
+        identifier_uuid = None
+        relation = None
+        relation_trait_filter_dict = None
+
+        # declare variables - looping over people to make relations.
+        relation_type_slug = None
+        from_entity_list = None
+        from_entity = None
+        from_entity_id = None
+        to_entity_list = None
+        to_entity = None
+        to_entity_id = None
+        through_entity = None
         
         # init status container
         status_OUT = StatusContainer()
         status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
         
-        # first, see if article passed in.
-        if ( article_IN is not None ):
+        # first, see if article entity passed in.
+        if ( article_entity_IN is not None ):
         
-            # first, get article entity.
-            article_entity = article_IN.get_entity()
-            if ( article_entity is not None ):
+            # shared traits for these relations
+            trait_dict = {}
+            relation_trait_filter_dict = {}
             
-                # next, get newspaper entity.
-                newspaper_instance = article_IN.newspaper
-                if ( newspaper_instance is not None ):
-                
-                    # got a newspaper - try to retrieve entity.
-                    newspaper_entity = newspaper_instance.get_entity()
+            # include traits for pub_date of article.
+            
+            # pub_date
+            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
+            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+            trait_value = entity_trait.get_trait_value()
+            trait_dict[ trait_name ] = trait_value
+            relation_trait_filter_dict[ trait_name ] = trait_value
                     
-                else:
-                
-                    # no newspaper, so no newspaper entity.
-                    status_message = "no newspaper for article {}, so no newspaper relations.".format( article_IN )
-                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
-                    status_OUT.add_message( status_message )
-                    
-                #-- END check to see if associated newspaper. --#
-                
-                # now we start creating relations.
-                
-                # if newspaper entity, we create a set of newspaper relations.
-                if ( newspaper_entity is not None ):
-                
-                    # create newspaper relations
-                    result_status = self.create_newspaper_relations( newspaper_entity,
-                                                                     article_entity,
-                                                                     author_entity_list_IN,
-                                                                     subject_entity_list_IN,
-                                                                     source_entity_list_IN )
-                    result_status_is_error = result_status.is_error()
-                    
-                    # errors?
-                    if ( result_status_is_error == True ):
-                    
-                        # set status to error, add a message, then nest the
-                        #     StatusContainer instance.
-                        status_message = "ERROR - errors processing newspaper relations.  See nested StatusContainer for more details."
-                        self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
-                        status_code = StatusContainer.STATUS_CODE_ERROR
-                        status_OUT.set_status( status_code )
-                        status_OUT.add_message( status_message )
-                        status_OUT.add_status_container( result_status )
-                    
-                    #-- END check to see if errors. --#
-                    
-                    # and create article-based relations.
-                    result_status = self.create_article_relations( article_entity,
-                                                                   author_entity_list_IN,
-                                                                   subject_entity_list_IN,
-                                                                   source_entity_list_IN )                
-                    result_status_is_error = result_status.is_error()
-                    
-                    # errors?
-                    if ( result_status_is_error == True ):
-                    
-                        # set status to error, add a message, then nest the
-                        #     StatusContainer instance.
-                        status_message = "ERROR - errors processing article-based relations.  See nested StatusContainer for more details."
-                        self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
-                        status_code = StatusContainer.STATUS_CODE_ERROR
-                        status_OUT.set_status( status_code )
-                        status_OUT.add_message( status_message )
-                        status_OUT.add_status_container( result_status )
-                    
-                    #-- END check to see if errors. --#
-                    
-                else:
-                
-                    # no newspaper entity, so no newspaper relations.
-                    status_message = "no newspaper entity, so no newspaper relations.".format( article_IN )
-                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
-                    status_OUT.add_message( status_message )
+            #------------------------------------------------------------------#
+            # ! ----> Entity_Relation_Type slugs - FROM ARTICLE
+            from_entity = article_entity_IN
 
-                #-- END check to see if newspaper entity. --#
+            # ! --------> CONTEXT_RELATION_TYPE_SLUG_AUTHOR = "author"    # FROM article TO reporter.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_AUTHOR
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            to_entity_list = author_entity_list_IN
+
+            # got entities in list?
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+            
+                # yes, there are entities.  Loop.
+                for to_entity in to_entity_list:
                 
-                # create article-based relations.
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over TO entities --#
             
-            else:
+            #-- END check to see if entities in list. --#
+
+            # ! --------> CONTEXT_RELATION_TYPE_SLUG_SOURCE = "source"    # FROM article TO source person.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_SOURCE
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            to_entity_list = source_entity_list_IN
+
+            # got entities in list?
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
             
-                # ERROR - no article entity.
-                status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_IN )
-                self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
-                status_code = StatusContainer.STATUS_CODE_ERROR
-                status_OUT.set_status( status_code )
-                status_OUT.add_message( status_message )            
+                # yes, there are entities.  Loop.
+                for to_entity in to_entity_list:
+                
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over TO entities --#
             
-            #-- END check to see if article entity present --#
+            #-- END check to see if entities in list. --#
+
+
+            # ! --------> CONTEXT_RELATION_TYPE_SLUG_SUBJECT = "subject"  # FROM article TO subject person.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_SUBJECT
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            to_entity_list = subject_entity_list_IN
+
+            # got entities in list?
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+            
+                # yes, there are entities.  Loop.
+                for to_entity in to_entity_list:
+                
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over TO entities --#
+            
+            #-- END check to see if entities in list. --#
+    
+            #------------------------------------------------------------------#
+            # ! ----> Entity_Relation_Type slugs - FROM reporter/author
+            through_entity = article_entity_IN
+            from_entity_list = author_entity_list_IN
+            
+            # got from entities?
+            if ( ( from_entity_list is not None ) and ( len( from_entity_list ) > 0 ) ):
+            
+                # loop over entities for FROM
+                for from_entity in from_entity_list:
+                
+                    # get ID
+                    from_entity_id = from_entity.id
+            
+                    # ! --------> CONTEXT_RELATION_TYPE_SLUG_MENTIONED = "mentioned"  # FROM reporter/author TO subject THROUGH article (includes subjects and sources).
+                    relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_MENTIONED
+                    relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+                    to_entity_list = subject_entity_list_IN
         
+                    # got entities in TO list?
+                    if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+                    
+                        # yes, there are people.  Loop.
+                        for to_entity in to_entity_list:
+                        
+                            # create relation if no match of FROM, TO, THROUGH, type, and pub_date.
+                            relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                               to_IN = to_entity,
+                                                                               through_IN = through_entity,
+                                                                               type_IN = relation_type,
+                                                                               trait_name_to_value_map_IN = trait_dict,
+                                                                               match_trait_dict_IN = relation_trait_filter_dict )
+                        
+                        #-- END loop over TO entities --#
+                    
+                    #-- END author-to-subject check to see if TO entities in list. --#
+
+                    # ! --------> CONTEXT_RELATION_TYPE_SLUG_QUOTED = "quoted"  # FROM reporter TO source THROUGH article.
+                    relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_QUOTED
+                    relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+                    to_entity_list = source_entity_list_IN
+        
+                    # got entities in TO list?
+                    if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+                    
+                        # yes, there are people.  Loop.
+                        for to_entity in to_entity_list:
+                        
+                            # create relation if no match of FROM, TO, THROUGH, type, and pub_date.
+                            relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                               to_IN = to_entity,
+                                                                               through_IN = through_entity,
+                                                                               type_IN = relation_type,
+                                                                               trait_name_to_value_map_IN = trait_dict,
+                                                                               match_trait_dict_IN = relation_trait_filter_dict )
+                        
+                        #-- END loop over TO entities --#
+                    
+                    #-- END author-to-subject check to see if TO entities in list. --#
+
+                    # ! --------> CONTEXT_RELATION_TYPE_SLUG_SHARED_BYLINE = "shared_byline"  # FROM author TO author THROUGH article.
+                    relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_SHARED_BYLINE
+                    relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+                    to_entity_list = author_entity_list_IN
+        
+                    # got people in list?
+                    if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+                    
+                        # yes, there are people.  Loop.
+                        for to_entity in to_entity_list:
+                        
+                            # get ID
+                            to_entity_id = to_entity.id
+                            
+                            # only create tie if FROM entity != TO entity
+                            if ( from_entity_id != to_entity_id ):
+                        
+                                # create relation if no match of FROM, TO, THROUGH, type, and pub_date.
+                                relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                                   to_IN = to_entity,
+                                                                                   through_IN = through_entity,
+                                                                                   type_IN = relation_type,
+                                                                                   trait_name_to_value_map_IN = trait_dict,
+                                                                                   match_trait_dict_IN = relation_trait_filter_dict )
+                                                                                   
+                            #-- END check to make sure we don't make self-ties --#
+                        
+                        #-- END loop over people --#
+                    
+                    #-- END author-to-author check to see if person entities in list. --#
+
+                #-- END loop over author list
+
+            #-- END check to see if author list? --#
+
+            #------------------------------------------------------------------#
+            # ! ----> Entity_Relation_Type slugs - FROM source
+            through_entity = article_entity_IN
+            from_entity_list = source_entity_list_IN
+
+            # got a FROM list?
+            if ( ( from_entity_list is not None ) and ( len( from_entity_list ) > 0 ) ):
+            
+                # loop over entities for FROM
+                for from_entity in from_entity_list:
+                
+                    # get id
+                    from_entity_id = from_entity.id
+            
+                    # ! --------> CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SOURCES = "same_article_sources"    # FROM source person TO source person THROUGH article.
+                    relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SOURCES
+                    relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+                    to_entity_list = source_entity_list_IN
+        
+                    # got people in list?
+                    if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+                    
+                        # yes, there are people.  Loop.
+                        for to_entity in to_entity_list:
+                        
+                            # get ID
+                            to_entity_id = to_entity.id
+                            
+                            # only create tie if FROM entity != TO entity
+                            if ( from_entity_id != to_entity_id ):
+                        
+                                # create relation if no match of FROM, TO, THROUGH, type, and pub_date.
+                                relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                                   to_IN = to_entity,
+                                                                                   through_IN = through_entity,
+                                                                                   type_IN = relation_type,
+                                                                                   trait_name_to_value_map_IN = trait_dict,
+                                                                                   match_trait_dict_IN = relation_trait_filter_dict )
+                                                                                   
+                            #-- END check to make sure we don't make self-ties --#
+                        
+                        #-- END loop over TO entities --#
+                    
+                    #-- END check to see if TO entities in list. --#
+
+                #-- END loop over FROM list
+
+            #-- END check to see if FROM list --#
+
+            #------------------------------------------------------------------#
+            # ! ----> Entity_Relation_Type slugs - FROM subject
+            through_entity = article_entity_IN
+            from_entity_list = subject_entity_list_IN
+
+            # got a from list?
+            if ( ( from_entity_list is not None ) and ( len( from_entity_list ) > 0 ) ):
+            
+                # loop over subject entities for FROM
+                for from_entity in from_entity_list:
+                
+                    # get id
+                    from_entity_id = from_entity.id
+            
+                    # ! --------> CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SUBJECTS = "same_article_subjects"  # FROM subject person TO subject person THROUGH article (includes subjects and sources).
+                    relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SUBJECTS
+                    relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+                    to_entity_list = subject_entity_list_IN
+        
+                    # got people in list?
+                    if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
+                    
+                        # yes, there are people.  Loop.
+                        for to_entity in to_entity_list:
+                        
+                            # get ID
+                            to_entity_id = to_entity.id
+                            
+                            # only create tie if FROM entity != TO entity
+                            if ( from_entity_id != to_entity_id ):
+                        
+                                # create relation if no match of FROM, TO, THROUGH, type, and pub_date.
+                                relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                                   to_IN = to_entity,
+                                                                                   through_IN = through_entity,
+                                                                                   type_IN = relation_type,
+                                                                                   trait_name_to_value_map_IN = trait_dict,
+                                                                                   match_trait_dict_IN = relation_trait_filter_dict )
+                                                                                   
+                            #-- END check to make sure we don't make self-ties --#
+                        
+                        #-- END loop over TO entities --#
+                    
+                    #-- END check to see if TO entities in list. --#
+
+                #-- END loop over FROM list
+
+            #-- END check to see if FROM list --#
+                
         else:
         
-            # ERROR - no article passed in.
-            status_message = "ERROR - no article passed in, so no relations to create."
+            # ERROR - no article entity passed in.
+            status_message = "In {}: ERROR - no article entity in, so no relations to create.".format( me )
             self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
             status_code = StatusContainer.STATUS_CODE_ERROR
             status_OUT.set_status( status_code )
@@ -282,7 +487,7 @@ class ExportToContext( ContextTextBase ):
         #-- END check to see if article entity passed in. --#
         
         return status_OUT                  
-                          
+
     #-- END method create_article_relations() --#
 
 
@@ -343,7 +548,13 @@ class ExportToContext( ContextTextBase ):
         entity_trait = None
         trait_value = None
         trait_name = None
+        entity_identifier = None
+        identifier_type = None
+        identifier_name = None
+        identifier_uuid = None
         relation = None
+        relation_trait_filter_dict = None
+        person_entity = None
         
         # init status container
         status_OUT = StatusContainer()
@@ -352,31 +563,113 @@ class ExportToContext( ContextTextBase ):
         # first, see if newspaper entity passed in.
         if ( newspaper_entity_IN is not None ):
         
-            # ! ----> newspaper_article
+            # shared traits for these relations
+            trait_dict = {}
+            relation_trait_filter_dict = {}
+            
+            # include traits for pub_date and sourcenet article ID of article.
+            
+            # pub_date
+            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
+            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+            trait_value = entity_trait.get_trait_value()
+            trait_dict[ trait_name ] = trait_value
+            relation_trait_filter_dict[ trait_name ] = trait_value
+            
+            # pull in identifier with sourcenet django ID
+            identifier_name = Article.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+            identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_name )
+            entity_identifier = article_entity_IN.get_identifier( identifier_name, id_type_IN = identifier_type )
+            identifier_uuid = enitity_identifier.uuid
+            trait_dict[ identifier_name ] = identifier_uuid
+            relation_trait_filter_dict[ identifier_name ] = identifier_uuid
+        
+            # ! ----> "newspaper_article"    # FROM newspaper TO article.
         
             # got article entity?
             if ( article_entity_IN is not None ):
-            
-                # Make trait dictionary
-                trait_dict = {}
-                
-                # add pub_date from article
-                trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
-                entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
-                trait_value = entity_trait.get_trait_value()
-                trait_dict[ trait_name ] = trait_value
-                
+
                 # get type
                 relation_type = Entity_Relation_Type.objects.get( slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE )
                 
-                # create relation
+                # create relation if no match of FROM, TO, type, pub_date, and article ID.
                 relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
                                                                    to_IN = article_entity_IN,
                                                                    type_IN = relation_type,
-                                                                   trait_name_to_value_map_IN = trait_dict )                
+                                                                   trait_name_to_value_map_IN = trait_dict,
+                                                                   match_trait_dict_IN = relation_trait_filter_dict )                
             
             #-- END check to see if article entity. --#
-        
+            
+            # ! ----> "newspaper_reporter"  # FROM newspaper TO person (reporter) THROUGH article.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_REPORTER
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            person_entity_list = author_entity_list_IN
+
+            # got people in list?
+            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            
+                # yes, there are people.  Loop.
+                for person_entity in person_entity_list:
+                
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
+                                                                       to_IN = person_entity,
+                                                                       through_IN = article_entity_IN,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over people --#
+            
+            #-- END check to see if person entities in list. --#
+                
+            # ! ----> "newspaper_subject"    # FROM newspaper TO person (subject, including sources) THROUGH article.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SUBJECT
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            person_entity_list = subject_entity_list_IN
+
+            # got people in list?
+            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            
+                # yes, there are people.  Loop.
+                for person_entity in person_entity_list:
+                
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
+                                                                       to_IN = person_entity,
+                                                                       through_IN = article_entity_IN,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over people --#
+            
+            #-- END check to see if person entities in list. --#
+                
+            # ! ----> "newspaper_source"      # FROM newspaper TO person (source) THROUGH article.
+            relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SOURCE
+            relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
+            person_entity_list = source_entity_list_IN
+
+            # got people in list?
+            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            
+                # yes, there are people.  Loop.
+                for person_entity in person_entity_list:
+                
+                    # create relation if no match of FROM, TO, type, and pub_date.
+                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
+                                                                       to_IN = person_entity,
+                                                                       through_IN = article_entity_IN,
+                                                                       type_IN = relation_type,
+                                                                       trait_name_to_value_map_IN = trait_dict,
+                                                                       match_trait_dict_IN = relation_trait_filter_dict )
+                
+                #-- END loop over people --#
+            
+            #-- END check to see if person entities in list. --#
+                
         else:
         
             # ERROR - no newspaper entity passed in.
@@ -386,7 +679,7 @@ class ExportToContext( ContextTextBase ):
             status_OUT.set_status( status_code )
             status_OUT.add_message( status_message )
         
-        #-- END check to see if article entity passed in. --#
+        #-- END check to see if newspaper entity passed in. --#
         
         return status_OUT                  
                           
