@@ -827,7 +827,7 @@ class ExportToContext( ContextTextBase ):
             status_OUT.set_status( status_code )
             status_OUT.add_message( status_message )
         
-        #-- END check to see if article entity passed in. --#
+        #-- END check to see if article passed in. --#
         
         return status_OUT                  
                           
