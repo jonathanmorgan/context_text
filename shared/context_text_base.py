@@ -206,6 +206,9 @@ class ContextTextBase( ContextBase ):
     CONTEXT_ENTITY_TYPE_SLUG_PERSON = "person"
     
     # ! --------> trait names
+    CONTEXT_TRAIT_NAME_CODER_ID = "sourcenet-coder-User-id"
+    CONTEXT_TRAIT_NAME_CODER_TYPE = "coder_type"
+    CONTEXT_TRAIT_NAME_CODER_USERNAME = "sourcenet-coder-User-username"
     CONTEXT_TRAIT_NAME_DESCRIPTION = "description"
     CONTEXT_TRAIT_NAME_FIRST_NAME = "first_name"
     CONTEXT_TRAIT_NAME_FULL_NAME = "full_name"

@@ -158,7 +158,15 @@ class ExportToContext( ContextTextBase ):
     def create_article_relations( article_entity_IN,
                                   author_entity_list_IN = None,
                                   subject_entity_list_IN = None,
-                                  source_entity_list_IN = None ):
+                                  source_entity_list_IN = None,
+                                  article_data_IN = None ):
+                                      
+        '''
+        If Article_Data passed in, assuming all are based on this single
+            Article_Data instance, so adding metadata traits on the coder and 
+            coder type to provide information on how the relations were
+            captured.
+        '''
                           
         # return reference
         status_OUT = None
@@ -180,6 +188,10 @@ class ExportToContext( ContextTextBase ):
         identifier_uuid = None
         relation = None
         relation_trait_filter_dict = None
+        coder = None
+        coder_id = None
+        coder_username = None
+        coder_type = None
 
         # declare variables - looping over people to make relations.
         relation_type_slug = None
@@ -205,11 +217,55 @@ class ExportToContext( ContextTextBase ):
             # include traits for pub_date of article.
             
             # pub_date
-            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
-            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+            trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
+            entity_trait = article_entity_IN.get_trait( trait_name )
             trait_value = entity_trait.get_trait_value()
             trait_dict[ trait_name ] = trait_value
             relation_trait_filter_dict[ trait_name ] = trait_value
+            
+            # do we have Article_Data?
+            if ( article_data_IN is not None ):
+            
+                # we do.  Retrieve the coder and coder type.
+                coder = article_data_IN.coder
+                coder_type = article_data_IN.coder_type
+                
+                # is there a coder?
+                if ( coder is not None ):
+                
+                    # yes - get ID and username.
+                    coder_id = coder.id
+                    coder_username = coder.username
+                    
+                    # add them to the dictionary.
+                    
+                    # coder_id
+                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_ID
+                    trait_value = coder_id
+                    trait_dict[ trait_name ] = trait_value
+                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
+
+                    # coder_username                    
+                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_USERNAME
+                    trait_value = coder_username
+                    trait_dict[ trait_name ] = trait_value
+                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
+                
+                #-- END check to see if coder --#
+            
+                # got a coder_type?
+                if ( ( coder_type is not None ) and ( coder_type != "" ) ):
+                
+                    # yes.  Add it as a trait.
+                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_TYPE
+                    trait_value = coder_type
+                    trait_dict[ trait_name ] = trait_value
+                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
+
+                #-- END check to see if coder_type. --#                    
+
+            #-- END check to see if Article_Data --#
+            
                     
             #------------------------------------------------------------------#
             # ! ----> Entity_Relation_Type slugs - FROM ARTICLE
@@ -532,7 +588,8 @@ class ExportToContext( ContextTextBase ):
                                     article_entity_IN,
                                     author_entity_list_IN = None,
                                     subject_entity_list_IN = None,
-                                    source_entity_list_IN = None ):
+                                    source_entity_list_IN = None,
+                                    article_data_IN = None ):
                           
         # return reference
         status_OUT = None
@@ -705,7 +762,7 @@ class ExportToContext( ContextTextBase ):
     #-- END method create_person_entity() --#
 
 
-    def create_relations( article_IN,
+    def create_relations( article_data_IN,
                           author_entity_list_IN = None,
                           subject_entity_list_IN = None,
                           source_entity_list_IN = None ):
@@ -717,6 +774,7 @@ class ExportToContext( ContextTextBase ):
         me = "create_relations"
         status_message = None
         status_code = None
+        article_instance = None
         article_entity = None
         newspaper_instance = None
         newspaper_entity = None
@@ -727,15 +785,16 @@ class ExportToContext( ContextTextBase ):
         status_OUT = StatusContainer()
         status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
         
-        # first, see if article passed in.
-        if ( article_IN is not None ):
+        # first, see if Article_Data passed in.
+        if ( article_data_IN is not None ):
         
             # first, get article entity.
-            article_entity = article_IN.get_entity()
+            article_instance = article_data_IN.article
+            article_entity = article_instance.get_entity()
             if ( article_entity is not None ):
             
                 # next, get newspaper entity.
-                newspaper_instance = article_IN.newspaper
+                newspaper_instance = article_instance.newspaper
                 if ( newspaper_instance is not None ):
                 
                     # got a newspaper - try to retrieve entity.
@@ -744,7 +803,7 @@ class ExportToContext( ContextTextBase ):
                 else:
                 
                     # no newspaper, so no newspaper entity.
-                    status_message = "no newspaper for article {}, so no newspaper relations.".format( article_IN )
+                    status_message = "no newspaper for article {}, so no newspaper relations.".format( article_instance )
                     self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
                     status_OUT.add_message( status_message )
                     
@@ -752,15 +811,18 @@ class ExportToContext( ContextTextBase ):
                 
                 # now we start creating relations.
                 
+                # ! ----> create newspaper-based relations.
+                
                 # if newspaper entity, we create a set of newspaper relations.
                 if ( newspaper_entity is not None ):
                 
                     # create newspaper relations
                     result_status = self.create_newspaper_relations( newspaper_entity,
                                                                      article_entity,
-                                                                     author_entity_list_IN,
-                                                                     subject_entity_list_IN,
-                                                                     source_entity_list_IN )
+                                                                     author_entity_list_IN = author_entity_list_IN,
+                                                                     subject_entity_list_IN = subject_entity_list_IN,
+                                                                     source_entity_list_IN = source_entity_list_IN,
+                                                                     article_data_IN = article_data_IN )
                     result_status_is_error = result_status.is_error()
                     
                     # errors?
@@ -780,17 +842,18 @@ class ExportToContext( ContextTextBase ):
                 else:
                 
                     # no newspaper entity, so no newspaper relations.
-                    status_message = "no newspaper entity, so no newspaper relations.".format( article_IN )
+                    status_message = "no newspaper entity, so no newspaper relations.".format( article_instance )
                     self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.INFO )
                     status_OUT.add_message( status_message )
 
                 #-- END check to see if newspaper entity. --#
                 
-                # and create article-based relations.
+                # ! ----> create article-based relations.
                 result_status = self.create_article_relations( article_entity,
-                                                               author_entity_list_IN,
-                                                               subject_entity_list_IN,
-                                                               source_entity_list_IN )                
+                                                               author_entity_list_IN = author_entity_list_IN,
+                                                               subject_entity_list_IN = subject_entity_list_IN,
+                                                               source_entity_list_IN = source_entity_list_IN,
+                                                               article_data_IN = article_data_IN )                
                 result_status_is_error = result_status.is_error()
                 
                 # errors?
@@ -810,7 +873,7 @@ class ExportToContext( ContextTextBase ):
             else:
             
                 # ERROR - no article entity.
-                status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_IN )
+                status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_instance )
                 self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
                 status_code = StatusContainer.STATUS_CODE_ERROR
                 status_OUT.set_status( status_code )
@@ -821,13 +884,13 @@ class ExportToContext( ContextTextBase ):
         else:
         
             # ERROR - no article passed in.
-            status_message = "ERROR - no article passed in, so no relations to create."
+            status_message = "ERROR - no Article_Data passed in, so no relations to create."
             self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
             status_code = StatusContainer.STATUS_CODE_ERROR
             status_OUT.set_status( status_code )
             status_OUT.add_message( status_message )
         
-        #-- END check to see if article passed in. --#
+        #-- END check to see if Article_Data passed in. --#
         
         return status_OUT                  
                           
@@ -968,9 +1031,11 @@ class ExportToContext( ContextTextBase ):
 
                 #-- END loop over subjects --#
                 
+                # ! ----> create relations
+                
                 # now we have entities for article, newspaper, authors,
                 #     subjects, and sources.  Time to make relations.
-                self.create_relations( current_article,
+                self.create_relations( article_data_instance,
                                        author_entity_list,
                                        subject_entity_list,
                                        source_entity_list )
