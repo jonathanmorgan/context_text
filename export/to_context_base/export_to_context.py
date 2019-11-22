@@ -104,6 +104,245 @@ class ExportToContext( ContextTextBase ):
     #============================================================================
 
 
+    @classmethod
+    def make_author_entity_list( cls, article_data_IN ):
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        me = "make_author_entity_list"
+        status_message = None
+        author_entity_list = None
+        article_data_instance = None
+        author_qs = None
+        article_author = None
+        current_person = None
+        person_entity = None
+        
+        # check to make sure we have Article_Data.
+        if ( article_data_IN is not None ):
+        
+            # init
+            article_data_instance = article_data_IN
+            author_entity_list = []
+            
+            # get QuerySet of Article_Author instances and loop.    
+            author_qs = article_data_instance.article_author_set
+            for article_author in author_qs:
+            
+                # get nested person.
+                current_person = article_author.person
+
+                # create their entity.
+                person_entity = self.create_person_entity( current_person )
+                
+                # store entity for making relations.
+                author_entity_list.append( person_entity )
+
+            #-- END loop over authors --#
+        
+            # return the list
+            list_OUT = author_entity_list
+        
+        else:
+        
+            # No Article_Data passed in.  Return None.
+            list_OUT = None
+            status_message = "In {}(): no Article_Data passed in, can't create author entity list".format( me )
+            cls.output_debug( status_message, method_IN = me, do_print_IN = True )
+            
+        #-- END check to see if Article_Data. --#
+        
+        return list_OUT
+        
+    #-- END class method make_author_entity_list() --#
+    
+
+    @classmethod
+    def make_relation_trait_dict( cls, article_entity_IN = None, article_data_IN = None ):
+        
+        # return reference
+        dict_OUT = None
+        
+        # declare variables
+        trait_dict = None
+        trait_name = None
+        entity_trait = None
+        trait_value = None
+        coder = None
+        coder_id = None
+        coder_username = None
+        coder_type = None
+        
+        # init
+        trait_dict = {}
+        
+        # got article entity?
+        if ( article_entity_IN is not None ):
+
+            # pub_date
+            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
+            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+            trait_value = entity_trait.get_trait_value()
+            trait_dict[ trait_name ] = trait_value
+            #relation_trait_filter_dict[ trait_name ] = trait_value
+            
+            # pull in identifier with sourcenet django ID
+            identifier_name = Article.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+            identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_name )
+            entity_identifier = article_entity_IN.get_identifier( identifier_name, id_type_IN = identifier_type )
+            identifier_uuid = enitity_identifier.uuid
+            trait_dict[ identifier_name ] = identifier_uuid
+            #relation_trait_filter_dict[ identifier_name ] = identifier_uuid
+            
+        #-- END check to see if we have an article entity for traits. --#
+
+        # do we have Article_Data?
+        if ( article_data_IN is not None ):
+        
+            # we do.  Retrieve the coder and coder type.
+            coder = article_data_IN.coder
+            coder_type = article_data_IN.coder_type
+            
+            # is there a coder?
+            if ( coder is not None ):
+            
+                # yes - get ID and username.
+                coder_id = coder.id
+                coder_username = coder.username
+                
+                # add them to the dictionary.
+                
+                # coder_id
+                trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_ID
+                trait_value = coder_id
+                trait_dict[ trait_name ] = trait_value
+                # ? relation_trait_filter_dict[ trait_name ] = trait_value
+
+                # coder_username                    
+                trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_USERNAME
+                trait_value = coder_username
+                trait_dict[ trait_name ] = trait_value
+                # ? relation_trait_filter_dict[ trait_name ] = trait_value
+            
+            #-- END check to see if coder --#
+        
+            # got a coder_type?
+            if ( ( coder_type is not None ) and ( coder_type != "" ) ):
+            
+                # yes.  Add it as a trait.
+                trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_TYPE
+                trait_value = coder_type
+                trait_dict[ trait_name ] = trait_value
+                # ? relation_trait_filter_dict[ trait_name ] = trait_value
+
+            #-- END check to see if coder_type. --#                    
+
+        #-- END check to see if Article_Data --#
+
+        # return the dictionary.
+        dict_OUT = trait_dict
+        
+        return dict_OUT
+        
+    #-- END class method make_relation_trait_dict() --#
+    
+
+    @classmethod
+    def make_subject_entity_list( cls, article_data_IN, limit_to_sources_IN = False, include_sources_in_subjects_IN = True ):
+        
+        # return reference
+        list_OUT = None
+        
+        # declare variables
+        me = "make_subject_entity_list"
+        status_message = None
+        subject_entity_list = None
+        source_entity_list = None
+        article_data_instance = None
+        subject_qs = None
+        article_subject = None
+        current_person = None
+        person_entity = None
+        
+        # check to make sure we have Article_Data.
+        if ( article_data_IN is not None ):
+        
+            # init
+            article_data_instance = article_data_IN
+            subject_entity_list = []
+            source_entity_list = []
+            subject_qs = article_data_instance.article_subject_set
+            for article_subject in subject_qs:
+            
+                # get nested person.
+                current_person = article_subject.person
+                subject_type = article_subject.subject_type
+
+                # create their entity.
+                person_entity = self.create_person_entity( current_person )
+                
+                # store based on subject_type so we can make relations.
+                if ( subject_type == Article_Subject.SUBJECT_TYPE_MENTIONED ):
+                
+                    # simple subject, not quoted
+                    subject_entity_list.append( person_entity )
+                    
+                elif ( subject_type == Article_Subject.SUBJECT_TYPE_QUOTED ):
+                
+                    # source
+                    source_entity_list.append( person_entity )
+                    
+                    # and subject? (Default is yes - source is also a subject).
+                    if ( include_sources_in_subjects_IN == True ):
+                    
+                        # yes - add it.
+                        subject_entity_list.append( person_entity )
+                        
+                    #-- END check to see if we consider a source also a subject --#
+                    
+                else:
+                
+                    # unknown or empty subject type.  Assume simple subject.
+                    subject_entity_list.append( person_entity )
+                    
+                #-- END check subject_type --#
+                
+            #-- END loop over subjects. --#
+
+            # return a list
+            if ( limit_to_sources_IN == False ):
+
+                # return subject list
+                list_OUT = subject_entity_list
+                
+            elif ( limit_to_sources_IN == True ):
+            
+                # just return source list
+                list_OUT = source_entity_list
+                
+            else:
+            
+                # huh? just subjects.
+                list_OUT = subject_entity_list
+                
+            #-- END check to see what we return. --#
+        
+        else:
+        
+            # No Article_Data passed in.  Return None.
+            list_OUT = None
+            status_message = "In {}(): no Article_Data passed in, can't create subject entity list".format( me )
+            cls.output_debug( status_message, method_IN = me, do_print_IN = True )
+            
+        #-- END check to see if Article_Data. --#
+        
+        return list_OUT
+        
+    #-- END class method make_subject_entity_list() --#
+
+
     #---------------------------------------------------------------------------
     # ! ==> __init__() method
     #---------------------------------------------------------------------------
@@ -210,62 +449,14 @@ class ExportToContext( ContextTextBase ):
         # first, see if article entity passed in.
         if ( article_entity_IN is not None ):
         
-            # shared traits for these relations
-            trait_dict = {}
-            relation_trait_filter_dict = {}
+            # traits to filter relations on.
+            # - include traits for pub_date and django/sourcenet ID of article.
+            relation_trait_filter_dict = self.make_relation_trait_dict( article_entity_IN = article_entity_IN )
             
-            # include traits for pub_date of article.
-            
-            # pub_date
-            trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
-            entity_trait = article_entity_IN.get_trait( trait_name )
-            trait_value = entity_trait.get_trait_value()
-            trait_dict[ trait_name ] = trait_value
-            relation_trait_filter_dict[ trait_name ] = trait_value
-            
-            # do we have Article_Data?
-            if ( article_data_IN is not None ):
-            
-                # we do.  Retrieve the coder and coder type.
-                coder = article_data_IN.coder
-                coder_type = article_data_IN.coder_type
-                
-                # is there a coder?
-                if ( coder is not None ):
-                
-                    # yes - get ID and username.
-                    coder_id = coder.id
-                    coder_username = coder.username
-                    
-                    # add them to the dictionary.
-                    
-                    # coder_id
-                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_ID
-                    trait_value = coder_id
-                    trait_dict[ trait_name ] = trait_value
-                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
-
-                    # coder_username                    
-                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_USERNAME
-                    trait_value = coder_username
-                    trait_dict[ trait_name ] = trait_value
-                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
-                
-                #-- END check to see if coder --#
-            
-                # got a coder_type?
-                if ( ( coder_type is not None ) and ( coder_type != "" ) ):
-                
-                    # yes.  Add it as a trait.
-                    trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_CODER_TYPE
-                    trait_value = coder_type
-                    trait_dict[ trait_name ] = trait_value
-                    # ? relation_trait_filter_dict[ trait_name ] = trait_value
-
-                #-- END check to see if coder_type. --#                    
-
-            #-- END check to see if Article_Data --#
-            
+            # traits for actual relations, both article info and coder
+            #     information from Article_Data.
+            trait_dict = self.make_relation_trait_dict( article_entity_IN = article_entity_IN,
+                                                        article_data_IN = article_data_IN )            
                     
             #------------------------------------------------------------------#
             # ! ----> Entity_Relation_Type slugs - FROM ARTICLE
@@ -620,27 +811,11 @@ class ExportToContext( ContextTextBase ):
         # first, see if newspaper entity passed in.
         if ( newspaper_entity_IN is not None ):
         
-            # shared traits for these relations
-            trait_dict = {}
-            relation_trait_filter_dict = {}
-            
-            # include traits for pub_date and sourcenet article ID of article.
-            
-            # pub_date
-            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
-            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
-            trait_value = entity_trait.get_trait_value()
-            trait_dict[ trait_name ] = trait_value
-            relation_trait_filter_dict[ trait_name ] = trait_value
-            
-            # pull in identifier with sourcenet django ID
-            identifier_name = Article.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
-            identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_name )
-            entity_identifier = article_entity_IN.get_identifier( identifier_name, id_type_IN = identifier_type )
-            identifier_uuid = enitity_identifier.uuid
-            trait_dict[ identifier_name ] = identifier_uuid
-            relation_trait_filter_dict[ identifier_name ] = identifier_uuid
-        
+            # shared traits for these relations, also used to filter.
+            # - includes article's pub_date and sourcenet article ID.
+            trait_dict = self.make_relation_trait_dict( article_entity_IN = article_entity_IN )
+            relation_trait_filter_dict = trait_dict
+                        
             # ! ----> "newspaper_article"    # FROM newspaper TO article.
         
             # got article entity?
@@ -982,54 +1157,15 @@ class ExportToContext( ContextTextBase ):
                 
                 # ! --------> Authors (Person)
                 # start with authors
-                author_entity_list = []
-                author_qs = article_data_instance.article_author_set
-                for article_author in author_qs:
-                
-                    # get nested person.
-                    current_person = article_author.person
-
-                    # create their entity.
-                    person_entity = self.create_person_entity( current_person )
-                    
-                    # store entity for making relations.
-                    author_entity_list.append( person_entity )
-
-                #-- END loop over authors --#
+                author_entity_list = self.make_author_entity_list( article_data_instance )
 
                 # ! --------> Subjects (Person)
                 # subjects
-                subject_entity_list = []
-                source_entity_list = []
-                subject_qs = article_data_instance.article_subject_set
-                for article_subject in subject_qs:
+                subject_entity_list = self.make_subject_entity_list( article_data_instance, limit_to_sources_IN = False )
                 
-                    # get nested person.
-                    current_person = article_subject.person
-                    subject_type = article_subject.subject_type
-
-                    # create their entity.
-                    person_entity = self.create_person_entity( current_person )
-                    
-                    # store based on subject_type so we can make relations.
-                    if ( subject_type == Article_Subject.SUBJECT_TYPE_MENTIONED ):
-                    
-                        # simple subject, not quoted
-                        subject_entity_list.append( person_entity )
-                        
-                    elif ( subject_type == Article_Subject.SUBJECT_TYPE_QUOTED ):
-                    
-                        # source
-                        source_entity_list.append( person_entity )
-                        
-                    else:
-                    
-                        # unknown or empty subject type.  Assume simple subject.
-                        subject_entity_list.append( person_entity )
-                        
-                    #-- END check subject_type --#
-
-                #-- END loop over subjects --#
+                # ! --------> Sources (Person)
+                # sources
+                source_entity_list = self.make_subject_entity_list( article_data_instance, limit_to_sources_IN = True )
                 
                 # ! ----> create relations
                 
