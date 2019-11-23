@@ -34,6 +34,8 @@ from python_utilities.status.status_container import StatusContainer
 from context.models import Entity
 from context.models import Entity_Identifier_Type
 from context.models import Entity_Identifier
+from context.models import Entity_Relation
+from context.models import Entity_Relation_Type
 
 # context_text imports
 from context_text.article_coding.article_coding import ArticleCoder
@@ -105,6 +107,84 @@ class ExportToContext( ContextTextBase ):
 
 
     @classmethod
+    def create_article_entity( cls, instance_IN ):
+        
+        '''
+        Accepts an Article instance, creates and populates an entity for the
+            Article based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # call the standard method
+        entity_OUT = cls.create_entity_container_entity( instance_IN )
+        
+        return entity_OUT
+        
+    #-- END method create_article_entity() --#
+
+
+    @classmethod
+    def create_entity_container_entity( cls, entity_container_IN ):
+        
+        '''
+        Accepts an AbstractEntityContainer child instance, creates and populates
+            an entity based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables
+        entity_container = None
+        
+        # declare variables - create new.
+        entity_instance = None
+        
+        # make sure an isntance was passed in.
+        entity_container = entity_container_IN
+        if ( entity_container is not None ):
+
+            # ask the instance to make its entity.
+            entity_instance = entity_container.update_entity()
+            entity_OUT = entity_instance
+        
+        else:
+        
+            # instance passed in is None.  return None.
+            entity_OUT = None    
+        
+        #-- END check to see if instance is None --#
+        
+        return entity_OUT
+        
+    #-- END method create_entity_container_entity() --#
+
+
+    @classmethod
+    def create_person_entity( cls, instance_IN ):
+        
+        '''
+        Accepts a Person instance, creates and populates an entity for the
+            Person based on the contents of the instance, returns the entity
+            instance.
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # call the standard method
+        entity_OUT = cls.create_entity_container_entity( instance_IN )
+        
+        return entity_OUT
+                
+    #-- END method create_person_entity() --#
+
+
+    @classmethod
     def make_author_entity_list( cls, article_data_IN ):
         
         # return reference
@@ -128,14 +208,14 @@ class ExportToContext( ContextTextBase ):
             author_entity_list = []
             
             # get QuerySet of Article_Author instances and loop.    
-            author_qs = article_data_instance.article_author_set
+            author_qs = article_data_instance.article_author_set.all()
             for article_author in author_qs:
             
                 # get nested person.
                 current_person = article_author.person
 
                 # create their entity.
-                person_entity = self.create_person_entity( current_person )
+                person_entity = cls.create_person_entity( current_person )
                 
                 # store entity for making relations.
                 author_entity_list.append( person_entity )
@@ -182,8 +262,8 @@ class ExportToContext( ContextTextBase ):
         if ( article_entity_IN is not None ):
 
             # pub_date
-            trait_name = ContextTextBase.TRAIT_NAME_PUB_DATE
-            entity_trait = article_entity_IN.get_trait( ContextTextBase.TRAIT_NAME_PUB_DATE )
+            trait_name = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
+            entity_trait = article_entity_IN.get_trait( ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE )
             trait_value = entity_trait.get_trait_value()
             trait_dict[ trait_name ] = trait_value
             #relation_trait_filter_dict[ trait_name ] = trait_value
@@ -192,7 +272,7 @@ class ExportToContext( ContextTextBase ):
             identifier_name = Article.ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
             identifier_type = Entity_Identifier_Type.get_type_for_name( identifier_name )
             entity_identifier = article_entity_IN.get_identifier( identifier_name, id_type_IN = identifier_type )
-            identifier_uuid = enitity_identifier.uuid
+            identifier_uuid = entity_identifier.uuid
             trait_dict[ identifier_name ] = identifier_uuid
             #relation_trait_filter_dict[ identifier_name ] = identifier_uuid
             
@@ -273,7 +353,7 @@ class ExportToContext( ContextTextBase ):
             article_data_instance = article_data_IN
             subject_entity_list = []
             source_entity_list = []
-            subject_qs = article_data_instance.article_subject_set
+            subject_qs = article_data_instance.article_subject_set.all()
             for article_subject in subject_qs:
             
                 # get nested person.
@@ -281,7 +361,7 @@ class ExportToContext( ContextTextBase ):
                 subject_type = article_subject.subject_type
 
                 # create their entity.
-                person_entity = self.create_person_entity( current_person )
+                person_entity = cls.create_person_entity( current_person )
                 
                 # store based on subject_type so we can make relations.
                 if ( subject_type == Article_Subject.SUBJECT_TYPE_MENTIONED ):
@@ -375,26 +455,8 @@ class ExportToContext( ContextTextBase ):
     #---------------------------------------------------------------------------
 
 
-    def create_article_entity( self, instance_IN ):
-        
-        '''
-        Accepts an Article instance, creates and populates an entity for the
-            Article based on the contents of the instance, returns the entity
-            instance.
-        '''
-        
-        # return reference
-        entity_OUT = None
-        
-        # call the standard method
-        entity_OUT = self.create_entity_container_entity( instance_IN )
-        
-        return entity_OUT
-        
-    #-- END method create_article_entity() --#
-
-
-    def create_article_relations( article_entity_IN,
+    def create_article_relations( self,
+                                  article_entity_IN,
                                   author_entity_list_IN = None,
                                   subject_entity_list_IN = None,
                                   source_entity_list_IN = None,
@@ -444,7 +506,7 @@ class ExportToContext( ContextTextBase ):
         
         # init status container
         status_OUT = StatusContainer()
-        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
         
         # first, see if article entity passed in.
         if ( article_entity_IN is not None ):
@@ -728,7 +790,7 @@ class ExportToContext( ContextTextBase ):
             status_message = "In {}: ERROR - no article entity in, so no relations to create.".format( me )
             self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
             status_code = StatusContainer.STATUS_CODE_ERROR
-            status_OUT.set_status( status_code )
+            status_OUT.set_status_code( status_code )
             status_OUT.add_message( status_message )
         
         #-- END check to see if article entity passed in. --#
@@ -738,44 +800,8 @@ class ExportToContext( ContextTextBase ):
     #-- END method create_article_relations() --#
 
 
-    def create_entity_container_entity( self, entity_container_IN ):
-        
-        '''
-        Accepts an AbstractEntityContainer child instance, creates and populates
-            an entity based on the contents of the instance, returns the entity
-            instance.
-        '''
-        
-        # return reference
-        entity_OUT = None
-        
-        # declare variables
-        entity_container = None
-        
-        # declare variables - create new.
-        entity_instance = None
-        
-        # make sure an isntance was passed in.
-        entity_container = entity_container_IN
-        if ( entity_container is not None ):
-
-            # ask the instance to make its entity.
-            entity_instance = entity_container.update_entity()
-            entity_OUT = entity_instance
-        
-        else:
-        
-            # instance passed in is None.  return None.
-            entity_OUT = None    
-        
-        #-- END check to see if instance is None --#
-        
-        return entity_OUT
-        
-    #-- END method create_entity_container_entity() --#
-
-
-    def create_newspaper_relations( newspaper_entity_IN,
+    def create_newspaper_relations( self,
+                                    newspaper_entity_IN,
                                     article_entity_IN,
                                     author_entity_list_IN = None,
                                     subject_entity_list_IN = None,
@@ -806,7 +832,7 @@ class ExportToContext( ContextTextBase ):
         
         # init status container
         status_OUT = StatusContainer()
-        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
         
         # first, see if newspaper entity passed in.
         if ( newspaper_entity_IN is not None ):
@@ -908,7 +934,7 @@ class ExportToContext( ContextTextBase ):
             status_message = "ERROR - no newspaper entity in, so no relations to create."
             self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
             status_code = StatusContainer.STATUS_CODE_ERROR
-            status_OUT.set_status( status_code )
+            status_OUT.set_status_code( status_code )
             status_OUT.add_message( status_message )
         
         #-- END check to see if newspaper entity passed in. --#
@@ -918,26 +944,8 @@ class ExportToContext( ContextTextBase ):
     #-- END method create_newspaper_relations() --#
 
 
-    def create_person_entity( self, instance_IN ):
-        
-        '''
-        Accepts a Person instance, creates and populates an entity for the
-            Person based on the contents of the instance, returns the entity
-            instance.
-        '''
-        
-        # return reference
-        entity_OUT = None
-        
-        # call the standard method
-        entity_OUT = self.create_entity_container_entity( instance_IN )
-        
-        return entity_OUT
-                
-    #-- END method create_person_entity() --#
-
-
-    def create_relations( article_data_IN,
+    def create_relations( self,
+                          article_data_IN,
                           author_entity_list_IN = None,
                           subject_entity_list_IN = None,
                           source_entity_list_IN = None ):
@@ -958,7 +966,7 @@ class ExportToContext( ContextTextBase ):
         
         # init status container
         status_OUT = StatusContainer()
-        status_OUT.set_status( StatusContainer.STATUS_CODE_SUCCESS )
+        status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
         
         # first, see if Article_Data passed in.
         if ( article_data_IN is not None ):
@@ -1008,7 +1016,7 @@ class ExportToContext( ContextTextBase ):
                         status_message = "ERROR - errors processing newspaper relations.  See nested StatusContainer for more details."
                         self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
                         status_code = StatusContainer.STATUS_CODE_ERROR
-                        status_OUT.set_status( status_code )
+                        status_OUT.set_status_code( status_code )
                         status_OUT.add_message( status_message )
                         status_OUT.add_status_container( result_status )
                     
@@ -1039,7 +1047,7 @@ class ExportToContext( ContextTextBase ):
                     status_message = "ERROR - errors processing article-based relations.  See nested StatusContainer for more details."
                     self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
                     status_code = StatusContainer.STATUS_CODE_ERROR
-                    status_OUT.set_status( status_code )
+                    status_OUT.set_status_code( status_code )
                     status_OUT.add_message( status_message )
                     status_OUT.add_status_container( result_status )
                 
@@ -1051,7 +1059,7 @@ class ExportToContext( ContextTextBase ):
                 status_message = "ERROR - no article entity for article {}, so no relations to create.".format( article_instance )
                 self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
                 status_code = StatusContainer.STATUS_CODE_ERROR
-                status_OUT.set_status( status_code )
+                status_OUT.set_status_code( status_code )
                 status_OUT.add_message( status_message )            
             
             #-- END check to see if article entity present --#
@@ -1062,7 +1070,7 @@ class ExportToContext( ContextTextBase ):
             status_message = "ERROR - no Article_Data passed in, so no relations to create."
             self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
             status_code = StatusContainer.STATUS_CODE_ERROR
-            status_OUT.set_status( status_code )
+            status_OUT.set_status_code( status_code )
             status_OUT.add_message( status_message )
         
         #-- END check to see if Article_Data passed in. --#

@@ -1016,7 +1016,7 @@ class Person( Abstract_Person ):
                                                     
                 else:
                 
-                    debug_message = "In Person." + me + ": ----> Entity Identifiercreated tie from {} to UUID {}" .format( self, instance_OUT )
+                    debug_message = "In Person." + me + ": ----> Entity Identifier created tie from {} to UUID {}" .format( self, entity_instance )
                     output_debug( debug_message )
                 
                 #-- END check to see if UUID already present. --#

@@ -34,5 +34,23 @@
       "groups": [],
       "user_permissions": []
     }
+  },
+  {
+    "model": "auth.user",
+    "pk": 7,
+    "fields": {
+        "password": "pbkdf2_sha256$150000$orMbgXYFASB0$as9A4XNN6A5pFGm1Es4gaZvj+7z+H9oYCNFK3r3FKGg=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "automated",
+        "first_name": "Automated",
+        "last_name": "Processing",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-09-13T02:12:34.321Z",
+        "groups": [],
+        "user_permissions": []
+    }
   }
 ]

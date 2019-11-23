@@ -184,6 +184,28 @@ class TestHelper( context.tests.test_helper.TestHelper ):
 
 
     @classmethod
+    def filter_article_data_open_calais_v2( cls, article_data_qs_IN ):
+    
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        automated_coder_user = None
+        
+        # get automated coder
+        automated_coder_user = ContextTextBase.get_automated_coding_user()
+        
+        # filter
+        qs_OUT = article_data_qs_IN
+        qs_OUT = qs_OUT.filter( coder = automated_coder_user )
+        qs_OUT = qs_OUT.filter( coder_type = OpenCalaisV2ArticleCoder.CONFIG_APPLICATION )
+        
+        return qs_OUT
+        
+    #-- END method filter_article_data_open_calais_v2() --#
+        
+    
+    @classmethod
     def load_open_calais_access_token( cls, directory_path_IN = "" ):
         
         # return references
@@ -271,7 +293,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
         status_instance = None
         current_fixture = ""
         
-        print( "\nIn TestHelper." + me + "(): starting standardOpenCalaisSetUp." )
+        print( "\n\nIn TestHelper." + me + "(): starting standardOpenCalaisSetUp.\n" )
         
         # see if test case passed in.  If so, set status variables on it.
         if ( test_case_IN is not None ):

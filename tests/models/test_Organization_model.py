@@ -219,7 +219,7 @@ class OrganizationModelTest( django.test.TestCase ):
 
             # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
-            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_entity_id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
@@ -255,7 +255,7 @@ class OrganizationModelTest( django.test.TestCase ):
 
             # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
-            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_entity_id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
@@ -360,7 +360,7 @@ class OrganizationModelTest( django.test.TestCase ):
 
             # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
-            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_entity_id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
@@ -396,7 +396,7 @@ class OrganizationModelTest( django.test.TestCase ):
 
             # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
-            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_entity_id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
@@ -506,7 +506,7 @@ class OrganizationModelTest( django.test.TestCase ):
 
             # more tests.
             id_type = Entity_Identifier_Type.get_type_for_name( self.MY_ENTITY_ID_TYPE_NAME )
-            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_type_IN = id_type )
+            test_entity_instance = Entity.get_entity_for_identifier( my_id, id_entity_id_type_IN = id_type )
             test_entity_id = test_entity_instance.id
             
             # returned entity should have same ID as entity_instance.
