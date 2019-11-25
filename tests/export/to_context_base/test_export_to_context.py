@@ -998,7 +998,7 @@ class ExportToContextTest( django.test.TestCase ):
                                                                            limit_to_sources_IN = True,
                                                                            include_sources_in_subjects_IN = False )
                                                                            
-            # call the create newspaper relations method.
+            # ! ----> call the create_article_relations() method.
             create_status = export_instance.create_article_relations( article_entity,
                                                                       author_entity_list_IN = author_entity_list,
                                                                       subject_entity_list_IN = subject_entity_list,
@@ -1015,6 +1015,23 @@ class ExportToContextTest( django.test.TestCase ):
             #     call.
             self.validate_article_article_relations( article_id )
             
+            # ! ----> call the create_article_relations() method again.
+            create_status = export_instance.create_article_relations( article_entity,
+                                                                      author_entity_list_IN = author_entity_list,
+                                                                      subject_entity_list_IN = subject_entity_list,
+                                                                      source_entity_list_IN = source_entity_list,
+                                                                      article_data_IN = article_data_instance )
+                                                                        
+            # success?
+            test_value = create_status.is_success()
+            should_be = True
+            error_string = "Creating article-related relations for article_entity: {}, authors: {}, subjects: {}, sources: {}, and Article_Data: {}.  Success?: {}, should be {}.".format( article_entity, author_entity_list, subject_entity_list, source_entity_list, article_data_instance, test_value, should_be )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # now, validate the relations that should have resulted from this
+            #     call.
+            self.validate_article_article_relations( article_id )
+
         #-- END loop over articles --#
             
     #-- END test method test_create_article_relations() --#
@@ -1112,7 +1129,25 @@ class ExportToContextTest( django.test.TestCase ):
                                                                            limit_to_sources_IN = True,
                                                                            include_sources_in_subjects_IN = False )
                                                                            
-            # call the create newspaper relations method.
+            # ! ----> call the create_newspaper_relations() method.
+            create_status = export_instance.create_newspaper_relations( newspaper_entity,
+                                                                        article_entity,
+                                                                        author_entity_list_IN = author_entity_list,
+                                                                        subject_entity_list_IN = subject_entity_list,
+                                                                        source_entity_list_IN = source_entity_list,
+                                                                        article_data_IN = article_data_instance )
+                                                                        
+            # success?
+            test_value = create_status.is_success()
+            should_be = True
+            error_string = "Creating newspaper-related relations for newspaper entity: {}, article_entity: {}, authors: {}, subjects: {}, sources: {}, and Article_Data: {}.  Success?: {}, should be {}.".format( newspaper_entity, article_entity, author_entity_list, subject_entity_list, source_entity_list, article_data_instance, test_value, should_be )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # now, validate the relations that should have resulted from this
+            #     call.
+            self.validate_article_newspaper_relations( article_id )
+                        
+            # ! ----> call the create_newspaper_relations() method again.
             create_status = export_instance.create_newspaper_relations( newspaper_entity,
                                                                         article_entity,
                                                                         author_entity_list_IN = author_entity_list,
@@ -1227,7 +1262,7 @@ class ExportToContextTest( django.test.TestCase ):
                                                                            limit_to_sources_IN = True,
                                                                            include_sources_in_subjects_IN = False )
                                                                            
-            # call the create newspaper relations method.
+            # ! ----> call the create_relations() method.
             create_status = export_instance.create_relations( article_data_instance,
                                                               author_entity_list_IN = author_entity_list,
                                                               subject_entity_list_IN = subject_entity_list,
@@ -1244,6 +1279,23 @@ class ExportToContextTest( django.test.TestCase ):
             self.validate_article_newspaper_relations( article_id )
             self.validate_article_article_relations( article_id )
                         
+            # ! ----> call the create_relations method again - test duplication.
+            create_status = export_instance.create_relations( article_data_instance,
+                                                              author_entity_list_IN = author_entity_list,
+                                                              subject_entity_list_IN = subject_entity_list,
+                                                              source_entity_list_IN = source_entity_list )                                                                        
+
+            # success?
+            test_value = create_status.is_success()
+            should_be = True
+            error_string = "Creating newspaper-related relations for newspaper entity: {}, article_entity: {}, authors: {}, subjects: {}, sources: {}, and Article_Data: {}.  Success?: {}, should be {}.".format( newspaper_entity, article_entity, author_entity_list, subject_entity_list, source_entity_list, article_data_instance, test_value, should_be )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # now, validate the relations that should have resulted from this
+            #     call.
+            self.validate_article_newspaper_relations( article_id )
+            self.validate_article_article_relations( article_id )
+
         #-- END loop over articles. --#
                         
     #-- END method test_create_relations()
@@ -1527,7 +1579,7 @@ class ExportToContextTest( django.test.TestCase ):
         #     self.TEST_ID_LIST
         article_qs = Article.objects.filter( id__in = self.TEST_ID_LIST )
         
-        # call the process_articles() method.
+        # ! ----> call the process_articles() method.
         create_status = export_instance.process_articles( article_qs )
         
         # success?
@@ -1546,6 +1598,25 @@ class ExportToContextTest( django.test.TestCase ):
                         
         #-- END loop over articles. --#
                         
+        # ! ----> call the process_articles() method again - duplicates?
+        create_status = export_instance.process_articles( article_qs )
+        
+        # success?
+        test_value = create_status.is_success()
+        should_be = True
+        error_string = "Calling process_articles() for Article QuerySet: {} ( from article ID list {} ).  Success?: {}, should be {}.".format( article_qs, self.TEST_ID_LIST, test_value, should_be )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # For each article we processed, validate relations (assuming entities
+        #     are right if relations come out right).
+        for article_id in self.TEST_ID_LIST:
+        
+            # validate the relations that should have resulted from this call.
+            self.validate_article_newspaper_relations( article_id )
+            self.validate_article_article_relations( article_id )
+                        
+        #-- END loop over articles. --#
+
     #-- END method test_process_articles()
 
 
