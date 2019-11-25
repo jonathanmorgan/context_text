@@ -828,7 +828,10 @@ class ExportToContext( ContextTextBase ):
         identifier_uuid = None
         relation = None
         relation_trait_filter_dict = None
-        person_entity = None
+        from_entity = None
+        to_entity_list = None
+        to_entity = None
+        through_entity = None
         
         # init status container
         status_OUT = StatusContainer()
@@ -843,15 +846,20 @@ class ExportToContext( ContextTextBase ):
             relation_trait_filter_dict = trait_dict
                         
             # ! ----> "newspaper_article"    # FROM newspaper TO article.
+
+            # config
+            from_entity = newspaper_entity_IN
+            through_entity = None
         
             # got article entity?
             if ( article_entity_IN is not None ):
 
                 # get type
-                relation_type = Entity_Relation_Type.objects.get( slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE )
+                relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE
+                relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
                 
                 # create relation if no match of FROM, TO, type, pub_date, and article ID.
-                relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
+                relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
                                                                    to_IN = article_entity_IN,
                                                                    type_IN = relation_type,
                                                                    trait_name_to_value_map_IN = trait_dict,
@@ -860,71 +868,83 @@ class ExportToContext( ContextTextBase ):
             #-- END check to see if article entity. --#
             
             # ! ----> "newspaper_reporter"  # FROM newspaper TO person (reporter) THROUGH article.
+
+            # config
+            from_entity = newspaper_entity_IN
+            through_entity = article_entity_IN
             relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_REPORTER
             relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
-            person_entity_list = author_entity_list_IN
+            to_entity_list = author_entity_list_IN
 
             # got people in list?
-            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
             
                 # yes, there are people.  Loop.
-                for person_entity in person_entity_list:
+                for to_entity in to_entity_list:
                 
                     # create relation if no match of FROM, TO, type, and pub_date.
-                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
-                                                                       to_IN = person_entity,
-                                                                       through_IN = article_entity_IN,
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       through_IN = through_entity,
                                                                        type_IN = relation_type,
                                                                        trait_name_to_value_map_IN = trait_dict,
                                                                        match_trait_dict_IN = relation_trait_filter_dict )
                 
-                #-- END loop over people --#
+                #-- END loop over TO entities --#
             
             #-- END check to see if person entities in list. --#
                 
             # ! ----> "newspaper_subject"    # FROM newspaper TO person (subject, including sources) THROUGH article.
+
+            # config
+            from_entity = newspaper_entity_IN
+            through_entity = article_entity_IN
             relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SUBJECT
             relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
-            person_entity_list = subject_entity_list_IN
+            to_entity_list = subject_entity_list_IN
 
             # got people in list?
-            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
             
                 # yes, there are people.  Loop.
-                for person_entity in person_entity_list:
+                for to_entity in to_entity_list:
                 
                     # create relation if no match of FROM, TO, type, and pub_date.
-                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
-                                                                       to_IN = person_entity,
-                                                                       through_IN = article_entity_IN,
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       through_IN = through_entity,
                                                                        type_IN = relation_type,
                                                                        trait_name_to_value_map_IN = trait_dict,
                                                                        match_trait_dict_IN = relation_trait_filter_dict )
                 
-                #-- END loop over people --#
+                #-- END loop over TO entities --#
             
             #-- END check to see if person entities in list. --#
                 
             # ! ----> "newspaper_source"      # FROM newspaper TO person (source) THROUGH article.
+
+            # config
+            from_entity = newspaper_entity_IN
+            through_entity = article_entity_IN
             relation_type_slug = ContextTextBase.CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SOURCE
             relation_type = Entity_Relation_Type.objects.get( slug = relation_type_slug )
-            person_entity_list = source_entity_list_IN
+            to_entity_list = source_entity_list_IN
 
             # got people in list?
-            if ( ( person_entity_list is not None ) and ( len( person_entity_list ) > 0 ) ):
+            if ( ( to_entity_list is not None ) and ( len( to_entity_list ) > 0 ) ):
             
                 # yes, there are people.  Loop.
-                for person_entity in person_entity_list:
+                for to_entity in to_entity_list:
                 
                     # create relation if no match of FROM, TO, type, and pub_date.
-                    relation = Entity_Relation.create_entity_relation( from_IN = newspaper_entity_IN,
-                                                                       to_IN = person_entity,
-                                                                       through_IN = article_entity_IN,
+                    relation = Entity_Relation.create_entity_relation( from_IN = from_entity,
+                                                                       to_IN = to_entity,
+                                                                       through_IN = through_entity,
                                                                        type_IN = relation_type,
                                                                        trait_name_to_value_map_IN = trait_dict,
                                                                        match_trait_dict_IN = relation_trait_filter_dict )
                 
-                #-- END loop over people --#
+                #-- END loop over TO entities --#
             
             #-- END check to see if person entities in list. --#
                 
@@ -1082,8 +1102,13 @@ class ExportToContext( ContextTextBase ):
 
     def process_articles( self, article_qs_IN ):
         
+        # return reference
+        status_OUT = None
+        
         # declare variables
         me = "process_articles"
+        status_message = None
+        status_code = None
         article_qs = None
         current_article = None
         current_article_id = None
@@ -1107,12 +1132,18 @@ class ExportToContext( ContextTextBase ):
         author_entity_list = None
         subject_entity_list = None
         source_entity_list = None
+        result_status = None
+        result_status_is_error = None
         
         # declare variables - auditing
         good_counter = None
         more_than_one_counter = None
         zero_counter = None
         unexpected_counter = None
+        
+        # init status container
+        status_OUT = StatusContainer()
+        status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
         
         # initialization
         article_qs = article_qs_IN
@@ -1179,25 +1210,46 @@ class ExportToContext( ContextTextBase ):
                 
                 # now we have entities for article, newspaper, authors,
                 #     subjects, and sources.  Time to make relations.
-                self.create_relations( article_data_instance,
-                                       author_entity_list,
-                                       subject_entity_list,
-                                       source_entity_list )
+                result_status = self.create_relations( article_data_instance,
+                                                    author_entity_list,
+                                                    subject_entity_list,
+                                                    source_entity_list )
                 
+                result_status_is_error = result_status.is_error()
+                
+                # errors?
+                if ( result_status_is_error == True ):
+                
+                    # set status to error, add a message, then nest the
+                    #     StatusContainer instance.
+                    status_message = "ERROR - errors creating relations.  See nested StatusContainer for more details."
+                    self.output_message( status_message, do_print_IN = True, log_level_code_IN = logging.ERROR )
+                    status_code = StatusContainer.STATUS_CODE_ERROR
+                    status_OUT.set_status_code( status_code )
+                    status_OUT.add_message( status_message )
+                    status_OUT.add_status_container( result_status )
+                
+                #-- END check to see if errors. --#
+
             elif ( article_data_count > 1 ):
                 
                 # more than one.  Hmmm.
                 more_than_one_counter += 1
                 log_message = "ERROR - Article: {} - More than one Article_Data instance found ( {} ).  Moving to next article.".format( current_article_id, article_data_count )
-                self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
-        
+                self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )
                 
+                # add message to status container.
+                status_OUT.add_message( log_message )
+        
             elif ( article_data_count == 0 ):
                 
                 # none.  ERROR.  move on.
                 zero_counter += 1
                 log_message = "ERROR - Article: {} - No Article_Data instances found ( {} ).  Moving to next article.".format( current_article_id, article_data_count )
                 self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
+        
+                # add message to status container.
+                status_OUT.add_message( log_message )
         
             else:
             
@@ -1206,20 +1258,44 @@ class ExportToContext( ContextTextBase ):
                 log_message = "ERROR - Article: {} - Article_Data count ( {} ) wasn't 1, > 1, or 0 - Unexpected...".format( current_article_id, article_data_count )
                 self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
                 
+                # add message to status container.
+                status_OUT.add_message( log_message )
+        
             #-- END check to see how many Article_Data. --#
             
         #-- END loop over articles --#
         
         log_message = "\nSummary:"
+        status_message = "{}".format( log_message )
         self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
         log_message = "- good count: {}".format( good_counter )
+        status_message += "\n{}".format( log_message )
         self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
         log_message = "- > 1 count: {}".format( more_than_one_counter )
+        status_message += "\n{}".format( log_message )
         self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
         log_message = "- 0 count: {}".format( zero_counter )
+        status_message += "\n{}".format( log_message )
         self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )        
         log_message = "- unexpected count: {}".format( unexpected_counter )
+        status_message += "\n{}".format( log_message )
         self.output_message( log_message, do_print_IN = True, log_level_code_IN = logging.INFO )
+        
+        # update status
+        status_OUT.add_message( status_message )
+        
+        # if any counts other than "good" are > 1, set to error code.
+        if ( ( more_than_one_counter > 0 )
+            or ( zero_counter > 0 )
+            or ( unexpected_counter > 0 ) ):
+            
+            # ERROR.
+            status_code = StatusContainer.STATUS_CODE_ERROR
+            status_OUT.set_status_code( status_code )
+
+        #-- END check to see if any non-"good" --#            
+        
+        return status_OUT
     
     #-- END method process_articles() --#
 
