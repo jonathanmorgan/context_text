@@ -446,6 +446,7 @@ class ExportToContext( ContextTextBase ):
         #self.logging_format = self.LOGGING_DEFAULT_FORMAT
         #self.logging_filename = self.LOGGING_DEFAULT_FILENAME
         #self.logging_filemode = self.LOGGING_DEFAULT_FILEMODE
+        self.progress_interval = 100
         
     #-- END method __init__() --#
 
@@ -1110,6 +1111,8 @@ class ExportToContext( ContextTextBase ):
         status_message = None
         status_code = None
         article_qs = None
+        article_count = None
+        progress_interval = None
         current_article = None
         current_article_id = None
         coder_type_list = None
@@ -1136,17 +1139,30 @@ class ExportToContext( ContextTextBase ):
         result_status_is_error = None
         
         # declare variables - auditing
+        article_counter = None
         good_counter = None
         more_than_one_counter = None
         zero_counter = None
         unexpected_counter = None
+        start_time = None
+        previous_time = None
+        current_time = None
+        elapsed_time = None
+        elapsed_this_period = None
+        average_time = None
+        average_this_period = None
         
         # init status container
         status_OUT = StatusContainer()
         status_OUT.set_status_code( StatusContainer.STATUS_CODE_SUCCESS )
         
+        # init start time
+        start_time = datetime.datetime.now()
+        previous_time = start_time
+        
         # initialization
         article_qs = article_qs_IN
+        article_count = article_qs.count()
         automated_coder_user = ArticleCoder.get_automated_coding_user()
 
         # initialization - retrieve a Q to filter Article_Data on automated
@@ -1156,12 +1172,15 @@ class ExportToContext( ContextTextBase ):
         article_data_q = Article_Data.create_q_only_automated( coder_type_list )
         
         # loop over articles
+        article_counter = 0
+        progress_interval = self.progress_interval
         good_counter = 0
         more_than_one_counter = 0
         zero_counter = 0
         unexpected_counter = 0
         for current_article in article_qs:
             
+            article_counter += 1
             current_article_id = current_article.id
             
             # create article entity?  For now, no, only those with coding.
@@ -1262,6 +1281,21 @@ class ExportToContext( ContextTextBase ):
                 status_OUT.add_message( log_message )
         
             #-- END check to see how many Article_Data. --#
+            
+            # output an update every progress_interval articles.
+            if ( ( article_counter % progress_interval ) == 0 ):
+            
+                previous_time = current_time
+                current_time = datetime.datetime.now()
+                elapsed_time = current_time - start_time
+                elapsed_this_period = current_time - previous_time
+                average_time = elapsed_time / article_counter
+                average_this_period = elaped_this_period / progress_interval
+                print( "\n----> Processed {} of {} articles at {}".format( article_counter, article_count, current_time ) )
+                print( "Total elapsed: {} ( average: {} )".format( elapsed_time, average_time ) )
+                print( "Period elapsed: {} ( average: {} )".format( elapsed_this_period, average_this_period ) )
+            
+            #-- END check to see if we output progress update. --#
             
         #-- END loop over articles --#
         

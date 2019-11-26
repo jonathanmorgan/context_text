@@ -3015,6 +3015,7 @@ class Article( Abstract_Entity_Container ):
         entity_OUT = None
         
         # declare variables - create new.
+        me = "update_entity"
         entity_instance = None
         entity_type = None
         trait_name = None
@@ -3128,7 +3129,7 @@ class Article( Abstract_Entity_Container ):
             
                 # log archive identifier information
                 log_message = "NOTE - Archive identifier: {}; source: {}".format( identifier_uuid, identifier_source )
-                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = DEBUG )
             
                 # archive ID and source present.  Create identifier.
                 identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
@@ -3141,7 +3142,7 @@ class Article( Abstract_Entity_Container ):
             
                 # No archive identifier.
                 log_message = "NOTE - No archive identifier or source."
-                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = DEBUG )
             
             #-- END check to see if generic archive ID. --#
             
