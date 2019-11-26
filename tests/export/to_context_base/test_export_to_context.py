@@ -1574,6 +1574,7 @@ class ExportToContextTest( django.test.TestCase ):
         
         # init
         export_instance = ExportToContext()
+        export_instance.progress_interval = 1
         
         # create an Article QuerySet filtered to just the IDs in
         #     self.TEST_ID_LIST

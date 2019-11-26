@@ -1158,7 +1158,7 @@ class ExportToContext( ContextTextBase ):
         
         # init start time
         start_time = datetime.datetime.now()
-        previous_time = start_time
+        current_time = start_time
         
         # initialization
         article_qs = article_qs_IN
@@ -1290,7 +1290,7 @@ class ExportToContext( ContextTextBase ):
                 elapsed_time = current_time - start_time
                 elapsed_this_period = current_time - previous_time
                 average_time = elapsed_time / article_counter
-                average_this_period = elaped_this_period / progress_interval
+                average_this_period = elapsed_this_period / progress_interval
                 print( "\n----> Processed {} of {} articles at {}".format( article_counter, article_count, current_time ) )
                 print( "Total elapsed: {} ( average: {} )".format( elapsed_time, average_time ) )
                 print( "Period elapsed: {} ( average: {} )".format( elapsed_this_period, average_this_period ) )
