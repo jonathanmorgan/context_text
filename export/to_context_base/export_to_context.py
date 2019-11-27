@@ -95,6 +95,10 @@ class ExportToContext( ContextTextBase ):
     TRAIT_NAME_PUB_DATE = ContextTextBase.CONTEXT_TRAIT_NAME_PUB_DATE
     TRAIT_NAME_SOURCENET_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
     
+    # tag values
+    TAG_PREFIX = "export_to_context"
+    TAG_TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
+    
 
     #============================================================================
     # static methods
@@ -1101,7 +1105,7 @@ class ExportToContext( ContextTextBase ):
     #-- END method create_relations() --#
 
 
-    def process_articles( self, article_qs_IN ):
+    def process_articles( self, article_qs_IN, tag_articles_IN = False ):
         
         # return reference
         status_OUT = None
@@ -1110,6 +1114,7 @@ class ExportToContext( ContextTextBase ):
         me = "process_articles"
         status_message = None
         status_code = None
+        article_tag_value = None
         article_qs = None
         article_count = None
         progress_interval = None
@@ -1170,6 +1175,14 @@ class ExportToContext( ContextTextBase ):
         coder_type_list = []
         coder_type_list.append( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION )
         article_data_q = Article_Data.create_q_only_automated( coder_type_list )
+        
+        # initialization - are we tagging article?
+        if ( tag_articles_IN == True ):
+        
+            # yes.  Create tag value - TAG_PREFIX + timestamp.
+            article_tag_value = self.TAG_PREFIX + start_time.strftime( self.TAG_TIMESTAMP_FORMAT )
+            
+        #-- END check of tagging articles. --#
         
         # loop over articles
         article_counter = 0
@@ -1297,6 +1310,14 @@ class ExportToContext( ContextTextBase ):
             
             #-- END check to see if we output progress update. --#
             
+            # do we tag each article we process?
+            if ( tag_articles_IN == True ):
+            
+                # yes.  Apply tag value.
+                current_article.tags.add( article_tag_value )
+                
+            #-- END check of tagging articles. --#
+    
         #-- END loop over articles --#
         
         log_message = "\nSummary:"

@@ -1581,7 +1581,7 @@ class ExportToContextTest( django.test.TestCase ):
         article_qs = Article.objects.filter( id__in = self.TEST_ID_LIST )
         
         # ! ----> call the process_articles() method.
-        create_status = export_instance.process_articles( article_qs )
+        create_status = export_instance.process_articles( article_qs, tag_articles_IN = True )
         
         # success?
         test_value = create_status.is_success()
@@ -1596,11 +1596,13 @@ class ExportToContextTest( django.test.TestCase ):
             # validate the relations that should have resulted from this call.
             self.validate_article_newspaper_relations( article_id )
             self.validate_article_article_relations( article_id )
+            
+            # ! TODO - add some sort of test to make sure tag was applied.
                         
         #-- END loop over articles. --#
                         
         # ! ----> call the process_articles() method again - duplicates?
-        create_status = export_instance.process_articles( article_qs )
+        create_status = export_instance.process_articles( article_qs, tag_articles_IN = True )
         
         # success?
         test_value = create_status.is_success()
@@ -1616,6 +1618,8 @@ class ExportToContextTest( django.test.TestCase ):
             self.validate_article_newspaper_relations( article_id )
             self.validate_article_article_relations( article_id )
                         
+            # ! TODO - add some sort of test to make sure another tag was applied.
+
         #-- END loop over articles. --#
 
     #-- END method test_process_articles()
