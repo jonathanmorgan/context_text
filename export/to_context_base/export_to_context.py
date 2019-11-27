@@ -14,6 +14,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # imports
 import datetime
+import gc
 import logging
 
 # six - python 2 + 3
@@ -1307,6 +1308,9 @@ class ExportToContext( ContextTextBase ):
                 print( "\n----> Processed {} of {} articles at {}".format( article_counter, article_count, current_time ) )
                 print( "Total elapsed: {} ( average: {} )".format( elapsed_time, average_time ) )
                 print( "Period elapsed: {} ( average: {} )".format( elapsed_this_period, average_this_period ) )
+                
+                # also, garbage collect
+                gc.collect()
             
             #-- END check to see if we output progress update. --#
             
