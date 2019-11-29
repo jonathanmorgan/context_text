@@ -1557,6 +1557,7 @@ class ExportToContextTest( django.test.TestCase ):
         debug_flag = None
         error_string = None
         article_qs = None
+        article_count = None
         article_id = None
         create_status = None
         is_create_success = None
@@ -1566,6 +1567,9 @@ class ExportToContextTest( django.test.TestCase ):
         relation_trait_filter_dict = None
         to_entity_list = None
         relation_type_slug = None
+        tag_test_qs = None
+        tag_test_count = None
+        tag_test_article = None
 
         # debug
         debug_flag = self.DEBUG
@@ -1579,6 +1583,7 @@ class ExportToContextTest( django.test.TestCase ):
         # create an Article QuerySet filtered to just the IDs in
         #     self.TEST_ID_LIST
         article_qs = Article.objects.filter( id__in = self.TEST_ID_LIST )
+        article_count = article_qs.count()
         
         # ! ----> call the process_articles() method.
         create_status = export_instance.process_articles( article_qs, tag_articles_IN = True )
@@ -1589,6 +1594,17 @@ class ExportToContextTest( django.test.TestCase ):
         error_string = "Calling process_articles() for Article QuerySet: {} ( from article ID list {} ).  Success?: {}, should be {}.".format( article_qs, self.TEST_ID_LIST, test_value, should_be )
         self.assertEqual( test_value, should_be, msg = error_string )
 
+        # Count number of articles with tag name starting with
+        #     ExportToContext.TAG_PREFIX
+        tag_test_qs = Article.objects.filter( tags__name__istartswith = ExportToContext.TAG_PREFIX )
+        tag_test_count = tag_test_qs.count()
+        
+        # did all the articles get tagged?
+        test_value = tag_test_count
+        should_be = article_count
+        error_string = "After calling process_articles() for Article QuerySet: {} ( from article ID list {} ).  Count of tagged articles: {}, should be {}.".format( article_qs, self.TEST_ID_LIST, test_value, should_be )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
         # For each article we processed, validate relations (assuming entities
         #     are right if relations come out right).
         for article_id in self.TEST_ID_LIST:
@@ -1597,8 +1613,19 @@ class ExportToContextTest( django.test.TestCase ):
             self.validate_article_newspaper_relations( article_id )
             self.validate_article_article_relations( article_id )
             
-            # ! TODO - add some sort of test to make sure tag was applied.
-                        
+            # load article
+            tag_test_article = Article.objects.get( pk = article_id )
+            
+            # should have 1 tag starting with ExportToContext.TAG_PREFIX
+            tag_test_qs = tag_test_article.tags.filter( name__istartswith = ExportToContext.TAG_PREFIX )
+            tag_test_count = tag_test_qs.count()
+            
+            # did the article get tagged?
+            test_value = tag_test_count
+            should_be = 1
+            error_string = "Validating article {}, found {} tags starting with {}, should be {}.".format( tag_test_article, test_value, ExportToContext.TAG_PREFIX, should_be )
+            self.assertEqual( test_value, should_be, msg = error_string )
+    
         #-- END loop over articles. --#
                         
         # ! ----> call the process_articles() method again - duplicates?
@@ -1618,8 +1645,19 @@ class ExportToContextTest( django.test.TestCase ):
             self.validate_article_newspaper_relations( article_id )
             self.validate_article_article_relations( article_id )
                         
-            # ! TODO - add some sort of test to make sure another tag was applied.
-
+            # load article
+            tag_test_article = Article.objects.get( pk = article_id )
+            
+            # should have 1 tag starting with ExportToContext.TAG_PREFIX
+            tag_test_qs = tag_test_article.tags.filter( name__istartswith = ExportToContext.TAG_PREFIX )
+            tag_test_count = tag_test_qs.count()
+            
+            # did the article get tagged again?
+            test_value = tag_test_count
+            should_be = 2
+            error_string = "Validating article {}, found {} tags starting with {}, should be {}.".format( tag_test_article, test_value, ExportToContext.TAG_PREFIX, should_be )
+            self.assertEqual( test_value, should_be, msg = error_string )
+    
         #-- END loop over articles. --#
 
     #-- END method test_process_articles()

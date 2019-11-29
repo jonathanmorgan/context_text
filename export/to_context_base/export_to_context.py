@@ -97,7 +97,7 @@ class ExportToContext( ContextTextBase ):
     TRAIT_NAME_SOURCENET_NEWSPAPER_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID
     
     # tag values
-    TAG_PREFIX = "export_to_context"
+    TAG_PREFIX = "export_to_context-"
     TAG_TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
     
 
