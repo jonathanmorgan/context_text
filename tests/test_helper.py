@@ -59,7 +59,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
     # ! ----> fixtures
 
     # standard context entity setup fixture
-    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context-sourcenet_entities_and_relations.json"
+    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context-sourcenet_entity_and_relation_types.json"
 
     # fixtures paths, in order they should be loaded.
     FIXTURE_UNIT_TEST_AUTH_DATA = "context_text_unittest_auth_data.json"
