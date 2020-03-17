@@ -8,6 +8,9 @@ Functions tested:
 from __future__ import unicode_literals
 
 # imports
+from context_text.article_coding.open_calais_v1.open_calais_article_coder import OpenCalaisArticleCoder
+from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
+from context_text.models import Article
 from context_text.models import Article_Data
 from context_text.models import Article_Author
 from context_text.models import Article_Subject
@@ -749,12 +752,34 @@ class Article_Data_Copy_Tester( object ):
 class Article_DataModelTest( django.test.TestCase ):
     
     #----------------------------------------------------------------------------
-    # Constants-ish
+    # ! ==> Constants-ish
     #----------------------------------------------------------------------------
 
 
+    # DEBUG
+    DEBUG = False
+
+    # CLASS NAME
+    CLASS_NAME = "Article_DataModelTest"
+
+    # test Article IDs
+    TEST_ID_1 = 94442
+    TEST_ID_2 = 21409
+    
+    TEST_ID_LIST = []
+    TEST_ID_LIST.append( TEST_ID_1 )
+    TEST_ID_LIST.append( TEST_ID_2 )
+    
+    # test automated coder type (OC = OpenCalais)
+    TEST_OCV1_CODER_TYPE = OpenCalaisArticleCoder.CONFIG_APPLICATION
+    TEST_OCV2_CODER_TYPE = OpenCalaisV2ArticleCoder.CONFIG_APPLICATION
+    TEST_OCV2_ARTICLE_DATA_COUNT = 46
+    TEST_NON_AUTOMATED_ARTICLE_DATA_COUNT = 92
+    TEST_ALL_ARTICLE_DATA_COUNT = 138
+
+
     #----------------------------------------------------------------------------
-    # instance methods
+    # ! ==> instance methods
     #----------------------------------------------------------------------------
 
 
@@ -765,7 +790,7 @@ class Article_DataModelTest( django.test.TestCase ):
         """
 
         # call TestHelper.standardSetUp()
-        TestHelper.standardSetUp( self, fixture_list_IN = TestHelper.FIXTURE_LIST )
+        TestHelper.standardSetUp( self, fixture_list_IN = TestHelper.EXPORT_FIXTURE_LIST )
 
     #-- END function setUp() --#
         
@@ -777,8 +802,11 @@ class Article_DataModelTest( django.test.TestCase ):
         """
         
         # declare variables
+        me = "test_setup"
         error_count = -1
         error_message = ""
+        
+        print( '\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
         
         # get setup error count
         setup_error_count = self.setup_error_count
@@ -801,6 +829,8 @@ class Article_DataModelTest( django.test.TestCase ):
         new_article_data_id = -1
         error_message_list = None
                 
+        print( '\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
+        
         # pick an Article_Data to copy.
         original_article_data_id = 74
         
@@ -825,5 +855,350 @@ class Article_DataModelTest( django.test.TestCase ):
         self.assertEqual( error_message_count, should_be, msg = error_string )
         
     #-- END test method test_article_data_deep_copy() --# 
+
+
+    def test_class_create_q_filter_automated_by_coder_type( self ):
+        
+        # declare variables
+        me = "test_class_create_q_filter_automated_by_coder_type"
+        expected_total_automated_ocv2_count = None
+        include_non_automated = None
+        my_coder_type = None
+        coder_type_list_v1 = None
+        test_article_data_q_v1 = None
+        coder_type_list_v2 = None
+        test_article_data_q_v2 = None
+        coder_type_list_any = None
+        test_article_data_q_any = None
+        test_article_data_qs = None
+        test_article_data_count = None
+        test_value = None
+        should_be = None
+        error_string = None
+        current_article_id = None
+        current_article = None
+        
+        print( '\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
+        
+        # init
+        expected_total_automated_ocv2_count = self.TEST_OCV2_ARTICLE_DATA_COUNT
+        
+        # get test Q() instances.
+        
+        #----------------------------------------------------------------------#
+        # ! ----> Only automted, no non-automated.
+        #----------------------------------------------------------------------#
+
+        include_non_automated = False
+        
+        # v1
+        coder_type_list_v1 = []
+        coder_type_list_v1.append( self.TEST_OCV1_CODER_TYPE )    
+        test_article_data_q_v1 = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_v1, include_non_automated_coders_IN = include_non_automated )
+        
+        # v2
+        coder_type_list_v2 = []
+        coder_type_list_v2.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_v2 = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_v2, include_non_automated_coders_IN = include_non_automated )
+        
+        # either
+        coder_type_list_any = []
+        coder_type_list_any.append( self.TEST_OCV1_CODER_TYPE )    
+        coder_type_list_any.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_any = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_any, include_non_automated_coders_IN = include_non_automated )
+        
+        # ! --------> all Article_Data
+        
+        # v1 count ( 0 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = 0
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v1, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # v2 count ( 46 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = expected_total_automated_ocv2_count
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v2, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # any count ( 46 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = expected_total_automated_ocv2_count
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_any, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # ! --------> Individual Articles.
+        for current_article_id in self.TEST_ID_LIST:
+        
+            # retrieve article instance.
+            current_article = Article.objects.get( pk = current_article_id )
+            
+            # total count ( 3 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 3
+            error_string = "Found {} Article_Data for article {}; should have been {} ( query = {} ).".format( test_value, current_article_id, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+
+            # v1 count ( 0 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 0
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v1, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # v2 count ( 1 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 1
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v2, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+    
+            # any count ( 1 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 1
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_any, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+        
+        #-- END loop over test IDs. --#
+
+        #----------------------------------------------------------------------#
+        # ! ----> automted OCV2 AND non-automated.
+        #----------------------------------------------------------------------#
+
+        include_non_automated = True
+        
+        # v1
+        coder_type_list_v1 = []
+        coder_type_list_v1.append( self.TEST_OCV1_CODER_TYPE )    
+        test_article_data_q_v1 = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_v1, include_non_automated_coders_IN = include_non_automated )
+        
+        # v2
+        coder_type_list_v2 = []
+        coder_type_list_v2.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_v2 = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_v2, include_non_automated_coders_IN = include_non_automated )
+        
+        # either
+        coder_type_list_any = []
+        coder_type_list_any.append( self.TEST_OCV1_CODER_TYPE )    
+        coder_type_list_any.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_any = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_any, include_non_automated_coders_IN = include_non_automated )
+        
+        # ! --------> all Article_Data
+        
+        # v1 count ( 92 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = self.TEST_NON_AUTOMATED_ARTICLE_DATA_COUNT  # 92
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v1, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # v2 count ( 138 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = self.TEST_ALL_ARTICLE_DATA_COUNT  # 138 
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v2, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # any count ( 138 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = self.TEST_ALL_ARTICLE_DATA_COUNT  # 138
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_any, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # ! --------> Individual Articles.
+        for current_article_id in self.TEST_ID_LIST:
+        
+            # retrieve article instance.
+            current_article = Article.objects.get( pk = current_article_id )
+            
+            # total count ( 3 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 3
+            error_string = "Found {} Article_Data for article {}; should have been {} ( query = {} ).".format( test_value, current_article_id, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+
+            # v1 count ( 0 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 2
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v1, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # v2 count ( 3 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 3
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v2, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+    
+            # any count ( 3 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 3
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_any, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+        
+        #-- END loop over test IDs. --#
+
+    #-- END test method test_class_create_q_filter_automated_by_coder_type --#
+    
+
+    def test_class_create_q_only_automated( self ):
+        
+        # declare variables
+        me = "test_class_create_q_only_automated"
+        expected_total_automated_ocv2_count = None
+        include_non_automated = None
+        my_coder_type = None
+        coder_type_list_v1 = None
+        test_article_data_q_v1 = None
+        coder_type_list_v2 = None
+        test_article_data_q_v2 = None
+        coder_type_list_any = None
+        test_article_data_q_any = None
+        test_article_data_qs = None
+        test_article_data_count = None
+        test_value = None
+        should_be = None
+        error_string = None
+        current_article_id = None
+        current_article = None
+        
+        print( '\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
+        
+        # init
+        expected_total_automated_ocv2_count = self.TEST_OCV2_ARTICLE_DATA_COUNT
+        
+        # get test Q() instances.
+        
+        #----------------------------------------------------------------------#
+        # ! ----> Only automted, no non-automated.
+        #----------------------------------------------------------------------#
+
+        include_non_automated = False
+        
+        # v1
+        coder_type_list_v1 = []
+        coder_type_list_v1.append( self.TEST_OCV1_CODER_TYPE )    
+        test_article_data_q_v1 = Article_Data.create_q_only_automated( coder_type_list_v1 )
+        
+        # v2
+        coder_type_list_v2 = []
+        coder_type_list_v2.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_v2 = Article_Data.create_q_only_automated( coder_type_list_v2 )
+        
+        # either
+        coder_type_list_any = []
+        coder_type_list_any.append( self.TEST_OCV1_CODER_TYPE )    
+        coder_type_list_any.append( self.TEST_OCV2_CODER_TYPE )    
+        test_article_data_q_any = Article_Data.create_q_only_automated( coder_type_list_any )
+        
+        # ! --------> all Article_Data
+        
+        # v1 count ( 0 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = 0
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v1, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # v2 count ( 46 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = expected_total_automated_ocv2_count
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_v2, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # any count ( 46 )
+        test_article_data_qs = Article_Data.objects.all()
+        test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+        test_article_data_count = test_article_data_qs.count()
+        test_value = test_article_data_count
+        should_be = expected_total_automated_ocv2_count
+        error_string = "Found {} Article_Data for coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, coder_type_list_any, should_be, test_article_data_qs.query )
+        self.assertEqual( test_value, should_be, msg = error_string )
+        
+        # ! --------> Individual Articles.
+        for current_article_id in self.TEST_ID_LIST:
+        
+            # retrieve article instance.
+            current_article = Article.objects.get( pk = current_article_id )
+            
+            # total count ( 3 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 3
+            error_string = "Found {} Article_Data for article {}; should have been {} ( query = {} ).".format( test_value, current_article_id, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+
+            # v1 count ( 0 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v1 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 0
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v1, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+            
+            # v2 count ( 1 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_v2 )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 1
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_v2, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+    
+            # any count ( 1 )
+            test_article_data_qs = current_article.article_data_set.all()
+            test_article_data_qs = test_article_data_qs.filter( test_article_data_q_any )
+            test_article_data_count = test_article_data_qs.count()
+            test_value = test_article_data_count
+            should_be = 1
+            error_string = "Found {} Article_Data for article {}, coder_type_list: {}; should have been {} ( query = {} ).".format( test_value, current_article_id, coder_type_list_any, should_be, test_article_data_qs.query )
+            self.assertEqual( test_value, should_be, msg = error_string )
+        
+        #-- END loop over test IDs. --#
+
+    #-- END test method test_class_create_q_only_automated --#
+
 
 #-- END class Article_DataModelTest --#

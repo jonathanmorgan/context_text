@@ -6,8 +6,8 @@
       "application": "OpenCalais_REST_API_v2",
       "property_name": "open_calais_access_token",
       "property_value": "",
-      "create_date": "2015-08-09T12:56:36.377",
-      "last_update": "2015-12-18T16:44:30.601"
+      "create_date": "2015-08-09T12:56:36.377Z",
+      "last_update": "2015-12-18T16:44:30.601Z"
     }
   },
   {
@@ -17,8 +17,8 @@
       "application": "OpenCalais_REST_API_v2",
       "property_name": "submitter",
       "property_value": "context_text-testing-v2",
-      "create_date": "2015-08-09T12:59:52.220",
-      "last_update": "2015-08-09T12:59:52.220"
+      "create_date": "2015-08-09T12:59:52.220Z",
+      "last_update": "2015-08-09T12:59:52.220Z"
     }
   }
 ]

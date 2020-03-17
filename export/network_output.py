@@ -261,10 +261,10 @@ class NetworkOutput( ContextTextBase ):
 
             Parameters:
             - self - self instance variable.
-            - dictionary_IN - dictionary we want to add people to.  Returned
-                with people added.
             - person_qs_IN - django query set object that contains the people we
                 want to add to our dictionary.
+            - dictionary_IN - dictionary we want to add people to.  Returned
+                with people added.
             - store_person_IN - boolean, if False, doesn't load Person model
                 instances while building the dictionary.  If True, loads Person
                 models and stores them in the dictionary.
@@ -273,7 +273,7 @@ class NetworkOutput( ContextTextBase ):
             - Dictionary - dictionary that contains all the people in the query
                 set of Article_Person implementors passed in, either mapped to
                 None or to Person model instances, depending on the
-                load_person_IN flag value.
+                store_person_IN flag value.
         """
 
         # return reference

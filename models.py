@@ -306,6 +306,33 @@ class Topic( models.Model ):
 # Organization model
 class Organization( Abstract_Organization ):
 
+    #----------------------------------------------------------------------------
+    # ! ==> Constants-ish
+    #----------------------------------------------------------------------------
+    
+    
+    #===========================================================================
+    # ! ----> Context
+
+    # Entity name prefix
+    ENTITY_NAME_PREFIX = "context_text-Organization-"
+
+    # entity type
+    ENTITY_TYPE_SLUG_ORGANIZATION = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION
+
+    # entity identifier types - organization
+    ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID
+    
+    # trait names
+    TRAIT_NAME_DESCRIPTION = ContextTextBase.CONTEXT_TRAIT_NAME_DESCRIPTION
+    TRAIT_NAME_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_NAME
+    TRAIT_NAME_LOCATION_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_LOCATION_ID
+    
+
+    #----------------------------------------------------------------------
+    # ! ==> model fields and meta
+    #----------------------------------------------------------------------
+
     # inherit all from parent.
     #name = models.CharField( max_length = 255 )
     #description = models.TextField( blank = True )
@@ -316,16 +343,136 @@ class Organization( Abstract_Organization ):
     #class Meta:
     #    ordering = [ 'name', 'location' ]
 
-    #----------------------------------------------------------------------
-    # methods
-    #----------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+    # ! ==> overridden built-in methods
+    #---------------------------------------------------------------------------
+
 
     def __init__( self, *args, **kwargs ):
         
         # call parent __init()__ first.
         super( Organization, self ).__init__( *args, **kwargs )
 
+        # then, initialize variable.
+        self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
+        self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_ORGANIZATION
+        self.my_base_entity_id_type = self.ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID
+
     #-- END method __init__() --#
+
+
+    #----------------------------------------------------------------------
+    # ! ==> instance methods
+    #----------------------------------------------------------------------
+
+
+    def update_entity( self ):
+        
+        '''
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
+            instance.
+            
+        If you just want to get a fully-populated ID loaded into this instance,
+            call this method, not load_entity().  load_entity() will create a
+            new instance if one doesn't exist, but it does not fill in all of
+            the details - because this method does!
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables - create new.
+        entity_instance = None
+        entity_type = None
+        trait_name = None
+        trait_definition = None
+        trait_instance = None
+        trait_value = None
+        trait_type = None
+        identifier_type_name = None
+        identifier_type = None
+        identifier_instance = None
+        identifier_uuid = None
+        identifier_source = None
+        
+        # load entity for article.
+        entity_instance = self.load_entity( do_create_if_none_IN = True )
+
+        # got an entity?
+        if ( entity_instance is not None ):
+
+            # get entity type (won't duplicate if already added).
+            entity_type = entity_instance.add_entity_type( self.my_entity_type_slug )
+            
+            # make sure we return it at this point, since it has been
+            #    created and stored in database.
+            entity_OUT = entity_instance
+
+            #------------------------------------------------------------------#
+            # ! ----> set entity traits
+
+            # ! --------> name
+            trait_name = self.TRAIT_NAME_NAME
+            trait_value = self.name
+
+            # initialize trait from predefined entity type trait "pub_date".
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ! --------> description
+            trait_name = self.TRAIT_NAME_DESCRIPTION
+            trait_value = self.description
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> location.id
+            trait_instance = self.location
+            trait_name = self.TRAIT_NAME_LOCATION_ID
+
+            # is there an instance?
+            if ( trait_instance is not None ):
+
+                trait_value = trait_instance.id
+                
+            else:
+            
+                # no organization, set it to None.
+                trait_value = None
+                
+            #-- END check to see if organization present. --#
+            
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+            
+            #------------------------------------------------------------------#
+            # ! ----> add identifiers
+
+            # ! --------> for django ID in this system.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.my_base_entity_id_type )
+            identifier_uuid = self.id
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+            
+        else:
+            
+            # no entity, can't add/update traits or identifiers
+            print( "no entity, can't add/update traits or identifiers" )
+            entity_OUT = None
+            
+        #-- END check to make sure we have an entity --#
+        
+        return entity_OUT
+        
+    #-- END method update_entity() --#
 
 
 #= End Organization Model ======================================================
@@ -333,6 +480,51 @@ class Organization( Abstract_Organization ):
 
 # Person model
 class Person( Abstract_Person ):
+
+    #----------------------------------------------------------------------------
+    # ! ==> Constants-ish
+    #----------------------------------------------------------------------------
+
+
+    EXTERNAL_UUID_NAME_OPEN_CALAIS = "OpenCalais API URI (URL)"
+    EXTERNAL_UUID_SOURCE_OPEN_CALAIS = "OpenCalais_REST_API"
+    EXTERNAL_UUID_NAME_OPEN_CALAIS_V2 = "OpenCalais API V2 URI (URL)"
+    EXTERNAL_UUID_SOURCE_OPEN_CALAIS_V2 = "OpenCalais_REST_API_v2"
+    
+    # list of Open Calais UUID names.
+    EXTERNAL_UUID_NAME_OPEN_CALAIS_LIST = []
+    EXTERNAL_UUID_NAME_OPEN_CALAIS_LIST.append( EXTERNAL_UUID_NAME_OPEN_CALAIS )
+    EXTERNAL_UUID_NAME_OPEN_CALAIS_LIST.append( EXTERNAL_UUID_NAME_OPEN_CALAIS_V2 )
+    
+    
+    #===========================================================================
+    # ! ----> Context
+
+    # Entity name prefix
+    ENTITY_NAME_PREFIX = "context_text-Person-"
+
+    # entity type
+    ENTITY_TYPE_SLUG_PERSON = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_PERSON
+
+    # entity identifier types - organization
+    ENTITY_ID_TYPE_PERSON_OPEN_CALAIS_UUID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID
+    ENTITY_ID_TYPE_PERSON_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID
+    
+    # trait names
+    TRAIT_NAME_FIRST_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_FIRST_NAME
+    TRAIT_NAME_FULL_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_FULL_NAME
+    TRAIT_NAME_GENDER = ContextTextBase.CONTEXT_TRAIT_NAME_GENDER
+    TRAIT_NAME_LAST_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_LAST_NAME
+    TRAIT_NAME_MIDDLE_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_MIDDLE_NAME
+    TRAIT_NAME_NAME_PREFIX = ContextTextBase.CONTEXT_TRAIT_NAME_NAME_PREFIX
+    TRAIT_NAME_NAME_SUFFIX = ContextTextBase.CONTEXT_TRAIT_NAME_NAME_SUFFIX
+    TRAIT_NAME_ORGANIZATION_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID
+    TRAIT_NAME_TITLE = ContextTextBase.CONTEXT_TRAIT_NAME_TITLE
+
+
+    #----------------------------------------------------------------------
+    # ! ==> model fields and meta
+    #----------------------------------------------------------------------
 
     # Properties from Abstract_Person:
     '''
@@ -357,9 +549,24 @@ class Person( Abstract_Person ):
     organization = models.ForeignKey( Organization, on_delete = models.SET_NULL, blank = True, null = True )
     #entity = models.ForeignKey( Entity, on_delete = models.SET_NULL, blank = True, null = True )
 
-    #----------------------------------------------------------------------
-    # instance methods
-    #----------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+    # ! ==> overridden built-in methods
+    #---------------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # call parent __init()__ first.
+        super( Person, self ).__init__( *args, **kwargs )
+
+        # then, initialize variable.
+        self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
+        self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_PERSON
+        self.my_base_entity_id_type = self.ENTITY_ID_TYPE_PERSON_SOURCENET_ID
+
+    #-- END method __init__() --#
+
 
     def __str__( self ):
  
@@ -410,6 +617,11 @@ class Person( Abstract_Person ):
 
     #-- END method __str__() --#
     
+
+    #----------------------------------------------------------------------
+    # ! ==> instance methods
+    #----------------------------------------------------------------------
+
 
     def associate_newspaper( self, newspaper_IN, notes_IN = None ):
         
@@ -500,6 +712,10 @@ class Person( Abstract_Person ):
         
             # we do.  See if person is already associated with the UUID.
             related_uuid_qs = self.person_external_uuid_set.filter( uuid = uuid_IN )
+            related_uuid_qs = related_uuid_qs.filter( source = source_IN )
+            if ( name_IN is not None ):
+                related_uuid_qs = related_uuid_qs.filter( name = name_IN )
+            #-- END check to see if name present --#
             
             # got a match?
             related_uuid_count = related_uuid_qs.count()
@@ -533,7 +749,7 @@ class Person( Abstract_Person ):
                 # save.
                 instance_OUT.save()
 
-                debug_message = "In Person." + me + ": ----> created tie from " + str( self ) + " to UUID " + uuid_IN
+                debug_message = "In Person." + me + ": ----> created tie from {} to UUID {}" .format( self, instance_OUT )
                 output_debug( debug_message )
             
             else:
@@ -542,7 +758,7 @@ class Person( Abstract_Person ):
                 #    exception is fine.
                 instance_OUT = related_uuid_qs.get()
 
-                debug_message = "In Person." + me + ": ----> tie exists from " + str( self ) + " to UUID " + uuid_IN
+                debug_message = "In Person." + me + ": ----> tie exists from {} to UUID {}" .format( self, instance_OUT )
                 output_debug( debug_message )
             
             #-- END check to see if UUID match. --#
@@ -553,6 +769,266 @@ class Person( Abstract_Person ):
         
     #-- END method associate_external_uuid() --#
     
+
+    def update_entity( self ):
+        
+        '''
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
+            instance.
+            
+        If you just want to get a fully-populated ID loaded into this instance,
+            call this method, not load_entity().  load_entity() will create a
+            new instance if one doesn't exist, but it does not fill in all of
+            the details - because this method does!
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables - create new.
+        me = "update_entity"
+        debug_message = None
+        entity_instance = None
+        entity_type = None
+        trait_name = None
+        trait_definition = None
+        trait_instance = None
+        instance_has_entity = None
+        trait_value = None
+        trait_type = None
+        identifier_type_name = None
+        identifier_type = None
+        identifier_instance = None
+        identifier_uuid = None
+        identifier_source = None
+        identifier_qs = None
+        
+        # identifier information
+        my_id_name = None
+        my_id_uuid = None
+        my_id_id_type = None
+        my_id_source = None
+        my_id_notes = None
+        is_id_present = None
+        is_uuid_in_use = None
+        
+        # load entity for article.
+        entity_instance = self.load_entity( do_create_if_none_IN = True )
+
+        # got an entity?
+        if ( entity_instance is not None ):
+
+            # get entity type (won't duplicate if already added).
+            entity_type = entity_instance.add_entity_type( self.my_entity_type_slug )
+            
+            # make sure we return it at this point, since it has been
+            #    created and stored in database.
+            entity_OUT = entity_instance
+
+            #------------------------------------------------------------------#
+            # ! ----> set predefined entity traits
+
+            # ! --------> first_name
+            trait_name = self.TRAIT_NAME_FIRST_NAME
+            trait_value = self.first_name
+
+            # initialize trait from predefined entity type trait for name.
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ! --------> middle_name
+            trait_name = self.TRAIT_NAME_MIDDLE_NAME
+            trait_value = self.middle_name
+
+            # initialize trait from predefined entity type trait for name.
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ! --------> last_name
+            trait_name = self.TRAIT_NAME_LAST_NAME
+            trait_value = self.last_name
+
+            # initialize trait from predefined entity type trait for name.
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            #------------------------------------------------------------------#
+            # ! ----> set free-form entity traits
+
+            # ! --------> name_prefix
+            trait_name = self.TRAIT_NAME_NAME_PREFIX
+            trait_value = self.name_prefix
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> name_suffix
+            trait_name = self.TRAIT_NAME_NAME_SUFFIX
+            trait_value = self.name_suffix
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> full_name_string
+            trait_name = self.TRAIT_NAME_FULL_NAME
+            trait_value = self.full_name_string
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> gender
+            trait_name = self.TRAIT_NAME_GENDER
+            trait_value = self.gender
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> title
+            trait_name = self.TRAIT_NAME_TITLE
+            trait_value = self.title
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> organization_id
+            trait_instance = self.organization
+            trait_name = self.TRAIT_NAME_ORGANIZATION_ID
+
+            # is there an organization?
+            if ( trait_instance is not None ):
+
+                trait_value = trait_instance.id
+                
+                # and check if instance has an entity.  If not, create one.
+                instance_has_entity = trait_instance.has_entity()
+                if ( instance_has_entity == False ):
+                
+                    # create one.
+                    trait_instance.update_entity()
+                
+                #-- END check to see if instance has entity. --#
+                
+            else:
+            
+                # no organization, set it to None.
+                trait_value = None
+                
+            #-- END check to see if organization present. --#
+            
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+            
+            #------------------------------------------------------------------#
+            # ! ----> add identifiers
+
+            # ! --------> for django ID in this system.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.my_base_entity_id_type )
+            identifier_uuid = self.id
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+            
+            # ! --------> external UUIDs
+            
+            # get QuerySet of external IDs.
+            identifier_qs = self.person_external_uuid_set.all()
+            
+            # loop over identifiers.
+            for identifier_instance in identifier_qs:
+            
+                # retrieve identifier information
+                my_id_name = identifier_instance.name
+                my_id_uuid = identifier_instance.uuid
+                my_id_id_type = identifier_instance.id_type
+                my_id_source = identifier_instance.source
+                my_id_notes = identifier_instance.notes
+                my_id_type_name = None
+                
+                # see if it is an OpenCalais ID.
+                if ( my_id_name in self.EXTERNAL_UUID_NAME_OPEN_CALAIS_LIST ):
+                
+                    # it is.  retrieve pre-defined OpenCalais identifier type.
+                    my_id_type_name = self.ENTITY_ID_TYPE_PERSON_OPEN_CALAIS_UUID
+
+                else:
+                
+                    # it is not - try to retrieve type for value in id_type.
+                    my_id_type_name = my_id_id_type
+                    
+                #-- END check to see if known type. --#
+                
+                # try to load type, then set identifier.
+                identifier_type = Entity_Identifier_Type.get_type_for_name( my_id_type_name )
+                identifier_uuid = my_id_uuid
+                
+                # did we find an identifier_type?
+                if ( identifier_type is not None ):
+                
+                    # also need to set name - when there is an ID type, the
+                    #     type name overrides any name passed in.
+                    my_id_name = identifier_type.name
+                
+                #-- END check to see if we found a type --#
+                
+                # is identifier with matching identity already present?
+                #identifier_instance = entity_instance.get_identifier( my_id_name,
+                #                                                      id_source_IN = my_id_source,
+                #                                                      id_id_type_IN = my_id_id_type,
+                #                                                      id_type_IN = None )
+                    
+                # does identifier already exist?
+                identifier_instance = entity_instance.get_identifier( my_id_name,
+                                                                      id_source_IN = my_id_source,
+                                                                      id_id_type_IN = my_id_id_type,
+                                                                      id_type_IN = identifier_type,
+                                                                      id_uuid_IN = identifier_uuid )
+                
+                # if UUID not in use, set identifier.
+                if ( identifier_instance is None ):
+                
+                    # not in use.  Add it.
+                    entity_instance.set_identifier( identifier_uuid,
+                                                    name_IN = my_id_name,
+                                                    id_type_IN = my_id_id_type,
+                                                    source_IN = my_id_source,
+                                                    notes_IN = my_id_notes,
+                                                    entity_identifier_type_IN = identifier_type )
+                                                    
+                else:
+                
+                    debug_message = "In Person." + me + ": ----> Entity Identifier created tie from {} to UUID {}" .format( self, entity_instance )
+                    output_debug( debug_message )
+                
+                #-- END check to see if UUID already present. --#
+            
+            #-- END loop over identifiers. --#
+            
+        else:
+            
+            # no entity, can't add/update traits or identifiers
+            print( "no entity, can't add/update traits or identifiers" )
+            entity_OUT = None
+            
+        #-- END check to make sure we have an entity --#
+        
+        return entity_OUT
+        
+    #-- END method update_entity() --#
+
 
 #== END Person Model ===========================================================#
 
@@ -669,6 +1145,36 @@ class Document( models.Model ):
 # Newspaper model
 class Newspaper( Abstract_Entity_Container ):
 
+
+    #----------------------------------------------------------------------------
+    # ! ==> Constants-ish
+    #----------------------------------------------------------------------------
+    
+    
+    #===========================================================================
+    # ! ----> Context
+
+    # Entity name prefix
+    ENTITY_NAME_PREFIX = "context_text-Newspaper-"
+
+    # entity type
+    ENTITY_TYPE_SLUG_NEWSPAPER = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
+
+    # entity identifier types - general
+    ENTITY_ID_TYPE_PERMALINK = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
+    
+    # entity identifier types - articles
+    ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+    ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE
+    
+    # trait names
+    TRAIT_NAME_DESCRIPTION = ContextTextBase.CONTEXT_TRAIT_NAME_DESCRIPTION
+    TRAIT_NAME_NAME = ContextTextBase.CONTEXT_TRAIT_NAME_NAME
+    TRAIT_NAME_ORGANIZATION_ID = ContextTextBase.CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID
+    TRAIT_NAME_SECTIONS_LOCAL_NEWS = ContextTextBase.CONTEXT_TRAIT_NAME_SECTIONS_LOCAL_NEWS
+    TRAIT_NAME_SECTIONS_SPORTS = ContextTextBase.CONTEXT_TRAIT_NAME_SECTIONS_SPORTS
+    
+
     #----------------------------------------------------------------------
     # ! ==> model fields and meta
     #----------------------------------------------------------------------
@@ -707,6 +1213,11 @@ class Newspaper( Abstract_Entity_Container ):
         # call parent __init()__ first.
         super( Newspaper, self ).__init__( *args, **kwargs )
 
+        # then, initialize variable.
+        self.my_entity_name_prefix = self.ENTITY_NAME_PREFIX
+        self.my_entity_type_slug = self.ENTITY_TYPE_SLUG_NEWSPAPER
+        self.my_base_entity_id_type = self.ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+        
     #-- END method __init__() --#
 
     
@@ -744,6 +1255,145 @@ class Newspaper( Abstract_Entity_Container ):
     #----------------------------------------------------------------------
 
 
+    def update_entity( self ):
+        
+        '''
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
+            instance.
+            
+        If you just want to get a fully-populated ID loaded into this instance,
+            call this method, not load_entity().  load_entity() will create a
+            new instance if one doesn't exist, but it does not fill in all of
+            the details - because this method does!
+        '''
+        
+        # return reference
+        entity_OUT = None
+        
+        # declare variables - create new.
+        entity_instance = None
+        entity_type = None
+        trait_name = None
+        trait_definition = None
+        trait_instance = None
+        instance_has_entity = None
+        trait_value = None
+        trait_type = None
+        identifier_type_name = None
+        identifier_type = None
+        identifier_instance = None
+        identifier_uuid = None
+        identifier_source = None
+        
+        # load entity for article.
+        entity_instance = self.load_entity( do_create_if_none_IN = True )
+
+        # got an entity?
+        if ( entity_instance is not None ):
+
+            # get entity type (won't duplicate if already added).
+            entity_type = entity_instance.add_entity_type( self.my_entity_type_slug )
+            
+            # make sure we return it at this point, since it has been
+            #    created and stored in database.
+            entity_OUT = entity_instance
+
+            #------------------------------------------------------------------#
+            # ! ----> set entity traits
+
+            # ! --------> name
+            trait_name = self.TRAIT_NAME_NAME
+            trait_value = self.name
+
+            # initialize trait from predefined entity type trait for name.
+            trait_definition = entity_type.get_trait_spec( trait_name )
+
+            # add trait
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              entity_type_trait_IN = trait_definition )
+
+            # ! --------> description
+            trait_name = self.TRAIT_NAME_DESCRIPTION
+            trait_value = self.description
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> organization_id
+            trait_instance = self.organization
+            trait_name = self.TRAIT_NAME_ORGANIZATION_ID
+
+            # is there an organization?
+            if ( trait_instance is not None ):
+
+                trait_value = trait_instance.id
+                
+                # and check if instance has an entity.  If not, create one.
+                instance_has_entity = trait_instance.has_entity()
+                if ( instance_has_entity == False ):
+                
+                    # create one.
+                    trait_instance.update_entity()
+                
+                #-- END check to see if instance has entity. --#
+                
+            else:
+            
+                # no organization, set it to None.
+                trait_value = None
+                
+            #-- END check to see if organization present. --#
+            
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+            
+            # ! --------> sections_local_news
+            trait_name = self.TRAIT_NAME_SECTIONS_LOCAL_NEWS
+            trait_value = self.sections_local_news
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            # ! --------> sections_sports
+            trait_name = self.TRAIT_NAME_SECTIONS_SPORTS
+            trait_value = self.sections_sports
+            entity_instance.set_entity_trait( trait_name,
+                                              trait_value,
+                                              slug_IN = slugify( trait_name ) )
+
+            #------------------------------------------------------------------#
+            # ! ----> add identifiers
+
+            # ! --------> for django ID in this system.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.my_base_entity_id_type )
+            identifier_uuid = self.id
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+            
+            # ! --------> for newsbank code.
+            identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE )
+            identifier_uuid = self.newsbank_code
+            entity_instance.set_identifier( identifier_uuid,
+                                            name_IN = identifier_type.name,
+                                            entity_identifier_type_IN = identifier_type )
+                                            
+        else:
+            
+            # no entity, can't add/update traits or identifiers
+            print( "no entity, can't add/update traits or identifiers" )
+            entity_OUT = None
+            
+        #-- END check to make sure we have an entity --#
+        
+        return entity_OUT
+        
+    #-- END method update_entity() --#
+
+
 #= End Newspaper Model ======================================================
 
 
@@ -773,6 +1423,7 @@ class Person_External_UUID( Abstract_UUID ):
     person = models.ForeignKey( Person, on_delete = models.CASCADE )
     #name = models.CharField( max_length = 255, null = True, blank = True )
     #uuid = models.TextField( blank = True, null = True )
+    #id_type = models.CharField( max_length = 255, null = True, blank = True )
     #source = models.CharField( max_length = 255, null = True, blank = True )
     #notes = models.TextField( blank = True, null = True )
 
@@ -2336,10 +2987,10 @@ class Article( Abstract_Entity_Container ):
     def update_entity( self ):
         
         '''
-        Accepts an Article instance, creates and populates an entity for the
-            Article based on the contents of the instance, returns the entity
+        Based on current instance, creates and populates an entity for the
+            model based on the contents of the instance, returns the entity
             instance.
-            
+                        
         If you just want to get a fully-populated ID loaded into this instance,
             call this method, not load_entity().  load_entity() will create a
             new instance if one doesn't exist, but it does not fill in all of
@@ -2350,11 +3001,13 @@ class Article( Abstract_Entity_Container ):
         entity_OUT = None
         
         # declare variables - create new.
+        me = "update_entity"
         entity_instance = None
         entity_type = None
         trait_name = None
         trait_definition = None
         trait_instance = None
+        instance_has_entity = None
         trait_value = None
         trait_type = None
         identifier_type_name = None
@@ -2376,6 +3029,7 @@ class Article( Abstract_Entity_Container ):
             #    created and stored in database.
             entity_OUT = entity_instance
 
+            #------------------------------------------------------------------#
             # ! ----> set entity traits
 
             # ! --------> publication date
@@ -2393,13 +3047,38 @@ class Article( Abstract_Entity_Container ):
 
             # ! --------> newspaper ID
             trait_name = self.CONTEXT_TRAIT_NAME_NEWSPAPER_ID
-            trait_value = self.newspaper.id
+            
+            # do we have a newspaper?
+            if ( self.newspaper is not None ):
+            
+                # there is a related instance.  It's ID is value.
+                trait_instance = self.newspaper
+                trait_value = trait_instance.id
+                
+                # and check if instance has an entity.  If not, create one.
+                instance_has_entity = trait_instance.has_entity()
+                if ( instance_has_entity == False ):
+                
+                    # create one.
+                    trait_instance.update_entity()
+                
+                #-- END check to see if instance has entity. --#
+                
+            else:
+            
+                # No newspaper, set trait to None.
+                trait_value = None
+                
+            #-- END check to see if Newspaper. --#
+                
+            # store 
             entity_instance.set_entity_trait( trait_name,
                                               trait_value,
                                               slug_IN = slugify( trait_name ) )
-                                              
+                                                                                            
             # ! TODO - figure out other traits to add.
 
+            #------------------------------------------------------------------#
             # ! ----> add identifiers
 
             # ! --------> for django ID in this system.
@@ -2436,7 +3115,7 @@ class Article( Abstract_Entity_Container ):
             
                 # log archive identifier information
                 log_message = "NOTE - Archive identifier: {}; source: {}".format( identifier_uuid, identifier_source )
-                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = DEBUG )
             
                 # archive ID and source present.  Create identifier.
                 identifier_type = Entity_Identifier_Type.get_type_for_name( self.ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER )
@@ -2449,7 +3128,7 @@ class Article( Abstract_Entity_Container ):
             
                 # No archive identifier.
                 log_message = "NOTE - No archive identifier or source."
-                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = True )
+                output_log_message( log_message, log_level_code_IN = logging.DEBUG, do_print_IN = DEBUG )
             
             #-- END check to see if generic archive ID. --#
             
@@ -4482,6 +5161,8 @@ class Article_Text( Unique_Article_Content ):
 class Article_Data( models.Model ):
 
     # declaring a few "constants"
+    DEBUG = True
+    
     ARTICLE_TYPE_NEWS_TO_ID_MAP = {
         'news' : 1,
         'sports' : 2,
@@ -4562,7 +5243,7 @@ class Article_Data( models.Model ):
     #----------------------------------------------------------------------
 
     @classmethod
-    def create_q_filter_automated_by_coder_type( cls, coder_type_in_list_IN = None ):
+    def create_q_filter_automated_by_coder_type( cls, coder_type_in_list_IN = None, include_non_automated_coders_IN = True ):
         
         '''
         Accepts list of coder types we want included in Article_Data instances
@@ -4579,6 +5260,8 @@ class Article_Data( models.Model ):
         q_OUT = None
         
         # declare variables
+        me = "create_q_filter_automated_by_coder_type"
+        log_message = None
         automated_coder_user = None
         current_query = None
         
@@ -4587,14 +5270,25 @@ class Article_Data( models.Model ):
     
             # get automated coder.
             automated_coder_user = ContextTextBase.get_automated_coding_user()
+            
+            if cls.DEBUG == True:
+                log_message = "automated coder user: {} - {}".format( automated_coder_user.id, automated_coder_user )
+                output_log_message( log_message, me, do_print_IN = True )
+            #-- END DEBUG --#
                         
             # filter - either:
     
             # ( coder = automated_coder AND coder_type = automated_coder_type )
-            current_query = Q( coder = automated_coder_user ) & Q ( coder_type__in = coder_type_in_list_IN )
+            current_query = Q( coder = automated_coder_user ) & Q( coder_type__in = coder_type_in_list_IN )
     
-            # OR coder != automated_coder
-            current_query = ~Q( coder = automated_coder_user ) | current_query
+            # just filtering automated, but not excluding non-automated?
+            #    Said another way, include non-automated coder, as well?
+            if ( include_non_automated_coders_IN == True ):
+    
+                # OR coder != automated_coder
+                current_query = ~Q( coder = automated_coder_user ) | current_query
+                
+            #-- END check to see if we include non-automated coder, as well --#
             
             # return the query
             q_OUT = current_query
@@ -4638,7 +5332,7 @@ class Article_Data( models.Model ):
         if ( ( coder_type_in_list_IN is not None ) and ( len( coder_type_in_list_IN ) > 0 ) ):
     
             # yes - filter to only those with coder_type in list passed in.
-            current_query = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN )
+            current_query = cls.create_q_filter_automated_by_coder_type( coder_type_in_list_IN, include_non_automated_coders_IN = False )
             
             # add the filter to the Q() we will return.
             q_OUT = q_OUT & current_query

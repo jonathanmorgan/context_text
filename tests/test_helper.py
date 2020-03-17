@@ -36,6 +36,7 @@ import context.tests.test_helper
 from context_text.article_coding.open_calais_v2.open_calais_v2_article_coder import OpenCalaisV2ArticleCoder
 from context_text.models import Article
 from context_text.models import Newspaper
+from context_text.shared.context_text_base import ContextTextBase
 
 
 #================================================================================
@@ -51,9 +52,14 @@ class TestHelper( context.tests.test_helper.TestHelper ):
 
     
     #----------------------------------------------------------------------------
-    # CONSTANTS-ish
+    # ! ==> CONSTANTS-ish
     #----------------------------------------------------------------------------
 
+    #----------------------------------------------------------------------------
+    # ! ----> fixtures
+
+    # standard context entity setup fixture
+    FIXTURE_UNIT_TEST_CONTEXT_BASE = "context-sourcenet_entity_and_relation_types.json"
 
     # fixtures paths, in order they should be loaded.
     FIXTURE_UNIT_TEST_AUTH_DATA = "context_text_unittest_auth_data.json"
@@ -68,7 +74,22 @@ class TestHelper( context.tests.test_helper.TestHelper ):
     FIXTURE_LIST.append( FIXTURE_UNIT_TEST_BASE_DATA )
     FIXTURE_LIST.append( FIXTURE_UNIT_TEST_TAGGIT_DATA )
     
-    # OpenCalais
+    # fixtures for exporting complete data to context
+    FIXTURE_UNIT_TEST_EXPORT_AUTH_DATA = "context_text_unittest_export_auth_data.json"
+    FIXTURE_UNIT_TEST_EXPORT_BASE_DATA = "context_text_unittest_export_data.json"
+    FIXTURE_UNIT_TEST_EXPORT_TAGGIT_DATA = "context_text_unittest_export_taggit_data.json"
+
+    # list of export testing fixtures, in order.
+    EXPORT_FIXTURE_LIST = []
+    EXPORT_FIXTURE_LIST.append( FIXTURE_UNIT_TEST_EXPORT_AUTH_DATA )
+    EXPORT_FIXTURE_LIST.append( FIXTURE_UNIT_TEST_CONFIG_PROPERTIES )
+    EXPORT_FIXTURE_LIST.append( FIXTURE_UNIT_TEST_EXPORT_BASE_DATA )
+    EXPORT_FIXTURE_LIST.append( FIXTURE_UNIT_TEST_EXPORT_TAGGIT_DATA )
+    EXPORT_FIXTURE_LIST.append( FIXTURE_UNIT_TEST_CONTEXT_BASE )
+    
+    #----------------------------------------------------------------------------
+    # ! ----> OpenCalais
+
     OPEN_CALAIS_ACCESS_TOKEN_FILE_NAME = "open_calais_access_token.txt"
 
     # Test user
@@ -94,6 +115,59 @@ class TestHelper( context.tests.test_helper.TestHelper ):
     TEST_QUOTATION_1 = "The snow-covered runs are a beautiful sight to snowboarders Alex McNamara and Justin VanderVelde."
     TEST_QUOTATION_2 = "The Rockford friends, who have been practicing jumping and twirling tricks at Cannonsburg for a decade, said a \"long\" summer and fall left them eager to bust out their boards."
     
+    #----------------------------------------------------------------------------
+    # ! ----> Context-related variables.
+
+    # ! --------> Entity_Identifier_Type
+    
+    # entity identifier types - testing
+    IDENTIFIER_TYPE_NAME_DOES_NOT_EXIST = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST
+
+    # entity identifier types - general
+    IDENTIFIER_TYPE_NAME_PERMALINK = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_PERMALINK
+    
+    # entity identifier types - articles
+    IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER
+    IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID
+    IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID
+
+    # entity identifier types - newspaper
+    IDENTIFIER_TYPE_NAME_NEWSPAPER_NEWSBANK_CODE = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE
+    IDENTIFIER_TYPE_NAME_NEWSPAPER_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID
+
+    # entity identifier types - organization
+    IDENTIFIER_TYPE_NAME_ORGANIZATION_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID
+
+    # entity identifier types - person
+    IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID
+    IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID = ContextTextBase.CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID
+
+    # map of identifier type names to test IDs
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP = {}
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERSON_SOURCENET_ID ] = 1
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERSON_OPEN_CALAIS_UUID ] = 2
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_SOURCENET_ID ] = 3
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_NEWSBANK_ID ] = 4
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_PERMALINK ] = 5
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ARTICLE_ARCHIVE_IDENTIFIER ] = 6
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_NEWSPAPER_SOURCENET_ID ] = 7
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_NEWSPAPER_NEWSBANK_CODE ] = 8
+    IDENTIFIER_TYPE_NAME_TO_ID_MAP[ IDENTIFIER_TYPE_NAME_ORGANIZATION_SOURCENET_ID ] = 9    
+    
+    # ! --------> Entity_Type
+    
+    # Entity Type slugs
+    ENTITY_TYPE_SLUG_ARTICLE = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_ARTICLE
+    ENTITY_TYPE_SLUG_NEWSPAPER = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER
+    ENTITY_TYPE_SLUG_PERSON = ContextTextBase.CONTEXT_ENTITY_TYPE_SLUG_PERSON
+    
+    # ! --------> trait names
+    
+    TEST_ENTITY_TRAIT_NAME = "flibble_glibble_pants"
+    
+    # ! --------> identifier names
+    
+    TEST_IDENTIFIER_NAME = "nickname"
 
     #----------------------------------------------------------------------------
     # Class variables - overriden by __init__() per instance if same names, but
@@ -109,6 +183,28 @@ class TestHelper( context.tests.test_helper.TestHelper ):
     #-----------------------------------------------------------------------------
 
 
+    @classmethod
+    def filter_article_data_open_calais_v2( cls, article_data_qs_IN ):
+    
+        # return reference
+        qs_OUT = None
+        
+        # declare variables
+        automated_coder_user = None
+        
+        # get automated coder
+        automated_coder_user = ContextTextBase.get_automated_coding_user()
+        
+        # filter
+        qs_OUT = article_data_qs_IN
+        qs_OUT = qs_OUT.filter( coder = automated_coder_user )
+        qs_OUT = qs_OUT.filter( coder_type = OpenCalaisV2ArticleCoder.CONFIG_APPLICATION )
+        
+        return qs_OUT
+        
+    #-- END method filter_article_data_open_calais_v2() --#
+        
+    
     @classmethod
     def load_open_calais_access_token( cls, directory_path_IN = "" ):
         
@@ -197,7 +293,7 @@ class TestHelper( context.tests.test_helper.TestHelper ):
         status_instance = None
         current_fixture = ""
         
-        print( "\nIn TestHelper." + me + "(): starting standardOpenCalaisSetUp." )
+        print( "\n\nIn TestHelper." + me + "(): starting standardOpenCalaisSetUp.\n" )
         
         # see if test case passed in.  If so, set status variables on it.
         if ( test_case_IN is not None ):

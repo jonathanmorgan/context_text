@@ -169,32 +169,82 @@ class ContextTextBase( ContextBase ):
     # Tags
     TAG_LOCAL_HARD_NEWS = "local_hard_news"
     
+    #--------------------------------------------------------------------------#
     # ! ----> Context
     
+    # ! --------> Entities
+    
+    # entity identifier types - testing
+    CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
+
     # entity identifier types - general
     CONTEXT_ENTITY_ID_TYPE_PERMALINK = "permalink"
     
     # entity identifier types - articles
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
-    CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
+    CONTEXT_ENTITY_ID_TYPE_ARTICLE_SOURCENET_ID = "article_sourcenet_id"
+
+    # entity identifier types - newspaper
+    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
+    CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
+    
+    # entity identifier types - organization
+    CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID = "organization_sourcenet_id"
+
+    # entity identifier types - person
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_OPEN_CALAIS_UUID = "person_open_calais_uuid"
     CONTEXT_ENTITY_ID_TYPE_NAME_PERSON_SOURCENET_ID = "person_sourcenet_id"
-    CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
-    
+
     # entity identifier types - default
     CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
     
     # Entity Type slugs
     CONTEXT_ENTITY_TYPE_SLUG_ARTICLE = "article"
     CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER = "newspaper"
+    CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION = "organization"    
     CONTEXT_ENTITY_TYPE_SLUG_PERSON = "person"
     
-    # trait names
+    # ! --------> trait names
+    CONTEXT_TRAIT_NAME_CODER_ID = "sourcenet-coder-User-id"
+    CONTEXT_TRAIT_NAME_CODER_TYPE = "coder_type"
+    CONTEXT_TRAIT_NAME_CODER_USERNAME = "sourcenet-coder-User-username"
+    CONTEXT_TRAIT_NAME_DESCRIPTION = "description"
+    CONTEXT_TRAIT_NAME_FIRST_NAME = "first_name"
+    CONTEXT_TRAIT_NAME_FULL_NAME = "full_name"
+    CONTEXT_TRAIT_NAME_GENDER = "gender"
+    CONTEXT_TRAIT_NAME_LAST_NAME = "last_name"
+    CONTEXT_TRAIT_NAME_MIDDLE_NAME = "middle_name"
+    CONTEXT_TRAIT_NAME_NAME = "name"
+    CONTEXT_TRAIT_NAME_NAME_PREFIX = "name_prefix"
+    CONTEXT_TRAIT_NAME_NAME_SUFFIX = "name_suffix"
     CONTEXT_TRAIT_NAME_PUB_DATE = "pub_date"
+    CONTEXT_TRAIT_NAME_SECTIONS_LOCAL_NEWS = "sections_local_news"
+    CONTEXT_TRAIT_NAME_SECTIONS_SPORTS = "sections_sports"
+    CONTEXT_TRAIT_NAME_SOURCENET_LOCATION_ID = "sourcenet-Location-ID"
     CONTEXT_TRAIT_NAME_SOURCENET_NEWSPAPER_ID = "sourcenet-Newspaper-ID"
+    CONTEXT_TRAIT_NAME_SOURCENET_ORGANIZATION_ID = "sourcenet-Organization-ID"
+    CONTEXT_TRAIT_NAME_TITLE = "title"
 
+    # ! --------> Relations
+    
+    # Entity_Relation_Type slugs - FROM NEWSPAPER
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE = "newspaper_article"    # FROM newspaper TO article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_REPORTER = "newspaper_reporter"  # FROM newspaper TO person (reporter) THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SOURCE = "newspaper_source"      # FROM newspaper TO person (source) THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_SUBJECT = "newspaper_subject"    # FROM newspaper TO person (subject, including sources) THROUGH article.
 
+    # Entity_Relation_Type slugs - FROM ARTICLE
+    CONTEXT_RELATION_TYPE_SLUG_AUTHOR = "author"    # FROM article TO reporter.
+    CONTEXT_RELATION_TYPE_SLUG_SOURCE = "source"    # FROM article TO source person.
+    CONTEXT_RELATION_TYPE_SLUG_SUBJECT = "subject"  # FROM article TO subject person.
+    
+    # Entity_Relation_Type slugs - THROUGH ARTICLE    
+    CONTEXT_RELATION_TYPE_SLUG_MENTIONED = "mentioned"                          # FROM reporter/author TO subject THROUGH article (includes subjects and sources).
+    CONTEXT_RELATION_TYPE_SLUG_QUOTED = "quoted"                                # FROM reporter TO source THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SOURCES = "same_article_sources"    # FROM source person TO source person THROUGH article.
+    CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SUBJECTS = "same_article_subjects"  # FROM subject person TO subject person THROUGH article (includes subjects and sources).
+    CONTEXT_RELATION_TYPE_SLUG_SHARED_BYLINE = "shared_byline"                  # FROM author TO author THROUGH article.
 
     #-----------------------------------------------------------------------------
     # ! ==> class methods

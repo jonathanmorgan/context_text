@@ -92,8 +92,8 @@ class OrganizationAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'name', 'location', 'description' )
-    #list_display_links = ( 'headline', )
+    list_display = ( 'id', 'name', 'location', 'description', 'create_date', 'last_modified' )
+    list_display_links = ( 'id', 'name' )
     list_filter = [ 'location' ]
     search_fields = [ 'name', 'location', 'description', 'id' ]
     #date_hierarchy = 'pub_date'
@@ -124,7 +124,7 @@ class NewspaperAdmin( admin.ModelAdmin ):
     #]
 
     list_display = ( 'id', 'name', 'newsbank_code', 'description' )
-    #list_display_links = ( 'headline', )
+    list_display_links = ( 'id', 'name', 'newsbank_code' )
     #list_filter = [ 'location' ]
     search_fields = [ 'name', 'description', 'newsbank_code', 'sections_local_news', 'sections_sports', 'id' ]
     #date_hierarchy = 'pub_date'
@@ -170,7 +170,8 @@ class PersonAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Person, dict( organization = 'organization' ) )
+    #form = make_ajax_form( Person, dict( organization = 'organization' ) )
+    autocomplete_fields = [ 'organization' ]
 
     fieldsets = [
         (
@@ -201,6 +202,32 @@ class PersonAdmin( admin.ModelAdmin ):
     #date_hierarchy = 'pub_date'
 
 admin.site.register( Person, PersonAdmin )
+
+class Person_External_UUIDAdmin( admin.ModelAdmin ):
+
+    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
+    #    are looking to make ajax selects form fields for; 2nd argument is a
+    #    dict of pairs of field names in the model in argument 1 (with no quotes
+    #    around them) mapped to lookup channels used to service them (lookup
+    #    channels are defined in settings.py, implenented in a separate module -
+    #    in this case, implemented in context_text.lookups.py
+    #form = make_ajax_form( Person, dict( organization = 'organization' ) )
+    autocomplete_fields = [ 'person' ]
+
+    fieldsets = [
+        (
+            None,
+            { "fields" : [ "person", "name", "uuid", "source", "id_type", "tags", "notes" ] }
+        ),
+    ]
+
+    list_display = ( 'id', 'person', 'name', 'uuid', 'source', 'id_type' )
+    list_display_links = ( 'id', 'name' )
+    list_filter = [ 'name', 'source', 'id_type' ]
+    search_fields = [ 'name', 'uuid', 'source', 'id_type', 'notes', 'person__id', 'id' ]
+    #date_hierarchy = 'pub_date'
+
+admin.site.register( Person_External_UUID, Person_External_UUIDAdmin )
 
 class TopicInline( admin.TabularInline ):
     model = Topic
@@ -277,7 +304,8 @@ class ArticleAuthorInline( admin.StackedInline ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    #form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    autocomplete_fields = [ 'person', 'organization' ]
 
     model = Article_Author
     extra = 2
@@ -314,7 +342,8 @@ class ArticleSubjectInline( admin.StackedInline ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    #form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    autocomplete_fields = [ 'person', 'organization' ]
 
     model = Article_Subject
     extra = 2
@@ -350,7 +379,8 @@ class Article_ContentAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+    #form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+    autocomplete_fields = [ 'article' ]
 
     fieldsets = [
         (
@@ -387,7 +417,8 @@ class Article_DataAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Data, dict( article = 'article' ) )
+    #form = make_ajax_form( Article_Data, dict( article = 'article' ) )
+    autocomplete_fields = [ 'article' ]
 
     fieldsets = [
         (
@@ -434,7 +465,8 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    #form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    autocomplete_fields = [ 'person', 'organization' ]
 
     fieldsets = [
         (
@@ -478,7 +510,8 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    #form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    autocomplete_fields = [ 'person', 'organization' ]
 
     fieldsets = [
         (
@@ -523,7 +556,8 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     #    around them) mapped to lookup channels used to service them (lookup
     #    channels are defined in settings.py, implenented in a separate module -
     #    in this case, implemented in context_text.lookups.py
-    form = make_ajax_form( Article_Data_Notes, dict( article_data = 'article_data' ) )
+    #form = make_ajax_form( Article_Data_Notes, dict( article_data = 'article_data' ) )
+    autocomplete_fields = [ 'article_data' ]
 
     formfield_overrides = {
         fields.JSONField: {'widget': JSONEditorWidget},
