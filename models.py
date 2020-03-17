@@ -63,7 +63,6 @@ import django.db
 
 # django encoding imports (for supporting 2 and 3).
 import django.utils.encoding
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.text import slugify
 
 # python_utilities - text cleanup
@@ -228,7 +227,6 @@ Models for context_text, including some that are specific to the Grand Rapids Pr
 
 
 # Locations
-@python_2_unicode_compatible
 class Project( models.Model ):
 
     # Django model properties.
@@ -258,7 +256,6 @@ class Project( models.Model ):
 
 
 # Location model
-@python_2_unicode_compatible
 class Location( Abstract_Location ):
 
     # inherit all from parent.
@@ -286,7 +283,6 @@ class Location( Abstract_Location ):
 
 
 # Topic model
-@python_2_unicode_compatible
 class Topic( models.Model ):
     name = models.CharField( max_length = 255 )
     description = models.TextField( blank = True )
@@ -308,7 +304,6 @@ class Topic( models.Model ):
 
 
 # Organization model
-@python_2_unicode_compatible
 class Organization( Abstract_Organization ):
 
     # inherit all from parent.
@@ -337,7 +332,6 @@ class Organization( Abstract_Organization ):
 
 
 # Person model
-@python_2_unicode_compatible
 class Person( Abstract_Person ):
 
     # Properties from Abstract_Person:
@@ -564,7 +558,6 @@ class Person( Abstract_Person ):
 
 
 # Alternate_Name model
-@python_2_unicode_compatible
 class Alternate_Name( Abstract_Person ):
 
     '''
@@ -636,7 +629,6 @@ class Alternate_Name( Abstract_Person ):
 
 
 # Person_Organization model
-@python_2_unicode_compatible
 class Person_Organization( models.Model ):
 
     person = models.ForeignKey( Person, on_delete = models.CASCADE )
@@ -657,7 +649,6 @@ class Person_Organization( models.Model ):
 
 
 # Document model
-@python_2_unicode_compatible
 class Document( models.Model ):
 
     name = models.CharField( max_length = 255 )
@@ -676,7 +667,6 @@ class Document( models.Model ):
 
 
 # Newspaper model
-@python_2_unicode_compatible
 class Newspaper( Abstract_Entity_Container ):
 
     #----------------------------------------------------------------------
@@ -758,8 +748,7 @@ class Newspaper( Abstract_Entity_Container ):
 
 
 # Article_Topic model
-#@python_2_unicode_compatible
-#class Article_Topic( models.Model ):
+##class Article_Topic( models.Model ):
 
     #topic = models.ForeignKey( Topic, on_delete = models.CASCADE )
     #rank = models.IntegerField()
@@ -779,7 +768,6 @@ class Newspaper( Abstract_Entity_Container ):
 
 
 # Person_External_UUID model
-@python_2_unicode_compatible
 class Person_External_UUID( Abstract_UUID ):
 
     person = models.ForeignKey( Person, on_delete = models.CASCADE )
@@ -808,7 +796,6 @@ class Person_External_UUID( Abstract_UUID ):
 
 
 # Person_Newspaper model
-@python_2_unicode_compatible
 class Person_Newspaper( models.Model ):
 
     person = models.ForeignKey( Person, on_delete = models.CASCADE )
@@ -859,7 +846,6 @@ class Person_Newspaper( models.Model ):
 
 
 # Article model
-@python_2_unicode_compatible
 class Article( Abstract_Entity_Container ):
 
     #----------------------------------------------------------------------------
@@ -2497,7 +2483,6 @@ class Article( Abstract_Entity_Container ):
 
 
 # Article_Content model
-@python_2_unicode_compatible
 class Article_Content( Abstract_Related_JSON_Content ):
 
     #----------------------------------------------------------------------
@@ -2563,7 +2548,6 @@ class Article_Content( Abstract_Related_JSON_Content ):
 
 
 # Unique_Article_Content model
-@python_2_unicode_compatible
 class Unique_Article_Content( Abstract_Related_Content ):
 
     #----------------------------------------------------------------------
@@ -2629,7 +2613,6 @@ class Unique_Article_Content( Abstract_Related_Content ):
 
 
 # Article_Notes model
-@python_2_unicode_compatible
 class Article_Notes( Article_Content ):
 
     def __str__( self ):
@@ -2651,7 +2634,6 @@ class Article_Notes( Article_Content ):
 
 
 # Article_RawData model
-@python_2_unicode_compatible
 class Article_RawData( Unique_Article_Content ):
 
     def __str__( self ):
@@ -2673,7 +2655,6 @@ class Article_RawData( Unique_Article_Content ):
 
 
 # Article_Text model
-@python_2_unicode_compatible
 class Article_Text( Unique_Article_Content ):
 
     #----------------------------------------------------------------------------
@@ -4498,7 +4479,6 @@ class Article_Text( Unique_Article_Content ):
 
 
 # Article_Data model
-@python_2_unicode_compatible
 class Article_Data( models.Model ):
 
     # declaring a few "constants"
@@ -5557,7 +5537,6 @@ class Article_Data( models.Model ):
 
 
 # Article_Content model
-@python_2_unicode_compatible
 class Article_Data_Notes( Abstract_Related_JSON_Content ):
 
     #----------------------------------------------------------------------
@@ -5625,7 +5604,6 @@ class Article_Data_Notes( Abstract_Related_JSON_Content ):
 
 
 # Article_Person model
-@python_2_unicode_compatible
 class Article_Person( Abstract_Person_Parent ):
 
 
@@ -6302,7 +6280,6 @@ class Article_Person( Abstract_Person_Parent ):
 
 
 # Article_Author model
-@python_2_unicode_compatible
 class Article_Author( Article_Person ):
 
     AUTHOR_TYPE_TO_ID_MAP = {
@@ -6566,7 +6543,6 @@ class Article_Author( Article_Person ):
 #= End Article_Author Model ======================================================
 
 
-@python_2_unicode_compatible
 class Abstract_Alternate_Person_Match( models.Model ):
 
     #----------------------------------------------------------------------------
@@ -6654,7 +6630,6 @@ class Abstract_Alternate_Person_Match( models.Model ):
 
 
 # Alternate_Author_Match model
-@python_2_unicode_compatible
 class Alternate_Author_Match( Abstract_Alternate_Person_Match ):
 
     #----------------------------------------------------------------------------
@@ -6712,7 +6687,6 @@ class Alternate_Author_Match( Abstract_Alternate_Person_Match ):
 
 
 # Article_Subject model
-@python_2_unicode_compatible
 class Article_Subject( Article_Person ):
 
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = 'include_capacities'
@@ -7424,7 +7398,6 @@ class Article_Subject( Article_Person ):
 
 
 # Alternate_Subject_Match model
-@python_2_unicode_compatible
 class Alternate_Subject_Match( Abstract_Alternate_Person_Match ):
 
     #----------------------------------------------------------------------------
@@ -7515,7 +7488,6 @@ class Alternate_Subject_Match( Abstract_Alternate_Person_Match ):
 
 
 # Abstract_Selected_Text model
-@python_2_unicode_compatible
 class Abstract_Selected_Text( models.Model ):
 
     '''
@@ -7760,7 +7732,6 @@ class Abstract_Selected_Text( models.Model ):
 
 
 # AbstractArticleText model
-@python_2_unicode_compatible
 class AbstractSelectedArticleText( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
@@ -7836,7 +7807,6 @@ class AbstractSelectedArticleText( Abstract_Selected_Text ):
 
 
 # Article_Subject_Mention model
-@python_2_unicode_compatible
 class Article_Subject_Mention( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
@@ -7905,7 +7875,6 @@ class Article_Subject_Mention( Abstract_Selected_Text ):
 
 
 # Article_Subject_Quotation model
-@python_2_unicode_compatible
 class Article_Subject_Quotation( Abstract_Selected_Text ):
 
     #----------------------------------------------------------------------------
@@ -7982,7 +7951,6 @@ class Article_Subject_Quotation( Abstract_Selected_Text ):
 
 
 # Subject_Organization model
-@python_2_unicode_compatible
 class Subject_Organization( models.Model ):
 
     article_subject = models.ForeignKey( Article_Subject, on_delete = models.CASCADE )
@@ -8069,7 +8037,6 @@ class Subject_Organization( models.Model ):
 
 
 # Import_Error model
-@python_2_unicode_compatible
 class Import_Error( models.Model ):
 
     unique_identifier = models.CharField( max_length = 255, blank = True )
@@ -8097,7 +8064,6 @@ class Import_Error( models.Model ):
 
 
 # Temp_Section model
-@python_2_unicode_compatible
 class Temp_Section( models.Model ):
 
     #----------------------------------------------------------------------
@@ -9370,7 +9336,6 @@ class Temp_Section( models.Model ):
 #= End Temp_Section Model ======================================================#
 
 
-@python_2_unicode_compatible
 class Articles_To_Migrate( models.Model ):
 
     ARTICLE_TYPE_CHOICES = (
