@@ -22,6 +22,7 @@ from django.contrib.auth import views as auth_views
 
 # import polls from mysite
 import context_text.views
+from context_text.views import PersonAutocomplete
 from context_text.models import Article
 
 '''
@@ -106,5 +107,12 @@ urlpatterns = [
     
     # Article_Data
     url( r'^article_data/filter/$', context_text.views.article_data_filter, name = "context_text-article_data_filter" ),
-    
+
+    # django-autocomplete-light
+    url(
+        r'^autocomplete_person/$',
+        PersonAutocomplete.as_view(),
+        name='autocomplete-person',
+    ),
+
 ]

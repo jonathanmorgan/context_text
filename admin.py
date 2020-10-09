@@ -20,8 +20,8 @@ from django.contrib import admin
 from django.contrib.postgres import fields
 
 # import code for AJAX select
-from ajax_select import make_ajax_form
-from ajax_select.admin import AjaxSelectAdmin
+#from ajax_select import make_ajax_form
+#from ajax_select.admin import AjaxSelectAdmin
 
 # django_json_widget imports
 from django_json_widget.widgets import JSONEditorWidget

@@ -105,6 +105,9 @@ from django.db.models.query import QuerySet
 from ajax_select.fields import AutoCompleteSelectField
 from ajax_select import make_ajax_field
 
+# django-autocomplete-light imports
+from dal import autocomplete
+
 # python_utilities
 from python_utilities.django_utils.django_form_helper import DjangoFormHelper
 from python_utilities.django_utils.django_form_helper import FormParent
@@ -300,6 +303,10 @@ class ArticleCodingForm( forms.ModelForm ):
 
     # AJAX lookup for person.
     person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
+    #person = forms.ModelChoiceField(
+    #    queryset = Person.objects.all(),
+    #    widget =    autocomplete.ModelSelect2( url = 'autocomplete-person' )
+    #)
 
 #-- END ModelForm class ArticleCodingForm --#
 

@@ -61,6 +61,10 @@ from django.shortcuts import render
 #from django.template import Context
 #from django.template import loader
 
+# django class-based view imports
+from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView
+
 # import django code for csrf security stuff.
 from django.template.context_processors import csrf
 
@@ -82,10 +86,13 @@ email_from_address = Config_Property.get_property_value( Issue.CONFIG_APPLICATIO
 
 '''
 
+# django-autocomplete-light
+from dal import autocomplete
 
 # python_utilities
 from python_utilities.dictionaries.dict_helper import DictHelper
 from python_utilities.django_utils.django_view_helper import DjangoViewHelper
+from python_utilities.django_utils.django_autocomplete_light_helper import DalHelper
 from python_utilities.exceptions.exception_helper import ExceptionHelper
 from python_utilities.json.json_helper import JSONHelper
 from python_utilities.lists.list_helper import ListHelper
@@ -4232,3 +4239,97 @@ def person_merge( request_IN ):
     return response_OUT
 
 #-- END view function person_merge() --#
+
+
+#===============================================================================
+# ! ==> class-based view classes (in alphabetical order)
+#===============================================================================
+
+
+@method_decorator( login_required, name='dispatch' )
+class PersonAutocomplete( autocomplete.Select2QuerySetView ):
+
+    #--------------------------------------------------------------------------#
+    # ! Constants-ish
+    #--------------------------------------------------------------------------#
+
+
+    # this autocomplete's related class.
+    MY_LOOKUP_CLASS = Person
+
+
+    #============================================================================
+    # ! ==> Built-in Instance methods
+    #============================================================================
+
+
+    def __init__( self, *args, **kwargs ):
+        
+        # always call parent's __init__()
+        super( PersonAutocomplete, self ).__init__()
+
+    #-- END overridden built-in __init__() method --#
+        
+
+    #============================================================================
+    # ! ==> Instance methods
+    #============================================================================
+
+
+    def get_queryset( self ):
+
+        """
+        return a query set.  you also have access to request.user if needed.
+        """
+
+        # return reference
+        qs_OUT = None
+
+        # declare variables
+        me = "get_queryset"
+        my_request = None
+        my_q = None
+        my_lookup_class = None
+        my_logger_name = ""
+        person_search_string = ""
+        
+        # init.
+        my_request = self.request
+        my_q = self.q
+        my_lookup_class = self.MY_LOOKUP_CLASS
+        my_logger_name = "context_text.views.PersonAutocomplete"
+
+        # Don't forget to filter out results depending on the visitor !
+
+        # is user authenticated? 
+        if ( my_request.user.is_authenticated == True ):
+
+            # store q in a real variable
+            person_search_string = my_q
+            
+            # output string passed in
+            DalHelper.output_debug( "q = " + str( my_q ), method_IN = me, logger_name_IN = my_logger_name )
+
+            # is the q a number and is it the ID of an contributor?
+            qs_OUT = DalHelper.get_instance_query( person_search_string, my_request, my_lookup_class )
+
+            # got anything back?
+            if ( qs_OUT is None ):
+
+                # No exact match for q as ID.  Try Person.find_person_from_name()
+                qs_OUT = my_lookup_class.find_person_from_name( person_search_string, do_strict_match_IN = False, do_partial_match_IN = True )
+                
+            #-- END retrieval of QuerySet when no ID match. --#
+
+        else:
+
+            # user not authenticated - return empty QuerySet.
+            qs_OUT = my_lookup_class.objects.none()
+
+        #-- END check to see if user authenticated. --#
+
+        return qs_OUT
+
+    #-- END method get_queryset() --#
+
+#-- END class-based view PersonAutocomplete --#
