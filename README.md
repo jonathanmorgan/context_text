@@ -179,15 +179,15 @@ The context_text project has a small but growing set of unit tests that can be a
 
 In order to run unit tests using OpenCalais's API, you'll need to:
 
-- Create a Thompson Reuters ID ( [https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold](https://iameui-eagan-prod.thomsonreuters.com/iamui/UI/createUser?app_id=Bold&realm=Bold) ).
+- Create a Refinitiv ID ( [https://my.refinitiv.com/content/mytr/en/register.html](https://my.refinitiv.com/content/mytr/en/register.html) ).
 
-    - after submitting form, open email from Thompson Reuters with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
+    - after submitting form, open email from Refinitiv with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
    
 - Get your API token ()
 
-    - browse to the Open Calais site ( [http://www.opencalais.com/](http://www.opencalais.com/) ).
+    - browse to the PermID site ( [https://permid.org/](https://permid.org/) ).
     - click the "Login" button in the upper right.
-    - log in with your username and password.
+    - log in with your registered email address and password.
     - Once you are logged in, click on your username (your email address) in the upper right corner, then in the dropdown that results, click on "Display my Token".  Your API token will appear in a box labeled "YOUR TOKEN".  Copy it down and save it in a safe place.
 
 - Store that token and only that token in a file named "`open_calais_access_token.txt`" in the root of your django project/site (the same folder where `manage.py` lives).
@@ -263,8 +263,6 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 - **_`context_text_unittest_django_config_data.json`_** - configuration properties for context_text (in particular, for external APIs).
 - **_`context_text_unittest_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
 - **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
-
-### Using unittest data for development
 
 ### Using unittest data for development
 
@@ -356,7 +354,7 @@ To use the OpenCalais REST API to code articles, you'll need to first set up a f
 
 Create the following configuration properties, each with the Application value "OpenCalais_REST_API":
 
-    - `open_calais_api_key` - should contain your Open Calais API key.  For more information on getting an Open Calais API key, see: [http://www.opencalais.com/APIkey](http://www.opencalais.com/APIkey)
+    - `open_calais_api_key` - should contain your Open Calais API key.  For more information on getting an Open Calais API key, see: [https://developers.refinitiv.com/en/api-catalog/open-perm-id/intelligent-tagging-restful-api/quick-start](https://developers.refinitiv.com/en/api-catalog/open-perm-id/intelligent-tagging-restful-api/quick-start)
     - `submitter` - string that identifies the program that is invoking the API - should start with "context_text-", then identify more specifically your project. 
     
 Then, the most reliable way to code large numbers of articles is to use the file `context_text/examples/articles/article_coding.py` as a template to set up and run a set of articles through the coder.

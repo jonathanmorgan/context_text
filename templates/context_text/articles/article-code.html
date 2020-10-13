@@ -4,8 +4,17 @@
 {% block title %}Code Article{% endblock %}
 
 {% block inside-head %}
-<script src="https://code.jquery.com/jquery-latest.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.selection/1.0.1/jquery.selection.min.js"></script>
+{# use the jquery the django admin uses. #}
+<!-- <script src="https://code.jquery.com/jquery-latest.js"></script> -->
+<script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+
+{# pull in javascript for django-autocomplete-light for person lookup. #}
+<!-- pull in javascript for django-autocomplete-light for person lookup. -->
+{{ person_lookup_form.media }}
+
+{# this must follow django-autocomplete-light script tags, or it breaks. #}
+<!-- this must follow django-autocomplete-light script tags, or it breaks. -->
+<script type="text/javascript" src="{% static "context/js/jquery.selection.min.js" %}"></script>
 <link rel="stylesheet" type="text/css" href="{% static "context_text/css/article-coding/article-coding.css" %}" />
 <script src="{% static "context_text/js/context_text.js" %}"></script>
 <script src="{% static "context_text/js/find-in-text.js" %}"></script>

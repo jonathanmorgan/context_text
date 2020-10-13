@@ -127,7 +127,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
     OUTPUT_FORMAT_DEFAULT = OUTPUT_FORMAT_JSON
     
     # Open Calais V2 API URL
-    OPEN_CALAIS_REST_API_URL = "https://api.thomsonreuters.com/permid/calais"
+    #OPEN_CALAIS_REST_API_URL = "https://api.thomsonreuters.com/permid/calais"
+    OPEN_CALAIS_REST_API_URL = "https://api-eit.refinitiv.com/permid/calais"
     
     # variables to hold strings related to OpenCalais.
     OPEN_CALAIS_UUID_NAME = "OpenCalais API V2 URI (URL)"

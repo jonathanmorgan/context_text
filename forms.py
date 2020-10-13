@@ -305,7 +305,7 @@ class ArticleCodingForm( forms.ModelForm ):
     person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
     #person = forms.ModelChoiceField(
     #    queryset = Person.objects.all(),
-    #    widget =    autocomplete.ModelSelect2( url = 'autocomplete-person' )
+    #    widget = autocomplete.ModelSelect2( url = 'autocomplete-person' )
     #)
 
 #-- END ModelForm class ArticleCodingForm --#
