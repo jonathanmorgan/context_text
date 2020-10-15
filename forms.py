@@ -101,10 +101,6 @@ from django import forms
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 
-# import from AJAX selects, for looking up articles.
-from ajax_select.fields import AutoCompleteSelectField
-from ajax_select import make_ajax_field
-
 # django-autocomplete-light imports
 from dal import autocomplete
 
@@ -148,7 +144,6 @@ class Article_DataLookupForm( forms.Form ):
 
     # Article_Data ID
     article_data_id = forms.IntegerField( required = True, label = "Article Data ID" )
-    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
 
 #-- END Form class ArticleLookupForm --#
 
@@ -302,7 +297,6 @@ class ArticleCodingForm( forms.ModelForm ):
         #exclude = [ 'article_data', 'original_person', 'match_confidence_level', 'match_status', 'capture_method', 'create_date', 'last_modified', 'source_type', 'subject_type', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'document', 'topics', 'source_contact_type', 'source_capacity', 'localness', 'notes', 'organization_string', 'more_organization' ]
 
     # AJAX lookup for person.
-    #person  = make_ajax_field( Article_Subject, 'person', 'coding_person', help_text = "" )
     person = forms.ModelChoiceField(
         queryset = Person.objects.all(),
         widget = autocomplete.ModelSelect2( url = 'autocomplete-person' )
@@ -405,7 +399,6 @@ class ArticleLookupForm( forms.Form ):
 
     # Article ID
     article_id = forms.IntegerField( required = True, label = "Article ID" )
-    # article_id = AutoCompleteSelectField( 'article', required = True, help_text = None, plugin_options = { 'autoFocus': True, 'minLength': 1 } )
 
 #-- Form class END ArticleLookupForm --#
 

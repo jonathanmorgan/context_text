@@ -1781,7 +1781,6 @@ def article_code( request_IN ):
             response_dictionary[ 'article_lookup_form' ] = article_lookup_form
             response_dictionary[ 'person_lookup_form' ] = person_lookup_form
             response_dictionary[ 'coding_submit_form' ] = coding_submit_form
-            response_dictionary[ 'base_include_django_ajax_selects' ] = True
             
             # loaded from config
             response_dictionary[ 'do_output_table_html' ] = config_do_output_table_html
