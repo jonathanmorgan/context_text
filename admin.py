@@ -11,7 +11,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 '''
 
 # IMPORTANT!!! Any admin that contains a reference to an article should use
-#    django-ajax-selects to include the article.  In a large set of articles,
+#    autocomplete_fields to include the article.  In a large set of articles,
 #    the normal way of including a reference (a dropdown) will send the admin app
 #    out to lunch trying to pull in all the entries for the dropdown.
 
