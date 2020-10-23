@@ -2,6 +2,9 @@ import datetime
 import os
 import sys
 
+# jupyter notebooks are async, so make django ignore this.
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
 # path to folder where "manage.py" lives in your django project.
 project_path = "/home/jonathanmorgan/work/django/research/"
 
