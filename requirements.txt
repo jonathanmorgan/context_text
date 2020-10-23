@@ -1,7 +1,6 @@
 beautifulsoup4
 bleach
 django
-django-ajax-selects
 django-autocomplete-light
 django-basic-config
 django-basic-messages

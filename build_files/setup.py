@@ -41,7 +41,7 @@ setuptools.setup(
     ],
     install_requires=[
         "django",
-        "django-ajax-selects",
+        "django-autocomplete-light",
         "django-basic-config",
         "django-context-core",
         "django-json-widget",

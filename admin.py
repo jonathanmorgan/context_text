@@ -1,5 +1,5 @@
 '''
-Copyright 2010-present (currently 2016) Jonathan Morgan
+Copyright 2010-present (currently 2020) Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/context_text.
 
@@ -11,17 +11,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 '''
 
 # IMPORTANT!!! Any admin that contains a reference to an article should use
-#    django-ajax-selects to include the article.  In a large set of articles,
+#    autocomplete_fields to include the article.  In a large set of articles,
 #    the normal way of including a reference (a dropdown) will send the admin app
 #    out to lunch trying to pull in all the entries for the dropdown.
 
 # core django imports
 from django.contrib import admin
 from django.contrib.postgres import fields
-
-# import code for AJAX select
-#from ajax_select import make_ajax_form
-#from ajax_select.admin import AjaxSelectAdmin
 
 # django_json_widget imports
 from django_json_widget.widgets import JSONEditorWidget
@@ -164,13 +160,7 @@ class Person_Newspaper_Inline( admin.TabularInline ):
 
 class PersonAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Person, dict( organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'organization' ]
 
     fieldsets = [
@@ -205,13 +195,7 @@ admin.site.register( Person, PersonAdmin )
 
 class Person_External_UUIDAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Person, dict( organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'person' ]
 
     fieldsets = [
@@ -298,13 +282,7 @@ admin.site.register( Article, ArticleAdmin )
 
 class ArticleAuthorInline( admin.StackedInline ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'person', 'organization' ]
 
     model = Article_Author
@@ -336,13 +314,7 @@ class ArticleAuthorInline( admin.StackedInline ):
 
 class ArticleSubjectInline( admin.StackedInline ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'person', 'organization' ]
 
     model = Article_Subject
@@ -373,13 +345,7 @@ class ArticleSubjectInline( admin.StackedInline ):
 
 class Article_ContentAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Text, dict( article = 'article' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'article' ]
 
     fieldsets = [
@@ -411,13 +377,7 @@ admin.site.register( Article_RawData, Article_ContentAdmin )
 
 class Article_DataAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Data, dict( article = 'article' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'article' ]
 
     fieldsets = [
@@ -459,13 +419,7 @@ admin.site.register( Article_Data, Article_DataAdmin )
 
 class Article_SubjectAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Subject, dict( person = 'person', organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'person', 'organization' ]
 
     fieldsets = [
@@ -504,13 +458,7 @@ admin.site.register( Article_Subject, Article_SubjectAdmin )
 
 class Article_AuthorAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Author, dict( person = 'person', organization = 'organization' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'person', 'organization' ]
 
     fieldsets = [
@@ -550,13 +498,7 @@ admin.site.register( Article_Author, Article_AuthorAdmin )
 
 class Article_Data_NotesAdmin( admin.ModelAdmin ):
 
-    # set up ajax-selects - for make_ajax_form, 1st argument is the model you
-    #    are looking to make ajax selects form fields for; 2nd argument is a
-    #    dict of pairs of field names in the model in argument 1 (with no quotes
-    #    around them) mapped to lookup channels used to service them (lookup
-    #    channels are defined in settings.py, implenented in a separate module -
-    #    in this case, implemented in context_text.lookups.py
-    #form = make_ajax_form( Article_Data_Notes, dict( article_data = 'article_data' ) )
+    # ajax-based autocomplete
     autocomplete_fields = [ 'article_data' ]
 
     formfield_overrides = {

@@ -4,11 +4,6 @@
     <head>
         <title>{% block title %}Context Text{% endblock %}</title>
         <link rel="stylesheet" type="text/css" href="{% static "context/context.css" %}" />
-        {% if base_include_django_ajax_selects %}
-            <link href="{% static "ajax_select/css/ajax_select.css" %}" type="text/css" media="all" rel="stylesheet">
-            <script type="text/javascript" src="{% static "ajax_select/js/bootstrap.js" %}"></script>
-            <script type="text/javascript" src="{% static "ajax_select/js/ajax_select.js" %}"></script>
-        {% endif %}
         {%block inside-head %}{% endblock %}
     </head>
 

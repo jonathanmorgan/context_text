@@ -158,7 +158,7 @@
                 <p class="inputContainer" id="lookup-person-id" name="lookup-person-id">
                     <h4>Person lookup</h4>
                     <div class="lookupPersonExistingId" id="lookup-person-existing-id" name="lookup-person-existing-id"></div>
-                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Fetch Name ==>" /> | <input type="button" id="clear-person-lookup" name="clear-person-lookup" value="Clear Person Lookup" />
+                    <input type="button" id="lookup-person-name" name="lookup-person-name" value="Copy Name ==>" /> | <input type="button" id="clear-person-lookup" name="clear-person-lookup" value="Clear Person Lookup" onclick="CONTEXT_TEXT.clear_person_lookup_form( false, 'Person Lookup Cleared' )" /> <!-- clear_person_lookup_form( false ) is so we clear the lookup form, but not a person ID previously assigned to the person (present when existing coding is loaded back into the form) -->
                     <br />
                     <br />
                     {{ person_lookup_form }}

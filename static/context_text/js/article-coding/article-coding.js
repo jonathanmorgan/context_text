@@ -417,7 +417,7 @@ CONTEXT_TEXT.clear_person_id = function( status_message_IN )
     CONTEXT_TEXT.log_message( "Top of " + me );
         
     // clear out the person lookup form
-    CONTEXT_TEXT.clear_person_lookup_form( false );
+    CONTEXT_TEXT.clear_person_lookup_form( true, null );
     
     // clear out the matched person ID
     CONTEXT_TEXT.clear_matched_person_id( null );
@@ -437,9 +437,7 @@ CONTEXT_TEXT.clear_person_id = function( status_message_IN )
 
 
 /**
- * Clears out all inputs and divs related to the AJAX person looker-upper.  This
- *     includes the input where the name is stored, the div that holds selected
- *     matches, and optionally any matched person id, as well.
+ * Clears out all inputs and divs related to the DAL person looker-upper.
  *
  * Preconditions: None
  *
@@ -451,32 +449,21 @@ CONTEXT_TEXT.clear_person_lookup_form = function( do_clear_matched_id_IN, status
     // declare variables.
     var me = "CONTEXT_TEXT.clear_person_lookup_form";
     var status_message_array = [];
-    var temp_element = null;
-    var on_deck_person_element = null;
+    var dal_select_element = null;
+    var dal_display_span_element = null;
     
     // clear the coding form.
     CONTEXT_TEXT.log_message( "Top of " + me );
+
+    // Clear the autocomplete
+    dal_select_element = $( ':input[name=person]' );
+    dal_select_element.val( null ).trigger( 'click' );
+
+    // wipe any stored display information.
+    dal_display_span_element = $( '#select2-id_person-container' )
+    dal_display_span_element.text( "" )
+    dal_display_span_element.attr( 'title', "" );
         
-    // id_person
-    temp_element = $( '#' + CONTEXT_TEXT.INPUT_ID_AJAX_ID_PERSON );
-    temp_element.val( "" );
-    
-    // id_person_text
-    temp_element = $( '#' + CONTEXT_TEXT.INPUT_ID_AJAX_ID_PERSON_TEXT );
-    temp_element.val( "" );
-    
-    // clear out <div> inside <div id="id_person_on_deck">.
-    
-    // get on-deck <div>.
-    on_deck_person_element = $( '#' + CONTEXT_TEXT.DIV_ID_AJAX_ID_PERSON_ON_DECK );
-    
-    // remove anonymous <div> inside.
-    on_deck_person_element.find( 'div' ).remove();
-    
-    // add a new empty div.
-    temp_element = $( '<div></div>' );
-    on_deck_person_element.append( temp_element );
-    
     // do we clear out any matched person ID?
     if ( do_clear_matched_id_IN == true )
     {
@@ -4348,11 +4335,14 @@ $( document ).ready(
                 source_text = CONTEXT_TEXT.get_person_name();
                 //CONTEXT_TEXT.log_message( "source text : " + source_text );
 
+                // try writing to clipboard.
+                navigator.clipboard.writeText( source_text )
+
                 // get id_person_text_element text field,  place value, then
                 //    fire lookup event.
-                id_person_text_element = $( '#' + CONTEXT_TEXT.INPUT_ID_AJAX_ID_PERSON_TEXT );
-                id_person_text_element.val( source_text );
-                id_person_text_element.trigger( 'keydown' );
+                // id_person_text_element = $( '#' + CONTEXT_TEXT.INPUT_ID_AJAX_ID_PERSON_TEXT );
+                // id_person_text_element.val( source_text );
+                // id_person_text_element.trigger( 'keydown' );
                 
                 // You'd think some of these might work to fire event...
                 //    ...but they don't.
@@ -4379,49 +4369,6 @@ $( document ).ready(
     }
 ); //-- END document.ready( button - #lookup-person-name ) --//
 
-
-// ! document.ready( button - #clear-person-lookup )
-// javascript to copy name from #source-name to the Lookup text field.
-$( document ).ready(
-    function()
-    {
-        $( '#clear-person-lookup' ).click(        
-            function()
-            {
-                // declare variables
-                var source_text = "";
-                var person_lookup = "";
-    
-                // get id_person_text_element text field, place value, then
-                //    fire lookup event.
-                id_person_text_element = $( '#' + CONTEXT_TEXT.INPUT_ID_AJAX_ID_PERSON_TEXT );
-                id_person_text_element.val( "" );
-                id_person_text_element.trigger( 'keydown' );
-                
-                // You'd think some of these might work to fire event...
-                //    ...but they don't.
-                //id_person_text_element.trigger( "search", "" );
-                //id_person_text_element.autocomplete( "search", "" );
-                //id_person_text_element.data( "ui-autocomplete" )._trigger( "change" );
-                //id_person_text_element.keyup()
-                //id_person_text_element.click()
-                //id_person_text_element.trigger( 'init-autocomplete' );
-                //id_person_text_element.trigger( 'added' );
-
-                // tried other elements, too - #id_person_on_deck.
-                //id_person_on_deck_element = $( '#id_person_on_deck' );
-                //id_person_on_deck_element.trigger( 'added' );
-                //id_person_on_deck_element.autocomplete( "search", "" );
-
-                // tried other elements, too - #id_person
-                //id_person_element = $( '#id_person' );
-                //id_person_element.trigger( 'added' );
-                //id_person_element.autocomplete( "search", "" );
-
-            }
-        )
-    }
-); //-- END document.ready( button - #clear-person-lookup ) --//
 
 // ! ----> buttons - find in article text
 
