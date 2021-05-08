@@ -11,7 +11,7 @@ ipython
 lxml
 nameparser
 openpyxl
-psycopg2
+psycopg2-binary
 python-utilities-jsm
 regex
 requests
