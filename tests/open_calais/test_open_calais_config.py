@@ -105,7 +105,7 @@ class OpenCalaisConfigTest( django.test.TestCase ):
             from django_config.models import Config_Property
             
             # get config property for OpenCalais Access token
-            oc_api_access_token = Config_Property.get_property_value( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION, OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN, None )
+            oc_api_access_token = Config_Property.get_property_value( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION, OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN, default_IN = None )
             
             # got a value?
             self.assertNotEqual( oc_api_access_token, "" )
@@ -150,7 +150,7 @@ class OpenCalaisConfigTest( django.test.TestCase ):
             from django_config.models import Config_Property
             
             # get config property for OpenCalais Access token
-            oc_api_access_token = Config_Property.get_property_value( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION, OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN, None )
+            oc_api_access_token = Config_Property.get_property_value( OpenCalaisV2ArticleCoder.CONFIG_APPLICATION, OpenCalaisV2ArticleCoder.CONFIG_PROP_OPEN_CALAIS_ACCESS_TOKEN, default_IN = None )
             
             # got a value?
             self.assertNotEqual( oc_api_access_token, "" )
