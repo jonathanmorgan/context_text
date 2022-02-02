@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 # core django imports
 from django.contrib import admin
-from django.contrib.postgres import fields
+#from django.contrib.postgres import fields
 
 # django_json_widget imports
 from django_json_widget.widgets import JSONEditorWidget
@@ -245,7 +245,7 @@ class ArticleTextInline( admin.StackedInline ):
 class ArticleAdmin( admin.ModelAdmin ):
 
     formfield_overrides = {
-        fields.JSONField: {'widget': JSONEditorWidget},
+        models.JSONField: { 'widget': JSONEditorWidget },
     }
     
     fieldsets = [
@@ -502,7 +502,7 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     autocomplete_fields = [ 'article_data' ]
 
     formfield_overrides = {
-        fields.JSONField: {'widget': JSONEditorWidget},
+        models.JSONField: {'widget': JSONEditorWidget},
     }
     
     fieldsets = [
