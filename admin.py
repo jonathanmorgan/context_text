@@ -18,6 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 # core django imports
 from django.contrib import admin
 #from django.contrib.postgres import fields
+from django.db import models
 
 # django_json_widget imports
 from django_json_widget.widgets import JSONEditorWidget
