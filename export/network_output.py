@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from __future__ import division
-
 '''
 Copyright 2010-2017 Jonathan Morgan
 
@@ -17,7 +14,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 The network_output module contains objects and code to parse and output social
    network data from context_text in a variety of formats, and also generates
    some descriptive statistics as it builds output.
-   
+
 2014-05-16 - Jonathan Morgan - Updated so that this object now speaks in terms
    of Article_Data, not Article, so that we support multiple passes at coding
    a given article by different people, only have to store the contents of each
@@ -64,7 +61,7 @@ from context_text.export.ndo_tab_delimited_matrix import NDO_TabDelimitedMatrix
 
 # Import context_text shared classes.
 from context_text.shared.context_text_base import ContextTextBase
-
+from context_text.shared.context_text_error import ContextTextError
 
 #===============================================================================
 # classes (in alphabetical order by name)
@@ -109,7 +106,7 @@ class NetworkOutput( ContextTextBase ):
     # prefix for person-selection params - same as network selection parameters
     #    above, but with this prefix appended to the front.
     PARAM_PERSON_PREFIX = 'person_'
-    
+
     # parameters for person selection.
     PARAM_PERSON_QUERY_TYPE = NetworkDataOutput.PARAM_PERSON_QUERY_TYPE
 
@@ -128,7 +125,7 @@ class NetworkOutput( ContextTextBase ):
         PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_CODER_TYPE_LIST : ParamContainer.PARAM_TYPE_LIST,
         ContextTextBase.PARAM_TOPIC_LIST : ParamContainer.PARAM_TYPE_LIST,
-        ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,        
+        ContextTextBase.PARAM_TAG_LIST : ParamContainer.PARAM_TYPE_LIST,
         ContextTextBase.PARAM_UNIQUE_ID_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_ALLOW_DUPLICATE_ARTICLES : ParamContainer.PARAM_TYPE_STRING,
         PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
@@ -176,7 +173,7 @@ class NetworkOutput( ContextTextBase ):
     NETWORK_OUTPUT_TYPE_CSV_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_CSV_MATRIX
     NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX = NetworkDataOutput.NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
     NETWORK_OUTPUT_TYPE_DEFAULT = NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT
-    
+
     NETWORK_OUTPUT_TYPE_CHOICES_LIST = NetworkDataOutput.NETWORK_DATA_FORMAT_CHOICES_LIST
 
     # Network data output types
@@ -185,7 +182,7 @@ class NetworkOutput( ContextTextBase ):
     NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
     NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS
     NETWORK_DATA_OUTPUT_TYPE_DEFAULT = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT
-    
+
     NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST
 
     # Person Query Types
@@ -201,8 +198,14 @@ class NetworkOutput( ContextTextBase ):
     CODER_TYPE_FILTER_TYPE_AUTOMATED = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_AUTOMATED
     CODER_TYPE_FILTER_TYPE_ALL = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_ALL
     CODER_TYPE_FILTER_TYPE_DEFAULT = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_DEFAULT
-    
+
     CODER_TYPE_FILTER_TYPE_CHOICES_LIST = NetworkDataOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST
+
+
+    #---------------------------------------------------------------------------
+    # class methods
+    #---------------------------------------------------------------------------
+
 
     #---------------------------------------------------------------------------
     # __init__() method
@@ -212,7 +215,7 @@ class NetworkOutput( ContextTextBase ):
     def __init__( self ):
 
         # call parent's __init__()
-        super( NetworkOutput, self ).__init__()
+        super().__init__()
 
         # declare variables - moved to parent
         #self.request = None
@@ -220,18 +223,18 @@ class NetworkOutput( ContextTextBase ):
 
         # define parameters - moved to parent
         #self.define_parameters( NetworkOutput.PARAM_NAME_TO_TYPE_MAP )
-        
+
         # variables for outputting result as file
         self.mime_type = ""
         self.file_extension = ""
-        
+
         # variable to hold combined master article and person coder ID list.
         self.m_article_coder_id_list = None
         self.m_person_coder_id_list = None
-        
+
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
         self.set_logger_name( "context_text.export.network_output" )
-        
+
     #-- END method __init__() --#
 
 
@@ -346,7 +349,7 @@ class NetworkOutput( ContextTextBase ):
     #-- end method output_create_network_query_set() -------------------------------------------------------
 
 
-    def create_person_dict( self, load_person_IN = False ):
+    def create_person_dict( self, load_person_IN = False, debug_flag_IN = None ):
 
         """
             Accepts flag that dictates whether we load the actual person
@@ -364,7 +367,6 @@ class NetworkOutput( ContextTextBase ):
                range.
 
             Parameters:
-            - request_IN - django request object.
             - load_person_IN - boolean, if False, doesn't load Person model
                instances while building the dictionary.  If True, loads Person
                models and stores them in the dictionary.
@@ -380,44 +382,51 @@ class NetworkOutput( ContextTextBase ):
 
         # declare variables
         me = "create_person_dict"
+        my_debug_flag = None
+        debug_message = None
         my_logger = None
-        request_IN = None
         article_data_query_set = None
         current_article_data = None
         author_qs = None
         source_qs = None
-        
+
+        # init debug
+        my_debug_flag = NetworkDataOutput.DEBUG_FLAG
+        if ( debug_flag_IN is not None ):
+            my_debug_flag = debug_flag_IN
+        #-- END check if debug flag passed in. --#
+
         # initialize logger
         my_logger = self.get_logger()
 
-        # get request instance
-        request_IN = self.request
+        # get query set to loop over Article_Data that matches our person
+        #    select criteria.
+        article_data_query_set = self.create_person_query_set()
 
-        # got request?
-        if ( request_IN ):
+        debug_message = "In {me}: article_data_query_set.count() = {qs_count}".format(
+            me = me,
+            qs_count = article_data_query_set.count()
+        )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
-            # get query set to loop over Article_Data that matches our person
-            #    select criteria.
-            article_data_query_set = self.create_person_query_set()
-            
-            my_logger.debug( "In " + me + ": article_data_query_set.count() = " + str( article_data_query_set.count() ) )
+        # loop over the articles
+        for current_article_data in article_data_query_set:
 
-            # loop over the articles
-            for current_article_data in article_data_query_set:
-            
-                # retrieve authors and add them to dict
-                author_qs = current_article_data.article_author_set.all()
-                person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
+            # retrieve authors and add them to dict
+            author_qs = current_article_data.article_author_set.all()
+            person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
 
-                # retrieve sources and add them to dict
-                source_qs = current_article_data.get_quoted_article_sources_qs()
-                person_dict_OUT = self.add_people_to_dict( source_qs, person_dict_OUT, load_person_IN )
+            # retrieve sources and add them to dict
+            source_qs = current_article_data.get_quoted_article_sources_qs()
+            person_dict_OUT = self.add_people_to_dict( source_qs, person_dict_OUT, load_person_IN )
 
-            #-- END loop over articles --#
+        #-- END loop over articles --#
 
-        #-- END check to make sure we have a request --#
-        
-        my_logger.debug( "In " + me + ": len( person_dict_OUT ) = " + str( len( person_dict_OUT ) ) )
+        debug_message = "In {me}: len( person_dict_OUT ) = {dict_count}".format(
+            me = me,
+            dict_count = len( person_dict_OUT )
+        )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
         return person_dict_OUT
 
@@ -433,23 +442,23 @@ class NetworkOutput( ContextTextBase ):
         me = "create_person_query_set"
         my_logger = None
         selected_person_query_type = ""
-        
+
         # initialize logger.
         my_logger = self.get_logger()
-        
+
         # got a value passed in?
         if ( ( person_query_type_IN is not None ) and ( person_query_type_IN != "" ) ):
-        
+
             # value passed in - use it.
             selected_person_query_type = person_query_type_IN
 
         else:
-        
+
             # nothing passed in - retrieve person query type from request.
             selected_person_query_type = self.get_param_as_str( NetworkOutput.PARAM_PERSON_QUERY_TYPE, NetworkOutput.PERSON_QUERY_TYPE_DEFAULT )
-        
+
         #-- END check to see if query type passed in --#
-        
+
         my_logger.debug( "In " + me + ": selected_person_query_type = " + selected_person_query_type )
 
         # Figure out what to call to generate QuerySet based on selected person
@@ -457,22 +466,22 @@ class NetworkOutput( ContextTextBase ):
 
         # "all"
         if ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_ALL ):
-        
+
             # want all people referenced in any coded article - return all
             #    Article_Data instances.
             query_set_OUT = Article_Data.objects.all()
             my_logger.debug( "In " + me + ": returning all Article_Data instances." )
-            
+
         # "articles"
         elif ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_ARTICLES ):
-        
+
             # just want people associated with selected articles.
             query_set_OUT = self.create_network_query_set()
             my_logger.debug( "In " + me + ": returning same Article_Data instances used for network." )
-            
+
         # "custom"
         elif ( selected_person_query_type == NetworkOutput.PERSON_QUERY_TYPE_CUSTOM ):
-        
+
             # custom - call the create_query_set() method with "PERSON_" prefix,
             #    so it uses the custom person selection filter fields.  This
             #    will be used for things like retrieving all people across
@@ -480,12 +489,12 @@ class NetworkOutput( ContextTextBase ):
             #    network.
             query_set_OUT = self.create_query_set( NetworkOutput.PARAM_PERSON_PREFIX )
             my_logger.debug( "In " + me + ": returning Article_Data instances that match custom person query filters." )
-            
+
         else:
-        
+
             # unknown person query type - just use those for selected articles.
             query_set_OUT = self.create_network_query_set()
-            
+
         #-- END check to see what we do based on person query type. --#
 
         return query_set_OUT
@@ -501,7 +510,6 @@ class NetworkOutput( ContextTextBase ):
         # declare variables
         me = "create_query_set"
         my_logger = None
-        request_IN = None
         start_date_IN = ''
         end_date_IN = ''
         date_range_IN = ''
@@ -528,11 +536,11 @@ class NetworkOutput( ContextTextBase ):
         current_query = None
         query_list = []
         has_unique_id_list = False
-        
+
         # filtering Article_Data coder_type
         automated_coder_user = None
         automated_coder_pk = -1
-        
+
         # get logger
         my_logger = self.get_logger()
 
@@ -544,7 +552,7 @@ class NetworkOutput( ContextTextBase ):
 
         # use method to get coder ID list now that there are two fields.
         coder_id_list = self.get_coder_id_list( param_prefix_IN )
-        
+
         coder_type_filter_type_IN = self.get_param_as_str( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_FILTER_TYPE, '' )
         coder_type_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_TYPE_LIST )
         topic_list_IN = self.get_param_as_list( param_prefix_IN + ContextTextBase.PARAM_TOPIC_LIST )
@@ -634,18 +642,18 @@ class NetworkOutput( ContextTextBase ):
             # try converting items in list to int.
             coder_int_list = []
             for coder_id_string in coder_id_list:
-            
+
                 # convert to int, then append to list.
                 coder_id_int = int( coder_id_string )
                 coder_int_list.append( coder_id_int )
-                
+
             #-- END loop over string coder IDs. --#
-            
+
             my_logger.debug( "In " + me + ": coder_int_list = " + str( coder_id_list ) )
-            
+
             # set up query instance
             current_query = Q( coder__pk__in = coder_int_list )
-                
+
             # add it to the query list
             query_list.append( current_query )
 
@@ -657,42 +665,42 @@ class NetworkOutput( ContextTextBase ):
         if ( ( coder_type_filter_type_IN is not None )
             and ( coder_type_filter_type_IN != "" )
             and ( coder_type_filter_type_IN != self.CODER_TYPE_FILTER_TYPE_NONE ) ):
-        
+
             # yes, but still need to make sure there is something in the list.
             #if ( coder_type_list_IN ):
             if ( ( coder_type_list_IN is not None ) and ( len( coder_type_list_IN ) > 0 ) ):
-    
+
                 # we have a list.  See what our filter type is.
-                if ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_ALL ): 
+                if ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_ALL ):
 
                     # "all" - plain old filter - set up query instance
                     current_query = Q( coder_type__in = coder_type_list_IN )
-        
+
                     # add it to the query list
                     query_list.append( current_query )
-    
+
                 elif ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_AUTOMATED ):
-                
+
                     # only want to filter records coded by automated user.
                     current_query = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_IN )
 
                     # add it to the query list
                     query_list.append( current_query )
-                    
+
                 else:
-                
+
                     # not a valid type.  No filter.
                     my_logger.debug( "In " + me + ": unknown coder_type_filter_type = " + str( coder_type_filter_type_IN ) )
 
                 #-- END check to see what the coder_type_filter_type is --#
-                        
+
             else:
-            
+
                 # nothing in coder type list, so no filtering to do.
                 my_logger.debug( "In " + me + ": coder_type filtering requested ( " + coder_type_filter_type_IN + " ), but no coder_type values passed in.  Moving on." )
-            
+
             #-- END processing of coder types --#
-            
+
         #-- END check to see if we filter on coder_type --#
 
         # topics
@@ -730,12 +738,12 @@ class NetworkOutput( ContextTextBase ):
 
             # add it to list of queries
             query_list.append( current_query )
-            
+
             # set flag so we know there were indeed unique IDs. --#
             has_unique_id_list = True
 
         #-- END processing of unique_identifiers --#
-        
+
         my_logger.debug( "In " + me + ": before adding Q() instances - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
         # now, add them all to the QuerySet - try a loop
@@ -744,7 +752,7 @@ class NetworkOutput( ContextTextBase ):
 
             # increment query_item_count
             query_item_count += 1
-            
+
             # append each filter to query set.
             query_set_OUT = query_set_OUT.filter( query_item )
 
@@ -778,7 +786,6 @@ class NetworkOutput( ContextTextBase ):
         string_OUT = ''
 
         # declare variables
-        request_IN = None
         expected_params = None
         param_name = ''
         param_type = ''
@@ -793,7 +800,7 @@ class NetworkOutput( ContextTextBase ):
 
         # get list of expected params
         expected_params = NetworkOutput.PARAM_NAME_TO_TYPE_MAP
-        
+
         # loop over expected parameters, grabbing each and adding it to the
         #    output string.
         for param_name, param_type in expected_params.items():
@@ -816,8 +823,9 @@ class NetworkOutput( ContextTextBase ):
                 param_value_list = self.get_param_as_list( param_name )
 
                 # output list of values
-                for param_value in param_value_list:
-                    param_output_string += param_value + ", "
+                param_output_string += str( param_value_list )
+                #for param_value in param_value_list:
+                #    param_output_string += param_value + ", "
 
             #-- END handle different types of parameters appropriately --#
 
@@ -828,15 +836,15 @@ class NetworkOutput( ContextTextBase ):
             #    depending on type.  To check, see if param name starts with
             #    "person_" (stored in self.PARAM_PERSON_PREFIX).
             if ( param_name.startswith( self.PARAM_PERSON_PREFIX ) == True ):
-            
+
                 # person param.
                 person_output_string_list.append( param_output_string )
-                
+
             else:
-            
+
                 # article param.
-                article_output_string_list.append( param_output_string )                    
-            
+                article_output_string_list.append( param_output_string )
+
             #-- END Check to see which list we append to. --#
 
         #-- END loop over expected parameters --#
@@ -849,7 +857,7 @@ class NetworkOutput( ContextTextBase ):
         list_separator_string = "\n"
         article_output_string += list_separator_string.join( article_output_string_list )
         person_output_string += list_separator_string.join( person_output_string_list )
-        
+
         # And, finally, add them all together.
         string_OUT = article_output_string + "\n\n" + person_output_string
 
@@ -859,65 +867,65 @@ class NetworkOutput( ContextTextBase ):
 
 
     def get_article_coder_id_list( self ):
-        
+
         '''
         Checks to see if article coder list already populated.  If so, returns
             it.  If not, builds article coder ID list, stores it, then returns
             it.
         '''
-        
+
         # return reference
         list_OUT = None
-        
+
         # declare variables
         coder_id_list = None
-        
+
         # try to set from instance variable.
         coder_id_list = self.m_article_coder_id_list
-        
+
         # is it None?
         if ( coder_id_list is None ):
-        
+
             # it is None.  Render list.
             coder_id_list = self.get_coder_id_list()
-            
+
             # store it.
             self.m_article_coder_id_list = coder_id_list
-            
+
             # and return it.
             list_OUT = self.m_article_coder_id_list
-        
+
         else:
-        
+
             # not None - return it.
             list_OUT = self.m_article_coder_id_list
-        
+
         #-- END check to see if list populated. --#
-                
+
         return list_OUT
 
     #-- END method get_article_coder_id_list --#
 
 
     def get_coder_id_list( self, param_prefix_IN = '' ):
-        
+
         '''
         Builds coder ID list, then returns it.  To do this:
         - checks to see if prioritized list of coder IDs was in request.
         - If not, returns the unordered person ID list.
         - If so:
-        
+
             - starts with prioritized list as a base.  Loops over IDs that
                 are in the unordered list.  If any are not in prioritized
                 list, appends them to the end.
             - return the merged list.
-            
-        Returns None if error. 
+
+        Returns None if error.
         '''
-        
+
         # return reference
         list_OUT = None
-        
+
         # declare variables
         me = "get_coder_id_list"
         my_logger = None
@@ -927,67 +935,67 @@ class NetworkOutput( ContextTextBase ):
         coder_id_list = None
         coder_id_string = None
         coder_id = None
-        
+
         # get logger
         my_logger = self.get_logger()
-        
+
         # get the two places where coder IDs are stored.
         coder_list_IN = self.get_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_LIST )
         coder_id_priority_list_IN = self.get_string_param_as_list( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
-        
+
         debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
         my_logger.debug( debug_message )
-        
+
         # got a priority list?
         if ( ( coder_id_priority_list_IN is not None )
-            and ( coder_id_priority_list_IN != "" ) 
+            and ( coder_id_priority_list_IN != "" )
             and ( len( coder_id_priority_list_IN ) > 0 ) ):
-        
+
             # yes - use it.
             coder_id_list = coder_id_priority_list_IN
-            
+
             # now, see if unordered list has anything in it.
             if ( ( coder_list_IN is not None )
-                and ( coder_list_IN != "" ) 
+                and ( coder_list_IN != "" )
                 and ( len( coder_list_IN ) > 0 ) ):
-            
+
                 # loop
                 for coder_id in coder_list_IN:
-                
+
                     # see if it is in the output list.
                     if ( coder_id not in coder_id_list ):
-                    
+
                         # not in ther already - append().
                         coder_id_list.append( coder_id )
-                        
+
                     #-- END check to see if coder ID is in coder_id_list. --#
-                    
+
                 #-- END loop over coder IDs in unordered list.
-            
+
             #-- END check to see if unordered list. --#
-            
+
         else:
-        
+
             # no - use the normal list
             coder_id_list = coder_list_IN
-            
+
         #-- END coder ID processing. --#
-        
+
         # convert them all to integers and store in list_OUT
         list_OUT = []
         for coder_id_string in coder_id_list:
-        
+
             # convert to int
             coder_id = int( coder_id_string )
-            
+
             # add to output list.
             list_OUT.append( coder_id )
-        
+
         #-- END loop over string coder IDs. --#
-        
+
         debug_message = "In " + me + ": list_OUT = " + str( list_OUT )
         my_logger.debug( debug_message )
-        
+
         return list_OUT
 
     #-- END method get_coder_id_list --#
@@ -997,11 +1005,11 @@ class NetworkOutput( ContextTextBase ):
 
         '''
         Assumes there is an output type property specified in the POST parameters
-           passed in as part of the current request.  Retrieves this output type,
-           creates a NetworkDataOutput implementer instance to match the type,
-           then returns the instance.  If no type or unknown type, returns None.
+            passed in as part of the current request.  Retrieves this output type,
+            creates a NetworkDataOutput implementer instance to match the type,
+            then returns the instance.  If no type or unknown type, returns None.
         '''
-        
+
         # return reference
         NDO_instance_OUT = None
 
@@ -1010,30 +1018,30 @@ class NetworkOutput( ContextTextBase ):
 
         # get output type.
         output_type_IN = self.get_param_as_str( self.PARAM_OUTPUT_TYPE )
-        
+
         # make instance for output type.
         if ( output_type_IN == self.NETWORK_OUTPUT_TYPE_SIMPLE_MATRIX ):
-        
+
             # simple matrix.
             NDO_instance_OUT = NDO_SimpleMatrix()
-        
+
         elif ( output_type_IN == self.NETWORK_OUTPUT_TYPE_CSV_MATRIX ):
-        
+
             # CSV matrix.
             NDO_instance_OUT = NDO_CSVMatrix()
-        
+
         elif ( output_type_IN == self.NETWORK_OUTPUT_TYPE_TAB_DELIMITED_MATRIX ):
-        
+
             # Tab-delimited matrix.
             NDO_instance_OUT = NDO_TabDelimitedMatrix()
-        
+
         else:
-        
+
             # no output type, or unknown.  Make simple output matrix.
             NDO_instance_OUT = NDO_SimpleMatrix()
-        
+
         #-- END check to see what type we have. --#
-        
+
         # set mime type and file extension from instance
         self.mime_type = NDO_instance_OUT.mime_type
         self.file_extension = NDO_instance_OUT.file_extension
@@ -1044,48 +1052,48 @@ class NetworkOutput( ContextTextBase ):
 
 
     def get_person_coder_id_list( self ):
-        
+
         '''
         Checks to see if person coder list already populated.  If so, returns
             it.  If not, builds article coder ID list, stores it, then returns
             it.
         '''
-        
+
         # return reference
         list_OUT = None
-        
+
         # declare variables
         coder_id_list = None
-        
+
         # try to set from instance variable.
         coder_id_list = self.m_person_coder_id_list
-        
+
         # is it None?
         if ( coder_id_list is None ):
-        
+
             # it is None.  Render list.
             coder_id_list = self.get_coder_id_list( param_prefix_IN = self.PARAM_PERSON_PREFIX )
-            
+
             # store it.
             self.m_person_coder_id_list = coder_id_list
-            
+
             # and return it.
             list_OUT = self.m_person_coder_id_list
-        
+
         else:
-        
+
             # not None - return it.
             list_OUT = self.m_person_coder_id_list
-        
+
         #-- END check to see if list populated. --#
-                
+
         return list_OUT
 
     #-- END method get_person_coder_id_list --#
 
 
     def has_prioritized_coder_list( self, param_prefix_IN = "" ):
-        
+
         '''
         Accepts param prefix.  Checks to see if there is a
             coder_id_priority_list set.  If so, return True.  If not, returns
@@ -1094,52 +1102,236 @@ class NetworkOutput( ContextTextBase ):
 
         # return reference
         has_list_OUT = False
-        
+
         # declare variables
         coder_id_priority_list_IN = None
-        
+
         # try to get coder ID priority list.
         coder_id_priority_list_IN = self.get_param_as_list ( param_prefix_IN + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
-        
+
         # anything in the list?
         if ( ( coder_id_priority_list_IN is not None )
             and ( isinstance( coder_id_priority_list_IN, list ) == True )
             and ( len( coder_id_priority_list_IN ) > 0 ) ):
-            
+
             # yes.  Return True.
             has_list_OUT = True
-            
+
         else:
-        
+
             # no prioritized list.
             has_list_OUT = False
-            
+
         #-- END check to see if prioritized list. --#
-        
+
         return has_list_OUT
-        
+
     #-- END method has_prioritized_coder_list() --#
+
+
+    def process_network_output_request( self, request_IN = None, params_IN = None, debug_flag_IN = None ):
+
+        # return reference
+        data_OUT = None
+
+        # declare variables
+        me = "process_network_output_request"
+        status_message = None
+        debug_message = None
+        my_debug_flag = None
+        include_render_details_IN = ''
+        include_render_details = False
+        output_string = ''
+        current_item = None
+        network_query_set = None
+        network_query_set_count = None
+        article_data_count = ''
+        query_counter = ''
+
+        # declare variables - DEBUG
+        coder_list_IN = None
+        coder_id_priority_list_IN = None
+        person_coder_list_IN = None
+        person_coder_id_priority_list_IN = None
+
+        # init debug
+        my_debug_flag = NetworkDataOutput.DEBUG_FLAG
+        if ( debug_flag_IN is not None ):
+            my_debug_flag = debug_flag_IN
+        #-- END check if debug flag passed in. --#
+
+        # retrieve articles specified by the input parameters, then create
+        #   string output, then pass it and form on to the output form.
+
+        # initialize parameters
+        if ( request_IN is not None ):
+
+            # store request, and it will pull POST out of it.
+            self.set_request( request_IN )
+
+        elif ( params_IN is not None ):
+
+            # no request, but parameters passed in. Just use those.
+            self.store_parameters( params_IN )
+
+        else:
+
+            # no request or params. Error.
+            status_message = "In {me}(): No request or params passed in. Nothing to be done.".format( me = me )
+            raise ContextTextError( status_message )
+
+        #-- END check to see
+
+        # do we include details?
+        include_render_details_IN = self.get_param(
+            NetworkOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS,
+            NetworkOutput.CHOICE_NO
+        )
+
+        # convert include_render_details_IN to boolean
+        if ( include_render_details_IN == NetworkOutput.CHOICE_YES ):
+
+            # yes - True
+            include_render_details = True
+
+        else:
+
+            # not yes, so False.
+            include_render_details = False
+
+        #-- END check to see whether we include render details --#
+
+        debug_message = "In " + me + ": parameter debug - " + self.debug_parameters()
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
+        # get the two places where coder IDs are stored.
+        coder_list_IN = self.get_param_as_list( NetworkOutput.PARAM_CODER_LIST )
+        coder_id_priority_list_IN = self.get_string_param_as_list( NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+
+        debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
+        # get the two places where person coder IDs are stored.
+        person_coder_list_IN = self.get_param_as_list( "person_" + NetworkOutput.PARAM_CODER_LIST )
+        person_coder_id_priority_list_IN = self.get_string_param_as_list( "person_" + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+
+        debug_message = "In " + me + ": person_coder_list_IN = " + str( person_coder_list_IN ) + "; person_coder_id_priority_list_IN = " + str( person_coder_id_priority_list_IN )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
+        # prepare data
+
+        # retrieve Article_Data QuerySet based on parameters passed in.
+        network_query_set = self.create_network_query_set()
+
+        debug_message = "In {me}: type of network_query_set = {qs_type}".format(
+            me = me,
+            qs_type = str( type( network_query_set ) )
+        )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
+        # get count of queryset return items
+        if ( network_query_set is not None ):
+
+            article_data_count = network_query_set.count()
+
+        else:
+
+            article_data_count = -1
+
+        #-- END check to see if None --#
+
+        debug_message = "In {me}: before parameter and article details, Article_Data count: {article_data_count}.".format(
+            me = me,
+            article_data_count = article_data_count
+        )
+        self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
+        # include render details?
+        if ( include_render_details == True ):
+
+            # For now, output plain string
+            output_string += "=======================\n"
+            output_string += "parameter overview:\n"
+            output_string += "=======================\n"
+            output_string += "\n"
+            output_string += self.debug_parameters()
+            output_string += "\n"
+            output_string += "\n"
+            my_param_container = self.get_param_container()
+            output_string += my_param_container.debug_parameters()
+
+            #-------------------------------------------------------------------
+            # summary info.
+            #-------------------------------------------------------------------
+
+            output_string += "\n\n\n"
+            output_string += "=======================\n"
+            output_string += "article overview:\n"
+            output_string += "=======================\n"
+            output_string += "\nTotal article data rows returned: " + str( article_data_count ) + "\n\n"
+
+            # loop over the query set.
+            query_counter = 0
+
+            if ( network_query_set is not None ):
+
+                for current_item in network_query_set:
+
+                    query_counter += 1
+                    output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
+
+                #-- END loop over articles to list out headlines. --#
+
+            #-- END check to see if network_query_set is None --#
+
+            # render and output networkd data.
+            output_string += "\n\n"
+            output_string += "=======================\n"
+            output_string += "network data output:\n"
+            output_string += "=======================\n"
+
+        #-- END check to see if we include render details. --#
+
+        self.output_debug( "In " + me + ": after parameter and article details, before rendering network." )
+
+        # render the actual network data.
+        output_string += self.render_network_data( network_query_set, debug_flag_IN = my_debug_flag )
+
+        # include render details?
+        if ( include_render_details == True ):
+
+            output_string += "=======================\n"
+            output_string += "END network data output\n"
+            output_string += "=======================\n"
+
+        #-- END check to see if we output render details --#
+
+        data_OUT = output_string
+
+        return data_OUT
+
+    #-- END method process_network_output_request() --#
 
 
     def render_csv_article_data( self, query_set_IN ):
 
         """
             Accepts query set of articles.  Creates a new instance of the
-               CsvArticleOutput class, places the query set in it, sets up its
-               instance variables approrpiately according to the request, then
-               renders CSV output and returns that output as a string.
-               Uses the query set to output CSV data in the format specified in
-               the output_type request parameter.  If one line per article, has
-               sets of columns for as many authors and sources as are present in
-               the articles with the most authors and sources, respectively.  If
-               one line per source, each article is given a line for each source
-               with all other article information duplicated for each source. If
-               one line per author, each article is given a line for each author
-               with all other article information duplicated for each author.
+                CsvArticleOutput class, places the query set in it, sets up its
+                instance variables approrpiately according to the request, then
+                renders CSV output and returns that output as a string.
+                Uses the query set to output CSV data in the format specified in
+                the output_type request parameter.  If one line per article, has
+                sets of columns for as many authors and sources as are present in
+                the articles with the most authors and sources, respectively.  If
+                one line per source, each article is given a line for each source
+                with all other article information duplicated for each source. If
+                one line per author, each article is given a line for each author
+                with all other article information duplicated for each author.
 
             Preconditions: assumes that we have a query set of articles passed
-               in that we can store in the instance.  If not, does nothing,
-               returns empty string.
+                in that we can store in the instance.  If not, does nothing,
+                returns empty string.
 
             Postconditions: returns the CSV network data, in a string.
 
@@ -1191,11 +1383,11 @@ class NetworkOutput( ContextTextBase ):
             Accepts query set of Article_Data.  Designed to make sure we only
             have one data record per article.  This could be a good idea in
             some cases, and could be a bad idea in others...
-            
+
             Preconditions: assumes that we have a query set of Article_Data
                instances passed in that we can interact with to look for
                duplicates.  If not, does nothing.
-               
+
             Postconditions: returns a query set with a not IN filter that omits
                Article_Data instances past the first it encounters for a given
                article.
@@ -1206,7 +1398,7 @@ class NetworkOutput( ContextTextBase ):
             Returns:
             - QuerySet - QuerySet of Article_Data instances with only one Article_Data row per Article.  If nothing to remove, just returns QuerySet passed in.  If something other than a QuerySet passed in, just returns it.
         """
-        
+
         # ! TODO - test!
 
         # return reference
@@ -1216,7 +1408,7 @@ class NetworkOutput( ContextTextBase ):
         me = "remove_duplicate_article_data"
         my_logger = None
         unique_article_id_to_article_data_id_dict = {}
-        unique_article_id_to_article_data_map = {}        
+        unique_article_id_to_article_data_map = {}
         has_prioritized_coders = False
         prioritized_coder_id_list = None
         current_article_data = None
@@ -1236,24 +1428,24 @@ class NetworkOutput( ContextTextBase ):
 
         # get logger
         my_logger = self.get_logger()
-        
+
         my_logger.debug( "In " + me + ": beginning of method: count of query_set_IN = " + str( query_set_IN.count() ) )
-        
+
         # to start, set return QuerySet to QuerySet passed in.
         qs_OUT = query_set_IN
 
         # do we have a query set?
         if query_set_IN is not None:
-        
+
             # get prioritized coder list?
             has_prioritized_coders = self.has_prioritized_coder_list( param_prefix_IN )
             if ( has_prioritized_coders == True ):
-            
+
                 # yes - retrieve.
                 prioritized_coder_id_list = self.get_coder_id_list( param_prefix_IN )
-                
+
             #-- END check to see if prioritized coders? --#
-             
+
             # loop over the article data
             for current_article_data in query_set_IN:
 
@@ -1267,65 +1459,65 @@ class NetworkOutput( ContextTextBase ):
 
                     # get ID of current Article_Data row.
                     current_article_data_id = current_article_data.id
-    
+
                     #my_logger.debug( "In " + me + ": current_article = id: " + str( current_id ) + "; current_unique_id = " + str( current_unique_id ) )
 
                     # is the unique_id in the dict?
                     if current_unique_id in unique_article_id_to_article_data_id_dict:
-    
+
                         # yes - so, this is a duplicate.  Do we have prioritized
                         #     coders?
                         if ( has_prioritized_coders == True ):
-                        
+
                             # prioritized coders.  Get instance for current
                             #     selected article, then get ID of coder.
                             selected_article_data = unique_article_id_to_article_data_map[ current_unique_id ]
                             selected_article_data_id = selected_article_data.id
                             selected_coder = selected_article_data.coder
                             selected_coder_id = selected_coder.id
-                            
+
                             # get selected index from prioritized list.
                             selected_coder_index = prioritized_coder_id_list.index( selected_coder_id )
-                            
+
                             # get coder ID and index from current.
-                            current_coder = current_article_data.coder 
+                            current_coder = current_article_data.coder
                             current_coder_id = current_coder.id
                             current_coder_index = prioritized_coder_id_list.index( current_coder_id )
-                        
+
                             # if current index less than selected_value...
                             if ( current_coder_index < selected_coder_index ):
-                                
+
                                 # this is highest priority yet. store current
                                 #     rather than selected.
                                 unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_article_data_id
                                 unique_article_id_to_article_data_map[ current_unique_id ] = current_article_data
-                            
+
                                 # add selected to the omit list.
                                 omit_id_list.append( selected_article_data_id )
-                            
+
                             else:
-                            
+
                                 # not a higher priority - add to omit list.
                                 omit_id_list.append( current_article_data_id )
-                            
+
                             #-- END check to see if higher priority. --#
-                            
+
                         else:
-                        
+
                             # No prioritization - first come, first served.
                             #     Add id to omit list.
                             omit_id_list.append( current_article_data_id )
-                            
+
                         #-- END check to see if prioritized coder list. --#
-    
+
                     else:
-    
+
                         # not in dict, so add it and its ID and instance.
                         unique_article_id_to_article_data_id_dict[ current_unique_id ] = current_article_data_id
                         unique_article_id_to_article_data_map[ current_unique_id ] = current_article_data
-    
+
                     #-- END check to see if duplicate. --#
-                    
+
                 #-- END check to see if we have an article. --#
 
             #-- END loop over article data --#
@@ -1347,7 +1539,7 @@ class NetworkOutput( ContextTextBase ):
     #-- END remove_duplicate_article_data() --#
 
 
-    def render_network_data( self, query_set_IN ):
+    def render_network_data( self, query_set_IN, debug_flag_IN = None ):
 
         """
             Accepts query set of Article_Data.  Creates a new instance of the
@@ -1372,18 +1564,45 @@ class NetworkOutput( ContextTextBase ):
         network_OUT = ''
 
         # declare variables
+        me = "render_network_data"
+        my_debug_flag = None
+        debug_message = None
         network_data_outputter = None
         person_dictionary = None
         my_params = None
 
+        # init debug
+        my_debug_flag = NetworkDataOutput.DEBUG_FLAG
+        if ( debug_flag_IN is not None ):
+            my_debug_flag = debug_flag_IN
+        #-- END check if debug flag passed in. --#
+
         # do we have a query set?
         if ( query_set_IN ):
 
+            debug_message = "in {me}: Article_Data QuerySet size = {qs_count}".format(
+                me = me,
+                qs_count = query_set_IN.count()
+            )
+            self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
             # create the person_dictionary
-            person_dictionary = self.create_person_dict()
+            person_dictionary = self.create_person_dict( debug_flag_IN = my_debug_flag )
+
+            debug_message = "in {me}: person dictionary size = {person_count}".format(
+                me = me,
+                person_count = len( person_dictionary )
+            )
+            self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
             # create instance of NetworkDataOutput.
             network_data_outputter = self.get_NDO_instance()
+
+            debug_message = "in {me}: retrieved NDO instance of type = {ndo_type}".format(
+                me = me,
+                ndo_type = type( network_data_outputter )
+            )
+            self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
             # initialize it.
             network_data_outputter.set_query_set( query_set_IN )
@@ -1393,11 +1612,20 @@ class NetworkOutput( ContextTextBase ):
             my_params = self.get_param_container()
             network_data_outputter.initialize_from_params( my_params )
 
+            debug_message = "in {me}: After NDO init, before render()".format( me = me )
+            self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
             # render and return the result.
             network_OUT = network_data_outputter.render()
 
+            debug_message = "in {me}: After render() - NDO debug = {ndo_debug}".format(
+                me = me,
+                ndo_debug = network_data_outputter.debug
+            )
+            self.output_debug( debug_message, do_print_IN = my_debug_flag )
+
             # add some debug?
-            if ( NetworkDataOutput.DEBUG_FLAG == True ):
+            if ( my_debug_flag == True ):
 
                 # yup.
                 network_OUT += "\n\n" + network_data_outputter.debug + "\n\n"

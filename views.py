@@ -147,7 +147,7 @@ from context_text.models import Person
 
 # shared classes
 from context_text.shared.context_text_base import ContextTextBase
-
+from context_text.shared.context_text_error import ContextTextError
 
 #================================================================================
 # ! ==> Shared variables and functions
@@ -3540,19 +3540,14 @@ def output_network( request_IN ):
     relation_select_form = None
     
     # declare variables - rendering
-    include_render_details_IN = ''
-    include_render_details = False
     download_as_file_IN = ""
     download_as_file = False
     output_string = ''
     network_outputter = None
-    current_item = None
-    network_query_set = None
-    article_count = ''
-    query_counter = ''
     my_content_type = ""
     my_file_extension = ""
     current_date_time = ""
+    content_disposition = None
     
     # declare variables - DEBUG
     coder_list_IN = None
@@ -3605,123 +3600,16 @@ def output_network( request_IN ):
             # retrieve articles specified by the input parameters, then create
             #   string output, then pass it and form on to the output form.
             
-            # do we include details?
-            include_render_details_IN = request_IN.POST.get( NetworkOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS, NetworkOutput.CHOICE_NO )
-
-            # convert include_render_details_IN to boolean
-            if ( include_render_details_IN == NetworkOutput.CHOICE_YES ):
+            # Use exception to check type of POST.
+            #raise ContextTextError( "type of POST: {}".format( str( type( request_IN.POST ) ) ) )
             
-                # yes - True
-                include_render_details = True
-    
-            else:
-            
-                # not yes, so False.
-                include_render_details = False
-            
-            #-- END check to see whether we include render details --#
-
-            # initialize the NetworkOutput instance.
+            # Create Network output instance, then render string network output
             network_outputter = NetworkOutput()
-            network_outputter.set_request( request_IN )
+            output_string = network_outputter.process_network_output_request(
+                request_IN = request_IN,
+                debug_flag_IN = True
+            )
             
-            debug_message = "In " + me + ": parameter debug - " + network_outputter.debug_parameters()
-            output_debug( debug_message )
-            
-            # get the two places where coder IDs are stored.
-            coder_list_IN = network_outputter.get_param_as_list( NetworkOutput.PARAM_CODER_LIST )
-            coder_id_priority_list_IN = network_outputter.get_string_param_as_list ( NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
-
-            debug_message = "In " + me + ": coder_list_IN = " + str( coder_list_IN ) + "; coder_id_priority_list_IN = " + str( coder_id_priority_list_IN )
-            output_debug( debug_message )
-
-            # get the two places where person coder IDs are stored.
-            person_coder_list_IN = network_outputter.get_param_as_list( "person_" + NetworkOutput.PARAM_CODER_LIST )
-            person_coder_id_priority_list_IN = network_outputter.get_string_param_as_list ( "person_" + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
-
-            debug_message = "In " + me + ": person_coder_list_IN = " + str( person_coder_list_IN ) + "; person_coder_id_priority_list_IN = " + str( person_coder_id_priority_list_IN )
-            output_debug( debug_message )
-
-            # prepare data
-            
-            # retrieve Article_Data QuerySet based on parameters passed in.
-            network_query_set = network_outputter.create_network_query_set()
-            
-            output_debug( "In " + me + ": type of network_query_set = " + str( type( network_query_set ) ) )
-
-            # get count of queryset return items
-            if ( network_query_set is not None ):
-            
-                article_data_count = network_query_set.count()
-                
-            else:
-            
-                article_data_count = -1
-                
-            #-- END check to see if None --#
-
-            output_debug( "In " + me + ": before parameter and article details." )
-
-            # include render details?
-            if ( include_render_details == True ):
-
-                # For now, output plain string
-                output_string += "=======================\n"
-                output_string += "parameter overview:\n"
-                output_string += "=======================\n"
-                output_string += "\n"
-                output_string += network_outputter.debug_parameters()
-                output_string += "\n"
-                output_string += "\n"
-                my_param_container = network_outputter.get_param_container()
-                output_string += my_param_container.debug_parameters()
-    
-                #-------------------------------------------------------------------
-                # summary info.
-                #-------------------------------------------------------------------
-    
-                output_string += "\n\n\n"
-                output_string += "=======================\n"
-                output_string += "article overview:\n"
-                output_string += "=======================\n"
-                output_string += "\nTotal article data rows returned: " + str( article_data_count ) + "\n\n"
-    
-                # loop over the query set.
-                query_counter = 0
-                
-                if ( network_query_set is not None ):
-
-                    for current_item in network_query_set:
-        
-                        query_counter += 1
-                        output_string += "- " + str( query_counter ) + " ( id: " + str( current_item.article.id ) + " ) - " + current_item.article.headline + "\n"
-        
-                    #-- END loop over articles to list out headlines. --#
-                    
-                #-- END check to see if network_query_set is None --#
-    
-                # render and output networkd data.
-                output_string += "\n\n"
-                output_string += "=======================\n"
-                output_string += "network data output:\n"
-                output_string += "=======================\n"
-                
-            #-- END check to see if we include render details. --#
-            
-            output_debug( "In " + me + ": after parameter and article details, before rendering network." )
-
-            # render the actual network data.
-            output_string += network_outputter.render_network_data( network_query_set )
-
-            # include render details?
-            if ( include_render_details == True ):
-
-                output_string += "=======================\n"
-                output_string += "END network data output\n"
-                output_string += "=======================\n"
-    
-            #-- END check to see if we output render details --#
-
             output_debug( "In " + me + ": download file, or render view?" )
 
             # download as file, or render view?
@@ -3737,7 +3625,11 @@ def output_network( request_IN ):
                 # Create the HttpResponse object with the appropriate content
                 #    type and disposition.
                 response_OUT = HttpResponse( content = output_string, content_type = my_content_type )
-                response_OUT[ 'Content-Disposition' ] = 'attachment; filename="context_text_data-' + current_date_time + '.' + my_file_extension + '"'
+                content_disposition = 'attachment; filename="context_text_data-{timestamp}.{file_extension}"'.format(
+                    timestamp = current_date_time,
+                    file_extension = my_file_extension
+                )
+                response_OUT[ 'Content-Disposition' ] = content_disposition
             
             else:
 
