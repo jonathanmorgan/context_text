@@ -79,7 +79,7 @@ class OrganizationAdmin( admin.ModelAdmin ):
     fieldsets = [
         (
             None,
-            { 
+            {
                 'fields' : [ 'name', 'description', 'location' ]
             }
         ),
@@ -110,7 +110,7 @@ class NewspaperAdmin( admin.ModelAdmin ):
     fieldsets = [
         (
             None,
-            { 
+            {
                 'fields' : [ 'name', 'description', 'organization', 'newsbank_code', 'sections_local_news', 'sections_sports' ]
             }
         ),
@@ -169,7 +169,7 @@ class PersonAdmin( admin.ModelAdmin ):
             None,
             { "fields" : [ "first_name", "middle_name", "last_name", "gender", "title", "organization", "is_ambiguous", "notes" ] }
         ),
-        ( 
+        (
             "More details (Optional)",
             {
                 "fields" : [ "more_title", "organization_string", "more_organization" ],
@@ -248,7 +248,7 @@ class ArticleAdmin( admin.ModelAdmin ):
     formfield_overrides = {
         models.JSONField: { 'widget': JSONEditorWidget },
     }
-    
+
     fieldsets = [
         (
             None,
@@ -256,7 +256,7 @@ class ArticleAdmin( admin.ModelAdmin ):
                 'fields' : [ 'unique_identifier', 'newspaper', 'pub_date', 'section', 'page', 'headline', 'author_string', 'author_varchar', 'author_name', 'author_affiliation', 'status', 'tags' ]
             }
         ),
-        ( 
+        (
             "More details (Optional)",
             {
                 'fields' : [ 'details_json', 'index_terms', 'cleanup_status', 'file_path'  ],
@@ -289,7 +289,7 @@ class ArticleAuthorInline( admin.StackedInline ):
     model = Article_Author
     extra = 2
     fk_name = 'article_data'
-    
+
     fieldsets = [
         (
             None,
@@ -363,7 +363,7 @@ class Article_ContentAdmin( admin.ModelAdmin ):
     list_filter = [ 'content_type', 'status' ]
     search_fields = [ 'content', ]
     #date_hierarchy = 'pub_date'
-    
+
 #-- END admin class Article_ContentAdmin --#
 
 # ! register all descendents of Article_Content and Unique_Article_Content
@@ -421,7 +421,7 @@ admin.site.register( Article_Data, Article_DataAdmin )
 class Article_SubjectAdmin( admin.ModelAdmin ):
 
     # ajax-based autocomplete
-    autocomplete_fields = [ 'person', 'organization' ]
+    autocomplete_fields = [ 'article_data', 'person', 'organization' ]
 
     fieldsets = [
         (
@@ -445,8 +445,8 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
 
     list_display = ( 'id', 'subject_type', 'person', 'article_data' )
     list_display_links = ( 'id', 'person', )
-    list_filter = [ 'subject_type', 'person', 'article_data', ]
-    #search_fields = [ 'article', 'person', 'organization' ]
+    list_filter = [ 'subject_type' ]
+    search_fields = [ 'name', 'verbatim_name', 'lookup_name', 'id' ]
     #date_hierarchy = 'pub_date'
 
 #-- END Article_SubjectAdmin admin model --#
@@ -505,7 +505,7 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
-    
+
     fieldsets = [
         (
             None,
