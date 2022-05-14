@@ -109,6 +109,8 @@ class ArticleCoder( BasicRateLimited ):
     # config parameters
     PARAM_AUTOPROC_ALL = "autoproc_all"
     PARAM_AUTOPROC_AUTHORS = "autoproc_authors"
+    CONFIG_PROP_AUTOPROC_ALL = PARAM_AUTOPROC_ALL
+    CONFIG_PROP_AUTOPROC_AUTHORS = PARAM_AUTOPROC_AUTHORS
 
     # author string processing
     REGEX_BEGINS_WITH_BY = re.compile( r'^\s*BY\s+', re.IGNORECASE )

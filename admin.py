@@ -281,65 +281,6 @@ class ArticleAdmin( admin.ModelAdmin ):
 
 admin.site.register( Article, ArticleAdmin )
 
-class ArticleAuthorInline( admin.StackedInline ):
-
-    # ajax-based autocomplete
-    autocomplete_fields = [ 'person', 'organization' ]
-
-    model = Article_Author
-    extra = 2
-    fk_name = 'article_data'
-
-    fieldsets = [
-        (
-            None,
-            {
-                'fields' : [ 'article_data', 'author_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
-            }
-        ),
-        (
-            "More Detail",
-            {
-                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
-                'classes' : ( "collapse", )
-            }
-        ),
-    ]
-
-#-- END class ArticleAuthorInline --#
-
-#class Source_OrganizationInline( admin.TabularInline ):
-#    model = Source_Organization
-#    extra = 2
-#    fk_name = 'source_organization'
-
-class ArticleSubjectInline( admin.StackedInline ):
-
-    # ajax-based autocomplete
-    autocomplete_fields = [ 'person', 'organization' ]
-
-    model = Article_Subject
-    extra = 2
-    fk_name = 'article_data'
-    fieldsets = [
-        (
-            None,
-            {
-                'fields' : [ 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
-            }
-        ),
-        (
-            "More Detail",
-            {
-                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
-                'classes' : ( "collapse", )
-            }
-        ),
-    ]
-
-#-- END class ArticleSubjectInline --#
-
-
 #-------------------------------------------------------------------------------
 # Article_Content abstract class admin definition
 #-------------------------------------------------------------------------------
@@ -376,6 +317,96 @@ admin.site.register( Article_RawData, Article_ContentAdmin )
 # Article_Data admin definition
 #-------------------------------------------------------------------------------
 
+class ArticleAuthorInline( admin.StackedInline ):
+
+    # ajax-based autocomplete
+    autocomplete_fields = [ 'person', 'organization' ]
+
+    model = Article_Author
+    extra = 1
+    fk_name = 'article_data'
+
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'article_data', 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+    ]
+
+#-- END class ArticleAuthorInline --#
+
+#class Source_OrganizationInline( admin.TabularInline ):
+#    model = Source_Organization
+#    extra = 2
+#    fk_name = 'source_organization'
+
+class ArticleSubjectInline( admin.StackedInline ):
+
+    # ajax-based autocomplete
+    autocomplete_fields = [ 'person', 'organization' ]
+
+    model = Article_Subject
+    extra = 1
+    fk_name = 'article_data'
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'subject_type', 'source_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+    ]
+
+#-- END class ArticleSubjectInline --#
+
+
+class Article_Data_Article_Data_NotesInline( admin.StackedInline ):
+
+    # ajax-based autocomplete
+    autocomplete_fields = [ 'article_data' ]
+
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONEditorWidget},
+    }
+
+    model = Article_Data_Notes
+    extra = 1
+    fk_name = 'article_data'
+
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'content', 'content_json', 'content_type', 'status', 'source', 'tags' ]
+            }
+        ),
+        (
+            "More Detail",
+            {
+                'fields' : [ 'note_type', 'source_identifier', 'content_description' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+    ]
+
+#-- END inline class Article_Data_Article_Data_NotesInline --#
+
 class Article_DataAdmin( admin.ModelAdmin ):
 
     # ajax-based autocomplete
@@ -402,6 +433,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
         ArticleAuthorInline,
         ArticleSubjectInline,
         #LocationInline
+        Article_Data_Article_Data_NotesInline,
     ]
 
     list_display = ( 'id', 'my_article_id', 'coder', 'create_date', 'article_type', 'status' )
@@ -415,7 +447,7 @@ class Article_DataAdmin( admin.ModelAdmin ):
 admin.site.register( Article_Data, Article_DataAdmin )
 
 #-------------------------------------------------------------------------------
-# Article Source admin definition
+# Article_Subject admin definition
 #-------------------------------------------------------------------------------
 
 class Article_SubjectAdmin( admin.ModelAdmin ):
@@ -427,13 +459,13 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
             "More Detail",
             {
-                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
+                'fields' : [ 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'document', 'source_contact_type', 'source_capacity', 'localness', 'notes' ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -466,13 +498,13 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'author_type', 'person', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+                'fields' : [ 'article_data', 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
             "More Detail",
             {
-                'fields' : [ 'name', 'verbatim_name', 'lookup_name', 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
+                'fields' : [ 'capture_method', 'match_confidence_level', 'match_status', 'original_person', 'notes' ],
                 'classes' : ( "collapse", )
             }
         ),
@@ -525,7 +557,7 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     list_display = ( 'id', 'last_modified', 'content_type', 'status', 'article_data', 'source', 'note_type',  )
     list_display_links = ( 'id', 'article_data', )
     list_filter = [ 'content_type', 'status', 'note_type' ]
-    search_fields = [ 'content', 'source', 'source_identifier', 'note_type' ]
+    search_fields = [ 'content', 'source', 'source_identifier', 'note_type', 'id' ]
     #date_hierarchy = 'pub_date'
 
 admin.site.register( Article_Data_Notes, Article_Data_NotesAdmin )

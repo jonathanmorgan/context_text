@@ -63,7 +63,7 @@ class OpenCalaisTest( django.test.TestCase ):
         error_count = -1
         error_message = ""
 
-        print( '\n\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
+        print( '\n\n========> In {}.{}\n'.format( self.CLASS_NAME, me ) )
 
         # get setup error count
         setup_error_count = self.setup_error_count
@@ -98,6 +98,10 @@ class OpenCalaisTest( django.test.TestCase ):
         automated_username = ""
         automated_article_data_qs = None
         article_data_count = -1
+
+        # declare variables - Article_Data_Notes
+        do_save_data = None
+        do_save_json_as_text = None
         article_data_notes_qs = None
         article_data_notes_count = None
         article_data_note = None
@@ -225,79 +229,117 @@ class OpenCalaisTest( django.test.TestCase ):
             error_string = "In " + me + "(): Article_Data count is " + str( test_value ) +", should be " + str( should_be )
             self.assertEqual( test_value, should_be, error_string )
 
-            # check Article_Data_Notes
-            article_data_notes_qs = Article_Data_Notes.objects.all()
-            article_data_notes_qs = article_data_notes_qs.filter( content_description = "OpenCalais_REST_API_v2 response JSON" )
-            article_data_notes_qs = article_data_notes_qs.filter( note_type = "OpenCalais_REST_API_v2_json" )
-            article_data_notes_qs = article_data_notes_qs.filter( tags__name = "OpenCalais_REST_API_v2_json" )
-            article_data_notes_qs = article_data_notes_qs.filter( content__isnull = False )
-            article_data_notes_qs = article_data_notes_qs.filter( content_json__isnull = False )
-            article_data_notes_count = article_data_notes_qs.count()
+            # check Article_Data_Notes?
+            do_save_data = OpenCalaisV2ArticleCoder.do_save_raw_data
+            do_save_json_as_text = OpenCalaisV2ArticleCoder.do_save_json_as_text
+            if ( do_save_data == True ):
 
-            # should also be expected_article_count, either 46 or limit specified.
-            test_value = article_data_notes_count
-            should_be = expected_article_count
-            error_string = "In " + me + "(): Article_Data_Notes count is " + str( test_value ) +", should be " + str( should_be )
-            self.assertEqual( test_value, should_be, error_string )
+                # yes, check Article_Data_Notes
+                article_data_notes_qs = Article_Data_Notes.objects.all()
+                article_data_notes_qs = article_data_notes_qs.filter( content_description = "OpenCalais_REST_API_v2 response JSON" )
+                article_data_notes_qs = article_data_notes_qs.filter( note_type = "OpenCalais_REST_API_v2_json" )
+                article_data_notes_qs = article_data_notes_qs.filter( tags__name = "OpenCalais_REST_API_v2_json" )
 
-            # loop over notes
-            for article_data_note in article_data_notes_qs:
+                # saving JSON as text in addition to in JSONField?
+                if ( do_save_json_as_text == True ):
 
-                # init
-                is_note_ok = True
-                error_string = "Article_Data_Notes is not OK: "
-
-                # get content and content_json
-                note_content = article_data_note.content
-                note_content_json = article_data_note.content_json
-
-                # is content empty?
-                if ( ( note_content is None ) or ( note_content == "" ) ):
-
-                    # content is empty.
-                    is_note_ok = False
-                    error_string += "note has no content; "
-
-                #-- END check content --#
-
-                # is content_json populated?
-                if ( note_content_json is not None ):
-
-                    # content_json has something in it. Is it a string?
-                    if ( isinstance( note_content_json, str ) == True ):
-
-                        # it is a string. OK to try update.
-                        is_note_ok = False
-                        error_string += "content_json is a string, not a dict; "
-
-                    elif ( isinstance( note_content_json, dict ) == True ):
-
-                        # dictionary - Already parsed.
-                        is_note_ok = True
-
-                    else:
-
-                        # not a string or a dictionary. Already parsed?
-                        is_note_ok = False
-                        error_string += "content_json is neither a string, nor a dict ( type: {} ); ".format( type( note_content_json ) )
-
-                    #-- END
+                    # yes - should not be null.
+                    article_data_notes_qs = article_data_notes_qs.filter( content__isnull = False )
 
                 else:
 
-                    # no content or content_json. nothing to do.
-                    is_note_ok = False
-                    error_string += "note has no content_json; "
+                    # no - should be null
+                    article_data_notes_qs = article_data_notes_qs.filter( content__isnull = True )
 
-                #-- END check if note_content_json populated --#
+                #-- END check if saving JSON as text in addition to in JSONField --#
 
-                # Article_Data_Notes instance should be OK.
-                test_value = is_note_ok
-                error_string = "In {me}(): {error_message}".format(
-                    me = me,
-                    error_message = error_string
-                )
-                self.assertTrue( test_value, error_string )
+                article_data_notes_qs = article_data_notes_qs.filter( content_json__isnull = False )
+                article_data_notes_count = article_data_notes_qs.count()
+
+                # should also be expected_article_count, either 46 or limit specified.
+                test_value = article_data_notes_count
+                should_be = expected_article_count
+                error_string = "In " + me + "(): Article_Data_Notes count is " + str( test_value ) +", should be " + str( should_be )
+                self.assertEqual( test_value, should_be, error_string )
+
+                # loop over notes
+                for article_data_note in article_data_notes_qs:
+
+                    # init
+                    is_note_ok = True
+                    error_string = "Article_Data_Notes is not OK: "
+
+                    # get content and content_json
+                    note_content = article_data_note.content
+                    note_content_json = article_data_note.content_json
+
+                    # is `Article_Data_Notes.content` field set correctly?
+                    if ( do_save_json_as_text == True ):
+
+                        # should be populated.
+                        if ( ( note_content is None ) or ( note_content == "" ) ):
+
+                            # empty. Error.
+                            is_note_ok = False
+                            error_string += "do_save_json_as_text = {}, but `Article_Data_Notes.content` is empty; ".format( do_save_json_as_text )
+
+                        #-- END check if note_content is empty. --#
+
+                    #-- END check if we are saving JSON as text, in addition to JSONField --#
+
+                    if ( do_save_json_as_text == False ):
+
+                        # should be empty.
+                        if ( ( note_content is not None ) and ( note_content != "" ) ):
+
+                            # not empty - error.
+                            is_note_ok = False
+                            error_string += "do_save_json_as_text = {}, but `Article_Data_Notes.content` is populated; ".format( do_save_json_as_text )
+
+                        #-- END check if content is empty (should be) --#
+
+                    #-- END check if we are NOT saving JSON as text, in addition to JSONField --#
+
+                    # is content_json populated?
+                    if ( note_content_json is not None ):
+
+                        # content_json has something in it. Is it a string?
+                        if ( isinstance( note_content_json, str ) == True ):
+
+                            # it is a string. OK to try update.
+                            is_note_ok = False
+                            error_string += "`Article_Data_Notes.content_json` is a string, not a dict; "
+
+                        elif ( isinstance( note_content_json, dict ) == True ):
+
+                            # dictionary - Already parsed.
+                            is_note_ok = True
+
+                        else:
+
+                            # not a string or a dictionary. Already parsed?
+                            is_note_ok = False
+                            error_string += "`Article_Data_Notes.content_json` is neither a string, nor a dict ( type: {} ); ".format( type( note_content_json ) )
+
+                        #-- END
+
+                    else:
+
+                        # no content or content_json. nothing to do.
+                        is_note_ok = False
+                        error_string += "note has no `Article_Data_Notes.content_json`; "
+
+                    #-- END check if note_content_json populated --#
+
+                    # Article_Data_Notes instance should be OK.
+                    test_value = is_note_ok
+                    error_string = "In {me}(): {error_message}".format(
+                        me = me,
+                        error_message = error_string
+                    )
+                    self.assertTrue( test_value, error_string )
+
+                #-- END check if configured to save Article_Data_Notes --#
 
             #-- END loop over Article_Data_Notes. --#
 

@@ -158,6 +158,8 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
     #http_helper = None
     #content_type = ""
     #output_format = ""
+    do_save_raw_data = True
+    do_save_json_as_text = True
 
 
     #============================================================================
@@ -215,19 +217,19 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts optional OpenCalaisV2ApiResponse instance (parameter named
-           "oc_api_response_helper_IN").  If instance passed in, uses it, else
-           uses the OpenCalaisV2ApiResponse stored in self.response_helper.
-           Uses helper to find all quotations and the people they are tied to.
-           Creates a dict that maps Person URIs to a map of quotation URIs to
-           quotation JSON for the quotes attributed to them.  Returns the dict
-           that maps persons to quotes.
+            "oc_api_response_helper_IN").  If instance passed in, uses it, else
+            uses the OpenCalaisV2ApiResponse stored in self.response_helper.
+            Uses helper to find all quotations and the people they are tied to.
+            Creates a dict that maps Person URIs to a map of quotation URIs to
+            quotation JSON for the quotes attributed to them.  Returns the dict
+            that maps persons to quotes.
 
         preconditions: OpenCalaisV2ApiResponse instance must already have a JSON
-           response in it and have been initialized so the JSON was parsed and
-           the items in it broken out by type group and type.
+            response in it and have been initialized so the JSON was parsed and
+            the items in it broken out by type group and type.
 
         postconditions: In addition to returning the dict, also stores it in
-           instance variable named "self.person_to_quotes_dict".
+            instance variable named "self.person_to_quotes_dict".
         '''
 
         # return reference
@@ -412,16 +414,16 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts optional OpenCalaisV2ApiResponse instance (parameter named
-           "oc_api_response_helper_IN").  Checks to see if there is already an
-           instance in self.person_to_quotes_dict.  If yes, returns it.  If
-           no, calls create_person_to_quotation_dict(), then returns the result.
+            "oc_api_response_helper_IN").  Checks to see if there is already an
+            instance in self.person_to_quotes_dict.  If yes, returns it.  If
+            no, calls create_person_to_quotation_dict(), then returns the result.
 
         preconditions: OpenCalaisV2ApiResponse instance must already have a JSON
-           response in it and have been initialized so the JSON was parsed and
-           the items in it broken out by type group and type.
+            response in it and have been initialized so the JSON was parsed and
+            the items in it broken out by type group and type.
 
         postconditions: Returns dict that is stored in instance variable
-           self.person_to_quotes_dict.
+            self.person_to_quotes_dict.
         '''
 
         # return reference
@@ -452,19 +454,19 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         purpose: Called as part of the base __init__() method, so that loading
-           config properties can also be included in the parent __init__()
-           method.  The application for django_config and any properties that
-           need to be loaded should be set here.  To set a property use
-           add_config_property( name_IN ).  To set application, use
-           set_config_application( app_name_IN ).
+            config properties can also be included in the parent __init__()
+            method.  The application for django_config and any properties that
+            need to be loaded should be set here.  To set a property use
+            add_config_property( name_IN ).  To set application, use
+            set_config_application( app_name_IN ).
 
         inheritance: This method overrides the abstract method of the same name in
-           the ArticleCoder parent class.
+            the ArticleCoder parent class.
 
         preconditions: None.
 
         postconditions: This instance should be ready to have
-           load_config_properties() called on it after this method is invoked.
+            load_config_properties() called on it after this method is invoked.
         '''
 
         self.set_config_application( self.CONFIG_APPLICATION )
@@ -478,10 +480,10 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         purpose: Accepts a dictionary of run-time parameters, uses them to
-           initialize this instance.
+            initialize this instance.
 
         inheritance: This method overrides the abstract method of the same name in
-           the ArticleCoder parent class.
+            the ArticleCoder parent class.
 
         preconditions: None.
 
@@ -533,20 +535,20 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         purpose: After the ArticleCoder is initialized, this method accepts one
-           article instance and codes it for sourcing.  In regards to articles,
-           this class is stateless, so you can process many articles with a
-           single instance of this object without having to reconfigure each
-           time.
+            article instance and codes it for sourcing.  In regards to articles,
+            this class is stateless, so you can process many articles with a
+            single instance of this object without having to reconfigure each
+            time.
 
         inheritance: This method overrides the abstract method of the same name in
-           the ArticleCoder parent class.
+            the ArticleCoder parent class.
 
         preconditions: load_config_properties() should have been invoked before
-           running this method.
+            running this method.
 
         postconditions: article passed in is coded, which means an Article_Data
-           instance is created for it and populated to the extent the child
-           class is capable of coding the article.
+            instance is created for it and populated to the extent the child
+            class is capable of coding the article.
         '''
 
         # return reference
@@ -576,6 +578,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         latest_status = ""
         do_save_article = True
         do_save_data = False
+        do_save_json_as_text = False
         my_json_note = None
 
         # declare variables - exception handling
@@ -589,13 +592,13 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
         my_exception_helper = self.get_exception_helper()
 
         # parse params
-        process_all_IN = self.get_config_property( self.PARAM_AUTOPROC_ALL, True )
+        process_all_IN = self.get_config_property( self.CONFIG_PROP_AUTOPROC_ALL, True )
 
         # if not process all, do we process any?
         if ( process_all_IN == False ):
 
             # how about authors?
-            process_authors_IN = self.get_config_property( self.PARAM_AUTOPROC_AUTHORS, True )
+            process_authors_IN = self.get_config_property( self.CONFIG_PROP_AUTOPROC_AUTHORS, True )
 
         #-- END check to see if we set processing flags by item --#
 
@@ -768,8 +771,12 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
                         self.output_debug( "In " + me + ": after parsing JSON, before processing it." )
 
+                        # check if we'll be outputting the raw data, and how.
+                        #do_save_data = False
+                        do_save_data = self.do_save_raw_data
+                        do_save_json_as_text = self.do_save_json_as_text
+
                         # all parsed - OK to continue?
-                        do_save_data = False
                         if ( is_response_OK == True ):
 
                             # process contents of response.
@@ -785,7 +792,7 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                                 # process author string.
                                 latest_status = self.process_author_string( article_data, my_author_string )
 
-                                do_save_data = True
+                                #do_save_data = True
 
                                 my_logger.debug( "After calling process_author_string() - " + latest_status )
 
@@ -817,7 +824,12 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
                             # set values
                             my_json_note.article_data = article_data
                             my_json_note.content_type = Article_Data_Notes.CONTENT_TYPE_JSON
-                            my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
+
+                            # save content as text, in addition to JSONField?
+                            if ( do_save_json_as_text == True ):
+                                my_json_note.content = JSONHelper.pretty_print_json( requests_response_json )
+                            #-- END check if we want to save content as text, in addition to JSONField. --#
+
                             my_json_note.content_json = requests_response_json
                             #my_json_note.status = ""
                             my_json_note.source = self.coder_type
@@ -896,20 +908,20 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Data instance of article we are processing, the
-           JSON response from passing that article's text to the OpenCalais
-           API, and an optional flag to tell whether we want to process by
-           persons in article, quotations in article, or run them both (defaults
-           to processing by person).  Parses response, finds and captures people
-           and quotations in the text by calling other, more specific processing
-           methods, returns a status.
+            JSON response from passing that article's text to the OpenCalais
+            API, and an optional flag to tell whether we want to process by
+            persons in article, quotations in article, or run them both (defaults
+            to processing by person).  Parses response, finds and captures people
+            and quotations in the text by calling other, more specific processing
+            methods, returns a status.
 
         preconditions: Must have already retrieved the article's OpenCalais
-           JSON before calling this method.
+            JSON before calling this method.
 
         postconditions: returns status, but also results in database being
-           updated with Article_Subject instances for people found in article,
-           including capturing mentions of each person and quotations by the
-           person if present.
+            updated with Article_Subject instances for people found in article,
+            including capturing mentions of each person and quotations by the
+            person if present.
         '''
 
         # return reference
@@ -1027,22 +1039,22 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Data instance of article we are processing, and
-           the JSON response from passing that article's text to the OpenCalais
-           API.  Parses response into OpenCalaisV2ApiResponse instance, then looks
-           for all people who are subjects of the article.  For each person
-           (make process_json_person() method):
-           - look up the person.
-              - If ambiguity, make a new person, but also keep track of other
-                 potential matches (will need to add this to the database).
-              - will probably need to refine the person lookup, too.  Right now,
-           - add sources to Article_Data as Article_Subject instances.
-           - add mentions to new Article_Subject as Article_Subject_Mention
-               instances.
-           - check to see if quotations.  If yes:
-              - change subject_type to "quoted".
-              - add quotations to Article_Subject as Article_Subject_Quotation
-                 instances.
-           - save the Article_Subject and Article_Data.
+            the JSON response from passing that article's text to the OpenCalais
+            API.  Parses response into OpenCalaisV2ApiResponse instance, then looks
+            for all people who are subjects of the article.  For each person
+            (make process_json_person() method):
+            - look up the person.
+                - If ambiguity, make a new person, but also keep track of other
+                    potential matches (will need to add this to the database).
+                - will probably need to refine the person lookup, too.  Right now,
+            - add sources to Article_Data as Article_Subject instances.
+            - add mentions to new Article_Subject as Article_Subject_Mention
+                instances.
+            - check to see if quotations.  If yes:
+                - change subject_type to "quoted".
+                - add quotations to Article_Subject as Article_Subject_Quotation
+                    instances.
+            - save the Article_Subject and Article_Data.
         '''
 
         # return reference
@@ -1128,15 +1140,15 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Data instance of article we are processing, and
-           the JSON response from passing that article's text to the OpenCalais
-           API.  Parses response, finds all quotations and the people they are
-           tied to.  Then, for each quotation:
-           - look up the people who are quoted by name.
-              - If ambiguity, make a new person, but also keep track of other
-                 potential matches (will need to add this to the database).
-              - will probably need to refine the person lookup, too.  Right now,
-           - add sources to Article_Data.
-           - save the article data.
+            the JSON response from passing that article's text to the OpenCalais
+            API.  Parses response, finds all quotations and the people they are
+            tied to.  Then, for each quotation:
+            - look up the people who are quoted by name.
+                - If ambiguity, make a new person, but also keep track of other
+                    potential matches (will need to add this to the database).
+                - will probably need to refine the person lookup, too.  Right now,
+            - add sources to Article_Data.
+            - save the article data.
         '''
 
         # return reference
@@ -1218,17 +1230,17 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Subject instance, and JSON of a
-           mention of the subject.  Retrieves data from JSON.  Looks for mention
-           that has same length, offset, and value.  If present, does nothing.
-           If not, makes an Article_Subject_Mention instance for the mention,
-           populates it, saves it, then returns it.  If error, returns None.
+            mention of the subject.  Retrieves data from JSON.  Looks for mention
+            that has same length, offset, and value.  If present, does nothing.
+            If not, makes an Article_Subject_Mention instance for the mention,
+            populates it, saves it, then returns it.  If error, returns None.
 
         Preconditions:  Assumes all input variables will be populated
-           appropriately.  If any are missing or set to None, will break,
-           throwing exceptions.
+            appropriately.  If any are missing or set to None, will break,
+            throwing exceptions.
 
         Postconditions:  If mention wasn't already stored, it will be after
-           this call.
+            this call.
 
         Example JSON:
         {
@@ -1682,36 +1694,36 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Data instance of article we are processing, and
-           the JSON for the person who is the subject of the article that we are
-           currently processing.  For each person:
-           - look up the person.
-              - If ambiguity, make a new person, but also keep track of other
-                 potential matches (will need to add this to the database).
-              - will probably need to refine the person lookup, too.  Right now,
-           - add person to Article_Data as Article_Subject instance.
-           - add mentions to person's Article_Subject as Article_Subject_Mention
-               instances.
-           - check to see if quotations.  If yes:
-              - change subject_type to "quoted".
-              - add quotations to Article_Subject as Article_Subject_Quotation
-                 instances.
-           - save the Article_Subject and Article_Data.
+            the JSON for the person who is the subject of the article that we are
+            currently processing.  For each person:
+            - look up the person.
+                - If ambiguity, make a new person, but also keep track of other
+                    potential matches (will need to add this to the database).
+                - will probably need to refine the person lookup, too.  Right now,
+            - add person to Article_Data as Article_Subject instance.
+            - add mentions to person's Article_Subject as Article_Subject_Mention
+                instances.
+            - check to see if quotations.  If yes:
+                - change subject_type to "quoted".
+                - add quotations to Article_Subject as Article_Subject_Quotation
+                    instances.
+            - save the Article_Subject and Article_Data.
 
         Returns Article_Subject instance for this person.
 
         Preconditions: Must have properly set up the following variables in the
-           instance:
-           - self.request_helper - instance of OpenCalaisV2ApiResponse instance
-              initialized with response JSON.
-           - self.coder_type - should always be self.CONFIG_APPLICATION.
-           - self.person_to_quotes_dict - dictionary of Person URIs to their
-              quotations, created by method create_person_to_quotation_dict().
+            instance:
+            - self.request_helper - instance of OpenCalaisV2ApiResponse instance
+                initialized with response JSON.
+            - self.coder_type - should always be self.CONFIG_APPLICATION.
+            - self.person_to_quotes_dict - dictionary of Person URIs to their
+                quotations, created by method create_person_to_quotation_dict().
 
         Postconditions: If successful, a new Article_Subject for this person
-           will have been created and saved to database on method completion.
-           This Article_Subject instance will be returned.  If None returned,
-           then there was an error and nothing was saved to the database.  See
-           log file for more details on error.
+            will have been created and saved to database on method completion.
+            This Article_Subject instance will be returned.  If None returned,
+            then there was an error and nothing was saved to the database.  See
+            log file for more details on error.
         '''
 
         # return reference
@@ -1928,17 +1940,17 @@ class OpenCalaisV2ArticleCoder( ArticleCoder ):
 
         '''
         Accepts Article, Article_Subject of a source, OpenCalais URI of a
-           quotation, and JSON of a quotation attributed to the source.  Uses
-           URI to check if the quotation has already been attributed to the
-           source.  If so, returns the instance.  If not, creates an instance
-           and saves it, then returns it.  If error, returns None.
+            quotation, and JSON of a quotation attributed to the source.  Uses
+            URI to check if the quotation has already been attributed to the
+            source.  If so, returns the instance.  If not, creates an instance
+            and saves it, then returns it.  If error, returns None.
 
         Preconditions:  Assumes all input variables will be populated
-           appropriately.  If any are missing or set to None, will break,
-           throwing exceptions.
+            appropriately.  If any are missing or set to None, will break,
+            throwing exceptions.
 
         Postconditions:  If quotation wasn't already stored, it will be after
-           this call.
+            this call.
 
         Example OpenCalais API v.2 JSON:
             "http://d.opencalais.com/genericHasher-1/8b835f21-6b62-33c8-9767-3d5c1a23a0e7": {
