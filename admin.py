@@ -330,7 +330,7 @@ class ArticleAuthorInline( admin.StackedInline ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+                'fields' : [ 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
@@ -492,7 +492,7 @@ admin.site.register( Article_Subject, Article_SubjectAdmin )
 class Article_AuthorAdmin( admin.ModelAdmin ):
 
     # ajax-based autocomplete
-    autocomplete_fields = [ 'person', 'organization' ]
+    autocomplete_fields = [ 'article_data', 'person', 'organization' ]
 
     fieldsets = [
         (
@@ -514,9 +514,10 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
     #    Source_OrganizationInline,
     #]
 
-    list_display = ( 'person', 'article_data' )
-    #list_display_links = ( 'headline', )
-    list_filter = [ 'person', 'article_data' ]
+    list_display = ( 'id', 'author_type', 'person', 'article_data' )
+    list_display_links = ( 'id', 'person', )
+    list_filter = [ 'author_type' ]
+    search_fields = [ 'name', 'verbatim_name', 'lookup_name', 'id' ]
     #search_fields = [ 'article', 'person' ]
     #date_hierarchy = 'pub_date'
 
