@@ -6358,6 +6358,10 @@ class Article_Person( Abstract_Person_Parent ):
     #    ( "subject", "Article Subject " )
     #)
 
+    TAG_SINGLE_NAME_PART = ContextTextBase.TAG_SINGLE_NAME_PART
+    TAG_SINGLE_NAME_MISMATCH_WITH_PERSON = ContextTextBase.TAG_SINGLE_NAME_MISMATCH_WITH_PERSON
+    TAG_ME_SINGLE_NAME_PERSON_MULTI = ContextTextBase.TAG_ME_SINGLE_NAME_PERSON_MULTI
+
     #----------------------------------------------------------------------------
     # model fields and meta
     #----------------------------------------------------------------------------
@@ -6668,6 +6672,232 @@ class Article_Person( Abstract_Person_Parent ):
         return id_OUT
 
     #-- END method get_person_id() --#
+
+
+    def get_verbatim_name_part_count( self ):
+
+        '''
+        Retrieves name part list from `get_name_part_list()`. Returns count.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        name_part_list = None
+        name_part_count = None
+
+        # get name part list
+        name_part_list = self.get_verbatim_name_part_list()
+
+        # got anything back?
+        if ( name_part_list is not None ):
+
+            # get and return count.
+            name_part_count = len( name_part_list )
+            value_OUT = name_part_count
+
+        else:
+
+            # error. return None
+            value_OUT = None
+
+        #-- END check for returned name part list. --#
+
+        return value_OUT
+
+    #-- END class method get_verbatim_name_part_count() --#
+
+
+    def get_verbatim_name_part_list( self, split_string_IN = None ):
+
+        '''
+        Retrieves list of tokens from split()-ing the verbatim_name field.
+        '''
+
+        # return reference
+        list_OUT = None
+
+        # declare variables
+        me = "get_verbatim_name_token_list"
+        status_message = None
+        my_verbatim_name = None
+        my_verbatim_name_part_list = None
+        name_part_count = None
+
+        # get count.
+        my_verbatim_name = self.verbatim_name
+        my_verbatim_name_part_list = self.get_name_part_list_from_name( my_verbatim_name )
+        name_part_count = len( my_verbatim_name_part_list )
+
+        list_OUT = my_verbatim_name_part_list
+
+        return list_OUT
+
+    #-- END class method get_verbatim_name_token_list() --#
+
+
+    def get_verbatim_name_token_count( self ):
+
+        '''
+        Retrieves name part list from `get_name_part_list()`. Returns count.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        name_part_list = None
+        name_part_count = None
+
+        # get name part list
+        name_part_list = self.get_verbatim_name_token_list()
+
+        # got anything back?
+        if ( name_part_list is not None ):
+
+            # get and return count.
+            name_part_count = len( name_part_list )
+            value_OUT = name_part_count
+
+        else:
+
+            # error. return None
+            value_OUT = None
+
+        #-- END check for returned name part list. --#
+
+        return value_OUT
+
+    #-- END class method get_verbatim_name_token_count() --#
+
+
+    def get_verbatim_name_token_list( self, split_string_IN = None ):
+
+        '''
+        Retrieves list of tokens from split()-ing the verbatim_name field.
+        '''
+
+        # return reference
+        list_OUT = None
+
+        # declare variables
+        me = "get_verbatim_name_token_list"
+        status_message = None
+        my_verbatim_name = None
+        my_verbatim_name_token_list = None
+        name_part_count = None
+
+        # get count.
+        my_verbatim_name = self.verbatim_name
+        my_verbatim_name_token_list = my_verbatim_name.split()
+        name_part_count = len( my_verbatim_name_token_list )
+
+        list_OUT = my_verbatim_name_token_list
+
+        return list_OUT
+
+    #-- END class method get_verbatim_name_token_list() --#
+
+
+    def is_single_verbatim_name( self ):
+
+        '''
+        Retrieves count of name parts from `get_name_part_count_from_name()`.
+            Returns True if 1, False if > 1, and raises ContextException
+            otherwise.
+        '''
+
+        # return reference
+        is_single_name_OUT = False
+
+        # declare variables
+        me = "is_single_verbatim_name"
+        status_message = None
+        my_verbatim_name = None
+        name_part_count = None
+
+        # get count.
+        my_verbatim_name = self.verbatim_name
+        name_part_count = self.get_name_part_count_from_name( my_verbatim_name )
+
+        # how many?
+        if ( name_part_count == 1 ):
+
+            # single name part.
+            is_single_name_OUT = True
+
+        elif ( name_part_count > 1 ):
+
+            # more than one name part.
+            is_single_name_OUT = False
+
+        else:
+
+            # not 1 or > 1. Error.
+            is_single_name_OUT = None
+            status_message = "In Abstract_Person.{me}(): name_count = {name_count}, not 1 or greater than 1, unexpected at this point.".format(
+                me = me,
+                name_count = name_part_count
+            )
+            raise ContextError( "status_message" )
+
+        #-- END how many name parts found? --#
+
+        return is_single_name_OUT
+
+    #-- END class method is_single_verbatim_name() --#
+
+
+    def is_single_verbatim_name_token( self ):
+
+        '''
+        Retrieves count of name part tokens by split()-ing the verbatim_name
+            field. Returns True if 1, False if > 1, and raises ContextException
+            otherwise.
+        '''
+
+        # return reference
+        is_single_name_OUT = False
+
+        # declare variables
+        me = "is_single_name"
+        status_message = None
+        my_verbatim_name = None
+        my_verbatim_name_part_list = None
+        name_part_count = None
+
+        # get count.
+        my_verbatim_name = self.verbatim_name
+        my_verbatim_name_part_list = self.get_verbatim_name_token_list( my_verbatim_name )
+        name_part_count = len( my_verbatim_name_part_list )
+
+        # how many?
+        if ( name_part_count == 1 ):
+
+            # single name part.
+            is_single_name_OUT = True
+
+        elif ( name_part_count > 1 ):
+
+            # more than one name part.
+            is_single_name_OUT = False
+
+        else:
+
+            # not 1 or > 1. Error.
+            is_single_name_OUT = None
+            status_message = "In Abstract_Person.{me}(): name_count = {name_count}, not 1 or greater than 1, unexpected at this point.".format(
+                me = me,
+                name_count = name_part_count
+            )
+            raise ContextError( "status_message" )
+
+        #-- END how many name parts found? --#
+
+        return is_single_name_OUT
+
+    #-- END class method is_single_verbatim_name_token() --#
 
 
     def is_connected( self, param_dict_IN = None ):

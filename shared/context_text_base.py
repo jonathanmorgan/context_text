@@ -53,7 +53,7 @@ class ContextTextBase( ContextBase ):
     DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE = "article_text_render_type"
     DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED = "article_text_is_preformatted"
     DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P = "article_text_wrap_in_p"
-    
+
     # django_config property values - article_text_render_type
     DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML = "do_output_table_html"
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_TABLE = "table"
@@ -66,7 +66,7 @@ class ContextTextBase( ContextBase ):
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_TABLE )
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_CUSTOM )
     DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_VALUE_LIST.append( DJANGO_CONFIG_ARTICLE_TEXT_RENDER_TYPE_PDF )
-     
+
     # django_config property values - find in text (FIT)
     DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT = "include_find_in_article_text"
     DJANGO_CONFIG_NAME_DEFAULT_FIND_LOCATION = "default_find_location"
@@ -81,33 +81,33 @@ class ContextTextBase( ContextBase ):
     VIEW_RESPONSE_KEY_ARTICLE_CONTENT = "article_content"
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM = "article_text_custom"
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE = "article_text_type"
-    
+
     # View response dictionary keys - article text
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE = DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED = DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED
     VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P = DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P
     VIEW_RESPONSE_KEY_DO_OUTPUT_TABLE_HTML = DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
-    
+
     # View response dictionary keys - find in text (FIT)
     VIEW_RESPONSE_KEY_INCLUDE_FIND_IN_ARTICLE_TEXT = DJANGO_CONFIG_NAME_INCLUDE_FIND_IN_ARTICLE_TEXT
     VIEW_RESPONSE_KEY_DEFAULT_FIND_LOCATION = DJANGO_CONFIG_NAME_DEFAULT_FIND_LOCATION
     VIEW_RESPONSE_KEY_IGNORE_WORD_LIST = DJANGO_CONFIG_NAME_IGNORE_WORD_LIST
     VIEW_RESPONSE_KEY_HIGHLIGHT_WORD_LIST = DJANGO_CONFIG_NAME_HIGHLIGHT_WORD_LIST
     VIEW_RESPONSE_KEY_BE_CASE_SENSITIVE = DJANGO_CONFIG_NAME_BE_CASE_SENSITIVE
-    
+
     # View HTML INPUT IDs.
     INPUT_ID_TEXT_TO_FIND_IN_ARTICLE = "text-to-find-in-article"
-    
+
     # defaults - moved to parent
     #DEFAULT_DATE_FORMAT = "%Y-%m-%d"
-    
+
     # standard date parameter names
     PARAM_SINGLE_DATE = 'single_date'
     PARAM_START_DATE = 'start_date'   # publication date - articles will be included that were published on or after this date.
     PARAM_END_DATE = 'end_date'   # publication date - articles will be included that were published on or before this date.
     PARAM_DATE_RANGE = 'date_range'   # For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
 
-    
+
     # network selection parameters we expect.
     PARAM_NEWSPAPER_ID = "newspaper_id"  # ID of newspaper whose articles we want.
     PARAM_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"  # Newsbank Code of newspaper whose articles we want.
@@ -130,7 +130,7 @@ class ContextTextBase( ContextBase ):
     PARAM_CODERS = "coders"
     PARAM_CODER_TYPE_FILTER_TYPE = "coder_type_filter_type"
     PARAM_CODER_TYPES_LIST = "coder_types_list"
-    
+
     # params for processing articles
     PARAM_APPLY_TAGS_LIST = 'apply_tags_list'
 
@@ -155,31 +155,36 @@ class ContextTextBase( ContextBase ):
     # automated coder user
     CODER_USERNAME_AUTOMATED = "automated"
     CODER_USER_AUTOMATED = None
-    
+
     # ground truth coding user
     CODER_USERNAME_GROUND_TRUTH = "ground_truth"
     CODER_USER_GROUND_TRUTH = None
-    
+
     # Filtering Article_Data on coder_type.
     CODER_TYPE_FILTER_TYPE_NONE = "none"
     CODER_TYPE_FILTER_TYPE_AUTOMATED = "automated"
     CODER_TYPE_FILTER_TYPE_ALL = "all"
     CODER_TYPE_FILTER_TYPE_DEFAULT = CODER_TYPE_FILTER_TYPE_NONE
-    
+
     # Tags
     TAG_LOCAL_HARD_NEWS = "local_hard_news"
-    
+
+    # Tags - Article_Person
+    TAG_SINGLE_NAME_PART = "single_name_part"
+    TAG_SINGLE_NAME_MISMATCH_WITH_PERSON = "single_name_mismatch_with_person"
+    TAG_ME_SINGLE_NAME_PERSON_MULTI = "me_single_name_person_multi"
+
     #--------------------------------------------------------------------------#
     # ! ----> Context
-    
+
     # ! --------> Entities
-    
+
     # entity identifier types - testing
     CONTEXT_ENTITY_ID_TYPE_NAME_DOES_NOT_EXIST = "calliope_tree_frog"
 
     # entity identifier types - general
     CONTEXT_ENTITY_ID_TYPE_PERMALINK = "permalink"
-    
+
     # entity identifier types - articles
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_ARCHIVE_IDENTIFIER = "article_archive_identifier"
     CONTEXT_ENTITY_ID_TYPE_ARTICLE_NEWSBANK_ID = "article_newsbank_id"
@@ -188,7 +193,7 @@ class ContextTextBase( ContextBase ):
     # entity identifier types - newspaper
     CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_NEWSBANK_CODE = "newspaper_newsbank_code"
     CONTEXT_ENTITY_ID_TYPE_NEWSPAPER_SOURCENET_ID = "newspaper_sourcenet_id"
-    
+
     # entity identifier types - organization
     CONTEXT_ENTITY_ID_TYPE_ORGANIZATION_SOURCENET_ID = "organization_sourcenet_id"
 
@@ -198,13 +203,13 @@ class ContextTextBase( ContextBase ):
 
     # entity identifier types - default
     CONTEXT_ENTITY_ID_TYPE_DEFAULT = CONTEXT_ENTITY_ID_TYPE_PERMALINK
-    
+
     # Entity Type slugs
     CONTEXT_ENTITY_TYPE_SLUG_ARTICLE = "article"
     CONTEXT_ENTITY_TYPE_SLUG_NEWSPAPER = "newspaper"
-    CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION = "organization"    
+    CONTEXT_ENTITY_TYPE_SLUG_ORGANIZATION = "organization"
     CONTEXT_ENTITY_TYPE_SLUG_PERSON = "person"
-    
+
     # ! --------> trait names
     CONTEXT_TRAIT_NAME_CODER_ID = "sourcenet-coder-User-id"
     CONTEXT_TRAIT_NAME_CODER_TYPE = "coder_type"
@@ -227,7 +232,7 @@ class ContextTextBase( ContextBase ):
     CONTEXT_TRAIT_NAME_TITLE = "title"
 
     # ! --------> Relations
-    
+
     # Entity_Relation_Type slugs - FROM NEWSPAPER
     CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_ARTICLE = "newspaper_article"    # FROM newspaper TO article.
     CONTEXT_RELATION_TYPE_SLUG_NEWSPAPER_REPORTER = "newspaper_reporter"  # FROM newspaper TO person (reporter) THROUGH article.
@@ -238,8 +243,8 @@ class ContextTextBase( ContextBase ):
     CONTEXT_RELATION_TYPE_SLUG_AUTHOR = "author"    # FROM article TO reporter.
     CONTEXT_RELATION_TYPE_SLUG_SOURCE = "source"    # FROM article TO source person.
     CONTEXT_RELATION_TYPE_SLUG_SUBJECT = "subject"  # FROM article TO subject person.
-    
-    # Entity_Relation_Type slugs - THROUGH ARTICLE    
+
+    # Entity_Relation_Type slugs - THROUGH ARTICLE
     CONTEXT_RELATION_TYPE_SLUG_MENTIONED = "mentioned"                          # FROM reporter/author TO subject THROUGH article (includes subjects and sources).
     CONTEXT_RELATION_TYPE_SLUG_QUOTED = "quoted"                                # FROM reporter TO source THROUGH article.
     CONTEXT_RELATION_TYPE_SLUG_SAME_ARTICLE_SOURCES = "same_article_sources"    # FROM source person TO source person THROUGH article.
@@ -264,16 +269,16 @@ class ContextTextBase( ContextBase ):
         # declare variables
         self.request = None
         self.parameters = ParamContainer()
-        
+
         # rate limiting
         self.is_rate_limited = False
 
         # define parameters - should do this in "child.__init__()".
-        self.define_parameters( self.PARAM_NAME_TO_TYPE_MAP )        
-        
+        self.define_parameters( self.PARAM_NAME_TO_TYPE_MAP )
+
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase).
         self.set_logger_name( "context_text.shared.context_text_base" )
-        
+
     #-- END method __init__() --#
 
 
