@@ -5385,6 +5385,65 @@ class Article_Data( models.Model ):
 
 
     @classmethod
+    def filter_article_persons(
+        cls,
+        qs_IN,
+        exclude_persons_with_tags_list_IN = None,
+        include_persons_with_single_name_IN = None
+    ):
+
+        '''
+        Accepts Article_Person child class QuerySet and parameters for how it
+            should be filtered. Returns QuerySet with any requested filtering
+            completed.
+
+        Parameters:
+        - exclude_persons_with_tags_list_IN - if tag names list provided,
+            excludes any person with any one of those tags assigned.
+        - include_persons_with_single_name_IN - if "yes" or empty, does nothing.
+            If "no", filters to only records with a space (" ") in verbatim_name
+            (so a multi-word name).
+
+        postconditions: Returns new QuerySet filtered as described above. If no
+            parameters passed in, returns QuerySet passed in, unchanged.
+        '''
+
+        # return reference
+        qs_OUT = None
+
+        # declare variables
+
+        # init
+        qs_OUT = qs_IN
+
+        # exclude persons with tags in tag name list?
+        if (
+            ( exclude_persons_with_tags_list_IN is not None )
+            and ( len( exclude_persons_with_tags_list_IN ) > 0 )
+        ):
+
+            # exclude persons with tags in tag name list
+            qs_OUT = qs_OUT.exclude( tags__name__in = exclude_persons_with_tags_list_IN )
+
+        #-- END check if exclude persons with tags in tag name list --#
+
+        # include persons with single-word verbatim_name?
+        if (
+            ( include_persons_with_single_name_IN is not None )
+            and ( include_persons_with_single_name_IN == ContextTextBase.CHOICE_NO )
+        ):
+
+            # do not include single-word verbatim_name (must be a space in there)
+            qs_OUT = qs_OUT.filter( verbatim_name__contains = " " )
+
+        #-- END check if include persons with single word verbatim_name. --#
+
+        return qs_OUT
+
+    #-- END class method filter_article_persons() --#
+
+
+    @classmethod
     def filter_automated_by_coder_type( cls, qs_IN, coder_type_in_list_IN = None ):
 
         '''
@@ -6091,11 +6150,47 @@ class Article_Data( models.Model ):
     #-- END method __str__() --#
 
 
-    def get_quoted_article_sources_qs( self ):
+    def get_article_authors_qs(
+        self,
+        exclude_persons_with_tags_list_IN = None,
+        include_persons_with_single_name_IN = None
+    ):
+
+        '''
+        Retrieves a QuerySet that contains related Article_Author instances,
+            optionally filtered so people with specified tags are excluded, and
+            persons with single word names are included.
+        '''
+
+        # return reference
+        qs_OUT = None
+
+        # declare variables
+
+        # get all article authors
+        qs_OUT = self.article_author_set.all()
+
+        # do standard Article_Person and children filtering.
+        qs_OUT = self.filter_article_persons(
+            qs_OUT,
+            exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list_IN,
+            include_persons_with_single_name_IN = include_persons_with_single_name_IN
+        )
+
+        return qs_OUT
+
+    #-- END method get_article_authors_qs() --#
+
+
+    def get_quoted_article_sources_qs(
+        self,
+        exclude_persons_with_tags_list_IN = None,
+        include_persons_with_single_name_IN = None
+    ):
 
         '''
         Retrieves a QuerySet that contains related Article_Subject instances
-           that are of subject_type "quoted".
+            that are of subject_type "quoted".
         '''
 
         # return reference
@@ -6109,6 +6204,13 @@ class Article_Data( models.Model ):
         # filter to just those with subject type of "quoted"
         #    (Article_Subject.SUBJECT_TYPE_QUOTED).
         qs_OUT = qs_OUT.filter( subject_type = Article_Subject.SUBJECT_TYPE_QUOTED )
+
+        # do standard Article_Person and children filtering.
+        qs_OUT = self.filter_article_persons(
+            qs_OUT,
+            exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list_IN,
+            include_persons_with_single_name_IN = include_persons_with_single_name_IN
+        )
 
         return qs_OUT
 

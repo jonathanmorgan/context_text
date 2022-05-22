@@ -55,12 +55,12 @@ from context_text.shared.context_text_base import ContextTextBase
 
 class NetworkDataOutput( ContextTextBase ):
 
-    
+
     #---------------------------------------------------------------------------
     # META!!!
     #---------------------------------------------------------------------------
 
-    
+
     __metaclass__ = ABCMeta
 
 
@@ -70,13 +70,13 @@ class NetworkDataOutput( ContextTextBase ):
 
 
     # network output type constants
-    
+
     # Network data format output types
     NETWORK_DATA_FORMAT_SIMPLE_MATRIX = "simple_matrix"
     NETWORK_DATA_FORMAT_CSV_MATRIX = "csv_matrix"
     NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
     NETWORK_DATA_FORMAT_DEFAULT = NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
-    
+
     NETWORK_DATA_FORMAT_CHOICES_LIST = [
         ( NETWORK_DATA_FORMAT_SIMPLE_MATRIX, "Simple Matrix" ),
         ( NETWORK_DATA_FORMAT_CSV_MATRIX, "CSV Matrix" ),
@@ -89,7 +89,7 @@ class NetworkDataOutput( ContextTextBase ):
     NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS = "net_and_attr_cols"
     NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS = "net_and_attr_rows"
     NETWORK_DATA_OUTPUT_TYPE_DEFAULT = NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS
-    
+
     NETWORK_DATA_OUTPUT_TYPE_CHOICES_LIST = [
         ( NETWORK_DATA_OUTPUT_TYPE_NETWORK, "Just Network" ),
         ( NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES, "Just Attributes" ),
@@ -103,7 +103,7 @@ class NetworkDataOutput( ContextTextBase ):
     PERSON_QUERY_TYPE_CUSTOM = "custom"
     PERSON_QUERY_TYPE_DEFAULT = PERSON_QUERY_TYPE_ARTICLES
 
-    PERSON_QUERY_TYPE_CHOICES_LIST = [ 
+    PERSON_QUERY_TYPE_CHOICES_LIST = [
         ( PERSON_QUERY_TYPE_ALL, "All persons" ),
         ( PERSON_QUERY_TYPE_ARTICLES, "From selected articles" ),
         ( PERSON_QUERY_TYPE_CUSTOM, "Custom, defined below" ),
@@ -114,8 +114,8 @@ class NetworkDataOutput( ContextTextBase ):
     CODER_TYPE_FILTER_TYPE_AUTOMATED = ContextTextBase.CODER_TYPE_FILTER_TYPE_AUTOMATED
     CODER_TYPE_FILTER_TYPE_ALL = ContextTextBase.CODER_TYPE_FILTER_TYPE_ALL
     CODER_TYPE_FILTER_TYPE_DEFAULT = ContextTextBase.CODER_TYPE_FILTER_TYPE_DEFAULT
-    
-    CODER_TYPE_FILTER_TYPE_CHOICES_LIST = [ 
+
+    CODER_TYPE_FILTER_TYPE_CHOICES_LIST = [
         ( CODER_TYPE_FILTER_TYPE_NONE, "Do not filter" ),
         ( CODER_TYPE_FILTER_TYPE_AUTOMATED, "Just automated" ),
         ( CODER_TYPE_FILTER_TYPE_ALL, "All users" ),
@@ -164,7 +164,7 @@ class NetworkDataOutput( ContextTextBase ):
     PARAM_PERSON_QUERY_TYPE = "person_query_type"
     PARAM_CODER_TYPE_FILTER_TYPE = "coder_type_filter_type"
     PARAM_PERSON_CODER_TYPE_FILTER_TYPE = "person_" + PARAM_CODER_TYPE_FILTER_TYPE
-    
+
     # node attributes
     NODE_ATTRIBUTE_PERSON_ID = "person_id"
     NODE_ATTRIBUTE_PERSON_TYPE = "person_type"
@@ -190,31 +190,35 @@ class NetworkDataOutput( ContextTextBase ):
         self.data_format = NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT
         self.data_output_type = NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_DEFAULT
         self.include_render_details = False
-        self.person_dictionary = {}
+        self.person_dictionary = dict()
         self.network_label = '' # heading to put in first line of network data.
-        self.relation_map = {}
+        self.relation_map = dict()
         self.include_row_and_column_headers = False
-        
+
         # variables for outputting result as file
         self.mime_type = ""
         self.file_extension = ""
-        
+
         # need a way to keep track of who is a reporter and who is a source.
         # person ID to person type map
-        self.person_type_dict = {}
+        self.person_type_dict = dict()
 
         # variable to hold master person list.
-        self.master_person_list = []
+        self.master_person_list = list()
 
         # internal debug string
         self.debug = "NetworkDataOutput debug:\n\n"
 
+        # person filtering
+        self.exclude_persons_with_tags_in_list = list()
+        self.include_persons_with_single_word_name = ContextTextBase.CHOICE_NO
+
         # inclusion parameter holder
-        self.inclusion_params = {}
+        self.inclusion_params = dict()
 
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
         self.set_logger_name( "context_text.export.network_data_output" )
-        
+
     #-- END method __init__() --#
 
 
@@ -336,12 +340,12 @@ class NetworkDataOutput( ContextTextBase ):
 
         # return reference
         status_OUT = NetworkDataOutput.STATUS_OK
-        
+
         # declare variables
         me = "add_reciprocal_relation"
         my_logger = None
         debug_string = ""
-        
+
         # initialize logger
         my_logger = self.get_logger()
 
@@ -352,12 +356,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                 # output message about having two values.
                 debug_string = "In " + me + ": got two IDs: " + str( person_1_id_IN ) + "; " + str( person_2_id_IN ) + "."
-                
+
                 # add to debug string?
                 self.debug += "\n\n" + debug_string + "\n\n"
-                
+
                 my_logger.debug( debug_string )
-                            
+
             #-- END DEBUG --#
 
             # add directed relations from 1 to 2 and from 2 to 1.
@@ -408,7 +412,7 @@ class NetworkDataOutput( ContextTextBase ):
 
         # get the data output type.
         my_data_output_type = self.data_output_type
-        
+
         # only need to get list of labels if we are outputting network as well as attributes.
 
         # include network?
@@ -418,18 +422,18 @@ class NetworkDataOutput( ContextTextBase ):
 
             # yes.  Start with list of labels.
             header_list_OUT = self.create_label_list()
-            
+
         else:
-        
+
             # not outputting whole network.  Start with empty list.
             header_list_OUT = []
-            
+
         #-- END check to see if outputting network. --#
-        
+
         # add "id" to the beginning of list (header for column of labels that
         #    starts each row).
         header_list_OUT.insert( 0, "id" )
-        
+
         # Are we outputting attributes in columns, either just attributes, or network plus attributes as columns?
         if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES )
             or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS ) ):
@@ -437,12 +441,12 @@ class NetworkDataOutput( ContextTextBase ):
             # we are - add column headers for attributes - loop over NODE_ATTRIBUTE_LIST.
             node_attribute_list = NetworkDataOutput.NODE_ATTRIBUTE_LIST
             for current_attr_name in node_attribute_list:
-            
+
                 # add the attribute name to the list.
                 header_list_OUT.append( current_attr_name )
-            
+
             #-- END loop over attributes
-            
+
         #-- END check to see if output attributes as columns --#
 
         return header_list_OUT
@@ -496,7 +500,7 @@ class NetworkDataOutput( ContextTextBase ):
             for current_person_id in sorted( master_list ):
 
                 person_count += 1
-                
+
                 # get current person type and type ID
                 current_type = self.get_person_type( current_person_id )
                 current_type_id = self.get_person_type_id( current_person_id )
@@ -572,7 +576,7 @@ class NetworkDataOutput( ContextTextBase ):
 
             # loop over the master list.
             for current_person_id in sorted( person_list ):
-            
+
                 # store in output variable
                 output_person_id = current_person_id
 
@@ -675,7 +679,7 @@ class NetworkDataOutput( ContextTextBase ):
 
         # get data output type
         my_data_output_type = self.data_output_type
-        
+
         # do the output?
         if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_ATTRIBUTES )
             or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS ) ):
@@ -684,10 +688,10 @@ class NetworkDataOutput( ContextTextBase ):
             do_it_OUT = True
 
         else:
-        
+
             # no.
             do_it_OUT = False
-    
+
         #-- END check to see if include network matrix --#
 
         return do_it_OUT
@@ -717,7 +721,7 @@ class NetworkDataOutput( ContextTextBase ):
 
         # get data output type
         my_data_output_type = self.data_output_type
-        
+
         # do the output?
         if ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_ROWS ):
 
@@ -725,10 +729,10 @@ class NetworkDataOutput( ContextTextBase ):
             do_it_OUT = True
 
         else:
-        
+
             # no.
             do_it_OUT = False
-    
+
         #-- END check to see if include network matrix --#
 
         return do_it_OUT
@@ -760,7 +764,7 @@ class NetworkDataOutput( ContextTextBase ):
 
         # get data output type
         my_data_output_type = self.data_output_type
-        
+
         # include network?
         if ( ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NETWORK )
             or ( my_data_output_type == NetworkDataOutput.NETWORK_DATA_OUTPUT_TYPE_NET_AND_ATTR_COLS )
@@ -770,10 +774,10 @@ class NetworkDataOutput( ContextTextBase ):
             do_it_OUT = True
 
         else:
-        
+
             # no, not outputting network.
             do_it_OUT = False
-    
+
         #-- END check to see if include network matrix --#
 
         return do_it_OUT
@@ -840,10 +844,10 @@ class NetworkDataOutput( ContextTextBase ):
         # make a dictionary that maps persons from person dictionary to type...
         person_id_to_type_dict = {}
         for current_person_id in person_ids_list:
-        
+
             # to start, add all persons to dictionary with type of "unknown".
             person_id_to_type_dict[ current_person_id ] = NetworkDataOutput.PERSON_TYPE_UNKNOWN
-            
+
         #-- END loop over IDs from dictionary. --#
 
         # update or add people and corresponding types from the nested
@@ -858,25 +862,72 @@ class NetworkDataOutput( ContextTextBase ):
         #    as your list of people to iterate over as you create actual
         #    output.
         merged_person_id_list = person_id_to_type_dict.keys()
-        
+
         # do we want it sorted?
         if ( is_sorted_IN == True ):
-        
+
             # we want it sorted.
             merged_person_id_list = sorted( merged_person_id_list )
-        
+
         #-- END check to see if we want the list sorted. --#
 
         # save this as the master person list.
         self.master_person_list = merged_person_id_list
 
         list_OUT = self.master_person_list
-        
+
         my_logger.debug( "In " + me + ": len( self.master_person_list ) = " + str( len( self.master_person_list ) ) )
 
         return list_OUT
 
     #-- END method generate_master_person_list() --#
+
+
+    def get_exclude_persons_with_tags_in_list( self ):
+
+        """
+            Method: get_exclude_persons_with_tags_in_list()
+
+            Purpose: retrieves nested person exclude tag list.
+
+            Returns:
+            - list - if tag names list provided, excludes any person with any one of those tags assigned.
+        """
+
+        # return reference
+        value_OUT = ''
+
+        # grab map
+        value_OUT = self.exclude_persons_with_tags_in_list
+
+        return value_OUT
+
+    #-- END method get_exclude_persons_with_tags_in_list() --#
+
+
+    def get_include_persons_with_single_word_name( self ):
+
+        """
+            Method: get_include_persons_with_single_word_name()
+
+            Purpose: retrieves nested flag indicating if we should include
+                persons with single-word names.
+
+            Returns:
+            - string - if "no", we want to filter to only include persons
+                with verbatim_name containing 1 or more spaces (multiple
+                words).
+        """
+
+        # return reference
+        value_OUT = ''
+
+        # grab map
+        value_OUT = self.include_persons_with_single_word_name
+
+        return value_OUT
+
+    #-- END method get_include_persons_with_single_word_name() --#
 
 
     def get_master_person_list( self, is_sorted_IN = True ):
@@ -926,7 +977,7 @@ class NetworkDataOutput( ContextTextBase ):
             list_OUT = self.generate_master_person_list( is_sorted_IN )
 
         #-- END check if list is OK. --#
-        
+
         return list_OUT
 
     #-- END method get_master_person_list() --#
@@ -1150,6 +1201,8 @@ class NetworkDataOutput( ContextTextBase ):
         source_capacity_include_list_IN = None
         source_capacity_exclude_list_IN = None
         source_contact_type_include_list_IN = None
+        exclude_persons_with_tags_in_list_IN = None
+        include_persons_with_single_word_name_IN = None
 
         # retrieve info.
         output_type_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_OUTPUT_TYPE, NetworkDataOutput.NETWORK_DATA_FORMAT_DEFAULT )
@@ -1159,6 +1212,8 @@ class NetworkDataOutput( ContextTextBase ):
         source_capacity_include_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST )
         source_capacity_exclude_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST )
         source_contact_type_include_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST )
+        exclude_persons_with_tags_in_list_IN = param_container_IN.get_param_as_list( NetworkDataOutput.PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST )
+        include_persons_with_single_word_name_IN = param_container_IN.get_param_as_str( NetworkDataOutput.PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME, NetworkDataOutput.CHOICE_NO )
 
         # store
         self.set_output_type( output_type_IN )
@@ -1167,23 +1222,23 @@ class NetworkDataOutput( ContextTextBase ):
 
         # convert include_render_details_IN to boolean
         if ( include_render_details_IN == NetworkDataOutput.CHOICE_YES ):
-        
+
             # yes - True
             self.include_render_details = True
 
         else:
-        
+
             # not yes, so False.
             self.include_render_details = False
-        
+
         #-- END check to see whether we include render details --#
-        
+
         # got source contact type include list?
         if ( ( source_contact_type_include_list_IN is not None ) and ( len( source_contact_type_include_list_IN ) > 0 ) ):
-        
+
             # store in internal inclusion parameters
             self.inclusion_params[ NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST ] = source_contact_type_include_list_IN
-        
+
         #-- END check to see if source contact type list --#
 
         # got include list?
@@ -1201,6 +1256,22 @@ class NetworkDataOutput( ContextTextBase ):
             self.inclusion_params[ NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST ] = source_capacity_exclude_list_IN
 
         #-- END check to see if anything in list. --#
+
+        # exclude persons with tags in tag name list?
+        if ( exclude_persons_with_tags_in_list_IN is not None ):
+
+            # exclude persons with tags in tag name list
+            self.exclude_persons_with_tags_in_list = exclude_persons_with_tags_in_list_IN
+
+        #-- END check if exclude persons with tags in tag name list --#
+
+        # include persons with single-word verbatim_name?
+        if ( include_persons_with_single_word_name_IN is not None ):
+
+            # do not include single-word verbatim_name
+            self.include_persons_with_single_word_name = include_persons_with_single_word_name_IN
+
+        #-- END check if include persons with single word verbatim_name. --#
 
     #-- END method initialize_from_params() --#
 
@@ -1297,7 +1368,7 @@ class NetworkDataOutput( ContextTextBase ):
             #if ( author_qs_IN.count() > 1 ):
 
             #    multiple_authors = True
-                
+
             #-- END setting up for multiple authors. --#
 
             # Create map of authors in to their model instances.
@@ -1323,12 +1394,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                 # output message about connectedness of source.
                 debug_string = "\n\nIn " + me + ": author map = \n" + str( author_map ) + "\n\n"
-                
+
                 # add to debug string?
                 self.debug += debug_string
-                
+
                 my_logger.debug( debug_string )
-                
+
             #-- END DEBUG --#
 
             # Now, make a copy of the keys of the map, for us to loop over.
@@ -1341,12 +1412,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                     # output message about connectedness of source.
                     debug_string = "\n\nIn " + me + ": author person ID:\n" + str( current_person_id ) + "\n\n"
-                    
+
                     # add to debug string?
                     self.debug += debug_string
-                    
+
                     my_logger.debug( debug_string )
-                
+
                 #-- END DEBUG --#
 
                 # remove author from author_map.  pop()-ing it, for now, just
@@ -1362,14 +1433,14 @@ class NetworkDataOutput( ContextTextBase ):
 
                     # output message about connectedness of source.
                     debug_string = "\n\nIn " + me + ": author map = \n" + str( author_map ) + "\n\n"
-                    
+
                     # add to debug string?
                     self.debug += debug_string
-                    
+
                     my_logger.debug( debug_string )
-                    
+
                 #-- END DEBUG --#
-                
+
                 # get IDs of remaining authors
                 remaining_author_id_list = author_map.keys()
 
@@ -1459,12 +1530,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                             # output message about connectedness of source.
                             debug_string = "In " + me + ": connected source " + str( source_counter ) + " has ID: " + str( current_person_id )
-                            
+
                             # add to debug string?
                             self.debug += "\n\n" + debug_string + "\n\n"
-                            
+
                             my_logger.debug( debug_string )
-                            
+
                         #-- END DEBUG --#
 
                         if ( current_person_id ):
@@ -1480,12 +1551,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                             # output message about connectedness of source.
                             debug_string = "In " + me + ": source " + str( source_counter ) + " is not connected."
-                            
+
                             # add to debug string?
                             self.debug += "\n\n" + debug_string + "\n\n"
-                            
+
                             my_logger.debug( debug_string )
-                            
+
                         #-- END DEBUG --#
 
                     #-- END check to see if connected. --#
@@ -1533,11 +1604,13 @@ class NetworkDataOutput( ContextTextBase ):
         debug_string = ""
         article_data_query_set = None
         person_dict = None
-        network_dict = {}
+        exclude_persons_with_tags_list = None
+        include_persons_with_single_name = None
+        network_dict = dict()
         article_data_counter = 0
         current_article_data = None
-        article_author_count = -1
         author_qs = None
+        article_author_count = -1
         source_qs = None
 
         # initialize logger
@@ -1547,13 +1620,17 @@ class NetworkDataOutput( ContextTextBase ):
         article_data_query_set = self.query_set
         person_dict = self.person_dictionary
 
+        # get instructions for filtering persons
+        exclude_persons_with_tags_list = self.get_exclude_persons_with_tags_in_list()
+        include_persons_with_single_name = self.get_include_persons_with_single_word_name()
+
         # make sure each of these has something in it.
         if ( ( article_data_query_set ) and ( person_dict ) ):
 
             #--------------------------------------------------------------------
             # create ties
             #--------------------------------------------------------------------
-            
+
             # loop over the article data for each article to be processed.
             for current_article_data in article_data_query_set:
 
@@ -1563,23 +1640,31 @@ class NetworkDataOutput( ContextTextBase ):
 
                     # output message about connectedness of source.
                     debug_string = "In " + me + ": +++ Current article data = " + str( current_article_data.id ) + " +++"
-                    
+
                     # add to debug string?
                     self.debug += "\n\n" + debug_string + "\n\n"
-                    
+
                     my_logger.debug( debug_string )
 
                 #-- END DEBUG --#
 
+                # get authors
+                author_qs = current_article_data.get_article_authors_qs(
+                    exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list,
+                    include_persons_with_single_name_IN = include_persons_with_single_name
+                )
+
                 # first, see how many authors this article has.
-                article_author_count = current_article_data.article_author_set.count()
+                article_author_count = author_qs.count()
 
                 # if no authors, move on.
                 if ( article_author_count > 0 ):
 
-                    # get authors
-                    author_qs = current_article_data.article_author_set.all()
-                    source_qs = current_article_data.get_quoted_article_sources_qs()
+                    # get sources
+                    source_qs = current_article_data.get_quoted_article_sources_qs(
+                        exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list,
+                        include_persons_with_single_name_IN = include_persons_with_single_name
+                    )
 
                     # call method to loop over authors and tie them to other
                     #    authors (if present) and eligible sources.
@@ -1592,12 +1677,12 @@ class NetworkDataOutput( ContextTextBase ):
 
                         # output message about connectedness of source.
                         debug_string = "In " + me + ": Relation Map after article " + str( article_data_counter ) + ":\n" + str( self.relation_map )
-                        
+
                         # add to debug string?
                         self.debug += "\n\n" + debug_string + "\n\n"
-                        
+
                         #my_logger.debug( debug_string )
-    
+
                     #-- END DEBUG --#
 
                 #-- END check to make sure there are authors.
@@ -1607,7 +1692,7 @@ class NetworkDataOutput( ContextTextBase ):
             #--------------------------------------------------------------------
             # build person list (list of network matrix rows/columns)
             #--------------------------------------------------------------------
-            
+
             # now that all relations are mapped, need to build our master person
             #    list, so we can loop to build out the network.  All people who
             #    need to be included should be in the person_dictionary passed
@@ -1626,9 +1711,9 @@ class NetworkDataOutput( ContextTextBase ):
             #--------------------------------------------------------------------
             # render network data based on people and ties.
             #--------------------------------------------------------------------
-            
+
             network_data_OUT += self.render_network_data()
-            
+
         #-- END check to make sure we have the data we need. --#
 
         return network_data_OUT
@@ -1649,7 +1734,7 @@ class NetworkDataOutput( ContextTextBase ):
         pass
 
     #-- END abstract method render_network_data() --#
-    
+
 
     def set_output_type( self, value_IN ):
 

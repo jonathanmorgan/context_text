@@ -26,46 +26,46 @@ properly passed through to all the things that might use it:
         reference them in NetworkOutput).
     - add parameters related to automated coding of articles to the class
         ArticleCoding, in file /article_coding/article_coding.py.
-        
+
     Example - adding person query type values to NetworkDataOutput:
-    
+
         # Person Query Types
         PERSON_QUERY_TYPE_ALL = "all"
         PERSON_QUERY_TYPE_ARTICLES = "articles"
         PERSON_QUERY_TYPE_CUSTOM = "custom"
-        
-        PERSON_QUERY_TYPE_CHOICES_LIST = [ 
+
+        PERSON_QUERY_TYPE_CHOICES_LIST = [
             ( PERSON_QUERY_TYPE_ALL, "All persons" ),
             ( PERSON_QUERY_TYPE_ARTICLES, "From selected articles" ),
             ( PERSON_QUERY_TYPE_CUSTOM, "Custom, defined below" ),
         ]
 
     And then referencing them from NetworkOutput:
-    
+
         # Person Query Types
         PERSON_QUERY_TYPE_ALL = NetworkDataOutput.PERSON_QUERY_TYPE_ALL
         PERSON_QUERY_TYPE_ARTICLES = NetworkDataOutput.PERSON_QUERY_TYPE_ARTICLES
         PERSON_QUERY_TYPE_CUSTOM = NetworkDataOutput.PERSON_QUERY_TYPE_CUSTOM
-    
-        PERSON_QUERY_TYPE_CHOICES_LIST = NetworkDataOutput.PERSON_QUERY_TYPE_CHOICES_LIST    
+
+        PERSON_QUERY_TYPE_CHOICES_LIST = NetworkDataOutput.PERSON_QUERY_TYPE_CHOICES_LIST
 
 - 2) Add a PARAM_* constant that contains the input name you'll use to reference
-    the new field in the form, and then subsequently whenever the associated 
+    the new field in the form, and then subsequently whenever the associated
     value is needed throughout the application.  Example - adding a person query
     type to tell network outputter how to figure out which people to include in
     the network, first to NetworkDataOutput:
-    
+
         PARAM_PERSON_QUERY_TYPE = "person_query_type"
 
     Then, referring to it in NetworkOutput:
-    
+
         PARAM_PERSON_QUERY_TYPE = NetworkDataOutput.PARAM_PERSON_QUERY_TYPE
-        
+
 - 3) Add that parameter to PARAM_NAME_TO_TYPE_MAP in NetworkOutput or
     ArticleCoding, with the parameter name mapped to the appropriate type from
     the ParamContainer class in python_utilities.  Example, adding our string
     person query type to NetworkOutput's PARAM_NAME_TO_TYPE_MAP:
-    
+
         PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
 
 - 4) Add the value to the appropriate form below, using the same name as was in
@@ -156,7 +156,7 @@ class Article_DataSelectForm( forms.Form ):
     '''
 
     def __init__( self, *args, **kwargs ):
-    
+
         # declare variables
         article_IN = None
         article_data_qs = None
@@ -167,62 +167,62 @@ class Article_DataSelectForm( forms.Form ):
         ad_coder = None
         ad_coder_type = ""
         ad_display_string = ""
-        
+
         # retrieve article passed in.
         article_id_IN = kwargs.pop( 'article_id' )
-        
+
         # call parent __init__() method.
         super( Article_DataSelectForm, self ).__init__(*args, **kwargs)
-        
+
         # got an article?
         if ( ( article_id_IN is not None ) and ( article_id_IN > 0 ) ):
-        
+
             # got any Article_Data instances?
             article_data_qs = Article_Data.objects.filter( article_id = article_id_IN )
             article_data_count = article_data_qs.count()
-            
+
             if ( article_data_count > 0 ):
-            
+
                 # yes.  Loop, building a list of 2-tuples for each option,
                 #   ( <actual_value>, <display_string> ).
                 for article_data_instance in article_data_qs:
-                
+
                     # get ID, coder, and coder type
                     ad_id = article_data_instance.id
                     ad_coder = article_data_instance.coder
                     ad_coder_type = article_data_instance.coder_type
-            
+
                     # create display string
                     ad_display_string = str( ad_id ) + " - " + str( ad_coder ) + " ( " + str( ad_coder_type ) + " )"
-                    
+
                     # add tuple to list
                     article_data_choice_list.append( ( ad_id, ad_display_string ) )
-                    
+
                 #-- END loop over choices. --#
-        
+
                 # add a form field to allow user to select Article_Data
                 #    instances to display.
                 self.fields[ 'article_data_id_select' ] = forms.MultipleChoiceField( required = False, choices = article_data_choice_list )
-                
+
             #-- END - check to see how many Article_Data --#
-            
+
         #-- END - check to see if article present. --#
-    
+
     #-- END overridden/extended function __init__() --#
 
 #-- END Form class ArticleLookupForm --#
 
 
 class ArticleCodingArticleFilterForm( forms.Form ):
-    
+
     # constants-ish
     IAMEMPTY = "IAMEMPTY"
-    
+
     '''
     create a form to let a user specify the criteria used to limit the articles
        that are used to create output.
     '''
-    
+
     # what fields do I want?
 
     # start date
@@ -242,45 +242,45 @@ class ArticleCodingArticleFilterForm( forms.Form ):
 
     # list of unique identifiers to limit to.
     tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
-    
+
     # list of unique identifiers to limit to.
     unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
-    
+
     # list of unique identifiers to limit to.
     article_id_list = forms.CharField( required = False, label = "Article ID IN List (comma-delimited)" )
 
     # list of unique identifiers to limit to.
     section_list = forms.CharField( required = False, label = "String Section Name IN List (comma-delimited)" )
-    
+
     #--------------------------------------------------------------------------#
     # methods
     #--------------------------------------------------------------------------#
-    
-    
+
+
     def am_i_empty( self, *args, **kwargs ):
-        
+
         '''
         Goes through the fields in the form and checks to see if any has been
             populated.  If not, returns True (it is empty!).  If there is a
             value in any of them, returns False (not empty).
         '''
-        
+
         # return reference
         is_empty_OUT = True
-        
+
         # declare variables
         me = "am_i_empty"
         my_logger_name = "context_text.forms.ArticleCodingArticleFilterForm"
         debug_message = ""
-        
+
         # use DjangoFormHelper method
         is_empty_OUT = DjangoFormHelper.is_form_empty( self )
 
         return is_empty_OUT
-        
+
     #-- END method am_i_empty() --#
 
-    
+
 #-- END Form class ArticleCodingArticleFilterForm --#
 
 
@@ -345,12 +345,12 @@ class ArticleCodingSubmitForm( forms.Form ):
 
 
 class ArticleDataFilterForm( FormParent ):
-    
+
     '''
     create a form to let a user specify the criteria used to filter
         Article_Data records.
     '''
-    
+
     # what fields do I want?
 
     # coders to include
@@ -361,26 +361,26 @@ class ArticleDataFilterForm( FormParent ):
         choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
         initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
         label = "Article_Data coder_type Filter Type" )
-    
+
     # list of Article_Data coder_type identifiers to limit to.
     coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
-    
+
     # list of unique identifiers to limit to.
     tags_in_list_IN = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
-    
+
     # article_id_list - list of Article IDs whose coding we want to see.
     article_id_list = forms.CharField( required = False, label = "IDs of Articles whose coding you want (,)" )
-    
+
 #-- END Form class ArticleDataFilterForm --#
 
 
 class ArticleDataProcessingForm( forms.Form ):
-    
+
     '''
     allows user to specify list of tags they would like to be applied to
         some taggable entity.
     '''
-    
+
     # action choices
     ACTION_CHOICES = (
         ( "match_summary", "Match Summary" ),
@@ -389,7 +389,7 @@ class ArticleDataProcessingForm( forms.Form ):
     action = forms.ChoiceField( required = True, choices = ACTION_CHOICES )
 
 #-- END Form class ArticleDataProcessingForm --#
-    
+
 
 class ArticleLookupForm( forms.Form ):
 
@@ -420,12 +420,12 @@ class ArticleOutputTypeSelectForm( forms.Form ):
 
 
 class ArticleSelectForm( forms.Form ):
-    
+
     '''
     create a form to let a user specify the criteria used to limit the articles
        that are used to create output.
     '''
-    
+
     # what fields do I want?
 
     # start date
@@ -452,22 +452,22 @@ class ArticleSelectForm( forms.Form ):
         choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
         initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
         label = "Article_Data coder_type Filter Type" )
-    
+
     # list of Article_Data coder_type identifiers to limit to.
     coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
-    
+
     # topics to include
     topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
 
-    # list of unique identifiers to limit to.
-    tags_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
-    
-    # list of unique identifiers to limit to.
-    unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
-    
+    # list of tag values Articles to be included must have one or more of.
+    tags_list = forms.CharField( required = False, label = "Include Articles With Tags In List (comma-delimited)" )
+
+    # list of unique Article identifiers to limit to.
+    unique_identifiers = forms.CharField( required = False, label = "Include Articles With unique_identifier In List (comma-delimited)" )
+
     # allow duplicate articles?
     allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
-    
+
 #-- END Form class ArticleSelectForm --#
 
 
@@ -483,7 +483,7 @@ class NetworkOutputForm( forms.Form ):
     # do we want to download result as file?
     network_download_as_file = forms.ChoiceField( required = False, label = "Download As File?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
-    # include render details? 
+    # include render details?
     network_include_render_details = forms.ChoiceField( required = False, label = "Include Render Details?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
     # just contains the format you want the network data outputted as.
@@ -502,15 +502,15 @@ class NetworkOutputForm( forms.Form ):
 
 
 class PersonLookupTypeForm( FormParent ):
-    
+
     '''
     allows user to specify list of tags they would like to be applied to
         some taggable entity.
     '''
-    
+
     PERSON_LOOKUP_TYPE_GENERAL_QUERY = "general_query"
     PERSON_LOOKUP_TYPE_EXACT_QUERY = "exact_query"
-    
+
     # action choices
     PERSON_LOOKUP_TYPE_CHOICES = (
         ( PERSON_LOOKUP_TYPE_GENERAL_QUERY, "General Query (match what is entered, ignore anything not entered)" ),
@@ -522,44 +522,44 @@ class PersonLookupTypeForm( FormParent ):
 
 
 class PersonLookupByIDForm( FormParent ):
-    
+
     '''
     Form that holds ways of finding and retrieving persons with certain IDs.  To
         start includes a list of IDs, or the ID of either an Article_Subject or
         Article_Author instance that might contain references to multiple
         people amongst which there is some ambiguity.
     '''
-    
+
     person_id_in_list = forms.CharField( required = False, label = "Person ID List (comma-delimited)" )
     article_author_id = forms.CharField( required = False, label = "Article_Author ID" )
     article_subject_id = forms.CharField( required = False, label = "Article_Subject ID" )
 
-    
+
     #--------------------------------------------------------------------------#
     # class methods
     #--------------------------------------------------------------------------#
-    
-    
+
+
     @classmethod
     def lookup_person_by_id( cls, request_inputs_IN, person_qs_IN = None, response_dictionary_IN = None, *args, **kwargs ):
-        
+
         '''
         Accepts request inputs we'd expect to contain the fields defined for
             this form.  Uses this information to lookup Persons and returns the
             QuerySet that contains the results of the lookup.  If error, returns None.
         '''
-        
+
         # return reference
         qs_OUT = None
-        
+
         # declare variables
         me = "lookup_person_by_id"
         my_logger_name = "context_text.forms.PersonLookupByIDForm"
         debug_message = ""
         request_inputs = None
         person_qs = None
-        
-        
+
+
         person_id_in_list_string = ""
         person_id_in_list = []
         article_author_id = -1
@@ -567,46 +567,46 @@ class PersonLookupByIDForm( FormParent ):
         article_author = None
         article_subject = None
         temp_list = []
-        
+
         # first, make sure we have request inputs.
         if ( request_inputs_IN is not None ):
-        
+
             # store off the inputs.
             request_inputs = request_inputs_IN
 
             # got a person qs?
             if ( person_qs_IN is not None ):
-            
+
                 person_qs = person_qs_IN
-                
+
             #-- END check to see if person_qs --#
-        
+
             # get values from form
             person_id_in_list_string = request_inputs.get( "person_id_in_list", None )
-            
+
             # convert string to list
             if ( ( person_id_in_list_string is not None ) and ( person_id_in_list_string != "" ) ):
-            
+
                 # got something.  Try to coerce it into a python list.
                 person_id_in_list = ListHelper.get_value_as_list( person_id_in_list_string, delimiter_IN = "," )
-                
+
                 debug_message = "found person ID list - using it."
                 LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
             else:
-            
+
                 # no ID list passed in.  Make an empty list.
                 person_id_in_list = []
-                
+
                 debug_message = "no straight up list of person IDs passed in - creating empty list,"
                 LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
             #-- END check to see if person ID list passed in --#
-            
+
             # see if there are Article_Subject or Article_Author IDs.
-            article_author_id = request_inputs.get( "article_author_id", None ) 
+            article_author_id = request_inputs.get( "article_author_id", None )
             article_subject_id = request_inputs.get( "article_subject_id", None )
-            
+
             debug_message = "article_author_id: " + str( article_author_id )
             LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -617,12 +617,12 @@ class PersonLookupByIDForm( FormParent ):
             if ( ( article_author_id is not None )
                 and ( article_author_id != "" )
                 and ( int( article_author_id ) > 0 ) ):
-            
+
                 try:
-                
+
                     # Got one.  Look up instance based on ID.
                     article_author = Article_Author.objects.get( pk = article_author_id )
-                    
+
                     debug_message = "found Article_Author: " + str( article_author )
                     LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -631,38 +631,38 @@ class PersonLookupByIDForm( FormParent ):
                     if ( ( temp_list is not None )
                         and ( isinstance( temp_list, list ) == True )
                         and ( len( temp_list ) > 0 ) ):
-                        
+
                         # got something in list.  Append it to the end of
                         #     the person_id_in_list.
                         person_id_in_list.extend( temp_list )
-                        
+
                     #-- END check to see if associated Persons. --#
-                
+
                 except Article_Author.DoesNotExist as dne:
-                
+
                     debug_message = "No Article_Author found for ID " + str( article_author_id )
                     LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
                     if ( response_dictionary_IN is not None ):
-                    
+
                         response_dictionary_IN[ 'output_string' ] = debug_message
-                        
+
                     #-- END check to see if response dictionary. --#
 
                 #-- END try/except lookup for Article_Author --#
-                
-            
+
+
             #-- END check to see if article_author_id --#
-                    
+
             # Article_Subject?
             if ( ( article_subject_id is not None )
                 and ( article_subject_id != "" )
                 and ( int( article_subject_id ) > 0 ) ):
-            
+
                 try:
-                
+
                     # Got one.  Look up instance based on ID.
                     article_subject = Article_Subject.objects.get( pk = article_subject_id )
-                    
+
                     debug_message = "found Article_Subject: " + str( article_subject )
                     LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -675,27 +675,27 @@ class PersonLookupByIDForm( FormParent ):
                     if ( ( temp_list is not None )
                         and ( isinstance( temp_list, list ) == True )
                         and ( len( temp_list ) > 0 ) ):
-                        
+
                         # got something in list.  Append it to the end of
                         #     the person_id_in_list.
                         person_id_in_list.extend( temp_list )
-                    
+
                     #-- END check to see if associated Persons. --#
-                    
+
                 except Article_Subject.DoesNotExist as dne:
-                
+
                     debug_message = "No Article_Subject found for ID " + str( article_subject_id )
                     LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
                     if ( response_dictionary_IN is not None ):
-                    
+
                         response_dictionary_IN[ 'output_string' ] = debug_message
-                        
+
                     #-- END check to see if response dictionary. --#
 
                 #-- END try/except lookup for Article_Author --#
-                
+
             #-- END check to see if article_subject_id --#
-                    
+
             debug_message = "Before filtering: person_id_in_list = " + str( person_id_in_list ) + "; person_qs = " + str( person_qs )
             LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -703,41 +703,41 @@ class PersonLookupByIDForm( FormParent ):
             if ( ( person_id_in_list is not None )
                 and ( isinstance( person_id_in_list, list ) == True )
                 and ( len( person_id_in_list ) > 0 ) ):
-                
+
                 # there are IDs to look for.  Do we have a QuerySet
                 #     already?
                 if ( person_qs is None ):
-                
+
                     # no.  Initialize to all()
                     person_qs = Person.objects.all()
-                    
+
                 #-- END check to see if Person QuerySet --#
-                
+
                 # filter.
                 person_qs = person_qs.filter( pk__in = person_id_in_list )
-                
+
             #-- END check to see if anything in ID list. --#
-            
+
         else:
-        
+
             debug_message = "no request_inputs_IN, so no query - returning None."
             LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
             person_qs = None
-        
+
         #-- END check to see if request_inputs_IN --#
-        
+
         # return person_qs
         qs_OUT = person_qs
-        
+
         return qs_OUT
 
     #-- END class method lookup_person_by_id() --#
-    
+
 
     #--------------------------------------------------------------------------#
     # instance methods
     #--------------------------------------------------------------------------#
-    
+
 
 #-- END Form class PersonLookupByIDForm --#
 
@@ -746,14 +746,14 @@ class PersonLookupByNameForm( ModelFormParent ):
 
     # constants-ish
     IAMEMPTY = "IAMEMPTY"
-    
+
     '''
     PersonNameLookupForm lets user specify full name or parts of a name to use
         to lookup one or more matching Person records.
     '''
 
     class Meta:
-    
+
         model = Person
         fields = [ "full_name_string", "first_name", "middle_name", "last_name", "name_prefix", "name_suffix", "nickname" ]
 
@@ -770,15 +770,15 @@ class PersonLookupByNameForm( ModelFormParent ):
     name_suffix = models.CharField( max_length = 255, blank = True, null = True )
     nickname = models.CharField( max_length = 255, blank = True, null = True )
     '''
-    
+
     #--------------------------------------------------------------------------#
     # class methods
     #--------------------------------------------------------------------------#
-    
-    
+
+
     @classmethod
     def lookup_person_by_name( cls, request_inputs_IN, lookup_type_IN = None, person_qs_IN = None, *args, **kwargs ):
-        
+
         '''
         Accepts request inputs we'd expect to contain the fields defined for
             this form and a lookup type that is one of those in the form class
@@ -786,10 +786,10 @@ class PersonLookupByNameForm( ModelFormParent ):
             a person and returns the QuerySet that contains the results of the
             lookup.  If error, returns None.
         '''
-        
+
         # return reference
         qs_OUT = None
-        
+
         # declare variables
         me = "lookup_person_by_name"
         my_logger_name = "context_text.forms.PersonLookupByNameForm"
@@ -802,44 +802,44 @@ class PersonLookupByNameForm( ModelFormParent ):
         name_string = None
         do_strict_match = False
         do_partial_match = False
-        
+
         # first, make sure we have request inputs.
         if ( request_inputs_IN is not None ):
-        
+
             # store off the inputs.
             request_inputs = request_inputs_IN
-            
+
             # and the lookup type.
             lookup_type = lookup_type_IN
-            
+
             debug_message = "lookup_type = " + str( lookup_type )
             LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
             # got a person qs?
             if ( person_qs_IN is not None ):
-            
+
                 person_qs = person_qs_IN
-                
+
             #-- END check to see if person_qs --#
-        
+
             # retrieve Person records specified by the input parameters,
             #     ordered by Last Name, then First Name.  Then, create HTML
             #     output of list of articles.  For each, output (to start):
             #     - Person string
-            
+
             # populate PersonDetails from request_inputs:
             my_person_details = PersonDetails.get_instance( request_inputs )
-            
+
             # get HumanName instance...
             human_name = my_person_details.to_HumanName()
             name_string = str( human_name )
-            
+
             # do lookup based on lookup_type
             if ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY ):
-            
+
                 debug_message = "performing general query"
                 LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
-            
+
                 # not strict
                 do_strict_match = False
                 do_partial_match = True
@@ -848,9 +848,9 @@ class PersonLookupByNameForm( ModelFormParent ):
                                                              do_strict_match_IN = do_strict_match,
                                                              do_partial_match_IN = do_partial_match,
                                                              qs_IN = person_qs )
-            
+
             elif ( lookup_type == PersonLookupTypeForm.PERSON_LOOKUP_TYPE_EXACT_QUERY ):
-            
+
                 debug_message = "performing exact query"
                 LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -864,7 +864,7 @@ class PersonLookupByNameForm( ModelFormParent ):
                                                              qs_IN = person_qs )
 
             else:
-            
+
                 debug_message = "no lookup_type, so doing general query"
                 LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
 
@@ -876,40 +876,40 @@ class PersonLookupByNameForm( ModelFormParent ):
                                                              do_strict_match_IN = do_strict_match,
                                                              do_partial_match_IN = do_partial_match,
                                                              qs_IN = person_qs )
-            
+
             #-- END decide how to lookup based on lookup_type --#
 
         else:
-        
+
             debug_message = "no request_inputs_IN, so no query - returning None."
             LoggingHelper.output_debug( debug_message, method_IN = me, logger_name_IN = my_logger_name )
             person_qs = None
-        
+
         #-- END check to see if request_inputs_IN --#
-        
+
         # return person_qs
         qs_OUT = person_qs
-        
+
         return qs_OUT
-        
+
     #-- END class method lookup_person() --#
-    
-        
+
+
     #--------------------------------------------------------------------------#
     # instance methods
     #--------------------------------------------------------------------------#
-    
-        
+
+
 #-- END ModelForm class PersonLookupByNameForm --#
 
 
 class Person_LookupResultViewForm( FormParent ):
-    
+
     '''
     allows user to specify list of tags they would like to be applied to
         some taggable entity.
     '''
-    
+
     # action choices
     PERSON_RESULT_VIEW_CHOICES = (
         ( "match_summary", "Match Summary" ),
@@ -920,34 +920,34 @@ class Person_LookupResultViewForm( FormParent ):
 
     # apply_tags_list (comma-delimited)
     #apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
-    
+
 #-- END Form class Person_ProcessSelectedForm --#
-    
+
 
 class Person_MergeActionForm( FormParent ):
-        
+
     '''
     Allows user to select from different types of merges to perform.  To start,
         just merge coding.
     '''
-    
+
     #===========================================================================
     # ! ==> CONSTANTS-ISH
     #===========================================================================
-    
+
     # merge_action choices
     PERSON_MERGE_ACTION_LOOKUP = "lookup"
     PERSON_MERGE_ACTION_MERGE_CODING = "merge_coding"
     PERSON_MERGE_ACTION_UN_MERGE_CODING = "un_merge_coding"
     PERSON_MERGE_ACTION_MERGE_ALL = "merge_all"
-    
+
     PERSON_MERGE_ACTION_CHOICES = (
         ( PERSON_MERGE_ACTION_LOOKUP, "Lookup (no changes)" ),
         ( PERSON_MERGE_ACTION_MERGE_CODING, "Merge Coding --> FROM 1 / INTO 1" ),
         ( PERSON_MERGE_ACTION_UN_MERGE_CODING, "Un-Merge Coding --> FROM = person we want coding to once again refer to; INTO (optional) = only undo records updated to refer to this person." ),
         #( PERSON_MERGE_ACTION_MERGE_ALL, "Merge All Person Data" ),
     )
-    
+
     # other constants
     INPUT_NAME_MERGE_FROM_PREFIX = "merge_from_person_id_"
     INPUT_NAME_MERGE_INTO_PREFIX = "merge_into_person_id_"
@@ -973,7 +973,7 @@ class PersonSelectForm( forms.Form ):
     '''
 
     # people to include?
-    
+
     # first, have a field that lets the user choose the overall strategy for
     #    choosing the people who will make up the rows and columns of the
     #    resulting attribution network.  Three choices:
@@ -1009,13 +1009,13 @@ class PersonSelectForm( forms.Form ):
         choices = NetworkOutput.CODER_TYPE_FILTER_TYPE_CHOICES_LIST,
         initial = NetworkOutput.CODER_TYPE_FILTER_TYPE_DEFAULT,
         label = "Article_Data coder_type Filter Type" )
-        
+
     # and values on which to filter.
     person_coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
 
     person_topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
-    person_tag_list = forms.CharField( required = False, label = "Article Tag List (comma-delimited)" )
-    person_unique_identifiers = forms.CharField( required = False, label = "Unique Identifier List (comma-delimited)" )
+    person_tag_list = forms.CharField( required = False, label = "Person - Include Articles With Tags In List (comma-delimited)" )
+    person_unique_identifiers = forms.CharField( required = False, label = "Person - Include Articles With unique_identifier In List (comma-delimited)" )
 
     # allow duplicate articles?
     person_allow_duplicate_articles = forms.ChoiceField( required = False, choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
@@ -1024,12 +1024,12 @@ class PersonSelectForm( forms.Form ):
 
 
 class ProcessSelectedArticlesForm( forms.Form ):
-    
+
     '''
     allows user to specify list of tags they would like to be applied to
         some taggable entity.
     '''
-    
+
     # action choices
     ACTION_CHOICES = (
         ( "match_summary", "Match Summary" ),
@@ -1041,17 +1041,17 @@ class ProcessSelectedArticlesForm( forms.Form ):
 
     # apply_tags_list (comma-delimited)
     apply_tags_list = forms.CharField( required = False, label = "If 'Apply Tags', list of tags to apply (comma-delimited)" )
-    
+
 #-- END Form class ProcessSelectedArticlesForm --#
-    
+
 
 class RelationSelectForm( forms.Form ):
-    
+
     '''
     RelationSelectForm contains form inputs that allow one to specify what types
        of relations you want included in a network.  To start, just includes the
        source contact type.
-    ''' 
+    '''
 
     # source contact types
 
@@ -1059,17 +1059,17 @@ class RelationSelectForm( forms.Form ):
     #    to place in "initial".
     initial_selected_list = []
     for selected_item in Article_Subject.SOURCE_CONTACT_TYPE_CHOICES:
-    
+
         initial_selected_list.append( selected_item[ 0 ] )
-        
+
     #-- END loop to populate initial selected items list --#
-        
+
     include_source_contact_types = forms.MultipleChoiceField( required = False,
         choices = Article_Subject.SOURCE_CONTACT_TYPE_CHOICES,
         widget = forms.widgets.CheckboxSelectMultiple,
         initial = ( initial_selected_list ),
         label = "relations - Include source contact types" )
-    
+
     # include and exclude source capacities
     include_capacities = forms.MultipleChoiceField( required = False,
         choices = Article_Subject.SOURCE_CAPACITY_CHOICES,
@@ -1078,5 +1078,14 @@ class RelationSelectForm( forms.Form ):
     exclude_capacities = forms.MultipleChoiceField( required = False,
         choices = Article_Subject.SOURCE_CAPACITY_CHOICES,
         label = "relations - Exclude source capacities" )
+
+    # comma-delimited string list of Article_Subject and Article_Author tag values you want excluded when creating network data.
+    exclude_persons_with_tags_in_list = forms.CharField( required = False,
+        label = "persons - Exclude Persons With Tags In List (comma-delimited)" )
+
+    # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
+    include_persons_with_single_word_name = forms.ChoiceField( required = False,
+        choices = NetworkOutput.CHOICES_YES_OR_NO_LIST,
+        label = "persons - Include Persons With Single Word Name?"  )
 
 #-- END Form class RelationSelectForm --#

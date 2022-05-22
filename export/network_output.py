@@ -12,19 +12,22 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 '''
 The network_output module contains objects and code to parse and output social
-   network data from context_text in a variety of formats, and also generates
-   some descriptive statistics as it builds output.
+    network data from context_text in a variety of formats, and also generates
+    some descriptive statistics as it builds output.
 
 2014-05-16 - Jonathan Morgan - Updated so that this object now speaks in terms
-   of Article_Data, not Article, so that we support multiple passes at coding
-   a given article by different people, only have to store the contents of each
-   article once.
+    of Article_Data, not Article, so that we support multiple passes at coding
+    a given article by different people, only have to store the contents of each
+    article once.
+
+2022-05-21 - Jonathan Morgan - Updating so `create_query_set` can both "filter"
+    and "exclude".
 '''
 
 '''
 If a NetworkDataOutput implementer will need to access or use variables, you
-   should declare them in class NetworkDataOutput in file
-   /export/network_data_output.py, then reference those variables here.
+    should declare them in class NetworkDataOutput in file
+    /export/network_data_output.py, then reference those variables here.
 '''
 
 __author__="jonathanmorgan"
@@ -353,23 +356,23 @@ class NetworkOutput( ContextTextBase ):
 
         """
             Accepts flag that dictates whether we load the actual person
-               record or not.  Uses person start and end dates from nested
-               request to retrieve all the article data in the range specified,
-               and then builds a dictionary of all the IDs of those people
-               mapped to their Person instance.
+                record or not.  Uses person start and end dates from nested
+                request to retrieve all the article data in the range specified,
+                and then builds a dictionary of all the IDs of those people
+                mapped to their Person instance.
 
             Preconditions: request must have contained required parameters, and
-               so contained at least a start and end date and a publication.
-               Should we have a flag that says to use the same criteria as the
-               selection criteria?
+                so contained at least a start and end date and a publication.
+                Should we have a flag that says to use the same criteria as the
+                selection criteria?
 
             Postconditions: uses a lot of memory if you choose a large date
-               range.
+                range.
 
             Parameters:
             - load_person_IN - boolean, if False, doesn't load Person model
-               instances while building the dictionary.  If True, loads Person
-               models and stores them in the dictionary.
+                instances while building the dictionary.  If True, loads Person
+                models and stores them in the dictionary.
 
             Returns:
             - Dictionary - dictionary that maps person IDs to Person model
@@ -389,6 +392,8 @@ class NetworkOutput( ContextTextBase ):
         current_article_data = None
         author_qs = None
         source_qs = None
+        exclude_persons_with_tags_list = None
+        include_persons_with_single_name = None
 
         # init debug
         my_debug_flag = NetworkDataOutput.DEBUG_FLAG
@@ -398,6 +403,10 @@ class NetworkOutput( ContextTextBase ):
 
         # initialize logger
         my_logger = self.get_logger()
+
+        # init person filter criteria
+        exclude_persons_with_tags_list = self.get_param_as_list( ContextTextBase.PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST )
+        include_persons_with_single_name = self.get_param_as_str( ContextTextBase.PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME, ContextTextBase.CHOICE_NO )
 
         # get query set to loop over Article_Data that matches our person
         #    select criteria.
@@ -412,12 +421,22 @@ class NetworkOutput( ContextTextBase ):
         # loop over the articles
         for current_article_data in article_data_query_set:
 
+            #------------------------------------------------------------------#
             # retrieve authors and add them to dict
-            author_qs = current_article_data.article_author_set.all()
+            author_qs = current_article_data.get_article_authors_qs(
+                exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list,
+                include_persons_with_single_name_IN = include_persons_with_single_name
+            )
+
             person_dict_OUT = self.add_people_to_dict( author_qs, person_dict_OUT, load_person_IN )
 
+            #------------------------------------------------------------------#
             # retrieve sources and add them to dict
-            source_qs = current_article_data.get_quoted_article_sources_qs()
+            source_qs = current_article_data.get_quoted_article_sources_qs(
+                exclude_persons_with_tags_list_IN = exclude_persons_with_tags_list,
+                include_persons_with_single_name_IN = include_persons_with_single_name
+            )
+
             person_dict_OUT = self.add_people_to_dict( source_qs, person_dict_OUT, load_person_IN )
 
         #-- END loop over articles --#
@@ -509,6 +528,7 @@ class NetworkOutput( ContextTextBase ):
 
         # declare variables
         me = "create_query_set"
+        status_message = None
         my_logger = None
         start_date_IN = ''
         end_date_IN = ''
@@ -534,7 +554,15 @@ class NetworkOutput( ContextTextBase ):
         date_range_q_list = None
         current_item = None
         current_query = None
-        query_list = []
+
+        # declare variables - build actual QuerySet.
+        filter_list = []
+        filter_item = None
+        filter_item_count = None
+        exclude_list = []
+        exclude_item = None
+        exclude_item_count = None
+        query_item_count = None
         has_unique_id_list = False
 
         # filtering Article_Data coder_type
@@ -544,7 +572,10 @@ class NetworkOutput( ContextTextBase ):
         # get logger
         my_logger = self.get_logger()
 
-        # retrieve the incoming parameters
+        #=====================================================================#
+        # ! retrieve the incoming parameters
+        #=====================================================================#
+
         start_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_START_DATE, '' )
         end_date_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_END_DATE, '' )
         date_range_IN = self.get_param_as_str( param_prefix_IN + ContextTextBase.PARAM_DATE_RANGE, '' )
@@ -563,7 +594,10 @@ class NetworkOutput( ContextTextBase ):
         # get all articles to start
         query_set_OUT = Article_Data.objects.all()
 
-        # now filter based on parameters passed in.
+        #=====================================================================#
+        # ! now filter based on parameters passed in.
+        #=====================================================================#
+
         # start date
         if ( start_date_IN != '' ):
 
@@ -571,7 +605,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( article__pub_date__gte = start_date_IN )
 
             # add it to list of queries
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END processing of start_date --#
 
@@ -582,7 +616,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( article__pub_date__lte = end_date_IN )
 
             # add it to list of queries
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END processing of end_date --#
 
@@ -617,7 +651,7 @@ class NetworkOutput( ContextTextBase ):
                 current_query = reduce( operator.__or__, date_range_q_list )
 
                 # add this to the query list.
-                query_list.append( current_query )
+                filter_list.append( current_query )
 
             #-- END check to see if we have any valid date ranges.
 
@@ -631,7 +665,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( article__newspaper__id__in = publication_list_IN )
 
             # add it to the query list
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END processing of publications --#
 
@@ -655,7 +689,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( coder__pk__in = coder_int_list )
 
             # add it to the query list
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END processing of coders --#
 
@@ -677,7 +711,7 @@ class NetworkOutput( ContextTextBase ):
                     current_query = Q( coder_type__in = coder_type_list_IN )
 
                     # add it to the query list
-                    query_list.append( current_query )
+                    filter_list.append( current_query )
 
                 elif ( coder_type_filter_type_IN == self.CODER_TYPE_FILTER_TYPE_AUTOMATED ):
 
@@ -685,7 +719,7 @@ class NetworkOutput( ContextTextBase ):
                     current_query = Article_Data.create_q_filter_automated_by_coder_type( coder_type_list_IN )
 
                     # add it to the query list
-                    query_list.append( current_query )
+                    filter_list.append( current_query )
 
                 else:
 
@@ -711,7 +745,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( topics__id__in = topic_list_IN )
 
             # add it to the query list
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END processing of topics --#
 
@@ -722,7 +756,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( article__tags__name__in = tag_list_IN )
 
             # add it to the query list
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
         #-- END check to see if we need to match tags. --#
 
@@ -737,7 +771,7 @@ class NetworkOutput( ContextTextBase ):
             current_query = Q( article__unique_identifier__in = unique_id_list_IN )
 
             # add it to list of queries
-            query_list.append( current_query )
+            filter_list.append( current_query )
 
             # set flag so we know there were indeed unique IDs. --#
             has_unique_id_list = True
@@ -746,19 +780,56 @@ class NetworkOutput( ContextTextBase ):
 
         my_logger.debug( "In " + me + ": before adding Q() instances - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
 
-        # now, add them all to the QuerySet - try a loop
+        #=====================================================================#
+        # ! combine filters and excludes into QuerySet.
+        #=====================================================================#
+
+        # init auditing counters
         query_item_count = 0
-        for query_item in query_list:
+        filter_item_count = 0
+        exclude_item_count = 0
+
+        # filters - add them all to the QuerySet - try a loop
+        for filter_item in filter_list:
 
             # increment query_item_count
             query_item_count += 1
+            filter_item_count += 1
 
             # append each filter to query set.
-            query_set_OUT = query_set_OUT.filter( query_item )
+            query_set_OUT = query_set_OUT.filter( filter_item )
 
-            my_logger.debug( "In " + me + ": Q() #" + str( query_item_count ) + " - type of query_set_OUT = " + str( type( query_set_OUT ) ) )
+            # debug
+            status_message = "In {me}(): Q() #{query_item_count} ( filter #{filter_item_count} ) - type of query_set_OUT = {qs_type}".format(
+                me = me,
+                query_item_count = query_item_count,
+                filter_item_count = filter_item_count,
+                qs_type = str( type( query_set_OUT ) )
+            )
+            my_logger.debug( status_message )
 
-        #-- END loop over query set items --#
+        #-- END loop over query set filter items --#
+
+        # excludes - add them all to the QuerySet - try a loop
+        for exclude_item in exclude_list:
+
+            # increment query_item_count
+            query_item_count += 1
+            exclude_item_count += 1
+
+            # append each filter to query set.
+            query_set_OUT = query_set_OUT.exclude( exclude_item )
+
+            # debug
+            status_message = "In {me}(): Q() #{query_item_count} ( exclude #{exclude_item_count} ) - type of query_set_OUT = {qs_type}".format(
+                me = me,
+                query_item_count = query_item_count,
+                exclude_item_count = exclude_item_count,
+                qs_type = str( type( query_set_OUT ) )
+            )
+            my_logger.debug( status_message )
+
+        #-- END loop over query set exclude items --#
 
         # see if we are omitting duplicates - can only do this if no unique
         #    IDs specified.  Those take precedence (and django can't handle
@@ -1385,12 +1456,12 @@ class NetworkOutput( ContextTextBase ):
             some cases, and could be a bad idea in others...
 
             Preconditions: assumes that we have a query set of Article_Data
-               instances passed in that we can interact with to look for
-               duplicates.  If not, does nothing.
+                instances passed in that we can interact with to look for
+                duplicates.  If not, does nothing.
 
             Postconditions: returns a query set with a not IN filter that omits
-               Article_Data instances past the first it encounters for a given
-               article.
+                Article_Data instances past the first it encounters for a given
+                article.
 
             Parameters:
             - query_set_IN - django QuerySet instance that contains Article_Data instances.
@@ -1543,13 +1614,13 @@ class NetworkOutput( ContextTextBase ):
 
         """
             Accepts query set of Article_Data.  Creates a new instance of the
-               requested output class, places the query set in it, sets up its
-               instance variables appropriately according to the request, then
-               renders output and returns that output as a string.
+                requested output class, places the query set in it, sets up its
+                instance variables appropriately according to the request, then
+                renders output and returns that output as a string.
 
             Preconditions: assumes that we have a query set of articles passed
-               in that we can store in the instance.  If not, does nothing,
-               returns empty string.
+                in that we can store in the instance.  If not, does nothing,
+                returns empty string.
 
             Postconditions: returns the CSV network data, in a string.
 

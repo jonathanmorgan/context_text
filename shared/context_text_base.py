@@ -120,11 +120,13 @@ class ContextTextBase( ContextBase ):
     PARAM_SECTION_LIST = 'section_list'   # alternate for list of names of sections you want included articles to be members of.
     PARAM_TAGS_IN_LIST = "tags_in_list_IN"  # comma-delimited string list of tag values that you want included.
     PARAM_TAGS_NOT_IN_LIST = "tags_not_in_list_IN"  # comma-delimited string list of tag values that you want excluded.
-    PARAM_TAG_LIST = 'tags_list'   # comma-delimited string list of tag values that you want included.
+    PARAM_TAG_LIST = 'tags_list'   # comma-delimited string list of Article tag values that you want included.
     PARAM_UNIQUE_ID_LIST = 'unique_identifiers'   # list of unique identifiers of articles whose data you want included.
     PARAM_ARTICLE_ID_LIST = 'article_id_list'   # list of ids of articles whose data you want included.
     PARAM_CUSTOM_ARTICLE_Q = 'custom_article_q'  # pre-built Q() instance to use to filter articles.  Can be anything you want!
     PARAM_GET_DISTINCT_RECORDS = "get_distinct_records"  # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
+    PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST = 'exclude_persons_with_tags_in_list'   # comma-delimited string list of Article_Subject and Article_Author tag values you want excluded when creating network data.
+    PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME = 'include_persons_with_single_word_name'   # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
 
     # Article_Data filter parameters.
     PARAM_CODERS = "coders"
