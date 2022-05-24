@@ -270,7 +270,7 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 
     - postgresql example, where production database name is "`research`" and database user is "`django_user`":
 
-            CREATE DATABASE research_test;
+            CREATE DATABASE research_test OWNER django_user;
             GRANT ALL PRIVILEGES ON DATABASE research_test TO django_user;
 
 - update the DATABASES dictionary in settings.py of the application that contains context_text to point to your test database (in easy example above, could just change the 'NAME' attribute in the 'default' entry to "`research_test`" rather than "`research`".
