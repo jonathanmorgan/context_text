@@ -72,16 +72,17 @@ class NetworkDataOutput( ContextTextBase ):
     # network output type constants
 
     # Network data format output types
-    NETWORK_DATA_FORMAT_SIMPLE_MATRIX = "simple_matrix"
-    NETWORK_DATA_FORMAT_CSV_MATRIX = "csv_matrix"
-    NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
-    NETWORK_DATA_FORMAT_DEFAULT = NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
+    NETWORK_DATA_FORMAT_SIMPLE_MATRIX = ContextTextBase.NETWORK_DATA_FORMAT_SIMPLE_MATRIX  # "simple_matrix"
+    NETWORK_DATA_FORMAT_CSV_MATRIX = ContextTextBase.NETWORK_DATA_FORMAT_CSV_MATRIX  # "csv_matrix"
+    NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX = ContextTextBase.NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX  # "tab_delimited_matrix"
+    NETWORK_DATA_FORMAT_DEFAULT = ContextTextBase.NETWORK_DATA_FORMAT_DEFAULT  # NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
 
-    NETWORK_DATA_FORMAT_CHOICES_LIST = [
-        ( NETWORK_DATA_FORMAT_SIMPLE_MATRIX, "Simple Matrix" ),
-        ( NETWORK_DATA_FORMAT_CSV_MATRIX, "CSV Matrix" ),
-        ( NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
-    ]
+    NETWORK_DATA_FORMAT_CHOICES_LIST = ContextTextBase.NETWORK_DATA_FORMAT_CHOICES_LIST
+    #[
+    #    ( NETWORK_DATA_FORMAT_SIMPLE_MATRIX, "Simple Matrix" ),
+    #    ( NETWORK_DATA_FORMAT_CSV_MATRIX, "CSV Matrix" ),
+    #    ( NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
+    #]
 
     # Network data output types
     NETWORK_DATA_OUTPUT_TYPE_NETWORK = "network"

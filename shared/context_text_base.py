@@ -177,6 +177,22 @@ class ContextTextBase( ContextBase ):
     TAG_ME_SINGLE_NAME_PERSON_MULTI = "me_single_name_person_multi"
 
     #--------------------------------------------------------------------------#
+    # ! ----> export --> network output
+
+    PARAM_NAME_OUTPUT_TYPE = "output_type"
+
+    NETWORK_DATA_FORMAT_SIMPLE_MATRIX = "simple_matrix"
+    NETWORK_DATA_FORMAT_CSV_MATRIX = "csv_matrix"
+    NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX = "tab_delimited_matrix"
+    NETWORK_DATA_FORMAT_DEFAULT = NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX
+
+    NETWORK_DATA_FORMAT_CHOICES_LIST = [
+        ( NETWORK_DATA_FORMAT_SIMPLE_MATRIX, "Simple Matrix" ),
+        ( NETWORK_DATA_FORMAT_CSV_MATRIX, "CSV Matrix" ),
+        ( NETWORK_DATA_FORMAT_TAB_DELIMITED_MATRIX, "Tab-Delimited Matrix" ),
+    ]
+
+    #--------------------------------------------------------------------------#
     # ! ----> Context
 
     # ! --------> Entities

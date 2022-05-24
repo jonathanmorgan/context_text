@@ -54,6 +54,7 @@ from python_utilities.parameters.param_container import ParamContainer
 # Import the classes for our context_text application
 from context_text.models import Article
 from context_text.models import Article_Data
+from context_text.models import NetworkDataOutputLog
 
 # Import context_text export classes.
 from context_text.export.csv_article_output import CsvArticleOutput
@@ -96,7 +97,7 @@ class NetworkOutput( ContextTextBase ):
     PARAM_CODER_ID_PRIORITY_LIST = 'coder_id_priority_list' # list of IDs of coders whose data you want included, in order of highest priority in case of a collision (two coders coding the same article) to lowest.
     PARAM_CODER_TYPE_LIST = 'coder_types_list'   # comma-delimited string list of coder_type values from Article_Data that you want articles' data to have for articles we process.
     PARAM_HEADER_PREFIX = 'header_prefix'   # for output, optional prefix you want appended to front of column header names.
-    PARAM_OUTPUT_TYPE = 'output_type'   # type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
+    PARAM_OUTPUT_TYPE = ContextTextBase.PARAM_NAME_OUTPUT_TYPE   # 'output_type' - type of output you want, either CSV, tab-delimited, or old UCINet format that I should just remove.
     PARAM_ALLOW_DUPLICATE_ARTICLES = 'allow_duplicate_articles'   # allow duplicate articles...  Not sure this is relevant anymore.
 
     # parameters specific to network output
@@ -206,12 +207,59 @@ class NetworkOutput( ContextTextBase ):
 
 
     #---------------------------------------------------------------------------
-    # class methods
+    # ! class methods
     #---------------------------------------------------------------------------
 
 
+    @classmethod
+    def render_and_log_network_data( cls, data_spec_IN ):
+
+        # return reference
+        log_OUT = None
+
+        # declare variables
+        network_outputter = None
+        network_data = None
+
+        # got a spec?
+        if ( ( data_spec_IN is not None ) and ( len ( data_spec_IN ) > 0 ) ):
+
+            # create log instance.
+            log_OUT = NetworkDataOutputLog()
+
+            # store spec.
+            log_OUT.set_data_spec_json( data_spec_IN )
+
+            # try creating network data.
+            network_outputter = cls()
+            network_data = network_outputter.process_network_output_request(
+                params_IN = data_spec_IN,
+                debug_flag_IN = None
+            )
+
+            # got anything back?
+            if ( network_data is not None ):
+
+                # yes. Store in log.
+                log_OUT.set_network_data( network_data )
+
+            #-- END - check for output data. --#
+
+            # save the log (and, so, also the data).
+            log_OUT.save()
+
+        else:
+
+            # no spec, nothing to do - return None.
+            log_OUT = None
+
+        #-- END check if spec. --#
+
+    #-- END class method render_network_data() --#
+
+
     #---------------------------------------------------------------------------
-    # __init__() method
+    # ! __init__() method
     #---------------------------------------------------------------------------
 
 
@@ -242,7 +290,7 @@ class NetworkOutput( ContextTextBase ):
 
 
     #---------------------------------------------------------------------------
-    # instance methods, in alphabetical order
+    # ! instance methods, in alphabetical order
     #---------------------------------------------------------------------------
 
 

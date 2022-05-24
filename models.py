@@ -24,6 +24,7 @@ import datetime
 from decimal import Decimal
 from decimal import getcontext
 import gc
+import hashlib
 import logging
 import pickle
 #import re
@@ -98,9 +99,12 @@ from context.shared.entity_models import Abstract_Person_Parent
 from context.shared.entity_models import Abstract_Person
 from context.shared.entity_models import Abstract_Related_Content
 from context.shared.entity_models import Abstract_Related_JSON_Content
+from context.shared.entity_models import output_debug
+from context.shared.entity_models import output_log_message
 from context.shared.person_details import PersonDetails
 
 # context_text imports
+#from context_text.export.network_output import NetworkOutput
 from context_text.shared.context_text_base import ContextTextBase
 
 #================================================================================
@@ -118,61 +122,12 @@ Debugging code, shared across all models.
 DEBUG = False
 DEFAULT_LOGGER_NAME = "context_text.models"
 
-def output_log_message( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME, log_level_code_IN = logging.DEBUG, do_print_IN = False ):
-
-    '''
-    Accepts message string.  If debug is on, logs it.  If not,
-       does nothing for now.
-    '''
-
-    # declare variables
-    do_print = False
-
-    # got a message?
-    if ( message_IN ):
-
-        # only print if debug is on.
-        do_print = DEBUG
-
-        # call LoggingHelper method
-        LoggingHelper.log_message( message_IN,
-                                   method_IN = method_IN,
-                                   indent_with_IN = indent_with_IN,
-                                   logger_name_IN = logger_name_IN,
-                                   log_level_code_IN = log_level_code_IN,
-                                   do_print_IN = do_print_IN )
-
-    #-- END check to see if message. --#
-
-#-- END method output_log_message() --#
+# now imported: context.shared.entity_models import output_log_message
+# def output_log_message( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME, log_level_code_IN = logging.DEBUG, do_print_IN = False ):
 
 
-def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME ):
-
-    '''
-    Accepts message string.  If debug is on, logs it.  If not,
-       does nothing for now.
-    '''
-
-    # declare variables
-    do_print = False
-
-    # got a message?
-    if ( message_IN ):
-
-        # only print if debug is on.
-        do_print = DEBUG
-
-        # call LoggingHelper method
-        LoggingHelper.output_debug( message_IN,
-                                    method_IN = method_IN,
-                                    indent_with_IN = indent_with_IN,
-                                    logger_name_IN = logger_name_IN,
-                                    do_print_IN = do_print )
-
-    #-- END check to see if message. --#
-
-#-- END method output_debug() --#
+# now imported: context.shared.entity_models import output_debug
+#def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = DEFAULT_LOGGER_NAME ):
 
 
 def get_dict_value( dict_IN, name_IN, default_IN = None ):
@@ -10498,3 +10453,456 @@ class Articles_To_Migrate( models.Model ):
 
 
 #= END Articles_To_Migrate model ===============================================#
+
+
+#==============================================================================#
+# ! Export Network Data models
+#==============================================================================#
+
+
+# NetworkDataOutputLog model
+class NetworkDataOutputLog( models.Model ):
+
+    # Content types:
+    CONTENT_TYPE_CANONICAL = 'canonical'
+    CONTENT_TYPE_TEXT = 'text'
+    CONTENT_TYPE_HTML = 'html'
+    CONTENT_TYPE_JSON = 'json'
+    CONTENT_TYPE_XML = 'xml'
+    CONTENT_TYPE_OTHER = 'other'
+    CONTENT_TYPE_NONE = 'none'
+    CONTENT_TYPE_DEFAULT = CONTENT_TYPE_TEXT
+
+    CONTENT_TYPE_CHOICES = (
+        ( CONTENT_TYPE_CANONICAL, "Canonical" ),
+        ( CONTENT_TYPE_TEXT, "Text" ),
+        ( CONTENT_TYPE_HTML, "HTML" ),
+        ( CONTENT_TYPE_JSON, "JSON" ),
+        ( CONTENT_TYPE_XML, "XML" ),
+        ( CONTENT_TYPE_OTHER, "Other" ),
+        ( CONTENT_TYPE_NONE, "None" )
+    )
+
+    PARAM_NAME_OUTPUT_TYPE = "output_type"
+
+    #----------------------------------------------------------------------
+    # model fields and meta
+    #----------------------------------------------------------------------
+
+    label = models.CharField( max_length = 255, blank = True, null = True )
+    data_spec_json = models.JSONField()
+    data_spec_json_hash = models.CharField( max_length = 255, blank = True, null = True )
+    network_data = models.TextField()
+    network_data_hash = models.CharField( max_length = 255, blank = True, null = True )
+    network_data_content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
+    network_data_format = models.CharField( max_length = 255, choices = ContextTextBase.NETWORK_DATA_FORMAT_CHOICES_LIST, blank = True, null = True )
+    status = models.CharField( max_length = 255, blank = True, null = True )
+    status_message = models.TextField( blank = True, null = True )
+    description = models.TextField( blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
+    create_date = models.DateTimeField( auto_now_add = True )
+    last_modified = models.DateTimeField( auto_now = True )
+
+    # tags!
+    tags = TaggableManager( blank = True )
+
+    # meta class so we know this is an abstract class.
+    class Meta:
+        ordering = [ 'last_modified', 'create_date' ]
+
+    #----------------------------------------------------------------------
+    # NOT instance variables
+    # Class variables - overriden by __init__() per instance if same names, but
+    #    if not set there, shared!
+    #----------------------------------------------------------------------
+
+
+    #bs_helper = None
+
+
+    #----------------------------------------------------------------------------
+    # class methods
+    #----------------------------------------------------------------------------
+
+
+    @classmethod
+    def make_standard_json_string_hash( cls, json_IN ):
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "make_standard_json_string_hash"
+        json_object = None
+        my_json_hash_hexdigest = None
+
+        # value_IN is json_object
+        json_object = json_IN
+
+        # Is JSON not None?
+        if ( json_object is not None ):
+
+            # not None - create hash of standardized JSON string and store.
+            my_json_hash_hexdigest = JSONHelper.create_standard_json_hash( json_object )
+            value_OUT = my_json_hash_hexdigest
+
+        #-- END check to see if JSON is not None. --#
+
+        return value_OUT
+
+    #-- END class method make_standard_json_string_hash() --#
+
+
+    @classmethod
+    def make_string_hash( cls, value_IN, hash_function_IN = hashlib.sha256 ):
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "make_string_hash"
+
+        # call StringHelper method.
+        value_OUT = StringHelper.make_string_hash( value_IN, hash_function_IN = hash_function_IN )
+
+        return value_OUT
+
+    #-- END class method make_standard_json_string_hash() --#
+
+
+    #----------------------------------------------------------------------------
+    # instance methods
+    #----------------------------------------------------------------------------
+
+
+    def __init__( self, *args, **kwargs ):
+
+        # call parent __init()__ first.
+        super().__init__( *args, **kwargs )
+
+        # then, initialize variable.
+        self.bs_helper = None
+
+    #-- END method __init__() --#
+
+
+    def get_bs_helper( self ):
+
+        # return reference
+        instance_OUT = None
+
+        # get instance.
+        instance_OUT = self.bs_helper
+
+        # got one?
+        if ( not( instance_OUT ) ):
+
+            # no.  Create and store.
+            self.bs_helper = BeautifulSoupHelper()
+
+            # try again.  If nothing this time, nothing we can do.  Return it.
+            instance_OUT = self.bs_helper
+
+        #-- END check to see if regex is stored in instance --#
+
+        return instance_OUT
+
+    #-- END method get_bs_helper() --#
+
+
+    def get_data_spec_json( self, *args, **kwargs ):
+
+        '''
+        Returns request JSON nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the request JSON exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_data_spec_json"
+
+        # return the content.
+        value_OUT = self.data_spec_json
+
+        return value_OUT
+
+    #-- END method get_data_spec_json() --#
+
+
+    def get_data_spec_json_hash( self, *args, **kwargs ):
+
+        '''
+        Returns data_spec_json_hash nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the data_spec_json_hash exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_data_spec_json_hash"
+
+        # return the content.
+        value_OUT = self.data_spec_json_hash
+
+        return value_OUT
+
+    #-- END method get_data_spec_json_hash() --#
+
+
+    def get_network_data( self, *args, **kwargs ):
+
+        '''
+        Returns network_data nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_network_data"
+
+        # return the content.
+        value_OUT = self.network_data
+
+        return value_OUT
+
+    #-- END method get_network_data() --#
+
+
+    def get_network_data_hash( self, *args, **kwargs ):
+
+        '''
+        Returns network_data_hash nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data_hash exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_network_data_hash"
+
+        # return the content.
+        value_OUT = self.network_data_hash
+
+        return value_OUT
+
+    #-- END method get_network_data_hash() --#
+
+
+    def set_data_spec_json( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts a JSON object (dictionary).  Stores it in this instance's
+            data_spec_json variable.
+        Preconditions: None
+        Postconditions: Also creates a sha256 hash of the standardized string
+            representation of the JSON passed in and stores it in
+            data_spec_json_hash.
+
+        Returns data_spec_json as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_data_spec_json"
+        json_object = None
+        my_json_hash_hexdigest = None
+        my_output_type = None
+
+        # value_IN is json_object
+        json_object = value_IN
+
+        # set the JSON in the instance.
+        self.data_spec_json = json_object
+
+        # Is JSON not None?
+        if ( json_object is not None ):
+
+            # not None - create hash of standardized JSON string and store.
+            my_json_hash_hexdigest = self.make_standard_json_string_hash( json_object )
+            self.set_data_spec_json_hash( my_json_hash_hexdigest )
+
+            # retrieve output_type and store it in network_data_format
+            my_output_type = json_object.get( ContextTextBase.PARAM_NAME_OUTPUT_TYPE, None )
+
+            # got output type?
+            if (
+                ( my_output_type is not None )
+                and ( my_output_type != "" )
+                and ( my_output_type in ContextTextBase.NETWORK_DATA_FORMAT_CHOICES_LIST )
+            ):
+
+                # yes - store it in network_data_format
+                self.network_data_format = my_output_type
+
+            #-- END check if there is an output type. --#
+
+        #-- END check to see if JSON is not None. --#
+
+        # return the content.
+        value_OUT = self.get_data_spec_json()
+
+        return value_OUT
+
+    #-- END method set_data_spec_json() --#
+
+
+    def set_data_spec_json_hash( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts a hash of a JSON object's standardized string representation.
+            Stores it in this instance's data_spec_json_hash variable.
+        Preconditions: None
+        Postconditions: Also creates a sha256 hash of the standardized string
+            representation of the JSON passed in and stores it in
+            data_spec_json_hash.
+
+        Returns data_spec_json_hash as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_data_spec_json_hash"
+
+        # set the value in the instance.
+        self.data_spec_json_hash = value_IN
+
+        # return the request.
+        value_OUT = self.get_data_spec_json_hash()
+
+        return value_OUT
+
+    #-- END method set_data_spec_json_hash() --#
+
+
+    def set_network_data( self, value_IN = "", hash_function_IN = hashlib.sha256, *args, **kwargs ):
+
+        '''
+        Accepts a piece of text.  Stores it in this instance's network_data variable.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_network_data"
+        my_value_bytes = None
+        my_value_hash = None
+        my_value_hash_hexdigest = None
+
+        # set the text in the instance.
+        self.network_data = value_IN
+
+        # Is value not None and not empty?
+        if ( ( value_IN is not None ) and ( value_IN != "" ) ):
+
+            # get hex digest of hash
+            my_value_hash_hexdigest = self.make_string_hash( value_IN )
+
+            # store it.
+            self.set_network_data_hash( my_value_hash_hexdigest )
+
+        #-- END check to see if value is not None. --#
+
+        # return the content.
+        value_OUT = self.get_network_data()
+
+        return value_OUT
+
+    #-- END method set_network_data() --#
+
+
+    def set_network_data_hash( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts the hash of the data in "network_data". Stores it in this instance's
+            network_data_hash variable.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data_hash as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_network_data_hash"
+
+        # set the text in the instance.
+        self.network_data_hash = value_IN
+
+        # return the content_hash.
+        value_OUT = self.get_network_data_hash()
+
+        return value_OUT
+
+    #-- END method set_network_data_hash() --#
+
+
+    def to_string( self ):
+
+        # return reference
+        string_OUT = ""
+
+        if ( self.id ):
+
+            string_OUT += str( self.id ) + " - "
+
+        #-- END check to see if ID --#
+
+        if ( self.label ):
+
+            string_OUT += self.label
+
+        #-- END check to see if label --#
+
+        if ( self.network_data_format ):
+
+            string_OUT += " ( type \"" + self.network_data_format + "\" )"
+
+        #-- END check to see if there is a network_data_format --#
+
+        return string_OUT
+
+    #-- END method to_string() --#
+
+
+    def __str__( self ):
+
+        # return reference
+        string_OUT = ""
+
+        string_OUT = self.to_string()
+
+        return string_OUT
+
+    #-- END method __str__() --#
+
+
+#-- END abstract NetworkDataOutputLog model --#
