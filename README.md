@@ -257,12 +257,24 @@ Specific sets of tests:
 
 ## Test data
 
-There is a set of test data stored in the `fixtures` folder inside this django application.  The files:
+There is a set of test data stored in the `fixtures` folder inside this django application.
+
+The base test files just include human-coded article data:
 
 - **_`context_text_unittest_auth_data.json`_** - User data for article-coding comparison.
 - **_`context_text_unittest_django_config_data.json`_** - configuration properties for context_text (in particular, for external APIs).
 - **_`context_text_unittest_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded.
-- **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data (broken at the moment, since it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests).
+- **_`context_text_unittest_taggit_data.json`_** - tag data for context_text data
+
+    - might be broken, but might have been fixed in the last 7 or so years - problem was that it relies on django's content types, and they are dynamically assigned and so not guaranteed to be the same for a given object type across runs of the unit tests.
+
+In addition, you can load a complete test data set that includes automated coding by loading the following files:
+
+- **_`context_text_unittest_export_auth_data.json`_** - User data for article-coding comparison, including automated user.
+- **_`context_text_unittest_django_config_data.json`_** - same as above.
+- **_`context_text_unittest_export_data.json`_** - actual context_text data - needs to be loaded after "`auth`" data so users who did coding are in database when coding data is loaded. "export" data includes automated coding by OpenCalais v.2.
+- **_`context_text_unittest_export_taggit_data.json`_** - tag data for context_text data that includes tags from automated coding.
+- **_`context-sourcenet_entity_and_relation_types.json`_** - context entity and relation types, for exporting from `context_text` to `context` relation database.
 
 ### Using unittest data for development
 
@@ -284,12 +296,22 @@ There is a set of test data stored in the `fixtures` folder inside this django a
 
         python manage.py createsuperuser
 
-- load the unit test fixtures into the database:
+- load the unit test fixtures into the database.
 
-        python manage.py loaddata context_text_unittest_auth_data.json
-        python manage.py loaddata context_text_unittest_django_config_data.json
-        python manage.py loaddata context_text_unittest_data.json
-        python manage.py loaddata context_text_unittest_taggit_data.json
+    - for a base set of data with no automated coding:
+
+            python manage.py loaddata context_text_unittest_auth_data.json
+            python manage.py loaddata context_text_unittest_django_config_data.json
+            python manage.py loaddata context_text_unittest_data.json
+            python manage.py loaddata context_text_unittest_taggit_data.json
+
+    - to load all that data, plus `Article_Data` coded by OpenCalais v.2:
+    
+            python manage.py loaddata context_text_unittest_export_auth_data.json
+            python manage.py loaddata context_text_unittest_django_config_data.json
+            python manage.py loaddata context_text_unittest_export_data.json
+            python manage.py loaddata context_text_unittest_export_taggit_data.json
+            python manage.py loaddata context-sourcenet_entity_and_relation_types.json
 
 # Collecting Articles
 
