@@ -41,8 +41,7 @@ if __name__ == "__main__":
 #===============================================================================
 
 # python base imports
-#from datetime import date
-from datetime import datetime
+import datetime
 import operator
 
 # django database classes
@@ -209,53 +208,6 @@ class NetworkOutput( ContextTextBase ):
     #---------------------------------------------------------------------------
     # ! class methods
     #---------------------------------------------------------------------------
-
-
-    @classmethod
-    def render_and_log_network_data( cls, data_spec_IN ):
-
-        # return reference
-        log_OUT = None
-
-        # declare variables
-        network_outputter = None
-        network_data = None
-
-        # got a spec?
-        if ( ( data_spec_IN is not None ) and ( len ( data_spec_IN ) > 0 ) ):
-
-            # create log instance.
-            log_OUT = NetworkDataOutputLog()
-
-            # store spec.
-            log_OUT.set_data_spec_json( data_spec_IN )
-
-            # try creating network data.
-            network_outputter = cls()
-            network_data = network_outputter.process_network_output_request(
-                params_IN = data_spec_IN,
-                debug_flag_IN = None
-            )
-
-            # got anything back?
-            if ( network_data is not None ):
-
-                # yes. Store in log.
-                log_OUT.set_network_data( network_data )
-
-            #-- END - check for output data. --#
-
-            # save the log (and, so, also the data).
-            log_OUT.save()
-
-        else:
-
-            # no spec, nothing to do - return None.
-            log_OUT = None
-
-        #-- END check if spec. --#
-
-    #-- END class method render_network_data() --#
 
 
     #---------------------------------------------------------------------------
@@ -1248,7 +1200,14 @@ class NetworkOutput( ContextTextBase ):
     #-- END method has_prioritized_coder_list() --#
 
 
-    def process_network_output_request( self, request_IN = None, params_IN = None, debug_flag_IN = None ):
+    def process_network_output_request(
+        self,
+        request_IN = None,
+        params_IN = None,
+        debug_flag_IN = None,
+        do_log_output_IN = False,
+        output_log_label_IN = None
+    ):
 
         # return reference
         data_OUT = None
@@ -1266,6 +1225,19 @@ class NetworkOutput( ContextTextBase ):
         network_query_set_count = None
         article_data_count = ''
         query_counter = ''
+
+        # declare variables - output logging
+        data_spec_json = None
+        data_output_request_type = None
+        database_output_IN = None
+        do_log_output = None
+        output_logger = None
+        dataspec_json = None
+        my_param_container = None
+        output_log_label = None
+        network_label_IN = None
+        label_value = None
+        output_type_IN = None
 
         # declare variables - DEBUG
         coder_list_IN = None
@@ -1288,10 +1260,18 @@ class NetworkOutput( ContextTextBase ):
             # store request, and it will pull POST out of it.
             self.set_request( request_IN )
 
+            # store some metadata, in case we are logging output.
+            data_spec_json = self.get_parameters_dict()
+            data_output_request_type = NetworkDataOutputLog.REQUEST_TYPE_HTTP_REQUEST
+
         elif ( params_IN is not None ):
 
             # no request, but parameters passed in. Just use those.
             self.store_parameters( params_IN )
+
+            # store some metadata, in case we are logging output.
+            data_spec_json = params_IN
+            data_output_request_type = NetworkDataOutputLog.REQUEST_TYPE_JSON
 
         else:
 
@@ -1300,6 +1280,54 @@ class NetworkOutput( ContextTextBase ):
             raise ContextTextError( status_message )
 
         #-- END check to see
+
+        # logging output?
+
+        # retrieve database_output parameter.
+        database_output_IN = self.get_param(
+            NetworkOutput.PARAM_NAME_DATABASE_OUTPUT,
+            None
+        )
+
+        # param set?
+        if (
+            ( database_output_IN is not None )
+            and ( database_output_IN != "" )
+            and ( database_output_IN in NetworkOutput.CHOICE_YES_OR_NO_VALUE_LIST )
+        ):
+
+            #raise ContextTextError( "Found database_output param: {}".format( database_output_IN ) )
+            # got a valid value. Yes or no?
+            if ( database_output_IN == NetworkOutput.CHOICE_NO ):
+
+                # no - set to True.
+                do_log_output = False
+
+            elif ( database_output_IN == NetworkOutput.CHOICE_YES ):
+
+                # no - set to True.
+                do_log_output = True
+
+            #-- END check to see if we log output based on data spec --#
+
+        else:
+
+            #raise ContextTextError( "DID NOT FIND database_output param: {} ( {} )".format( database_output_IN, self.get_parameters_dict() ) )
+            # param not set, use argument to method.
+            do_log_output = do_log_output_IN
+
+        #-- END check if database_output param set --#
+
+        if ( do_log_output == True ):
+
+            # yes. Create instance.
+            output_logger = NetworkDataOutputLog()
+
+            # and store request type and data spec JSON.
+            output_logger.set_request_type( data_output_request_type )
+            output_logger.set_data_spec_json( data_spec_json )
+
+        #-- END init logging output. --#
 
         # do we include details?
         include_render_details_IN = self.get_param(
@@ -1426,6 +1454,90 @@ class NetworkOutput( ContextTextBase ):
         #-- END check to see if we output render details --#
 
         data_OUT = output_string
+
+        # logging output?
+        if ( do_log_output == True ):
+
+            # store output and save.
+
+            #------------------------------------------------------------------#
+            # ==> network_data
+            output_logger.set_network_data( data_OUT )
+
+            #------------------------------------------------------------------#
+            # ==> label
+
+            # start with standard value
+            current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
+            output_log_label = "{request_type}-{timestamp_now}".format(
+                request_type = output_logger.get_request_type(),
+                timestamp_now = current_date_time
+            )
+
+            # anything else to add?
+
+            # retrieve network_label parameter.
+            network_label_IN = self.get_param(
+                NetworkOutput.PARAM_NETWORK_LABEL,
+                None
+            )
+
+            # first, parameter passed in data spec takes precedence.
+            if (
+                ( network_label_IN is not None )
+                and ( network_label_IN != "" )
+            ):
+
+                # network_label param - use it.
+                label_value = network_label_IN
+
+            else:
+
+                # no data spec param, try parameter passed to method.
+                label_value = output_log_label_IN
+
+            #-- END check if label passed in. --#
+
+            # got a label_value?
+            if (
+                ( label_value is not None )
+                and ( label_value != "" )
+            ):
+
+                # yes - prepend it to label...
+                output_log_label = "{label_value}-{rest_of_label}".format(
+                    label_value = label_value,
+                    rest_of_label = output_log_label
+                )
+
+            #-- END check if label value --#
+
+            # store label
+            output_logger.set_label( output_log_label )
+
+            #------------------------------------------------------------------#
+            # output_type --> network_data_format
+            output_type_IN = self.get_param(
+                NetworkOutput.PARAM_OUTPUT_TYPE,
+                None
+            )
+            output_logger.set_network_data_format( output_type_IN )
+
+            #------------------------------------------------------------------#
+            # save()
+            output_logger.save()
+
+            #------------------------------------------------------------------#
+            # tags - got a label_value?
+            if ( label_value is not None ):
+
+                # yes - add it and the label as tags.
+                output_logger.tags.add( label_value )
+                output_logger.tags.add( output_log_label )
+
+            #-- END check if label value --#
+
+        #-- END check if output_logger instance present. --#
 
         return data_OUT
 

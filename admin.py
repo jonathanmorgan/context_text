@@ -24,50 +24,52 @@ from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
 
 # Import models
-from context_text.models import Project
-from context_text.models import Location
-from context_text.models import Topic
-from context_text.models import Person
-from context_text.models import Organization
-from context_text.models import Person_Newspaper
-from context_text.models import Person_Organization
-from context_text.models import Person_External_UUID
-from context_text.models import Document
-from context_text.models import Newspaper
 from context_text.models import Article
 from context_text.models import Article_Author
+from context_text.models import Article_Data
+from context_text.models import Article_Data_Notes
 #from context_text.models import Article_Location
 from context_text.models import Article_Notes
 from context_text.models import Article_RawData
 from context_text.models import Article_Subject
 from context_text.models import Article_Text
 #from context_text.models import Article_Topic
+from context_text.models import Document
+from context_text.models import Location
+from context_text.models import NetworkDataOutputLog
+from context_text.models import Newspaper
+from context_text.models import Organization
+from context_text.models import Person
+from context_text.models import Person_External_UUID
+from context_text.models import Person_Newspaper
+from context_text.models import Person_Organization
+from context_text.models import Project
 #from context_text.models import Source_Organization
-from context_text.models import Article_Data
-from context_text.models import Article_Data_Notes
+from context_text.models import Topic
 
 # default admins
-admin.site.register( Project )
-admin.site.register( Location )
-admin.site.register( Topic )
-#admin.site.register( Person )
-#admin.site.register( Organization )
-#admin.site.register( Person_Newspaper )
-#admin.site.register( Person_Organization )
-#admin.site.register( Person_External_UUID )
-admin.site.register( Document )
-#admin.site.register( Newspaper )
 #admin.site.register( Article )
 #admin.site.register( Article_Author )
+#admin.site.register( Article_Data )
+#admin.site.register( Article_Data_Notes )
 #admin.site.register( Article_Location )
 #admin.site.register( Article_Notes )
 #admin.site.register( Article_RawData )
 #admin.site.register( Article_Subject )
 #admin.site.register( Article_Text )
 #admin.site.register( Article_Topic )
+admin.site.register( Document )
+admin.site.register( Location )
+#admin.site.register( NetworkDataOutputLog )
+#admin.site.register( Newspaper )
+#admin.site.register( Organization )
+#admin.site.register( Person )
+#admin.site.register( Person_External_UUID )
+#admin.site.register( Person_Newspaper )
+#admin.site.register( Person_Organization )
+admin.site.register( Project )
 #admin.site.register( Source_Organization )
-#admin.site.register( Article_Data )
-#admin.site.register( Article_Data_Notes )
+admin.site.register( Topic )
 
 
 #-------------------------------------------------------------------------------
@@ -562,3 +564,61 @@ class Article_Data_NotesAdmin( admin.ModelAdmin ):
     #date_hierarchy = 'pub_date'
 
 admin.site.register( Article_Data_Notes, Article_Data_NotesAdmin )
+
+#-------------------------------------------------------------------------------
+# NetworkDataOutputLog admin definition
+#-------------------------------------------------------------------------------
+
+class NetworkDataOutputLogAdmin( admin.ModelAdmin ):
+
+    formfield_overrides = {
+        models.JSONField: { 'widget': JSONEditorWidget },
+    }
+
+    fieldsets = [
+        (
+            None,
+            {
+                'fields' : [ 'label', 'description', 'request_type', 'status', 'status_message', 'tags' ]
+            }
+        ),
+        (
+            "Data Spec",
+            {
+                'fields' : [ 'data_spec_json_hash', 'data_spec_json' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+        (
+            "Network Data",
+            {
+                'fields' : [ 'network_data_content_type', 'network_data_format', 'network_data_hash', 'network_data' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+        (
+            "More Details (Optional)",
+            {
+                'fields' : [ 'notes' ],
+                'classes' : ( "collapse", )
+            }
+        ),
+    ]
+
+    list_display = (
+        'id',
+        'label',
+        'request_type',
+        'network_data_format',
+        'create_date',
+        'last_modified'
+    )
+    list_display_links = ( 'id', 'label' )
+    list_filter = [ 'request_type', 'network_data_format', 'network_data_content_type' ]
+    search_fields = [ 'label', 'description', 'notes', 'request_type', 'network_data_format', 'network_data_content_type', 'id' ]
+    #search_fields = [ 'newspaper', 'coder', 'headline' ]
+    #search_fields = [ 'newspaper.name', 'coder.last_name', 'coder.first_name', 'headline' ]
+    date_hierarchy = 'create_date'
+
+admin.site.register( NetworkDataOutputLog, NetworkDataOutputLogAdmin )
+

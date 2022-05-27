@@ -12,9 +12,9 @@ context_text is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Lesser General Public License along with http://github.com/jonathanmorgan/context_text. If not, see http://www.gnu.org/licenses/.
 
 Configuration properties for it are stored in django's admins, in the
-   django_config application.  The properties for the article_code view are stored in Application
-   "context_text-UI-article-code":
-   - include_fix_person_name - boolean flag, if true outputs additional field to correct name text from article.
+    django_config application.  The properties for the article_code view are stored in Application
+    "context_text-UI-article-code":
+    - include_fix_person_name - boolean flag, if true outputs additional field to correct name text from article.
 '''
 
 #===============================================================================
@@ -73,7 +73,7 @@ from django.template.context_processors import csrf
 # import basic django configuration application.
 from django_config.models import Config_Property
 
-'''   
+'''
 Example of getting properties from django_config:
 
 # get settings from django_config.
@@ -156,7 +156,7 @@ from context_text.shared.context_text_error import ContextTextError
 # configuration properties
 # article_code view
 CONFIG_APPLICATION_ARTICLE_CODE = ContextTextBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
-    
+
 # article_code config property names.
 CONFIG_PROP_DO_OUTPUT_TABLE_HTML = ContextTextBase.DJANGO_CONFIG_PROP_DO_OUTPUT_TABLE_HTML
 CONFIG_PROP_INCLUDE_FIX_PERSON_NAME = "include_fix_person_name"
@@ -173,17 +173,17 @@ INPUT_NAME_TAGS_IN_LIST = "tags_in_list"
 NO_GRAF = "no_graf"
 
 def create_graf_to_subject_map( article_data_qs_IN ):
-    
+
     '''
     Accepts Article_Data QuerySet.  Loops over Article_Data instances, then over
         Article_Subjects.  Creates a Dictionary that maps paragraph location of
         first mention of full name to list of subjects found in that paragraph.
         Returns dictionary.
     '''
-    
+
     # return reference
     map_OUT = {}
-    
+
     # declare variables
     me = "create_graf_to_subject_map"
     article_data_qs = None
@@ -195,87 +195,87 @@ def create_graf_to_subject_map( article_data_qs_IN ):
     subject_mention = None
     graf_number = -1
     graf_subject_list = None
-    
+
     # create place in map for people who are missing paragraph.
     map_OUT[ NO_GRAF ] = []
-    
+
     # got a QuerySet?
     article_data_qs = article_data_qs_IN
     if ( ( article_data_qs is not None ) and ( article_data_qs.count() > 0 ) ):
-                    
+
         # make list of subjects broken out by paragraph number.
         for article_data_instance in article_data_qs:
-        
+
             # retrieve all subjects
             article_subject_qs = article_data_instance.article_subject_set.all()
-            
+
             # loop over subjects.
             for article_subject in article_subject_qs:
-            
+
                 # get name
                 subject_name = article_subject.name
-                
+
                 # look for mentions of that name
                 subject_mention_qs = article_subject.article_subject_mention_set.all()
                 #subject_mention_qs = subject_mention_qs.filter( value__iexact = subject_name )
                 subject_mention_qs = subject_mention_qs.order_by( "paragraph_number" )
-                
+
                 # got any?
                 if ( subject_mention_qs.count() > 0 ):
-                
+
                     # yes - get the first.
                     subject_mention = subject_mention_qs[ 0 ]
-                    
+
                     # get paragraph number
                     graf_number = subject_mention.paragraph_number
-                    
+
                     # got valid number?
                     if ( ( graf_number is not None ) and ( graf_number != "" ) and ( graf_number > 0 ) ):
-                    
+
                         # yes - add to output map - graf number already in map?
                         if ( graf_number in map_OUT ):
-                        
+
                             # yup.  Get List of subjects.
                             graf_subject_list = map_OUT.get( graf_number, [] )
-                        
+
                         else:
-                        
+
                             # no subjects from that graf just yet.  Make empty
                             #    list...
                             graf_subject_list = []
-                            
+
                             # ...and store it in map.
                             map_OUT[ graf_number ] = graf_subject_list
-                        
+
                         #-- END check to see if graf already in map --#
-                        
+
                         # store article_subjet in list.
                         graf_subject_list.append( article_subject )
-                    
+
                     else:
-                    
+
                         # invalid paragraph number.  Add to "no_graf".
                         graf_subject_list = map_OUT.get( NO_GRAF, [] )
                         graf_subject_list.append( article_subject )
-                    
+
                     #-- check to see if valid paragraph number --#
-                
+
                 else:
-                
+
                     # no mentions recorded.  Add to "no_graf".
                     graf_subject_list = map_OUT.get( NO_GRAF, [] )
                     graf_subject_list.append( article_subject )
-                
+
                 #-- END check to see if any mentions of name. --#
-            
+
             #-- END loop over Article_Subject instances --#
-        
+
         #-- END loop over Article_Data instances --#
-                    
+
     #-- END check to see if we have Article_Data. --#
-    
+
     return map_OUT
-    
+
 #-- END function create_graf_to_subject_map() --#
 
 
@@ -283,14 +283,14 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
 
     '''
     Accepts list of Article_Subject instances and optional flag that tells
-       whether we also want a header row.  Generates an HTML table with one row
-       per subject with cells for coder info., subject info., and quote info.
-       if quotation present.  Returns HTML string.
+        whether we also want a header row.  Generates an HTML table with one row
+        per subject with cells for coder info., subject info., and quote info.
+        if quotation present.  Returns HTML string.
     '''
 
     # return reference
     html_OUT = ""
-    
+
     # declare variables
     me = "create_subject_table_html"
     article_subject_instance = None
@@ -310,27 +310,27 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
     quote_paragraph_number = -1
     alternate_subject_match_id_list = None
     person_id = -1
-    
+
     # got a list?
     if ( ( subject_list_IN is not None ) and ( len( subject_list_IN ) > 0 ) ):
 
-        # open <table>    
+        # open <table>
         html_OUT += "<table class=\"gridtable\">"
 
         # do we want a header?
         if ( include_header_row_IN == True ):
-        
+
             # yes
             html_OUT += "<tr><th>coder</th><th>subject</th><th>quotation</th><th>alternate matches</th></tr>"
-        
+
         #-- END check to see if we want a header. --#
-    
+
         # got at least one - loop.
         for article_subject_instance in subject_list_IN:
-    
+
             # render subject
             html_OUT += "<tr>"
-    
+
             #------------------------------------------#
             # get coder information...
             html_OUT += "<td>"
@@ -343,25 +343,25 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
             # got a coder type?
             article_data_coder_type = article_data_instance.coder_type
             if ( ( article_data_coder_type is not None ) and ( article_data_coder_type != "" ) ):
-            
+
                 # yes.  Output.
                 html_OUT += " (<em>" + article_data_coder_type + "</em>)"
-            
+
             #-- END check to see if coder type. --#
-            
+
             html_OUT += "</td>"
-    
+
             #------------------------------------------#
             # and subject information
             html_OUT += "<td>"
             html_OUT += StringHelper.object_to_unicode_string( article_subject_instance )
-    
+
             # got a name?
             subject_name = article_subject_instance.name
             if ( ( subject_name is not None ) and ( subject_name != "" ) ):
                 html_OUT += "<br />==> name: " + subject_name
             #-- END check to see if name captured. --#
-            
+
             # lookup name different from verbatim name?
             subject_verbatim_name = article_subject_instance.verbatim_name
             subject_lookup_name = article_subject_instance.lookup_name
@@ -369,36 +369,36 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
                 html_OUT += "<br />====> verbatim name: " + subject_verbatim_name
                 html_OUT += "<br />====> lookup name: " + subject_lookup_name
             #-- END check to see if name captured. --#
-            
+
             subject_title = article_subject_instance.title
             if ( ( subject_title is not None ) and ( subject_title != "" ) ):
                 html_OUT += "<br />==> title: " + subject_title
             #-- END check to see if name captured. --#
-            
+
             # got an organization string?
             subject_organization = article_subject_instance.organization_string
             if ( ( subject_organization is not None ) and ( subject_organization != "" ) ):
                 html_OUT += "<br />==> organization: " + subject_organization
             #-- END check to see if name captured. --#
-            
-            html_OUT += "</td>"                                    
-        
+
+            html_OUT += "</td>"
+
             #------------------------------------------#
             # and quote information
             html_OUT += "<td>"
-            
+
             # get first quote.
             quote_qs = article_subject_instance.article_subject_quotation_set.all()
             quote_qs = quote_qs.order_by( "paragraph_number" )
-            
+
             # got one?
             if ( quote_qs.count() > 0 ):
-                
+
                 # yes - get value and output.
                 quote = quote_qs[ 0 ]
                 quote_value = quote.value
                 quote_paragraph_number = quote.paragraph_number
-                
+
                 if( quote_value is None ):
 
                     quote_value = "None"
@@ -406,57 +406,57 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
                 #-- END check to see if quote value is "None" --#
 
                 html_OUT += str( quote_value ) + " ( graf: " + StringHelper.object_to_unicode_string( quote_paragraph_number ) + " )"
-    
+
             else:
-                
+
                 # no - output "None".
                 html_OUT += "None."
-                
+
             #-- END check to see if quote --#
-    
+
             html_OUT += "</td>"
 
             #------------------------------------------#
             # and alternate match information
             html_OUT += "<td>"
-            
+
             # get alternate matches
             alternate_subject_match_id_list = article_subject_instance.get_alternate_person_id_list()
-            
+
             # got any?
             if ( ( alternate_subject_match_id_list is not None )
                 and ( len( alternate_subject_match_id_list ) > 0 ) ):
-                
+
                 # yes - output list of IDS.
                 html_OUT += "<ul>"
 
                 # loop over IDs.
                 for person_id in alternate_subject_match_id_list:
-                
+
                     # output <li> for each ID.
                     html_OUT += "<li>"
                     html_OUT += str( person_id )
                     html_OUT += "</li>"
-                
+
                 #-- END loop over Alternate_Subject_Match person IDs --#
 
                 html_OUT += "</ul>"
-    
+
             else:
-                
+
                 # no - output "None".
                 html_OUT += "None."
-                
+
             #-- END check to see if quote --#
-    
+
             html_OUT += "</td>"
             html_OUT += "</tr>"
-    
+
         #-- END loop over subjects. --#
 
         # close table.
         html_OUT += "</table>"
-        
+
     #-- END check to see if we have a list --#
 
     return html_OUT
@@ -465,22 +465,22 @@ def create_subject_table_html( subject_list_IN, include_header_row_IN = True ):
 
 
 def get_request_data( request_IN ):
-    
+
     '''
     Accepts django request.  Based on method, grabs the container for incoming
         parameters and returns it:
         - for method "POST", returns request_IN.POST
         - for method "GET", returns request_IN.GET
     '''
-    
+
     # return reference
     request_data_OUT = None
 
     # call method in DjangoViewHelper
     request_data_OUT = DjangoViewHelper.get_request_data( request_IN )
-    
+
     return request_data_OUT
-    
+
 #-- END function get_request_data() --#
 
 
@@ -492,22 +492,22 @@ DEBUG = True
 LOGGER_NAME = "context_text.views"
 
 def output_debug( message_IN, method_IN = "", indent_with_IN = "", logger_name_IN = "" ):
-    
+
     '''
     Accepts message string.  If debug is on, logs it.  If not,
-       does nothing for now.
+        does nothing for now.
     '''
-    
+
     # declare variables
     my_logger_name = ""
-    
+
     # got a logger name?
     my_logger_name = LOGGER_NAME
     if ( ( logger_name_IN is not None ) and ( logger_name_IN != "" ) ):
-    
+
         # use logger name passed in.
         my_logger_name = logger_name_IN
-        
+
     #-- END check to see if logger name --#
 
     # call DjangoViewHelper method.
@@ -533,7 +533,7 @@ def person_lookup_and_filter_to_response(
 
     # return reference
     status_OUT = ""
-    
+
     # call method with proper name.
     status_OUT = render_person_lookup_and_filter_to_response(
         person_lookup_by_name_form_IN,
@@ -545,7 +545,7 @@ def person_lookup_and_filter_to_response(
         *args,
         **kwargs
     )
-                    
+
     return status_OUT
 
 #-- END method person_lookup_and_filter() --#
@@ -558,10 +558,10 @@ def person_output_details_to_response( person_qs_IN, response_dictionary_IN, *ar
         render_person_output_details_to_response().  See that function for
         documentation.
     '''
-    
+
     # return reference
     status_OUT = ""
-    
+
     # call actual function
     status_OUT = render_person_output_details_to_response( person_qs_IN, response_dictionary_IN, *args, **kwargs )
 
@@ -574,7 +574,7 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
 
     '''
     Accepts the ID of an article we want to render and response dict to hold
-        output. 
+        output.
     Preconditions: expects response_dictionary_IN to already contain a dictionary.
     Postconditions:  Returns a status message, None for no problems.  Adds the
         following to the response dictionary:
@@ -589,10 +589,10 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
 
         Also updates the dictionary entry "page_status_message_list" with any error messages generated during processing.
     '''
-    
+
     # return reference
     status_OUT = None
-    
+
     # declare variables
     me = "render_article_to_response"
     page_status_message_list = None
@@ -620,18 +620,18 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
 
     # got response dictionary?
     if ( response_dictionary_IN is not None ):
-    
+
         # initialize application name.
         if ( ( config_application_IN is not None ) and ( config_application_IN != "" ) ):
-        
+
             # application name passed - use it.
             config_application_name = config_application_IN
-        
+
         else:
-        
+
             # no application name passed in.
             config_application_name = ContextTextBase.DJANGO_CONFIG_APPLICATION_ARTICLE_CODE
-        
+
         #-- END check to see if application passed in --#
 
         # ! ---- initialize response dictionary
@@ -641,47 +641,47 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
         response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = None  # 'article_content'
         response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = None  # 'article_text_custom'
         response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = None  # 'article_text_type'
-        
+
         # for things that can be configured, only load if the property name is
         #     not present in the dictionary.
-        
+
         # 'article_text_render_type'
         if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE not in response_dictionary ):
-            
+
             # one of "table", "raw", "custom", "pdf", stored in 'article_text_render_type'
-            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE ] = Config_Property.get_property_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" ) 
-            
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_RENDER_TYPE ] = Config_Property.get_property_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_RENDER_TYPE, default_IN = "raw" )
+
         #-- END check to see if 'article_text_render_type' in response dict. --#
-        
+
         # 'article_text_is_preformatted'
         if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED not in response_dictionary ):
-        
+
             # 'article_text_is_preformatted'
             response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_IS_PREFORMATTED ] = Config_Property.get_property_boolean_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_IS_PREFORMATTED, default_IN = False )
-            
+
         #-- END check to see if 'article_text_is_preformatted' in response dict. --#
 
         # 'article_text_wrap_in_p'
         if ( ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P not in response_dictionary ):
 
             # 'article_text_wrap_in_p'
-            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P ] = Config_Property.get_property_boolean_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )  # 
-        
+            response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_WRAP_IN_P ] = Config_Property.get_property_boolean_value( config_application_name, ContextTextBase.DJANGO_CONFIG_PROP_ARTICLE_TEXT_WRAP_IN_P, default_IN = True )  #
+
         #-- END check to see if 'article_text_wrap_in_p' in response dict. --#
-        
+
         # get page_status_message_list
         page_status_message_list = response_dictionary.get( ContextTextBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST, None )
         if ( page_status_message_list is None ):
-        
+
             # no message list.  Start one and store it in response.
             page_status_message_list = []
             response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_PAGE_STATUS_MESSAGE_LIST ] = page_status_message_list
-            
+
         #-- END check to see if status message list --#
-        
+
         # got article ID?
         if ( ( article_id_IN is not None ) and ( article_id_IN != "" ) and ( int( article_id_IN ) > 0 ) ):
-    
+
             # get article ID.
             article_id = int( article_id_IN )
 
@@ -693,39 +693,39 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
 
                 # get count of articles
                 article_count = article_qs.count()
-    
+
                 # should only be one.
                 if ( article_count == 1 ):
-                
+
                     # get article instance
                     article_instance = article_qs.get()
-                    
+
                     # ! ---- retrieve article text.
                     article_text = article_instance.article_text_set.get()
-                    
+
                     # get content
                     article_content = article_text.get_content()
                     article_text_type = article_text.content_type
                     response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_TYPE ] = article_text_type
-                    
+
                     # if not "text", want to make sure to not use "custom".
-                    
+
                     # ! ------ create custom text
                     article_content_line_list = article_content.split( "\n" )
                     article_text_custom = "<p>" + "</p>\n<p>".join( article_content_line_list ) + "</p>"
                     response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT_CUSTOM ] = article_text_custom
-                    
+
                     # ! ------ table HTML
                     # parse with beautifulsoup
                     article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
+
                     # get paragraph tag list
                     p_tag_list = article_content_bs.find_all( 'p' )
                     p_tag_count = len( p_tag_list )
-                    
+
                     # got p-tags?
                     if ( p_tag_count > 0 ):
-                    
+
                         # yes.  create a table with two columns per row:
                         # - paragraph number
                         # - paragraph text
@@ -736,17 +736,17 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
                                     <th>text</th>
                                 </tr>
                         '''
-                    
+
                         # for each paragraph, grab that <p> and place it in a table
                         #    cell.
                         for paragraph_index in range( p_tag_count ):
-                        
+
                             # paragraph number is index + 1
                             paragraph_number = paragraph_index + 1
-                            
+
                             # get <p> tag with ID of paragraph_number
                             p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
+
                             # render row
                             p_tag_html = p_tag_bs.prettify()
                             #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
@@ -758,33 +758,33 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
                             rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
-                        
+
                         #-- END loop over <p> ids. --#
-                        
+
                         rendered_article_html += "</table>"
-                    
+
                     else:
-                    
+
                         # no p-tags - just use article_text.
                         rendered_article_html = article_content
-                        
+
                     #-- END check to see if paragraph tags. --#
-                    
+
                     # seed response dictionary.
                     response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_INSTANCE ] = article_instance
                     response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_TEXT ] = article_text
                     response_dictionary[ ContextTextBase.VIEW_RESPONSE_KEY_ARTICLE_CONTENT ] = rendered_article_html
-                    
+
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
-                    
+
                 elif ( article_count > 1 ):
 
                     # error - multiple articles found for ID. --#
 
                     # create error message.
                     page_status_message = "ERROR - lookup for article ID " + str( article_id ) + " returned " + str( article_count ) + " records.  Oh my..."
-                    
+
                     # log it...
                     output_debug( page_status_message, me, indent_with_IN = "====> " )
 
@@ -806,12 +806,12 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
 
                     # ...and output it.
                     page_status_message_list.append( page_status_message )
-                    
+
                     # set status
                     status_OUT = page_status_message
 
                 else:
-                
+
                     # unknown error. --#
 
                     # create error message.
@@ -829,7 +829,7 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
                 #-- END check to see if there is one or other than one. --#
 
             else:
-            
+
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
 
                 # create error message.
@@ -853,7 +853,7 @@ def render_article_to_response( article_id_IN, response_dictionary_IN, config_ap
         output_debug( status_OUT )
 
     #-- END check to see whether or not form is valid. --#
-                    
+
     return status_OUT
 
 #-- END function render_article_to_response() --#
@@ -872,7 +872,7 @@ def render_person_lookup_and_filter_to_response(
 
     # return reference
     status_OUT = ""
-    
+
     # declare variables
     output_string = ""
     debug_message = ""
@@ -883,31 +883,31 @@ def render_person_lookup_and_filter_to_response(
     request_inputs = None
     response_dictionary = None
     lookup_type = ""
-    
+
     # declare variables - form validation
     is_name_lookup_form_valid = False
     is_id_lookup_form_valid = False
     is_lookup_type_form_valid = False
     is_lookup_result_view_form_valid = False
-    
+
     # declare variables - passing hidden lookup inputs on to procesing pages.
     person_lookup_by_name_form_hidden_inputs = ""
     person_lookup_by_id_form_hidden_inputs = ""
     person_lookup_type_form_hidden_inputs = ""
     person_lookup_result_view_form_hidden_inputs = ""
-    
+
     # declare variables - form empty?
     is_name_lookup_form_empty = True
     is_id_lookup_form_empty = True
     is_lookup_form_empty = True
-    
+
     # declare variables - filter Person records on name
     person_qs = None
     person_count = -1
     my_person_details = None
     human_name = None
     name_string = ""
-    
+
     # declare variables - filter Person records on IDs
     person_id_in_list_string = ""
     person_id_in_list = None
@@ -916,7 +916,7 @@ def render_person_lookup_and_filter_to_response(
     article_author_id = -1
     article_author = None
     temp_list = None
-    
+
     # set variables from input variables.
     request_inputs = request_inputs_IN
     person_lookup_by_name_form = person_lookup_by_name_form_IN
@@ -924,13 +924,13 @@ def render_person_lookup_and_filter_to_response(
     person_lookup_type_form = person_lookup_type_form_IN
     person_lookup_result_view_form = person_lookup_result_view_form_IN
     response_dictionary = response_dictionary_IN
-    
+
     # validate forms
     is_name_lookup_form_valid = person_lookup_by_name_form.is_valid()
     is_id_lookup_form_valid = person_lookup_by_id_form.is_valid()
     is_lookup_type_form_valid = person_lookup_type_form.is_valid()
     is_lookup_result_view_form_valid = person_lookup_result_view_form.is_valid()
-    
+
     #-------------------------------------------------------------------
     # store the inputs for these forms as hidden input HTML, for use in
     #     sending the filter on to a processing page.
@@ -961,17 +961,17 @@ def render_person_lookup_and_filter_to_response(
 
         # is either form populated?.
         if ( ( is_name_lookup_form_empty == False ) or ( is_id_lookup_form_empty == False ) ):
-        
+
             # at least one is populated.
             is_lookup_form_empty = False
-            
+
         else:
-        
+
             # neither is populated.
             is_lookup_form_empty = True
-            
+
         #-- END check to see if name form is empty. --#
-        
+
         if ( is_lookup_form_empty == False ):
 
             # get the lookup action and add it to the response_dictionary.
@@ -986,103 +986,103 @@ def render_person_lookup_and_filter_to_response(
 
                 # populate PersonDetails from request_inputs:
                 my_person_details = PersonDetails.get_instance( request_inputs )
-                
+
                 # get HumanName instance...
                 human_name = my_person_details.to_HumanName()
                 name_string = str( human_name )
-    
+
                 # retrieve Person records specified by the input parameters,
                 #     ordered by Last Name, then First Name.  Then, create HTML
                 #     output of list of articles.  For each, output (to start):
                 #     - Person string
-                
+
                 # figure out type of lookup.
                 lookup_type = None
                 if ( is_lookup_type_form_valid == True ):
-                
+
                     # form is valid, use type from form.
                     lookup_type = request_inputs.get( "lookup_type", PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY )
-                
+
                 else:
-                
+
                     # form is not valid.  Default to general lookup
                     lookup_type = PersonLookupTypeForm.PERSON_LOOKUP_TYPE_GENERAL_QUERY
-                
+
                 #-- END Check to see if lookup type passed in --#
 
                 # call method provided by PersonLookupByNameForm.
                 person_qs = PersonLookupByNameForm.lookup_person_by_name( request_inputs, lookup_type, person_qs_IN = person_qs )
-                
+
             #-- END check to see if name lookup --#
-            
+
             # ID lookup?
             if ( is_id_lookup_form_empty == False ):
-            
+
                 # get values from form
                 person_id_in_list_string = request_inputs.get( "person_id_in_list", None )
-                article_author_id = request_inputs.get( "article_author_id", None ) 
+                article_author_id = request_inputs.get( "article_author_id", None )
                 article_subject_id = request_inputs.get( "article_subject_id", None )
-    
+
                 # lookup based on values in PersonLookupByIDForm
                 person_qs = PersonLookupByIDForm.lookup_person_by_id( request_inputs, person_qs_IN = person_qs )
-                                
+
             #-- END check to see if id lookup form is empty --#
-                                
+
             # get count of queryset return items
             if ( ( person_qs != None ) and ( person_qs != "" ) ):
 
                 # get count of records
                 person_count = person_qs.count()
-    
+
                 # got one or more?
                 if ( person_count >= 1 ):
-                
+
                     # always create and store a summary of Person records.
                     person_filter_summary = "Found " + str( person_count ) + " Person records that match your selected filter criteria: " + str( human_name )
                     response_dictionary[ 'person_filter_summary' ] = person_filter_summary
-                    
+
                     # ! ---- use lookup_action to see what we do now...
-                    
+
                     # is form valid?
                     if ( is_lookup_result_view_form_valid == True ):
-                    
+
                         # yes - do we have an action?
                         if ( lookup_action_IN is not None ):
-                            
+
                             # is it "view_matches"?
                             if ( lookup_action_IN == "view_matches" ):
 
                                 # ! ---- call person_output_details_to_response()
                                 person_output_details_to_response( person_qs, response_dictionary )
-                                
+
                             #-- END check to see if valid lookup_action. --#
-                                
+
                         #-- END check to see if action present. --#
-                        
+
                     #-- END check to see if article processing form is valid --#
-                                        
+
                 else:
-                
+
                     # no Person records match. --#
                     output_string = "No matches for filter criteria."
                     debug_message = response_dictionary.get( 'output_string', None )
                     if ( ( debug_message is None ) or ( debug_message == "" ) ):
- 
+
                         # no message thus far.  Just chuck it in.
                         response_dictionary[ 'output_string' ] = output_string
-                        
+
                     else:
-                    
+
                         # already a message - append this to the end.
                         response_dictionary[ 'output_string' ] += "  "
                         response_dictionary[ 'output_string' ] += output_string
-                        
+
                     #-- END check to see if message already present. --#
-                    
+
                 #-- END check to see if there is one or other than one. --#
 
             else:
-            
+
                 # no QuerySet - this is the new default if no matches.
                 output_string = "No Person records match for the specified filter criteria."
                 debug_message = response_dictionary.get( 'output_string', None )
@@ -1090,22 +1090,22 @@ def render_person_lookup_and_filter_to_response(
 
                     # no message thus far.  Just chuck it in.
                     response_dictionary[ 'output_string' ] = output_string
-                    
+
                 else:
-                
+
                     # already a message - append this to the end.
                     response_dictionary[ 'output_string' ] += "  "
                     response_dictionary[ 'output_string' ] += output_string
-                    
+
                 #-- END check to see if message already present. --#
-            
+
             #-- END check to see if query set is None --#
-            
+
         else:
-        
+
             # form is empty.
             response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
-        
+
         #-- END check to see if form is empty --#
 
     else:
@@ -1114,7 +1114,7 @@ def render_person_lookup_and_filter_to_response(
         response_dictionary[ 'output_string' ] = "Person lookup form is not valid."
 
     #-- END check to see whether or not form is valid. --#
-                    
+
     return status_OUT
 
 #-- END method render_person_lookup_and_filter_to_response() --#
@@ -1126,7 +1126,7 @@ def render_person_output_details_to_response( person_qs_IN, response_dictionary_
     Accepts a QuerySet of person instances and a response dictionary.  Renders
         details on each person in the QuerySet, adds the information to the
         response dictionary.
-        
+
     Postconditions:  Does not return anything.  Adds the following to the
         response dictionary:
         - "person_details_list" - list of person details dictionaries that contains:
@@ -1138,10 +1138,10 @@ def render_person_output_details_to_response( person_qs_IN, response_dictionary_
         - "person_id_string_list" - Python list of the IDs of the Persons in this QuerySet, with each a string.
         - "person_id_list_string" - String that is a comma-delimited list of the IDs.
     '''
-    
+
     # return reference
     status_OUT = ""
-    
+
     # declare variables
     person_qs = None
     response_dictionary = None
@@ -1159,117 +1159,117 @@ def render_person_output_details_to_response( person_qs_IN, response_dictionary_
     article_person = None
     article_data = None
     article_id = -1
-    
+
     # do we have a query set?
     if ( person_qs_IN is not None ):
-    
+
         # yes - store it in person_qs.
         person_qs = person_qs_IN
-        
+
         # do we have response dictionary?
         if ( response_dictionary_IN is not None ):
-        
+
             # yes - store it in local variable as well.
             response_dictionary = response_dictionary_IN
 
             # initialize list of person_details and Person IDs as strings.
             person_details_list = []
             person_id_string_list = []
-        
+
             # loop over articles
             person_counter = 0
             for person_instance in person_qs:
-            
+
                 # increment counter
                 person_counter += 1
-            
+
                 # new details dictionary
                 person_details_dict = {}
-                
+
                 # store index and person instance
                 person_details_dict[ "index" ] = person_counter
                 person_details_dict[ "instance" ] = person_instance
-                
+
                 # list of person IDs.
                 person_id = person_instance.pk
                 person_id_string_list.append( str( person_id ) )
-                
+
                 # make lists of newspapers and UUIDs.
                 newspaper_list = []
                 for newspaper_instance in person_instance.person_newspaper_set.all():
-                
+
                     # get actual newspaper instance
                     newspaper = newspaper_instance.newspaper
-                
+
                     # add the newspaper to the list.
                     newspaper_list.append( newspaper )
-                    
+
                 #-- END loop over newspapers --#
-                
+
                 # add to details dict.
                 person_details_dict[ "newspaper_list" ] = newspaper_list
-                
+
                 UUID_list = []
                 for UUID_instance in person_instance.person_external_uuid_set.all():
-                
+
                     # add the UUID to the list.
                     UUID_list.append( UUID_instance )
-                    
+
                 #-- END loop over UUIDs --#
-                
+
                 # add to details dict.
                 person_details_dict[ "UUID_list" ] = UUID_list
-                
+
                 # build a set of related article IDs.
                 article_id_set = set()
                 for article_person in person_instance.article_subject_set.all():
-                
+
                     # get related article ID through the
                     #     related article data.
                     article_data = article_person.article_data
                     article_id = article_data.article.id
                     article_id_set.add( article_id )
-                    
+
                 #-- END loop over related Article_Subjects --#
-                
+
                 for article_person in person_instance.article_author_set.all():
-                
+
                     # get related article ID through the
                     #     related article data.
                     article_data = article_person.article_data
                     article_id = article_data.article.id
                     article_id_set.add( article_id )
-                    
+
                 #-- END loop over related Article_Subjects --#
-                
+
                 # add to details.
                 person_details_dict[ "article_id_set" ] = article_id_set
-    
+
                 # add details to list.
                 person_details_list.append( person_details_dict )
-    
+
             #-- END loop over records --#
-            
+
             # seed response dictionary.
             response_dictionary[ 'person_details_list' ] = person_details_list
-            
+
             # place list of matching person IDs in dict
             #     as well.
             response_dictionary[ "person_id_string_list" ] = person_id_string_list
             response_dictionary[ "person_id_list_string" ] = ",".join( person_id_string_list )
-            
+
         else:
-        
+
             # no response dictionary passed in.  Error.
             status_OUT = "ERROR - no response dictionary passed in, no place to put render results."
-            
+
         #-- END check to see if response dictionary passed in.
-        
+
     else:
-    
+
         # no Person QuerySet.  Error.
         status_OUT = "ERROR - no QuerySet passed in, so nothing to render."
-        
+
     #-- END check to see if QuerySet passed in. --#
 
     return status_OUT
@@ -1365,19 +1365,19 @@ def article_code( request_IN ):
     me = "article_code"
     logger_name = ""
     debug_message = ""
-    
+
     # declare variables - config properties
     config_do_output_table_html = False
     config_include_fix_person_name = False
     config_include_title_field = False
     config_include_organization_field = False
     config_include_find_in_article_text = False
-    
+
     # declare variables - exception handling
     exception_message = ""
     is_exception = False
     do_cleanup_post_exception = False
-    
+
     # declare variables - processing request
     response_dictionary = {}
     default_template = ''
@@ -1391,7 +1391,7 @@ def article_code( request_IN ):
     article_count = -1
     article_instance = None
     article_paragraph_list = None
-    
+
     # declare variables - coding submission.
     data_store_json_string = ""
     current_user = None
@@ -1409,7 +1409,7 @@ def article_code( request_IN ):
     new_data_store_json_string = ""
     page_status_message = ""
     page_status_message_list = []
-    
+
     # declare variables - interacting with article text
     article_content = ""
     article_content_bs = None
@@ -1423,13 +1423,13 @@ def article_code( request_IN ):
 
     # declare variables - article coding
     person_lookup_form = None
-    
+
     # declare variables - submit coding back to server
     coding_submit_form = None
 
     # set logger_name
     logger_name = "context_text.views." + me
-    
+
     # ! ---- load configuration
     config_do_output_table_html = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_DO_OUTPUT_TABLE_HTML, default_IN = False )
     config_include_fix_person_name = Config_Property.get_property_boolean_value( CONFIG_APPLICATION_ARTICLE_CODE, CONFIG_PROP_INCLUDE_FIX_PERSON_NAME, default_IN = False )
@@ -1454,7 +1454,7 @@ def article_code( request_IN ):
     response_dictionary[ 'page_status_message_list' ] = page_status_message_list
     response_dictionary[ 'fit_extra_html' ] = '<input type="button" id="find-name-in-article-text" name="find-name-in-article-text" value="<== Fetch Name" /><br /><input type="button" id="find-last-name-in-article-text" name="find-last-name-in-article-text" value="<== Fetch Last Name" />'
 
-    
+
     # create article coder and place in response so we can access constants-ish.
     manual_article_coder = ManualArticleCoder()
     response_dictionary[ 'manual_article_coder' ] = manual_article_coder
@@ -1466,7 +1466,7 @@ def article_code( request_IN ):
     # init coding status variables
     # start with it being OK to process coding.
     is_ok_to_process_coding = True
-    
+
     # do we have input parameters?
     request_data = get_request_data( request_IN )
     if ( request_data is not None ):
@@ -1476,21 +1476,21 @@ def article_code( request_IN ):
         # ==> source (passed by article_code_list).
         source = request_data.get( INPUT_NAME_SOURCE, "" )
         response_dictionary[ INPUT_NAME_SOURCE ] = source
-        
+
         # ==> tags_in_list (passed by article_code_list).
         tags_in_list = request_data.get( INPUT_NAME_TAGS_IN_LIST, [] )
         response_dictionary[ INPUT_NAME_TAGS_IN_LIST ] = tags_in_list
 
         # OK to process.
         is_form_ready = True
-        
+
     #-- END check to see if we have request data. --#
-    
+
     # set up form objects.
 
     # make instance of person_lookup_form.
     person_lookup_form = ArticleCodingForm()
-    
+
     # make instance of article coding submission form.
     coding_submit_form = ArticleCodingSubmitForm( request_data )
 
@@ -1502,9 +1502,9 @@ def article_code( request_IN ):
 
     # check to see if ""
     if ( article_id == "" ):
-    
+
         article_id = -1
-        
+
     #-- END check to see if article_id = "" --#
 
     # retrieve QuerySet that contains that article.
@@ -1515,7 +1515,7 @@ def article_code( request_IN ):
 
     # should only be one.
     if ( article_count == 1 ):
-    
+
         # get article instance
         article_instance = article_qs.get()
 
@@ -1534,7 +1534,7 @@ def article_code( request_IN ):
     # see if existing Article_Data for user and article
     article_data_qs = Article_Data.objects.filter( coder = current_user )
     article_data_qs = article_data_qs.filter( article = article_instance )
-    
+
     # how many matches?
     article_data_count = article_data_qs.count()
     if ( article_data_count == 1 ):
@@ -1563,7 +1563,7 @@ def article_code( request_IN ):
                 article_data_id_list.append( str( article_data_instance.id ) )
 
             #-- END loop over Article_Data instances --#
-            
+
             # add Article_Data ids to message
             page_status_message += ", ".join( article_data_id_list )
 
@@ -1575,7 +1575,7 @@ def article_code( request_IN ):
 
             # place in status message variable.
             page_status_message_list.append( page_status_message )
-            
+
             has_existing_article_data = True
 
         else:
@@ -1590,7 +1590,7 @@ def article_code( request_IN ):
 
     # form ready?
     if ( is_form_ready == True ):
-    
+
         # ! ---- process coding submission
         if ( coding_submit_form.is_valid() == True ):
 
@@ -1605,7 +1605,7 @@ def article_code( request_IN ):
                 is_ok_to_process_coding = False
 
             #-- END check to see if we have any JSON --#
-                        
+
             # OK to process coding?
             if ( is_ok_to_process_coding == True ):
 
@@ -1615,7 +1615,7 @@ def article_code( request_IN ):
 
                     # process JSON with instance of ManualArticleCoder
                     #manual_article_coder = ManualArticleCoder()
-                    
+
                     # need to get call set up for new parameters.
                     article_data_instance = manual_article_coder.process_data_store_json( article_instance,
                                                                                           current_user,
@@ -1623,57 +1623,57 @@ def article_code( request_IN ):
                                                                                           article_data_id,
                                                                                           request_IN,
                                                                                           response_dictionary )
-    
+
                     # got anything back?
                     coding_status = ""
                     if ( article_data_instance is not None ):
-    
+
                         # get status from article data instance
                         coding_status = article_data_instance.status_messages
-    
+
                     #-- END check to see if we have an Article_Data instance --#
-    
+
                     # got a status?
                     if ( ( coding_status is not None ) and ( coding_status != "" ) ):
-    
+
                         # short circuit article lookup (use empty copy of form) if success.
                         if ( coding_status == ManualArticleCoder.STATUS_SUCCESS ):
-    
+
                             # no longer emptying things out - load existing
                             #    coding, so you can edit.
 
                             # Add status message that just says that Coding was saved.
                             page_status_message_list.append( "Article data successfully saved!" )
-    
+
                         elif ( coding_status != "" ):
-    
+
                             # got an error status.  Log and output it.
                             page_status_message = "There was an error processing your coding: " + coding_status
-    
+
                             # log it...
                             output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
-    
+
                             # ...and output it.
                             page_status_message_list.append( page_status_message )
-    
+
                         #-- END check to see what status message is --#
-    
+
                     #-- END check to see if status message returned at all --#
-                    
+
                 except Exception as e:
-                
+
                     # set exception flag
                     is_exception = True
-                
+
                     # Capture exception message.
                     my_exception_helper = ExceptionHelper()
 
                     # log exception, no email or anything.
                     exception_message = "Exception caught for user " + str( current_user.username ) + ", article " + str( article_id )
                     my_exception_helper.process_exception( e, exception_message )
-                    
+
                     output_debug( exception_message, me, indent_with_IN = "======> ", logger_name_IN = logger_name )
-                    
+
                     # and, create status message from Exception message.
                     page_status_message = "There was an unexpected exception caught while processing your coding: " + str( e )
 
@@ -1681,39 +1681,39 @@ def article_code( request_IN ):
                     output_debug( page_status_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
                     # ...and output it.
-                    page_status_message_list.append( page_status_message )    
+                    page_status_message_list.append( page_status_message )
 
                 #-- END try/except around article data processing. --#
 
             #-- END check to see if OK to process coding. --#
-            
+
         #-- END check to see if coding form is valid. --#
 
         # ! ---- figure out if and which data store JSON we return
 
         # check to see if exception.
         if ( is_exception == True ):
-        
+
             # yes, exception.  In "existing_data_store_json", override to pass
             #    back what was passed in.
             if ( ( data_store_json_string is not None ) and ( data_store_json_string != "" ) ):
-            
+
                 #output_debug( "\n\ndata_store_json_string : \n\n" + data_store_json_string, me )
-                
+
                 '''
                 # got JSON that was passed in.  After escaping nested quotes,
                 #    return it.
                 new_data_store_json = json.loads( data_store_json_string )
-                
+
                 # escape string values
                 new_data_store_json = JSONHelper.escape_all_string_json_values( new_data_store_json, do_double_escape_quotes_IN = True )
-                
+
                 # convert to string
                 new_data_store_json_string = json.dumps( new_data_store_json )
                 '''
-                
+
                 new_data_store_json_string = data_store_json_string.replace( "\\\"", "\\\\\\\"" )
-                
+
                 # output_debug( "\n\nnew_data_store_json_string : \n\n" + new_data_store_json_string, me )
 
                 # store in response dictionary.
@@ -1723,37 +1723,37 @@ def article_code( request_IN ):
 
             # got Article_Data that we created new?
             if ( ( has_existing_article_data == False ) and ( article_data_instance is not None ) ):
-            
+
                 # we created an Article_Data, then had an exception.  Delete?
                 if ( do_cleanup_post_exception == True ):
-                
+
                     # delete Article_Data and all child records.
                     article_data_instance.delete()
                     article_data_instance = None
-                    
+
                 #-- END check to see if we are to clean up after an exception. --#
-                
+
             #-- END check to see if we have a new Article_Data instance --#
 
         else:
-        
+
             # got article_data?
             if ( article_data_instance is not None ):
-    
+
                 # convert to JSON and store in response dictionary
                 new_data_store_json = ManualArticleCoder.convert_article_data_to_data_store_json( article_data_instance )
                 new_data_store_json_string = json.dumps( new_data_store_json )
                 #output_debug( "\n\nnew_data_store_json_string : \n\n" + new_data_store_json_string, me )
                 response_dictionary[ 'existing_data_store_json' ] = new_data_store_json_string
-    
+
                 # output a message that we've done this.
                 page_status_message = "Loaded article " + str( article_instance.id ) + " coding for user " + str( current_user )
                 page_status_message_list.append( page_status_message )
-    
+
             #-- END check to see if we have an Article_Data instance --#
-                
+
         #-- END check to see if exception --#
-        
+
 
         # process article lookup?
         if ( article_lookup_form.is_valid() == True ):
@@ -1766,22 +1766,22 @@ def article_code( request_IN ):
                 response_dictionary,
                 config_application_IN = ManualArticleCoder.CONFIG_APPLICATION
             )
-            
+
             # got a status message?
             if ( status_message is not None ):
-            
+
                 # ERROR - not sure what to do here.  Error should have been
                 #     stored in page_status_message_list.  Output debug.
                 debug_message = "ERROR - status from call to context_text.views.render_article_to_response(): {}".format( status_message )
                 output_debug( debug_message, me, indent_with_IN = "====> ", logger_name_IN = logger_name )
 
             #-- END check to see if status message. --#
-                
+
             # seed response dictionary.
             response_dictionary[ 'article_lookup_form' ] = article_lookup_form
             response_dictionary[ 'person_lookup_form' ] = person_lookup_form
             response_dictionary[ 'coding_submit_form' ] = coding_submit_form
-            
+
             # loaded from config
             response_dictionary[ 'do_output_table_html' ] = config_do_output_table_html
             response_dictionary[ 'include_fix_person_name' ] = config_include_fix_person_name
@@ -1797,15 +1797,15 @@ def article_code( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_lookup_form = ArticleLookupForm()
         response_dictionary[ 'article_lookup_form' ] = article_lookup_form
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -1846,7 +1846,7 @@ def article_coding_list( request_IN ):
     article_instance = ""
     article_data = None
     article_status = ""
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -1855,7 +1855,7 @@ def article_coding_list( request_IN ):
 
     # set my default rendering template
     default_template = 'context_text/articles/article-code-list.html'
-    
+
     # get current user
     current_user = request_IN.user
 
@@ -1864,10 +1864,10 @@ def article_coding_list( request_IN ):
 
     # do we have input parameters?
     request_inputs = get_request_data( request_IN )
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create ArticleCodingListForm
         article_coding_list_form = ArticleCodingListForm( request_inputs )
 
@@ -1875,14 +1875,14 @@ def article_coding_list( request_IN ):
         tags_in_list = request_inputs.get( INPUT_NAME_TAGS_IN_LIST, [] )
 
         is_form_ready = True
-    
+
     else:
-    
+
         # no inputs - create empty form
         article_coding_list_form = ArticleCodingListForm()
 
         is_form_ready = False
-    
+
     #-- END check to see if inputs. --#
 
     # store form in response
@@ -1890,7 +1890,7 @@ def article_coding_list( request_IN ):
 
     # store tags in list value in response dictionary.
     response_dictionary[ 'tags_in_list' ] = tags_in_list
-    
+
     # form ready?
     if ( is_form_ready == True ):
 
@@ -1903,7 +1903,7 @@ def article_coding_list( request_IN ):
             #     - link to code article.  If no existing coding, make it a
             #         generic link.  If existing coding, make the Article_Data
             #         string the link.
-            
+
             # retrieve QuerySet that contains articles with requested tag(s).
             article_qs = Article.filter_articles( tags_in_list_IN = tags_in_list )
             article_qs = article_qs.order_by( "id" )
@@ -1913,82 +1913,82 @@ def article_coding_list( request_IN ):
 
                 # get count of articles
                 article_count = article_qs.count()
-    
+
                 # got one or more?
                 if ( article_count >= 1 ):
-                
+
                     # yes - initialize list of article_details
                     article_details_list = []
-                
+
                     # loop over articles
                     article_counter = 0
                     for article_instance in article_qs:
-                    
+
                         # increment article_counter
                         article_counter += 1
-                    
+
                         # new article_details
                         article_details = {}
-                        
+
                         # store index and article
                         article_details[ "index" ] = article_counter
                         article_details[ "article_instance" ] = article_instance
-                        
+
                         # see if there is an Article_Data for current user.
                         try:
-                        
+
                             #look up Article_Data
                             article_data_qs = article_instance.article_data_set
                             article_data = article_data_qs.get( coder = current_user )
                             article_status = "coded"
-                            
+
                         except Article_Data.MultipleObjectsReturned as amore:
-                        
+
                             # multiple returned.
                             article_data = None
                             article_status = "multiple"
 
                         except Article_Data.DoesNotExist as adne:
-                        
+
                             # None returned.
                             article_data = None
                             article_status = "new"
 
                         except Exception as e:
-                        
+
                             # multiple returned.
                             article_data = None
                             article_status = "error" + str( e )
-                            
+
                         #-- END attempt to get Article_Data for current user. --#
-                        
+
                         # place article_data in article_details
                         article_details[ "article_data" ] = article_data
                         article_details[ "article_status" ] = article_status
-                        
+
                         # add details to list.
                         article_details_list.append( article_details )
 
                     #-- END loop over articles --#
-                    
+
                     # seed response dictionary.
                     response_dictionary[ 'article_details_list' ] = article_details_list
-                    
+
                 else:
-                
+
                     # error - none or multiple articles found for ID. --#
                     print( "No article returned for ID passed in." )
                     response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to Article.filter_articles() ( tags_in_list_IN = " + str( tags_in_list ) + " )."
                     response_dictionary[ 'article_coding_list_form' ] = article_coding_list_form
-                    
+
                 #-- END check to see if there is one or other than one. --#
 
             else:
-            
+
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                 response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
-                
-            
+
+
             #-- END check to see if query set is None --#
 
         else:
@@ -1999,14 +1999,14 @@ def article_coding_list( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, just use empty instance of form created and stored above.
         pass
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -2015,7 +2015,7 @@ def article_coding_list( request_IN ):
 
 #-- END view function article_coding_list() --#
 
-    
+
 @login_required
 def article_coding_view_person_ambiguities( request_IN ):
 
@@ -2028,11 +2028,11 @@ def article_coding_view_person_ambiguities( request_IN ):
     default_template = ''
     request_inputs = None
     article_coding_person_ambiguity_form = None
-    
+
     # declare variables - pull in subjects and authors with ambiguity.
     ambiguous_article_subject_qs = None
     ambiguous_article_author_qs = None
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -2048,37 +2048,37 @@ def article_coding_view_person_ambiguities( request_IN ):
 
         # use request_IN.POST as request_inputs.
         request_inputs = request_IN.POST
-        
+
     elif ( request_IN.method == 'GET' ):
-    
+
         # use request_IN.GET as request_inputs.
         request_inputs = request_IN.GET
-        
+
     #-- END check of request method to set request_inputs --#
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create ArticleLookupForm
         article_coding_person_ambiguity_form = ArticleCodingPersonAmbiguityForm( request_inputs )
 
         # get information we need from request.
 
         is_form_ready = True
-    
+
     else:
-    
+
         # create empty form
         article_coding_person_ambiguity_form = ArticleCodingPersonAmbiguityForm()
-        
+
         # form is not ready.
         is_form_ready = False
-    
+
     #-- END check to see if inputs. --#
-    
+
     # store the form in the response dictionary
     response_dictionary[ 'article_coding_person_ambiguity_form' ] = article_coding_person_ambiguity_form
-    
+
     # form ready?
     if ( is_form_ready == True ):
 
@@ -2086,17 +2086,17 @@ def article_coding_view_person_ambiguities( request_IN ):
 
             # to start, just pull in all the Article_Subject and Article_Author
             #     records where there are ambiguities.
-            
+
             # Article_Subject
             ambiguous_article_subject_qs = Article_Subject.objects.exclude( alternate_subject_match__person__isnull = True )
-            
+
             # Article_Author
             ambiguous_article_author_qs = Article_Author.objects.exclude( alternate_author_match__person__isnull = True )
 
             # store the querysets in the response_dictionary.
             response_dictionary[ 'ambiguous_article_subject_qs' ] = ambiguous_article_subject_qs
             response_dictionary[ 'ambiguous_article_author_qs' ] = ambiguous_article_author_qs
-            
+
         else:
 
             # not valid - render the form again
@@ -2106,15 +2106,15 @@ def article_coding_view_person_ambiguities( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_coding_person_ambiguity_form = ArticleCodingPersonAmbiguityForm()
         response_dictionary[ 'article_coding_person_ambiguity_form' ] = article_coding_person_ambiguity_form
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -2123,7 +2123,7 @@ def article_coding_view_person_ambiguities( request_IN ):
 
 #-- END view method article_coding_view_person_ambiguities() --#
 
-    
+
 @login_required
 def article_data_filter( request_IN ):
 
@@ -2146,7 +2146,7 @@ def article_data_filter( request_IN ):
     article_data_processing_form = None
     ready_to_act = False
     is_article_data_filter_form_empty = True
-    
+
     # declare variables - filter records
     article_data_qs = None
     coder_list_IN = None
@@ -2161,43 +2161,43 @@ def article_data_filter( request_IN ):
     article_data_counter = -1
     article_data_instance = None
     article_data_details = {}
-    
+
     # declare variables - article processing
     action_IN = ""
     action_summary = ""
     action_detail_list = []
     apply_tags_list_IN = []
     apply_tags_count = -1
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
     default_template = 'context_text/article_data/article_data-filter.html'
-    
+
     # get current user
     current_user = request_IN.user
 
     # do we have input parameters?
     request_inputs = get_request_data( request_IN )
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create forms
         article_data_filter_form = ArticleDataFilterForm( request_inputs )
         article_data_processing_form = ArticleDataProcessingForm( request_inputs )
-        
+
         # we can try an action
         ready_to_act = True
 
     else:
-    
+
         # no inputs - create empty forms
         article_data_filter_form = ArticleDataFilterForm()
         article_data_processing_form = ArticleDataProcessingForm()
-        
+
         # no action without some inputs
         ready_to_act = False
 
@@ -2223,17 +2223,17 @@ def article_data_filter( request_IN ):
                 #     - link to code article.  If no existing coding, make it a
                 #         generic link.  If existing coding, make the Article_Data
                 #         string the link.
-                
+
                 # retrieve the incoming parameters
                 coder_list_IN = request_inputs.getlist( ContextTextBase.PARAM_CODERS, None )
                 coder_type_filter_type_IN = request_inputs.get( ContextTextBase.PARAM_CODER_TYPE_FILTER_TYPE, None )
                 coder_types_list_IN = request_inputs.get( ContextTextBase.PARAM_CODER_TYPES_LIST, None )
                 tags_in_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_TAGS_IN_LIST, None )
                 article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_ARTICLE_ID_LIST, None )
-            
+
                 # get all Article_Data records to start
                 article_data_qs = Article_Data.objects.all()
-                
+
                 # set up dictionary for call to Article_Data.filter_records()
                 filter_params = {}
                 filter_params[ Article_Data.PARAM_CODERS ] = coder_list_IN
@@ -2245,90 +2245,90 @@ def article_data_filter( request_IN ):
                 # call Article_Data.filter_records() to retrieve QuerySet that
                 #     contains Article_Data records that match filter criteria.
                 article_data_qs = Article_Data.filter_records( qs_IN = article_data_qs, params_IN = filter_params )
-                
+
                 # Order by ID.
                 article_data_qs = article_data_qs.order_by( "id" )
-    
+
                 # get count of queryset return items
                 if ( ( article_data_qs != None ) and ( article_data_qs != "" ) ):
-    
+
                     # get count of Article_Data
                     article_data_count = article_data_qs.count()
-        
+
                     # got one or more?
                     if ( article_data_count >= 1 ):
-                    
+
                         # always create and store a summary of articles.
                         filter_summary = "Found " + str( article_data_count ) + " Article_Data that match your selected filter criteria: " + str( filter_params )
                         response_dictionary[ 'filter_summary' ] = filter_summary
-                        
+
                         # ! ---- use "action" input to see what we do now...
-                        
+
                         # is form valid?
                         if ( article_data_processing_form.is_valid() == True ):
-                        
+
                             # yes - do we have an action?
                             action_IN = request_inputs.get( "action", None )
                             if ( action_IN is not None ):
-                                
+
                                 # add to response.
                                 response_dictionary[ 'action' ] = action_IN
-                            
+
                                 # is it "view_matches"?
                                 if ( action_IN == "view_matches" ):
 
                                     # yes - initialize list of article_details
                                     article_details_list = []
-                                
+
                                     # loop over articles
                                     article_counter = 0
                                     for article_data_instance in article_data_qs:
-                                    
+
                                         # increment article_counter
                                         article_counter += 1
-                                    
+
                                         # new article_details
                                         article_data_details = {}
-                                        
+
                                         # store index and article
                                         article_data_details[ "index" ] = article_counter
                                         article_data_details[ "instance" ] = article_data_instance
-                                        
+
                                         # add details to list.
                                         article_data_details_list.append( article_data_details )
-                
+
                                     #-- END loop over articles --#
-                                    
+
                                     # seed response dictionary.
                                     response_dictionary[ 'article_data_details_list' ] = article_data_details_list
-                                
+
                                 #-- END check to see what action. --#
 
                             #-- END check to see if action present. --#
-                            
+
                         #-- END check to see if article processing form is valid --#
-                                            
+
                     else:
-                    
+
                         # error - none or multiple articles found for ID. --#
                         print( "No article returned for ID passed in." )
                         response_dictionary[ 'output_string' ] = "No matches for filter criteria."
-                        
+
                     #-- END check to see if there is one or other than one. --#
-    
+
                 else:
-                
+
                     # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                     response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
-                    
-                
+
+
                 #-- END check to see if query set is None --#
-                
+
             else:
-            
+
                 # form is empty.
                 response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
-            
+
             #-- END check to see if form is empty --#
 
         else:
@@ -2339,14 +2339,14 @@ def article_data_filter( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, just use empty instance of form created and stored above.
         pass
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -2374,7 +2374,7 @@ def article_view( request_IN ):
     article_count = -1
     article_instance = None
     article_paragraph_list = None
-    
+
     # declare variables - interacting with article text
     article_content = ""
     article_content_bs = None
@@ -2403,17 +2403,17 @@ def article_view( request_IN ):
 
         # use request_IN.POST as request_inputs.
         request_inputs = request_IN.POST
-        
+
     elif ( request_IN.method == 'GET' ):
-    
+
         # use request_IN.GET as request_inputs.
         request_inputs = request_IN.GET
-        
+
     #-- END check of request method to set request_inputs --#
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create ArticleLookupForm
         article_lookup_form = ArticleLookupForm( request_inputs )
 
@@ -2421,9 +2421,9 @@ def article_view( request_IN ):
         article_id = request_inputs.get( "article_id", -1 )
 
         is_form_ready = True
-    
+
     #-- END check to see if inputs. --#
-    
+
     # form ready?
     if ( is_form_ready == True ):
 
@@ -2431,7 +2431,7 @@ def article_view( request_IN ):
 
             # retrieve article specified by the input parameter, then create
             #   HTML output of article plus Article_Text.
-            
+
             # get article ID.
             # already populated above.
             #article_id = request_IN.POST.get( "article_id", -1 )
@@ -2444,29 +2444,29 @@ def article_view( request_IN ):
 
                 # get count of articles
                 article_count = article_qs.count()
-    
+
                 # should only be one.
                 if ( article_count == 1 ):
-                
+
                     # get article instance
                     article_instance = article_qs.get()
-                    
+
                     # retrieve article text.
                     article_text = article_instance.article_text_set.get()
-                    
+
                     # get content
                     article_content = article_text.get_content()
-                    
+
                     # parse with beautifulsoup
                     article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
+
                     # get paragraph tag list
                     p_tag_list = article_content_bs.find_all( 'p' )
                     p_tag_count = len( p_tag_list )
-                    
+
                     # got p-tags?
                     if ( p_tag_count > 0 ):
-                    
+
                         # yes.  create a table with two columns per row:
                         # - paragraph number
                         # - paragraph text
@@ -2477,17 +2477,17 @@ def article_view( request_IN ):
                                     <th>text</th>
                                 </tr>
                         '''
-                    
+
                         # for each paragraph, grab that <p> and place it in a table
                         #    cell.
                         for paragraph_index in range( p_tag_count ):
-                        
+
                             # paragraph number is index + 1
                             paragraph_number = paragraph_index + 1
-                            
+
                             # get <p> tag with ID of paragraph_number
                             p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
+
                             # render row
                             p_tag_html = p_tag_bs.prettify()
                             #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
@@ -2498,18 +2498,18 @@ def article_view( request_IN ):
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
                             rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td></tr>"
-                        
+
                         #-- END loop over <p> ids. --#
-                        
+
                         rendered_article_html += "</table>"
-                    
+
                     else:
-                    
+
                         # no p-tags - just use article_text.
                         rendered_article_html = article_content
-                        
+
                     #-- END check to see if paragraph tags. --#
-                    
+
                     # seed response dictionary.
                     response_dictionary[ 'article_instance' ] = article_instance
                     response_dictionary[ 'article_text' ] = article_text
@@ -2518,22 +2518,22 @@ def article_view( request_IN ):
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
-                    
+
                 else:
-                
+
                     # error - none or multiple articles found for ID. --#
                     print( "No article returned for ID passed in." )
                     response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
+
                 #-- END check to see if there is one or other than one. --#
 
             else:
-            
+
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                 response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
                 response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
+
             #-- END check to see if query set is None --#
 
         else:
@@ -2544,15 +2544,15 @@ def article_view( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_lookup_form = ArticleLookupForm()
         response_dictionary[ 'article_lookup_form' ] = article_lookup_form
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -2579,7 +2579,7 @@ def article_view_article_data( request_IN ):
     article_data_qs = None
     article_data_count = -1
     article_data_list = []
-    
+
     # declare variables - for selecting specific article_data to output.
     article_data_select_form = None
     article_data_id_list = []
@@ -2598,17 +2598,17 @@ def article_view_article_data( request_IN ):
 
         # use request_IN.POST as request_inputs.
         request_inputs = request_IN.POST
-        
+
     elif ( request_IN.method == 'GET' ):
-    
+
         # use request_IN.GET as request_inputs.
         request_inputs = request_IN.GET
-        
+
     #-- END check of request method to set request_inputs --#
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create ArticleLookupForm
         article_lookup_form = ArticleLookupForm( request_inputs )
 
@@ -2625,9 +2625,9 @@ def article_view_article_data( request_IN ):
         #-- END check to see if article_id is populated. --#
 
         is_form_ready = True
-    
+
     #-- END check to see if inputs. --#
-    
+
     # form ready?
     if ( is_form_ready == True ):
 
@@ -2641,23 +2641,23 @@ def article_view_article_data( request_IN ):
 
                 # do we need to further filter the list?
                 if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
-                
+
                     # yes.  Get list of IDs.
                     article_data_id_list = request_inputs.getlist( "article_data_id_select" )
-                    
+
                     # got any?  If not, just display all.
                     if ( len( article_data_id_list ) > 0 ):
-                    
+
                         # filter to just Article_Data whose IDs were selected.
                         article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
-                        
+
                     #-- END check to see if any IDs selected --#
-                
+
                 #-- END check to see if we need to further filter Article_Data list --#
-    
+
                 # get count of articles
                 article_data_count = article_data_qs.count()
-                
+
                 # to start, just make a list out of the article data and pass it
                 #    to the template.
                 article_data_list = list( article_data_qs )
@@ -2669,11 +2669,11 @@ def article_view_article_data( request_IN ):
                 response_dictionary[ 'article_data_select_form' ] = article_data_select_form
 
             else:
-            
+
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                 response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
                 response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
+
             #-- END check to see if query set is None --#
 
         else:
@@ -2684,15 +2684,15 @@ def article_view_article_data( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_lookup_form = ArticleLookupForm()
         response_dictionary[ 'article_lookup_form' ] = article_lookup_form
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -2720,7 +2720,7 @@ def article_view_article_data_with_text( request_IN ):
     article_count = -1
     article_instance = None
     article_paragraph_list = None
-    
+
     # declare variables - selecting and filtering Article_Data
     article_data_qs = None
     article_data_count = -1
@@ -2736,11 +2736,11 @@ def article_view_article_data_with_text( request_IN ):
     rendered_author_html = ""
     author_qs = None
     author_organization = ""
-    
+
     # declare variables - for unassociated subjects
     subject_list = None
     rendered_subject_html = ""
-    
+
     # declare variables - interacting with article text
     p_tag_id_to_subject_map = {}
     current_graf_subjects_list = []
@@ -2769,17 +2769,17 @@ def article_view_article_data_with_text( request_IN ):
 
         # use request_IN.POST as request_inputs.
         request_inputs = request_IN.POST
-        
+
     elif ( request_IN.method == 'GET' ):
-    
+
         # use request_IN.GET as request_inputs.
         request_inputs = request_IN.GET
-        
+
     #-- END check of request method to set request_inputs --#
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create ArticleLookupForm
         article_lookup_form = ArticleLookupForm( request_inputs )
 
@@ -2796,9 +2796,9 @@ def article_view_article_data_with_text( request_IN ):
         #-- END check to see if article_id is populated. --#
 
         is_form_ready = True
-    
+
     #-- END check to see if inputs. --#
-    
+
     # form ready?
     if ( is_form_ready == True ):
 
@@ -2806,7 +2806,7 @@ def article_view_article_data_with_text( request_IN ):
 
             # retrieve article specified by the input parameter, then create
             #   HTML output of article plus Article_Text.
-            
+
             # retrieve QuerySet that contains that article.
             article_qs = Article.objects.filter( pk = article_id )
 
@@ -2815,36 +2815,36 @@ def article_view_article_data_with_text( request_IN ):
 
                 # get count of articles
                 article_count = article_qs.count()
-    
+
                 # should only be one.
                 if ( article_count == 1 ):
-                
+
                     # retrieve QuerySet of Article_Data related to article.
                     article_data_qs = Article_Data.objects.filter( article_id = article_id )
-        
+
                     # do we need to further filter the list?
                     if ( ( article_data_select_form is not None ) and ( article_data_select_form.is_valid() == True ) ):
-                    
+
                         # yes.  Get list of IDs.
                         article_data_id_list = request_inputs.getlist( "article_data_id_select" )
-                        
+
                         # got any?  If not, just display all.
                         if ( len( article_data_id_list ) > 0 ):
-                        
+
                             # filter to just Article_Data whose IDs were selected.
                             article_data_qs = article_data_qs.filter( id__in = article_data_id_list )
-                            
+
                         #-- END check to see if any IDs selected --#
-                    
+
                     #-- END check to see if we need to further filter Article_Data list --#
-                    
+
                     article_data_qs = article_data_qs.order_by( "coder__id" )
-                    
+
                     # ! ---- authors
-                    
+
                     # got any Article_Data?
                     if ( article_data_qs.count() > 0 ):
-                    
+
                         rendered_author_html = '''
                             <table class="gridtable">
                                 <tr>
@@ -2856,26 +2856,26 @@ def article_view_article_data_with_text( request_IN ):
                         # make table of authors broken out by coder, then person
                         #    ID.
                         for article_data_instance in article_data_qs:
-                        
+
                             # get coder information
                             article_data_coder = article_data_instance.coder
                             article_data_coder_id = article_data_coder.id
                             article_data_coder_username = article_data_coder.username
-                        
+
                             # retrieve all authors
                             author_qs = article_data_instance.article_author_set.all()
                             author_qs = author_qs.order_by( "person__last_name", "person__first_name" )
-                            
+
                             # loop over authors.
                             for author in author_qs:
-                            
+
                                 # build HTML
                                 # calling str() on any part of a string being
                                 #    concatenated causes all parts of the string to
                                 #    try to encode to default encoding ('ascii').
                                 #    This breaks if there are non-ascii characters.
                                 rendered_author_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( article_data_coder_id ) + " - " + article_data_coder_username + "</td><td>" + StringHelper.object_to_unicode_string( author )
-                                
+
                                 # got an organization string?
                                 author_organization = author.organization_string
                                 if ( ( author_organization is not None ) and ( author_organization != "" ) ):
@@ -2883,50 +2883,50 @@ def article_view_article_data_with_text( request_IN ):
                                 #-- END check to see if name captured. --#
 
                                 rendered_author_html += "</td></tr>"
-                            
+
                             #-- END loop over authors. --#
-                        
+
                         #-- END loop over Article_Data instances --#
-                    
+
                         rendered_author_html += "</table>"
 
                     #-- END check to see if we have any Article_Data --#
-                    
+
                     # get map of subjects to <p> tags.
                     p_tag_id_to_subject_map = create_graf_to_subject_map( article_data_qs )
-                
+
                     # ! ---- subjects with no mentions (so no associated graf)
-                    
+
                     # got any unassociated subjects?
                     subject_list = p_tag_id_to_subject_map.get( NO_GRAF, [] )
                     if ( len ( subject_list ) > 0 ):
-                    
+
                         # we do.  Make a table for them.
                         rendered_subject_html = create_subject_table_html( subject_list, include_header_row_IN = True )
 
                     #-- END check to see if unassociated subjects --#
-                    
+
                     # ! ---- text and subjects
-                    
+
                     # get article instance
                     article_instance = article_qs.get()
-                    
+
                     # retrieve article text.
                     article_text = article_instance.article_text_set.get()
-                    
+
                     # get content
                     article_content = article_text.get_content()
-                    
+
                     # parse with beautifulsoup
                     article_content_bs = BeautifulSoup( article_content, "html5lib" )
-                    
+
                     # get paragraph tag list
                     p_tag_list = article_content_bs.find_all( 'p' )
                     p_tag_count = len( p_tag_list )
-                    
+
                     # got p-tags?
                     if ( p_tag_count > 0 ):
-                    
+
                         # yes.  create a table with three columns per row:
                         # - paragraph number
                         # - paragraph text
@@ -2939,17 +2939,17 @@ def article_view_article_data_with_text( request_IN ):
                                     <th>subjects coded</th>
                                 </tr>
                         '''
-                    
+
                         # for each paragraph, grab that <p> and place it in a table
                         #    cell.
                         for paragraph_index in range( p_tag_count ):
-                        
+
                             # paragraph number is index + 1
                             paragraph_number = paragraph_index + 1
-                            
+
                             # get <p> tag with ID of paragraph_number
                             p_tag_bs = article_content_bs.find( id = str( paragraph_number ) )
-                            
+
                             # render row
                             p_tag_html = p_tag_bs.prettify()
                             #p_tag_html = StringHelper.encode_string( p_tag_html, output_encoding_IN = StringHelper.ENCODING_UTF8 )
@@ -2960,14 +2960,14 @@ def article_view_article_data_with_text( request_IN ):
                             #    try to encode to default encoding ('ascii').
                             #    This breaks if there are non-ascii characters.
                             rendered_article_html += "\n        <tr><td>" + StringHelper.object_to_unicode_string( paragraph_number ) + "</td><td>" + p_tag_html + "</td>"
-                            
+
                             # check if any Article_Subjects for this paragraph.
                             current_graf_subjects_list = p_tag_id_to_subject_map.get( paragraph_number, [] )
                             if ( len( current_graf_subjects_list ) > 0 ):
-                            
+
                                 # open cell for subject table.
                                 rendered_article_html += "<td>"
-                                
+
                                 # generate HTML for subject table.
                                 rendered_article_html += create_subject_table_html( current_graf_subjects_list, include_header_row_IN = True )
 
@@ -2975,26 +2975,26 @@ def article_view_article_data_with_text( request_IN ):
                                 rendered_article_html += "</td>"
 
                             else:
-                            
+
                                 # none.
                                 rendered_article_html += "<td>None</td>"
-                            
+
                             #-- END check to see if Article_Subjects for graf --#
-                            
+
                             # close off the row.
                             rendered_article_html += "\n</tr>"
-                        
+
                         #-- END loop over <p> ids. --#
-                        
+
                         rendered_article_html += "</table>"
-                    
+
                     else:
-                    
+
                         # no p-tags - just use article_text.
                         rendered_article_html = article_content
-                        
+
                     #-- END check to see if paragraph tags. --#
-                    
+
                     # seed response dictionary.
                     response_dictionary[ 'article_instance' ] = article_instance
                     response_dictionary[ 'article_text' ] = article_text
@@ -3006,22 +3006,22 @@ def article_view_article_data_with_text( request_IN ):
 
                     # get paragraph list
                     #article_paragraph_list = article_text.get_paragraph_list()
-                    
+
                 else:
-                
+
                     # error - none or multiple articles found for ID. --#
                     print( "No article returned for ID passed in." )
                     response_dictionary[ 'output_string' ] = "ERROR - nothing in QuerySet returned from call to filter()."
                     response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-                    
+
                 #-- END check to see if there is one or other than one. --#
 
             else:
-            
+
                 # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                 response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to filter().  This is odd."
                 response_dictionary[ 'article_lookup_form' ] = article_lookup_form
-            
+
             #-- END check to see if query set is None --#
 
         else:
@@ -3032,15 +3032,15 @@ def article_view_article_data_with_text( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_lookup_form = ArticleLookupForm()
         response_dictionary[ 'article_lookup_form' ] = article_lookup_form
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3072,7 +3072,7 @@ def filter_articles( request_IN ):
     article_coding_article_filter_form = None
     ready_to_act = False
     is_article_filter_form_empty = True
-    
+
     # declare variables - filter articles
     article_qs = None
     start_date_IN = ""
@@ -3090,43 +3090,43 @@ def filter_articles( request_IN ):
     article_counter = -1
     article_instance = None
     article_details = {}
-    
+
     # declare variables - article processing
     action_IN = ""
     action_summary = ""
     action_detail_list = []
     apply_tags_list_IN = []
     apply_tags_count = -1
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
     default_template = 'context_text/articles/article-filter.html'
-    
+
     # get current user
     current_user = request_IN.user
 
     # do we have input parameters?
     request_inputs = get_request_data( request_IN )
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create forms
         article_coding_article_filter_form = ArticleCodingArticleFilterForm( request_inputs )
         process_selected_articles_form = ProcessSelectedArticlesForm( request_inputs )
-        
+
         # we can try an action
         ready_to_act = True
 
     else:
-    
+
         # no inputs - create empty forms
         article_coding_article_filter_form = ArticleCodingArticleFilterForm()
         process_selected_articles_form = ProcessSelectedArticlesForm()
-        
+
         # no action without some inputs
         ready_to_act = False
 
@@ -3152,7 +3152,7 @@ def filter_articles( request_IN ):
                 #     - link to code article.  If no existing coding, make it a
                 #         generic link.  If existing coding, make the Article_Data
                 #         string the link.
-                
+
                 # retrieve the incoming parameters
                 start_date_IN = request_inputs.get( ContextTextBase.PARAM_START_DATE, None )
                 end_date_IN = request_inputs.get( ContextTextBase.PARAM_END_DATE, None )
@@ -3162,10 +3162,10 @@ def filter_articles( request_IN ):
                 unique_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_UNIQUE_ID_LIST, None )
                 article_id_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_ARTICLE_ID_LIST, None )
                 section_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_SECTION_LIST, None )
-            
+
                 # get all articles to start
                 article_qs = Article.objects.all()
-                
+
                 # set up dictionary for call to Article.filter_articles()
                 filter_articles_params = {}
                 filter_articles_params[ Article.PARAM_START_DATE ] = start_date_IN
@@ -3176,136 +3176,136 @@ def filter_articles( request_IN ):
                 filter_articles_params[ Article.PARAM_UNIQUE_ID_IN_LIST ] = unique_id_list_IN
                 filter_articles_params[ Article.PARAM_ARTICLE_ID_IN_LIST ] = article_id_list_IN
                 filter_articles_params[ Article.PARAM_SECTION_NAME_IN_LIST ] = section_list_IN
-                
+
                 # call Article.filter_articles() retrieve QuerySet that contains
                 #     articles that match filter criteria.
                 article_qs = Article.filter_articles( qs_IN = article_qs, params_IN = filter_articles_params )
-                
+
                 # Order by ID.
                 article_qs = article_qs.order_by( "id" )
-    
+
                 # get count of queryset return items
                 if ( ( article_qs != None ) and ( article_qs != "" ) ):
-    
+
                     # get count of articles
                     article_count = article_qs.count()
-        
+
                     # got one or more?
                     if ( article_count >= 1 ):
-                    
+
                         # always create and store a summary of articles.
                         article_filter_summary = "Found " + str( article_count ) + " articles that match your selected filter criteria: " + str( filter_articles_params )
                         response_dictionary[ 'article_filter_summary' ] = article_filter_summary
-                        
+
                         # ! ---- use "action" input to see what we do now...
-                        
+
                         # is form valid?
                         if ( process_selected_articles_form.is_valid() == True ):
-                        
+
                             # yes - do we have an action?
                             action_IN = request_inputs.get( "action", None )
                             if ( action_IN is not None ):
-                                
+
                                 # add to response.
                                 response_dictionary[ 'action' ] = action_IN
-                            
+
                                 # is it "view_matches"?
                                 if ( action_IN == "view_matches" ):
 
                                     # yes - initialize list of article_details
                                     article_details_list = []
-                                
+
                                     # loop over articles
                                     article_counter = 0
                                     for article_instance in article_qs:
-                                    
+
                                         # increment article_counter
                                         article_counter += 1
-                                    
+
                                         # new article_details
                                         article_details = {}
-                                        
+
                                         # store index and article
                                         article_details[ "index" ] = article_counter
                                         article_details[ "article_instance" ] = article_instance
-                                        
+
                                         # add details to list.
                                         article_details_list.append( article_details )
-                
+
                                     #-- END loop over articles --#
-                                    
+
                                     # seed response dictionary.
                                     response_dictionary[ 'article_details_list' ] = article_details_list
-            
+
                                 elif ( action_IN == "apply_tags" ):
-                                
+
                                     # retrieve list of tags to apply.
                                     apply_tags_list_IN = DictHelper.get_dict_value_as_list( request_inputs, ContextTextBase.PARAM_APPLY_TAGS_LIST, None )
                                     if ( apply_tags_list_IN is not None ):
-                                        
+
                                         apply_tags_count = len( apply_tags_list_IN )
-                                
+
                                         # Check count of articles retrieved.
                                         action_summary = "Got " + str( article_count ) + " articles to tag with tags \"" + str( apply_tags_list_IN ) + "\"."
                                         response_dictionary[ "action_summary" ] = action_summary
-                                        
+
                                         # loop over tags
                                         for current_tag in apply_tags_list_IN:
-                                        
+
                                             # output the tags.
                                             action_detail_list.append( "Adding tag \"" + current_tag + "\" to articles:" )
 
                                             # loop over articles.
                                             for current_article in article_qs:
-                                            
+
                                                 # add tag.
                                                 current_article.tags.add( current_tag )
-                                                
+
                                                 # output the tags.
                                                 action_detail_list.append( "----> Tags for article " + str( current_article.id ) + " : " + str( current_article.tags.all() ) )
-                                                
+
                                             #-- END loop over articles --#
-                                            
+
                                         #-- END loop over tags to apply to selected articles. --#
-                                        
+
                                         # add variables to response
                                         response_dictionary[ "action_detail_list" ] = action_detail_list
-                                        
+
                                     else:
-                                        
+
                                         # no tags to apply.  Output message.
                                         action_summary = "Got " + str( article_count ) + " articles to tag, but no tags to apply were entered.  Please enter the tags you want to apply to the selected articles."
                                         response_dictionary[ "action_summary" ] = action_summary
-                                        
+
                                     #-- END check to see if any tags specified to be applied. --#
-                                
+
                                 #-- END check to see what action. --#
 
                             #-- END check to see if action present. --#
-                            
+
                         #-- END check to see if article processing form is valid --#
-                                            
+
                     else:
-                    
+
                         # error - none or multiple articles found for ID. --#
                         print( "No article returned for ID passed in." )
                         response_dictionary[ 'output_string' ] = "No matches for filter criteria."
-                        
+
                     #-- END check to see if there is one or other than one. --#
-    
+
                 else:
-                
+
                     # ERROR - nothing returned from attempt to get queryset (would expect empty query set)
                     response_dictionary[ 'output_string' ] = "ERROR - no QuerySet returned from call to Article.filter_articles().  This is odd."
-                    
-                
+
+
                 #-- END check to see if query set is None --#
-                
+
             else:
-            
+
                 # form is empty.
                 response_dictionary[ 'output_string' ] = "Please enter at least one filter criteria."
-            
+
             #-- END check to see if form is empty --#
 
         else:
@@ -3316,14 +3316,14 @@ def filter_articles( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, just use empty instance of form created and stored above.
         pass
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3332,10 +3332,10 @@ def filter_articles( request_IN ):
 
 #-- END view function filter_articles() --#
 
-    
+
 @login_required
 def index( request_IN ):
-    
+
     # return reference
     me = "index"
     response_OUT = None
@@ -3350,7 +3350,7 @@ def index( request_IN ):
     default_template = 'context_text/index.html'
 
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3366,14 +3366,14 @@ def logout( request_IN ):
     me = "context_text.views.logout"
     request_data = None
     redirect_path = ""
-    
+
     # initialize redirect_path
     redirect_path = "/"
-    
+
     # do we have input parameters?
     request_data = get_request_data( request_IN )
     if ( request_data is not None ):
-    
+
         # we do.  See if we have redirect.
         redirect_path = request_data.get( "post_logout_redirect", "/" )
 
@@ -3384,7 +3384,7 @@ def logout( request_IN ):
 
     # Redirect to server home page for now.
     return HttpResponseRedirect( redirect_path )
-    
+
 #-- END view method logout() --#
 
 
@@ -3406,7 +3406,7 @@ def output_articles( request_IN ):
     network_query_set = None
     article_data_count = ''
     query_counter = ''
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
@@ -3447,15 +3447,15 @@ def output_articles( request_IN ):
 
                 # get count of articles
                 article_data_count = network_query_set.count()
-    
+
                 output_string += "\n\nTotal articles returned: " + str( article_data_count ) + "\n\n\n"
-    
+
                 # loop over the query set.
                 query_counter = 0
                 for current_item in network_query_set:
                     query_counter += 1
                     output_string += "- ( " + str( query_counter ) + " ) " + current_item.article.headline + "\n"
-    
+
                 # first, build the CSV list of articles, so we can use it for
                 #    reliability, basic statistics.
                 output_string += "\n\n"
@@ -3466,21 +3466,21 @@ def output_articles( request_IN ):
                 output_string += "====================\n"
                 output_string += "END CSV output\n"
                 output_string += "====================\n"
-    
+
                 # Prepare parameters for view.
                 response_dictionary[ 'output_string' ] = output_string
                 response_dictionary[ 'article_select_form' ] = article_select_form
                 response_dictionary[ 'output_type_form' ] = output_type_form
                 response_OUT = render( request_IN, default_template, response_dictionary )
-                
+
             else:
-            
+
                 # is None.  error.
                 response_dictionary[ 'output_string' ] = "ERROR - network query set is None."
                 response_dictionary[ 'article_select_form' ] = article_select_form
                 response_dictionary[ 'output_type_form' ] = output_type_form
                 response_OUT = render( request_IN, default_template, response_dictionary )
-            
+
             #-- END check to see if query set is None --#
             '''
             # is None.  error.
@@ -3489,7 +3489,7 @@ def output_articles( request_IN ):
             response_dictionary[ 'output_type_form' ] = output_type_form
             response_OUT = render( request_IN, default_template, response_dictionary )
             '''
-            
+
         else:
 
             # not valid - render the form again
@@ -3500,7 +3500,7 @@ def output_articles( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, make an empty instance of network output form.
         article_select_form = ArticleSelectForm()
         output_type_form = ArticleOutputTypeSelectForm()
@@ -3508,7 +3508,7 @@ def output_articles( request_IN ):
         response_dictionary[ 'output_type_form' ] = output_type_form
 
         # add on the "me" property.
-        response_dictionary[ 'current_view' ] = me        
+        response_dictionary[ 'current_view' ] = me
 
         # render
         response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3532,13 +3532,13 @@ def output_network( request_IN ):
     response_dictionary = {}
     default_template = ''
     debug_message = None
-    
+
     # declare variables - forms
     article_select_form = None
     network_output_form = None
     person_select_form = None
     relation_select_form = None
-    
+
     # declare variables - rendering
     download_as_file_IN = ""
     download_as_file = False
@@ -3548,7 +3548,7 @@ def output_network( request_IN ):
     my_file_extension = ""
     current_date_time = ""
     content_disposition = None
-    
+
     # declare variables - DEBUG
     coder_list_IN = None
     coder_id_priority_list_IN = None
@@ -3561,23 +3561,23 @@ def output_network( request_IN ):
 
     # set my template
     default_template = 'context_text/context_text_output_network.html'
-    
+
     # output parameters
- 
+
     # does user want to download the result as a file?
     download_as_file_IN = request_IN.POST.get( NetworkOutput.PARAM_NETWORK_DOWNLOAD_AS_FILE, NetworkOutput.CHOICE_NO )
 
     # convert download_as_file_IN to boolean
     if ( download_as_file_IN == NetworkOutput.CHOICE_YES ):
-    
+
         # yes - True
         download_as_file = True
 
     else:
-    
+
         # not yes, so False.
         download_as_file = False
-    
+
     #-- END check to see whether user wants to download the results as a file --#
 
     # variables for building, populating person array that is used to control
@@ -3599,29 +3599,30 @@ def output_network( request_IN ):
 
             # retrieve articles specified by the input parameters, then create
             #   string output, then pass it and form on to the output form.
-            
+
             # Use exception to check type of POST.
             #raise ContextTextError( "type of POST: {}".format( str( type( request_IN.POST ) ) ) )
-            
+
             # Create Network output instance, then render string network output
             network_outputter = NetworkOutput()
             output_string = network_outputter.process_network_output_request(
                 request_IN = request_IN,
-                debug_flag_IN = True
+                debug_flag_IN = True,
+                do_log_output_IN = True
             )
-            
+
             output_debug( "In " + me + ": download file, or render view?" )
 
             # download as file, or render view?
             if ( download_as_file == True ):
-            
+
                 # figure out the content type and content disposition.
                 my_content_type = network_outputter.mime_type
                 my_file_extension = network_outputter.file_extension
-                
+
                 # time stamp to append to file name
                 current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
-                
+
                 # Create the HttpResponse object with the appropriate content
                 #    type and disposition.
                 response_OUT = HttpResponse( content = output_string, content_type = my_content_type )
@@ -3630,7 +3631,7 @@ def output_network( request_IN ):
                     file_extension = my_file_extension
                 )
                 response_OUT[ 'Content-Disposition' ] = content_disposition
-            
+
             else:
 
                 # Prepare parameters for view.
@@ -3640,7 +3641,7 @@ def output_network( request_IN ):
                 response_dictionary[ 'person_select_form' ] = person_select_form
                 response_dictionary[ 'relation_select_form' ] = relation_select_form
                 response_OUT = render( request_IN, default_template, response_dictionary )
-                
+
             #-- END check to see if we return result as a file --#
 
         else:
@@ -3666,9 +3667,9 @@ def output_network( request_IN ):
         response_dictionary[ 'network_output_form' ] = network_output_form
         response_dictionary[ 'person_select_form' ] = person_select_form
         response_dictionary[ 'relation_select_form' ] = relation_select_form
-        
+
         # add on the "me" property.
-        response_dictionary[ 'current_view' ] = me        
+        response_dictionary[ 'current_view' ] = me
 
         # declare variables
         response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3712,50 +3713,50 @@ def person_filter( request_IN ):
     is_id_lookup_form_valid = False
     is_lookup_type_form_valid = False
     is_lookup_result_view_form_valid = False
-    
+
     # declare variables - form empty?
     is_name_lookup_form_empty = True
     is_id_lookup_form_empty = True
     is_lookup_form_empty = True
-    
+
     # declare variables - person processing
     lookup_action_IN = ""
     action_summary = ""
     action_detail_list = []
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
     default_template = 'context_text/person/person_filter.html'
-    
+
     # get current user
     current_user = request_IN.user
 
     # do we have input parameters?
     request_inputs = get_request_data( request_IN )
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create forms
         person_lookup_by_name_form = PersonLookupByNameForm( request_inputs )
         person_lookup_by_id_form = PersonLookupByIDForm( request_inputs )
         person_lookup_type_form = PersonLookupTypeForm( request_inputs )
         person_lookup_result_view_form = Person_LookupResultViewForm( request_inputs )
-        
+
         # we can try an action
         ready_to_act = True
 
     else:
-    
+
         # no inputs - create empty forms
         person_lookup_by_name_form = PersonLookupByNameForm()
         person_lookup_by_id_form = PersonLookupByIDForm()
         person_lookup_type_form = PersonLookupTypeForm()
         person_lookup_result_view_form = Person_LookupResultViewForm()
-        
+
         # no action without some inputs
         ready_to_act = False
 
@@ -3766,7 +3767,7 @@ def person_filter( request_IN ):
     response_dictionary[ "person_lookup_by_id_form" ] = person_lookup_by_id_form
     response_dictionary[ "person_lookup_type_form" ] = person_lookup_type_form
     response_dictionary[ "person_lookup_result_view_form" ] = person_lookup_result_view_form
-    
+
 
     # lookup forms ready?
     if ( ready_to_act == True ):
@@ -3776,7 +3777,7 @@ def person_filter( request_IN ):
         is_id_lookup_form_valid = person_lookup_by_id_form.is_valid()
         is_lookup_type_form_valid = person_lookup_type_form.is_valid()
         is_lookup_result_view_form_valid = person_lookup_result_view_form.is_valid()
-    
+
         # first, check if lookup forms are valid.
         if ( ( is_name_lookup_form_valid == True )
             and ( is_id_lookup_form_valid == True ) ):
@@ -3799,14 +3800,14 @@ def person_filter( request_IN ):
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, just use empty instance of form created and stored above.
         pass
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -3842,19 +3843,19 @@ def person_merge( request_IN ):
     person_lookup_result_view_form = None
     person_merge_action_form = None
     ready_to_act = False
-    
+
     # declare variables - form validation
     is_name_lookup_form_valid = False
     is_id_lookup_form_valid = False
     is_lookup_type_form_valid = False
     is_lookup_result_view_form_valid = False
     is_merge_action_form_valid = False
-    
+
     # declare variables - form empty?
     is_name_lookup_form_empty = True
     is_id_lookup_form_empty = True
     is_lookup_form_empty = True
-    
+
     # declare variables - process actions.
     merge_from_id_list = []
     merge_into_id_list = []
@@ -3864,54 +3865,54 @@ def person_merge( request_IN ):
     person_id = -1
     merge_status = None
     merge_status_message_list = None
-    
+
     # overall logic flow
     merge_action_IN = ""
-    
+
     # declare variables - person processing
     action_IN = ""
     action_summary = ""
     action_detail_list = []
-    
+
     # initialize response dictionary
     response_dictionary = {}
     response_dictionary.update( csrf( request_IN ) )
 
     # set my default rendering template
     default_template = 'context_text/person/person_merge.html'
-    
+
     # add a few CONSTANTS-ISH for rendering.
     response_dictionary[ "input_name_merge_from_prefix" ] = Person_MergeActionForm.INPUT_NAME_MERGE_FROM_PREFIX
     response_dictionary[ "input_name_merge_into_prefix" ] = Person_MergeActionForm.INPUT_NAME_MERGE_INTO_PREFIX
-    
+
     # get current user
     current_user = request_IN.user
 
     # do we have input parameters?
     request_inputs = get_request_data( request_IN )
-    
+
     # got inputs?
     if ( request_inputs is not None ):
-        
+
         # create forms
         person_lookup_by_name_form = PersonLookupByNameForm( request_inputs )
         person_lookup_by_id_form = PersonLookupByIDForm( request_inputs )
         person_lookup_type_form = PersonLookupTypeForm( request_inputs )
         person_lookup_result_view_form = Person_LookupResultViewForm( request_inputs )
         person_merge_action_form = Person_MergeActionForm( request_inputs )
-        
+
         # we can try an action
         ready_to_act = True
 
     else:
-    
+
         # no inputs - create empty forms
         person_lookup_by_name_form = PersonLookupByNameForm()
         person_lookup_by_id_form = PersonLookupByIDForm()
         person_lookup_type_form = PersonLookupTypeForm()
         person_lookup_result_view_form = Person_LookupResultViewForm()
         person_merge_action_form = Person_MergeActionForm()
-        
+
         # no action without some inputs
         ready_to_act = False
 
@@ -3933,55 +3934,55 @@ def person_merge( request_IN ):
         is_lookup_type_form_valid = person_lookup_type_form.is_valid()
         is_lookup_result_view_form_valid = person_lookup_result_view_form.is_valid()
         is_merge_action_form_valid = person_merge_action_form.is_valid()
-        
+
         # is merge_type form valid?
         if ( is_merge_action_form_valid == True ):
 
             # first, get the merge action and add it to the response_dictionary.
             merge_action_IN = request_inputs.get( "merge_action", Person_MergeActionForm.PERSON_MERGE_ACTION_LOOKUP )
             response_dictionary[ "merge_action" ] = merge_action_IN
-            
+
             # got an action?
             if ( ( merge_action_IN is not None ) and ( merge_action_IN != "" ) ):
 
                 # Yes, we have an action.  But first...
-                
-                # populate merge...id lists.            
+
+                # populate merge...id lists.
                 merge_from_id_list = []
                 merge_into_id_list = []
-            
+
                 # loop over inputs, looking for field names that start with
                 #     either "merge_from_person_id_<person_id>" or
                 #     "merge_into_person_id_<person_id>".
                 for input_name, input_value in six.iteritems( request_inputs ):
-                
+
                     # does input_name begin with "merge_from_person_id_"?
                     if ( input_name.startswith( Person_MergeActionForm.INPUT_NAME_MERGE_FROM_PREFIX ) == True ):
-                    
+
                         # it is a "merge_from_person_id_" input - remove this
                         #     prefix, convert to integer, then add the ID value
                         #     to the merge_from_id_list.
                         person_id_string = input_name.replace( Person_MergeActionForm.INPUT_NAME_MERGE_FROM_PREFIX, "" )
                         person_id = int( person_id_string )
                         merge_from_id_list.append( person_id )
-                        
+
                     # does input_name begin with "merge_into_person_id_"?
                     elif ( input_name.startswith( Person_MergeActionForm.INPUT_NAME_MERGE_INTO_PREFIX ) == True ):
-                    
+
                         # it is a "merge_into_person_id_" input - remove this
                         #     prefix, convert to integer, then add the ID value
                         #     to the merge_into_id_list.
                         person_id_string = input_name.replace( Person_MergeActionForm.INPUT_NAME_MERGE_INTO_PREFIX, "" )
                         person_id = int( person_id_string )
                         merge_into_id_list.append( person_id )
-                        
+
                     #-- END check for "merge_*_person_id_" prefixes --#
-                                        
+
                 #-- END loop over request_inputs --#
-            
+
                 # Got one.  what are we doing?  Lookup?
                 if ( merge_action_IN == Person_MergeActionForm.PERSON_MERGE_ACTION_LOOKUP ):
-    
+
                     # ! ---- lookup
                     # call the person_lookup_and_filter() method.
                     person_lookup_and_filter_to_response(
@@ -3994,135 +3995,135 @@ def person_merge( request_IN ):
                     )
 
                 elif ( merge_action_IN == Person_MergeActionForm.PERSON_MERGE_ACTION_MERGE_CODING ):
-                
+
                     # ! ---- merge_coding from...to.
-                    
+
                     # first, check to make sure just one FROM and one INTO.
                     from_count = len( merge_from_id_list )
                     into_count = len( merge_into_id_list )
-                    
+
                     if ( ( from_count == 1 ) and ( into_count == 1 ) ):
-                    
+
                         # one of each.  Switch the coding that refers to the
                         #     FROM person to refer to the INTO person.  No other
                         #     changes - not merging details of the actual
                         #     people, just switching the person referred to in
                         #     Article_Subject and Article_Author instances.
-                        
+
                         # get the person IDs.
                         from_person_id = merge_from_id_list[ 0 ]
                         into_person_id = merge_into_id_list[ 0 ]
-                        
+
                         # call the switch method.
                         merge_status = PersonData.switch_persons_in_data( from_person_id, into_person_id, do_updates_IN = True )
-                        
+
                         # update the action details list.
                         action_summary = "Status = \"" + str( merge_status.get_status_code() ) + "\": switching coding that refers to person " + str( from_person_id ) + " so it instead refers to person " + str( into_person_id )
                         action_detail_list.append( action_summary )
-                        
+
                         # get message list from status container and append it to action summary.
                         merge_status_message_list = merge_status.get_message_list()
                         action_detail_list.extend( merge_status_message_list )
-                        
+
                     else:
-                    
+
                         # when merging coding, can only do one FROM and one INTO
-                        response_dictionary[ 'output_string' ] = "When merging coding, you can only merge coding that refers to a single person INTO the coding that refers to a single other person (FROM 1 INTO 1)."        
+                        response_dictionary[ 'output_string' ] = "When merging coding, you can only merge coding that refers to a single person INTO the coding that refers to a single other person (FROM 1 INTO 1)."
 
                     #-- END check to make sure one FROM and one INTO. --#
-                    
+
                 elif ( merge_action_IN == Person_MergeActionForm.PERSON_MERGE_ACTION_UN_MERGE_CODING ):
-                
+
                     # ! ---- un_merge_coding from...to.
-                    
+
                     # first, check to make sure just one FROM and either zero or one INTO.
                     from_count = len( merge_from_id_list )
                     into_count = len( merge_into_id_list )
-                    
+
                     if ( ( from_count == 1 ) and ( ( into_count == 0 ) or ( into_count == 1 ) ) ):
-                    
+
                         # one of each.  Switch the coding that refers to the
                         #     FROM person to refer to the INTO person.  No other
                         #     changes - not merging details of the actual
                         #     people, just switching the person referred to in
                         #     Article_Subject and Article_Author instances.
-                        
+
                         # get the person IDs.
                         from_person_id = merge_from_id_list[ 0 ]
-                        
+
                         # is there an INTO person ID?
                         if ( into_count == 1 ):
 
                             into_person_id = merge_into_id_list[ 0 ]
-                            
+
                         else:
-                        
+
                             into_person_id = -1
-                            
+
                         #-- END check to see if INTO person ID. --#
-                        
+
                         # call the switch method.
                         merge_status = PersonData.undo_switch_persons_in_data( from_person_id, into_person_id, do_updates_IN = True )
-                        
+
                         # update the action details list.
                         action_summary = "Status = \"" + str( merge_status.get_status_code() ) + "\": switching coding that originally referred to person " + str( from_person_id )
-                        
+
                         # got an INTO person ID?
                         if ( into_person_id > 0 ):
-                        
+
                             # yes
                             action_summary += " that was switched to person " + str( into_person_id )
-                            
+
                         #-- END check to see if INTO person ID. --#
-                        
+
                         action_summary += " so it once again refers to the original person."
-                            
+
                         action_detail_list.append( action_summary )
-                        
+
                         # get message list from status container and append it to action summary.
                         merge_status_message_list = merge_status.get_message_list()
                         action_detail_list.extend( merge_status_message_list )
-                        
+
                     else:
-                    
+
                         # when merging coding, can only do one FROM and one INTO
-                        response_dictionary[ 'output_string' ] = "When un-merging coding, you can only reverse the merging of coding that originally referred to a single person (the FROM), and optionally also specify a single merge target that you want to limit reverting to (the INTO)."        
+                        response_dictionary[ 'output_string' ] = "When un-merging coding, you can only reverse the merging of coding that originally referred to a single person (the FROM), and optionally also specify a single merge target that you want to limit reverting to (the INTO)."
 
                     #-- END check to make sure one FROM and one INTO. --#
 
                 #-- END check to see what merge action --#
-                
+
 
                 # add action_summary and action_detail_list to the response
                 #     dictionary.
                 response_dictionary[ "action_summary" ] = action_summary
                 response_dictionary[ "action_detail_list" ] = action_detail_list
-                
+
                 #-- END check to see if action_detail_list --#
-                
+
             else:
-            
+
                 # no merge_action
-                response_dictionary[ 'output_string' ] = "No merge action set.  Nothing to see here."        
-                
+                response_dictionary[ 'output_string' ] = "No merge action set.  Nothing to see here."
+
             #-- END check to see if merge_action present. --#
-            
+
         else:
-        
+
             # not valid - render the form again
             response_dictionary[ 'output_string' ] = "merge action form is not valid."
 
         #-- END check to see whether or not form is valid. --#
 
     else:
-    
+
         # new request, just use empty instance of form created and stored above.
         pass
 
     #-- END check to see if new request or POST --#
-    
+
     # add on the "me" property.
-    response_dictionary[ 'current_view' ] = me        
+    response_dictionary[ 'current_view' ] = me
 
     # render response
     response_OUT = render( request_IN, default_template, response_dictionary )
@@ -4155,12 +4156,12 @@ class PersonAutocomplete( autocomplete.Select2QuerySetView ):
 
 
     def __init__( self, *args, **kwargs ):
-        
+
         # always call parent's __init__()
         super( PersonAutocomplete, self ).__init__()
 
     #-- END overridden built-in __init__() method --#
-        
+
 
     #============================================================================
     # ! ==> Instance methods
@@ -4183,7 +4184,7 @@ class PersonAutocomplete( autocomplete.Select2QuerySetView ):
         my_lookup_class = None
         my_logger_name = ""
         person_search_string = ""
-        
+
         # init.
         my_request = self.request
         my_q = self.q
@@ -4192,12 +4193,12 @@ class PersonAutocomplete( autocomplete.Select2QuerySetView ):
 
         # Don't forget to filter out results depending on the visitor !
 
-        # is user authenticated? 
+        # is user authenticated?
         if ( my_request.user.is_authenticated == True ):
 
             # store q in a real variable
             person_search_string = my_q
-            
+
             # output string passed in
             DalHelper.output_debug( "q = " + str( my_q ), method_IN = me, logger_name_IN = my_logger_name )
 
@@ -4209,7 +4210,7 @@ class PersonAutocomplete( autocomplete.Select2QuerySetView ):
 
                 # No exact match for q as ID.  Try Person.find_person_from_name()
                 qs_OUT = my_lookup_class.find_person_from_name( person_search_string, do_strict_match_IN = False, do_partial_match_IN = True )
-                
+
             #-- END retrieval of QuerySet when no ID match. --#
 
         else:

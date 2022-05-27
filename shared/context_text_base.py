@@ -127,6 +127,7 @@ class ContextTextBase( ContextBase ):
     PARAM_GET_DISTINCT_RECORDS = "get_distinct_records"  # For whatever model is being queried or filtered, only get one instance of a record that has a given ID.
     PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST = 'exclude_persons_with_tags_in_list'   # comma-delimited string list of Article_Subject and Article_Author tag values you want excluded when creating network data.
     PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME = 'include_persons_with_single_word_name'   # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
+    PARAM_NAME_DATABASE_OUTPUT = "database_output"
 
     # Article_Data filter parameters.
     PARAM_CODERS = "coders"
@@ -147,6 +148,9 @@ class ContextTextBase( ContextBase ):
     # variables for choosing yes or no.
     CHOICE_YES = 'yes'
     CHOICE_NO = 'no'
+    CHOICE_YES_OR_NO_VALUE_LIST = list()
+    CHOICE_YES_OR_NO_VALUE_LIST.append( CHOICE_YES )
+    CHOICE_YES_OR_NO_VALUE_LIST.append( CHOICE_NO )
 
     # choices for yes or no decision.
     CHOICES_YES_OR_NO_LIST = [
@@ -303,6 +307,57 @@ class ContextTextBase( ContextBase ):
     #---------------------------------------------------------------------------
     # ! ==> instance methods, in alphabetical order
     #---------------------------------------------------------------------------
+
+
+    def get_parameters( self, *args, **kwargs ):
+
+        '''
+        Returns ParamContainer instance nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the ParamContainer stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_parameters"
+
+        # return the content.
+        value_OUT = self.parameters
+
+        return value_OUT
+
+    #-- END method get_parameters() --#
+
+
+    def get_parameters_dict( self, *args, **kwargs ):
+
+        '''
+        Returns parameters dictionary nested in ParamContainer instance stored
+            in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the parameters dictionary from the ParamContainer stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_parameters_dict"
+        my_param_container = None
+
+        # return the content.
+        my_param_container = self.get_parameters()
+        value_OUT = my_param_container.get_parameters()
+
+        return value_OUT
+
+    #-- END method get_parameters_dict() --#
 
 
 #-- END class ContextTextBase --#

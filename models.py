@@ -69,6 +69,7 @@ from django.utils.text import slugify
 # python_utilities - text cleanup
 from python_utilities.beautiful_soup.beautiful_soup_helper import BeautifulSoupHelper
 from python_utilities.integers.integer_helper import IntegerHelper
+from python_utilities.json.json_helper import JSONHelper
 from python_utilities.lists.list_helper import ListHelper
 from python_utilities.strings.html_helper import HTMLHelper
 from python_utilities.strings.string_helper import StringHelper
@@ -10463,6 +10464,16 @@ class Articles_To_Migrate( models.Model ):
 # NetworkDataOutputLog model
 class NetworkDataOutputLog( models.Model ):
 
+    # Sources:
+    REQUEST_TYPE_HTTP_REQUEST = "http_request"
+    REQUEST_TYPE_JSON = "json"
+    REQUEST_TYPE_DEFAULT = REQUEST_TYPE_JSON
+
+    REQUEST_TYPE_CHOICES_LIST = (
+        ( REQUEST_TYPE_JSON, "JSON" ),
+        ( REQUEST_TYPE_HTTP_REQUEST, "HTTP request" )
+    )
+
     # Content types:
     CONTENT_TYPE_CANONICAL = 'canonical'
     CONTENT_TYPE_TEXT = 'text'
@@ -10489,17 +10500,20 @@ class NetworkDataOutputLog( models.Model ):
     # model fields and meta
     #----------------------------------------------------------------------
 
-    label = models.CharField( max_length = 255, blank = True, null = True )
     data_spec_json = models.JSONField()
     data_spec_json_hash = models.CharField( max_length = 255, blank = True, null = True )
+    description = models.TextField( blank = True, null = True )
+    label = models.CharField( max_length = 255, blank = True, null = True )
     network_data = models.TextField()
-    network_data_hash = models.CharField( max_length = 255, blank = True, null = True )
-    network_data_content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = "none" )
+    network_data_content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = CONTENT_TYPE_DEFAULT )
     network_data_format = models.CharField( max_length = 255, choices = ContextTextBase.NETWORK_DATA_FORMAT_CHOICES_LIST, blank = True, null = True )
+    network_data_hash = models.CharField( max_length = 255, blank = True, null = True )
+    notes = models.TextField( blank = True, null = True )
+    request_type = models.CharField( max_length = 255, choices = REQUEST_TYPE_CHOICES_LIST, blank = True, null = True, default = REQUEST_TYPE_DEFAULT )
     status = models.CharField( max_length = 255, blank = True, null = True )
     status_message = models.TextField( blank = True, null = True )
-    description = models.TextField( blank = True, null = True )
-    notes = models.TextField( blank = True, null = True )
+
+    # timestamps
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
@@ -10567,7 +10581,7 @@ class NetworkDataOutputLog( models.Model ):
 
         return value_OUT
 
-    #-- END class method make_standard_json_string_hash() --#
+    #-- END class method make_string_hash() --#
 
 
     #----------------------------------------------------------------------------
@@ -10658,6 +10672,30 @@ class NetworkDataOutputLog( models.Model ):
     #-- END method get_data_spec_json_hash() --#
 
 
+    def get_label( self, *args, **kwargs ):
+
+        '''
+        Returns label stored in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the label exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_label"
+
+        # return the content.
+        value_OUT = self.label
+
+        return value_OUT
+
+    #-- END method get_label() --#
+
+
     def get_network_data( self, *args, **kwargs ):
 
         '''
@@ -10682,6 +10720,30 @@ class NetworkDataOutputLog( models.Model ):
     #-- END method get_network_data() --#
 
 
+    def get_network_data_format( self, *args, **kwargs ):
+
+        '''
+        Returns network_data nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_network_data_format"
+
+        # return the content.
+        value_OUT = self.network_data_format
+
+        return value_OUT
+
+    #-- END method get_network_data_format() --#
+
+
     def get_network_data_hash( self, *args, **kwargs ):
 
         '''
@@ -10704,6 +10766,28 @@ class NetworkDataOutputLog( models.Model ):
         return value_OUT
 
     #-- END method get_network_data_hash() --#
+
+
+    def get_request_type( self, *args, **kwargs ):
+
+        '''
+        Returns value nested in this instance.
+        Preconditions: None
+        Postconditions: None
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_request_type"
+
+        # return the content.
+        value_OUT = self.request_type
+
+        return value_OUT
+
+    #-- END method get_request_type() --#
 
 
     def set_data_spec_json( self, value_IN = "", *args, **kwargs ):
@@ -10796,6 +10880,32 @@ class NetworkDataOutputLog( models.Model ):
     #-- END method set_data_spec_json_hash() --#
 
 
+    def set_label( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts value and stores it in current instance variable.
+        Preconditions: None
+
+        Returns value as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_label"
+
+        # set the value in the instance.
+        self.label = value_IN
+
+        # return the value set in the instance.
+        value_OUT = self.get_label()
+
+        return value_OUT
+
+    #-- END method set_label() --#
+
+
     def set_network_data( self, value_IN = "", hash_function_IN = hashlib.sha256, *args, **kwargs ):
 
         '''
@@ -10837,6 +10947,33 @@ class NetworkDataOutputLog( models.Model ):
     #-- END method set_network_data() --#
 
 
+    def set_network_data_format( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts value, stores it in this instance's variable.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the value as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_network_data_format"
+
+        # set the value in the instance.
+        self.network_data_format = value_IN
+
+        # return the value.
+        value_OUT = self.get_network_data_format()
+
+        return value_OUT
+
+    #-- END method set_network_data_format() --#
+
+
     def set_network_data_hash( self, value_IN = "", *args, **kwargs ):
 
         '''
@@ -10863,6 +11000,32 @@ class NetworkDataOutputLog( models.Model ):
         return value_OUT
 
     #-- END method set_network_data_hash() --#
+
+
+    def set_request_type( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts value and stores it in current instance variable.
+        Preconditions: None
+
+        Returns value as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_request_type"
+
+        # set the value in the instance.
+        self.request_type = value_IN
+
+        # return the value set in the instance.
+        value_OUT = self.get_request_type()
+
+        return value_OUT
+
+    #-- END method set_request_type() --#
 
 
     def to_string( self ):
