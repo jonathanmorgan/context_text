@@ -139,8 +139,8 @@ class NetworkDataOutput( ContextTextBase ):
     STATUS_ERROR_PREFIX = "Error: "
 
     # variables for choosing yes or no.
-    CHOICE_YES = 'yes'
-    CHOICE_NO = 'no'
+    CHOICE_YES = ContextTextBase.CHOICE_YES  # 'yes'
+    CHOICE_NO = ContextTextBase.CHOICE_NO  # 'no'
 
     # source types
     SOURCE_TYPE_INDIVIDUAL = 'individual'
@@ -158,7 +158,7 @@ class NetworkDataOutput( ContextTextBase ):
     PARAM_NETWORK_LABEL = 'network_label'
     PARAM_NETWORK_DATA_OUTPUT_TYPE = 'network_data_output_type'   # type of data you want to output - either just the network, just node attributes, or network with attributes in same table, either with attributes as additional rows or additional columns.
     PARAM_NETWORK_INCLUDE_HEADERS = 'network_include_headers'
-    PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
+    PARAM_NETWORK_INCLUDE_RENDER_DETAILS = ContextTextBase.PARAM_NETWORK_INCLUDE_RENDER_DETAILS  # 'network_include_render_details'
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = Article_Subject.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = Article_Subject.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = Article_Subject.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST

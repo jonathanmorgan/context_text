@@ -461,7 +461,7 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'subject_type', 'source_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+                'fields' : [ 'article_data', 'tags', 'subject_type', 'source_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (
@@ -479,7 +479,7 @@ class Article_SubjectAdmin( admin.ModelAdmin ):
 
     list_display = ( 'id', 'subject_type', 'person', 'article_data' )
     list_display_links = ( 'id', 'person', )
-    list_filter = [ 'subject_type' ]
+    list_filter = [ 'subject_type', 'article_data__coder', 'article_data__article__newspaper' ]
     search_fields = [ 'name', 'verbatim_name', 'lookup_name', 'id' ]
     #date_hierarchy = 'pub_date'
 
@@ -500,7 +500,7 @@ class Article_AuthorAdmin( admin.ModelAdmin ):
         (
             None,
             {
-                'fields' : [ 'article_data', 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
+                'fields' : [ 'article_data', 'tags', 'author_type', 'person', 'name', 'verbatim_name', 'lookup_name', 'title', 'more_title', 'organization', 'organization_string', 'more_organization' ]
             }
         ),
         (

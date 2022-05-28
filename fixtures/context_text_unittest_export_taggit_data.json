@@ -40,6 +40,166 @@
     }
 },
 {
+    "model": "taggit.tag",
+    "pk": 6,
+    "fields": {
+        "name": "from_press_release",
+        "slug": "from_press_release"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 7,
+    "fields": {
+        "name": "godwin_heights",
+        "slug": "godwin_heights"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 8,
+    "fields": {
+        "name": "all_names",
+        "slug": "all_names"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 9,
+    "fields": {
+        "name": "all_names-json-20220528-032808",
+        "slug": "all_names-json-20220528-032808"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 10,
+    "fields": {
+        "name": "all_names-json-20220528-032811",
+        "slug": "all_names-json-20220528-032811"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 11,
+    "fields": {
+        "name": "no_single_names",
+        "slug": "no_single_names"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 12,
+    "fields": {
+        "name": "no_single_names-json-20220528-032847",
+        "slug": "no_single_names-json-20220528-032847"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 13,
+    "fields": {
+        "name": "no_single_names-json-20220528-032850",
+        "slug": "no_single_names-json-20220528-032850"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 14,
+    "fields": {
+        "name": "exclude_from_press_release",
+        "slug": "exclude_from_press_release"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 15,
+    "fields": {
+        "name": "exclude_from_press_release-json-20220528-032910",
+        "slug": "exclude_from_press_release-json-20220528-032910"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 16,
+    "fields": {
+        "name": "exclude_from_press_release-json-20220528-032912",
+        "slug": "exclude_from_press_release-json-20220528-032912"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 17,
+    "fields": {
+        "name": "exclude_godwin_heights",
+        "slug": "exclude_godwin_heights"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 18,
+    "fields": {
+        "name": "exclude_godwin_heights-json-20220528-033020",
+        "slug": "exclude_godwin_heights-json-20220528-033020"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 19,
+    "fields": {
+        "name": "exclude_godwin_heights-json-20220528-033021",
+        "slug": "exclude_godwin_heights-json-20220528-033021"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 20,
+    "fields": {
+        "name": "exclude_two_tags",
+        "slug": "exclude_two_tags"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 21,
+    "fields": {
+        "name": "exclude_two_tags-json-20220528-033046",
+        "slug": "exclude_two_tags-json-20220528-033046"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 22,
+    "fields": {
+        "name": "exclude_two_tags-json-20220528-033047",
+        "slug": "exclude_two_tags-json-20220528-033047"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 23,
+    "fields": {
+        "name": "exclude_two_tags_and_single_names",
+        "slug": "exclude_two_tags_and_single_names"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 24,
+    "fields": {
+        "name": "exclude_two_tags_and_single_names-json-20220528-033132",
+        "slug": "exclude_two_tags_and_single_names-json-20220528-033132"
+    }
+},
+{
+    "model": "taggit.tag",
+    "pk": 25,
+    "fields": {
+        "name": "exclude_two_tags_and_single_names-json-20220528-033133",
+        "slug": "exclude_two_tags_and_single_names-json-20220528-033133"
+    }
+},
+{
     "model": "taggit.taggeditem",
     "pk": 1,
     "fields": {
@@ -1558,6 +1718,276 @@
         "tag": 4,
         "content_type": 36,
         "object_id": 92
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 313,
+    "fields": {
+        "tag": 6,
+        "content_type": 39,
+        "object_id": 637
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 314,
+    "fields": {
+        "tag": 6,
+        "content_type": 39,
+        "object_id": 677
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 315,
+    "fields": {
+        "tag": 6,
+        "content_type": 39,
+        "object_id": 740
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 316,
+    "fields": {
+        "tag": 7,
+        "content_type": 39,
+        "object_id": 621
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 317,
+    "fields": {
+        "tag": 7,
+        "content_type": 39,
+        "object_id": 622
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 318,
+    "fields": {
+        "tag": 7,
+        "content_type": 39,
+        "object_id": 623
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 319,
+    "fields": {
+        "tag": 8,
+        "content_type": 57,
+        "object_id": 1
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 320,
+    "fields": {
+        "tag": 9,
+        "content_type": 57,
+        "object_id": 1
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 321,
+    "fields": {
+        "tag": 8,
+        "content_type": 57,
+        "object_id": 2
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 322,
+    "fields": {
+        "tag": 10,
+        "content_type": 57,
+        "object_id": 2
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 323,
+    "fields": {
+        "tag": 11,
+        "content_type": 57,
+        "object_id": 3
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 324,
+    "fields": {
+        "tag": 12,
+        "content_type": 57,
+        "object_id": 3
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 325,
+    "fields": {
+        "tag": 11,
+        "content_type": 57,
+        "object_id": 4
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 326,
+    "fields": {
+        "tag": 13,
+        "content_type": 57,
+        "object_id": 4
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 327,
+    "fields": {
+        "tag": 14,
+        "content_type": 57,
+        "object_id": 5
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 328,
+    "fields": {
+        "tag": 15,
+        "content_type": 57,
+        "object_id": 5
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 329,
+    "fields": {
+        "tag": 14,
+        "content_type": 57,
+        "object_id": 6
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 330,
+    "fields": {
+        "tag": 16,
+        "content_type": 57,
+        "object_id": 6
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 331,
+    "fields": {
+        "tag": 17,
+        "content_type": 57,
+        "object_id": 7
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 332,
+    "fields": {
+        "tag": 18,
+        "content_type": 57,
+        "object_id": 7
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 333,
+    "fields": {
+        "tag": 17,
+        "content_type": 57,
+        "object_id": 8
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 334,
+    "fields": {
+        "tag": 19,
+        "content_type": 57,
+        "object_id": 8
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 335,
+    "fields": {
+        "tag": 20,
+        "content_type": 57,
+        "object_id": 9
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 336,
+    "fields": {
+        "tag": 21,
+        "content_type": 57,
+        "object_id": 9
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 337,
+    "fields": {
+        "tag": 20,
+        "content_type": 57,
+        "object_id": 10
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 338,
+    "fields": {
+        "tag": 22,
+        "content_type": 57,
+        "object_id": 10
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 339,
+    "fields": {
+        "tag": 23,
+        "content_type": 57,
+        "object_id": 11
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 340,
+    "fields": {
+        "tag": 24,
+        "content_type": 57,
+        "object_id": 11
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 341,
+    "fields": {
+        "tag": 23,
+        "content_type": 57,
+        "object_id": 12
+    }
+},
+{
+    "model": "taggit.taggeditem",
+    "pk": 342,
+    "fields": {
+        "tag": 25,
+        "content_type": 57,
+        "object_id": 12
     }
 }
 ]

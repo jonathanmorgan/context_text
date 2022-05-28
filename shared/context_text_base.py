@@ -128,6 +128,7 @@ class ContextTextBase( ContextBase ):
     PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST = 'exclude_persons_with_tags_in_list'   # comma-delimited string list of Article_Subject and Article_Author tag values you want excluded when creating network data.
     PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME = 'include_persons_with_single_word_name'   # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
     PARAM_NAME_DATABASE_OUTPUT = "database_output"
+    PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
 
     # Article_Data filter parameters.
     PARAM_CODERS = "coders"

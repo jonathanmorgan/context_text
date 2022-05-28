@@ -27,10 +27,10 @@ I've left in a few notes below, regarding different package and installation cho
     - postgresql - psycopg2 - Before you can connect to Postgresql with this code, you need to do the following (based on [http://initd.org/psycopg/install/](http://initd.org/psycopg/install/)):
 
         - install the PostgreSQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libpq-dev) ( [source](http://initd.org/psycopg/install/) ).
-        - install the psycopg2 python package.  Install using pip (`sudo pip install psycopg2`).  
-        
+        - install the psycopg2 python package.  Install using pip (`sudo pip install psycopg2`).
+
     - mysql - mysqlclient - Before you can connect to MySQL with this code, you need to do the following:
-    
+
         - mysqlclient
 
             - install the MySQL client if it isn't already installed.  On linux, you'll also need to install a few dev packages (python-dev, libmysqlclient-dev) ( [source](http://codeinthehole.com/writing/how-to-set-up-mysql-for-python-on-ubuntu/) ).
@@ -43,14 +43,14 @@ I've left in a few notes below, regarding different package and installation cho
 - Natural Language Processing (NLP) APIs, if you are building your own thing (I don't use Alchemy API right now, and I built my own OpenCalais client):
 
     - To use Alchemy API, clone the `Alchemy_API` python client into your django project's root folder:
-    
+
         - `git clone https://github.com/alchemyapi/alchemyapi_python`
-        
+
     - To use the pycalais package for OpenCalais's REST API, clone the pycalais git repository into your django project directory, then copy the calais folder into your django project directory:
-    
+
         - `git clone https://github.com/ubergrape/pycalais`
         - `cp ./calais ../`
-        
+
         - You can also use python_utilities.network.http_helper.Http_Helper to connect directly (or requests package) see the sample code in /examples/NLP/OpenCalais_API.py for more details.
 
 ## settings.py - Configure logging, database, applications:
@@ -60,7 +60,7 @@ The following are some django settings you might want to tweak in the settings.p
 ### logging
 
 Edit the `research/research/settings.py` file and update it with details of your logging configuration
-    
+
 - Example that logs any messages INFO and above to standard out:
 
         import logging
@@ -112,10 +112,10 @@ In general, for any database other than sqlite3, in your database system of choi
 - create a database for django to use (I typically use `research`).
 
     - postgresql - at the unix command line:
-    
+
             # su to the postgres user
             su - postgres
-            
+
             # create the database at the unix shell
             #createdb <database_name>
             createdb research
@@ -123,10 +123,10 @@ In general, for any database other than sqlite3, in your database system of choi
 - create a database user for django to use that is not an admin (I typically use `django_user`).
 
     - postgresql - at the unix command line:
-    
+
             # su to the postgres user
             su - postgres
-            
+
             # create the user at the unix shell
             #createuser --interactive -P <username>
             createuser --interactive -P django_user
@@ -137,7 +137,7 @@ In general, for any database other than sqlite3, in your database system of choi
 An example for postgresql looks like this:
 
     DATABASES = {
-        'default': {        
+        'default': {
             # PostgreSQL - research
             'ENGINE': 'django.db.backends.postgresql', # Add 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
             'NAME': 'research',                      # Or path to database file if using sqlite3.
@@ -149,7 +149,7 @@ An example for postgresql looks like this:
     }
 
 More information:
-    
+
 - [https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup](https://docs.djangoproject.com/en/dev/intro/tutorial01/#database-setup)
 - [https://docs.djangoproject.com/en/dev/ref/settings/#databases](https://docs.djangoproject.com/en/dev/ref/settings/#databases)
 
@@ -182,7 +182,7 @@ In order to run unit tests using OpenCalais's API, you'll need to:
 - Create a Refinitiv ID ( [https://my.refinitiv.com/content/mytr/en/register.html](https://my.refinitiv.com/content/mytr/en/register.html) ).
 
     - after submitting form, open email from Refinitiv with subject something like "Please confirm your email address for your new Open PermID | Calais user account" and click the link to activate your profile.
-   
+
 - Get your API token ()
 
     - browse to the PermID site ( [https://permid.org/](https://permid.org/) ).
@@ -202,7 +202,7 @@ In order to run unit tests, your database configuration in `settings.py` will ne
 To run unit tests, at the command line in your django project/site folder (where `manage.py` lives):
 
     python manage.py test context_text.tests
-    
+
 Specific sets of tests:
 
 - OpenCalais API (v.2)
@@ -213,7 +213,7 @@ Specific sets of tests:
 
     - test OpenCalais automated coding (assumes configuration tests passed):
 
-            python manage.py test context_text.tests.open_calais.test_open_calais_api 
+            python manage.py test context_text.tests.open_calais.test_open_calais_api
 
 - ArticleCoder (using ManualArticleCoder)
 
@@ -222,37 +222,43 @@ Specific sets of tests:
             python manage.py test context_text.tests.article_coder.test_article_coder
 
 - ManualArticleCoder
-            
+
     - test methods in ManualArticleCoder specific to manual coding:
 
             python manage.py test context_text.tests.manual_article_coder.test_manual_article_coder
-            
+
 - context_text model instances:
 
     - test Article model
-    
+
             python manage.py test context_text.tests.models.test_Article_model
 
     - test Article_Data model
-    
+
             python manage.py test context_text.tests.models.test_Article_Data_model
 
     - test Newspaper model
-    
+
             python manage.py test context_text.tests.models.test_Newspaper_model
 
     - test Organization (and AbstractOrganization) model
-    
+
             python manage.py test context_text.tests.models.test_Organization_model
 
     - test Person (and AbstractPerson) model
-    
+
             python manage.py test context_text.tests.models.test_Person_model
+
+- create network data in context_text:
+
+    - test basic network data creation:
+
+            python manage.py test context_text.tests.export.network_data.test_network_output
 
 - export from context_text to context base:
 
     - test basic export:
-    
+
             python manage.py test context_text.tests.export.to_context_base.test_export_to_context
 
 ## Test data
@@ -306,7 +312,7 @@ In addition, you can load a complete test data set that includes automated codin
             python manage.py loaddata context_text_unittest_taggit_data.json
 
     - to load all that data, plus `Article_Data` coded by OpenCalais v.2:
-    
+
             python manage.py loaddata context_text_unittest_export_auth_data.json
             python manage.py loaddata context_text_unittest_django_config_data.json
             python manage.py loaddata context_text_unittest_export_data.json
@@ -324,12 +330,12 @@ To filter and tag sets of articles, use the page: 'http://<your_server>/research
 This page allows you to filter on:
 
 - Start Date (YYYY-MM-DD)
-- End Date (YYYY-MM-DD):    
-- * Fancy date range:   
-- Publications: 
-- Article Tag List (comma-delimited):   
-- Unique Identifier List (comma-delimited): 
-- Article ID IN List (comma-delimited): 
+- End Date (YYYY-MM-DD):
+- * Fancy date range:
+- Publications:
+- Article Tag List (comma-delimited):
+- Unique Identifier List (comma-delimited):
+- Article ID IN List (comma-delimited):
 - String Section Name IN List (comma-delimited):
 
 Then either see a summary of articles that fit your filter, look at details on each matching article, or apply one or more tags to all of the articles matched by your filter criteria.
@@ -341,9 +347,9 @@ context_text includes a set of pages that can be used to code articles by hand, 
 - to code people (subjects, sources, and authors) in articles, use: `http://<your_server>/research/context_text/article/code/`
 
     - Setup:
-    
+
         - make sure that any user you want to be able to code articles is configured in django as "staff" (and so able to access admins).  They don't need to actually have any access privileges, they just need to be "staff".
-    
+
     - See directions for coding in `context_text/protocol/protocol-capturing_people_in_articles.pdf`.
 
 - to view an article's meta-data and text: `http://<your_server>/research/context_text/article/view/`
@@ -377,8 +383,8 @@ To use the OpenCalais REST API to code articles, you'll need to first set up a f
 Create the following configuration properties, each with the Application value "OpenCalais_REST_API":
 
     - `open_calais_api_key` - should contain your Open Calais API key.  For more information on getting an Open Calais API key, see: [https://developers.refinitiv.com/en/api-catalog/open-perm-id/intelligent-tagging-restful-api/quick-start](https://developers.refinitiv.com/en/api-catalog/open-perm-id/intelligent-tagging-restful-api/quick-start)
-    - `submitter` - string that identifies the program that is invoking the API - should start with "context_text-", then identify more specifically your project. 
-    
+    - `submitter` - string that identifies the program that is invoking the API - should start with "context_text-", then identify more specifically your project.
+
 Then, the most reliable way to code large numbers of articles is to use the file `context_text/examples/articles/article_coding.py` as a template to set up and run a set of articles through the coder.
 
 # Creating Network Data
@@ -408,7 +414,7 @@ Once you have coded your articles, you can output network data from them by goin
 - Syntax for fancy date range fields: For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").
 
         Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
-        
+
 - For an idea of how you can invoke the network data outputter programmatically, see the `output_network()` method in the file `views.py`.
 
 - Parameters you can set to filter network creation can be seen on the web page for outputting network data.  If you want to interact programmatically, they are listed in the class /export/network_output.py, and you can see the expected values in the method `create_query_set()`.
@@ -416,7 +422,7 @@ Once you have coded your articles, you can output network data from them by goin
 ## Article selection parameters
 
 Article parameters - For convenience, here is a list that was current at the time of this update of parameters you can use.  For each, the list contains the string displayed on the web page, then the actual parameter names:
-    
+
 - _"Start Date (YYYY-MM-DD)"_ - `start_date` - publication date - articles will be included that were published on or after this date.
 - _"End Date (YYYY-MM-DD)"_ - `end_date` - publication date - articles will be included that were published on or before this date.
 - _"* Fancy date range"_ - `date_range` - For date range fields, enter any number of paired date ranges, where dates are in the format YYYY-MM-DD, dates are separated by the string " to ", and each pair of dates is separated by two pipes ("||").  Example: 2009-12-01 to 2009-12-31||2010-02-01 to 2010-02-28
@@ -527,23 +533,23 @@ To add a new output type, do the following:
     - implement a `__init__()` method that calls parent method, and overrides fields specific to your output type, especially output type, mime type, and file extension.  Example from `NDO_CSVMatrix` (file `export/ndo_csv_matrix.py`):
 
             def __init__( self ):
-        
+
                 # call parent's __init__()
                 super( NDO_CSVMatrix, self ).__init__()
-        
+
                 # override things set in parent.
                 self.output_type = self.MY_OUTPUT_TYPE
                 self.debug = "NDO_CSVMatrix debug:\n\n"
-        
+
                 # initialize variables.
                 self.csv_string_buffer = None
                 self.csv_writer = None
                 self.delimiter = ","
-        
+
                 # variables for outputting result as file
                 self.mime_type = "text/csv"
                 self.file_extension = "csv"
-        
+
             #-- END method __init__() --#
 
     - implement the `render_network_data()` method.  A few notes:
@@ -566,7 +572,7 @@ To add a new output type, do the following:
     - add the output type value for your new output class as a constant-ish at the top, named `NETWORK_OUTPUT_TYPE_<TYPE>`.
     - add the output type and its display string to the list of tuples stored in NETWORK_OUTPUT_TYPE_CHOICES_LIST.
     - in the method `get_NDO_instance()`, add an `elif` to the conditional that maps types to instantiation of objects for each type that creates an instance of your new class when type matches the constant you created in the step above.
-    
+
 ## Working with network data in R
 
 To work with network data into R, first you read either a CSV or tab-delimited network matrix in as a data frame.  Then, convert to an R matrix object.  From there, you can load the matrix into your SNA package of choice (examples for igraph and statnet below).
@@ -579,10 +585,10 @@ To read in a CSV matrix file:
 
     # comma-delimited:
     csv_test1 <- read.csv( "csv-test1.csv", header = TRUE, row.names = 1, check.names = FALSE )
-    
+
     # just use the first 314 rows (omit the person_type row, the last row, for now).
     csv_test1_network <- csv_test1[ -nrow( csv_test1 ), ]
-    
+
     # convert to a matrix
     csv_test1_matrix <- as.matrix( csv_test1_network )
 
@@ -592,13 +598,13 @@ To read in a tab-delimited matrix file:
 
     # tab-delimited:
     tab_test1 <- read.delim( "tab-test1-data.txt", header = TRUE, row.names = 1, check.names = FALSE )
-    
+
     # just use the first 314 rows (omit the person_type row, the last row, for now).
     tab_test1_network <- tab_test1[ -nrow( tab_test1 ), ]
-    
+
     # convert to a matrix
     tab_test1_matrix <- as.matrix( tab_test1_network )
-        
+
 ### Load matrix into igraph
 
 To load an imported matrix into igraph ([http://igraph.org/index.html](http://igraph.org/index.html)):
@@ -607,15 +613,15 @@ To load an imported matrix into igraph ([http://igraph.org/index.html](http://ig
 
     # convert matrix to igraph graph object instance.
     test1_igraph <- graph.adjacency( tab_test1_matrix, mode = "undirected", weighted = TRUE )
-    
+
     # more details on graph.adjacency(): http://igraph.org/r/doc/graph.adjacency.html
-    
+
     # to see count of nodes and edges, just type the object name:
     test1_igraph
-    
+
     # Will output something like:
     #
-    # IGRAPH UNW- 314 309 -- 
+    # IGRAPH UNW- 314 309 --
     # + attr: name (v/c), weight (e/n)
     #
     # in the first line, "UNW-" are traits of graph:
@@ -628,7 +634,7 @@ To load an imported matrix into igraph ([http://igraph.org/index.html](http://ig
     # - name (v/c) - the name attribute is a vertex/node attribute - the "v" in "(v/c)" - where the values are character data - the "c" in "(v/c)".
     # - weight (e/n) - the weight attribute is an edge attribute - the "e" in "(e/n)" - where the values are numeric data - the "n" in "(e/n)".
     # - based on: http://www.shizukalab.com/toolkits/sna/sna_data
-    
+
     # to reference a vertex attribute's values, use V( <network> )$<attribute_name>
 
     # output the names for the nodes in the graph:
@@ -644,7 +650,7 @@ To load an imported matrix into igraph ([http://igraph.org/index.html](http://ig
 
     # set vertex/node attribute person_type
     V( test1_igraph )$person_type <- person_types_list
-    
+
     # look at graph and person_type attribute values
     test1_igraph
     V( test1_igraph )$person_type
@@ -654,63 +660,63 @@ To load an imported matrix into igraph ([http://igraph.org/index.html](http://ig
 To load an imported matrix into statnet ([http://www.statnet.org/](http://www.statnet.org/)):
 
     library( statnet )
-    
+
     # convert matrix to statnet network object instance.
     test1_statnet <- network( tab_test1_matrix, matrix.type = "adjacency", directed = FALSE )
 
     # to see information about network, just type the object name:
     test1_statnet
-    
+
     # Output example:
     # Network attributes:
-    #  vertices = 314 
-    #  directed = FALSE 
-    #  hyper = FALSE 
-    #  loops = FALSE 
-    #  multiple = FALSE 
-    #  bipartite = FALSE 
-    #  total edges= 309 
-    #    missing edges= 0 
-    #    non-missing edges= 309 
+    #  vertices = 314
+    #  directed = FALSE
+    #  hyper = FALSE
+    #  loops = FALSE
+    #  multiple = FALSE
+    #  bipartite = FALSE
+    #  total edges= 309
+    #    missing edges= 0
+    #    non-missing edges= 309
     #
-    # Vertex attribute names: 
-    #    vertex.names 
+    # Vertex attribute names:
+    #    vertex.names
     #
     # No edge attributes
-        
+
     # If you have a file of attributes (each attribute is a column, with
     #    attribute name the column name), you can associate those attributes
     #    when you create the network.
     # attribute help: http://www.inside-r.org/packages/cran/network/docs/loading.attributes
-    
+
     # load attribute file:
     tab_attribute_test1 <- read.delim( "tab-test1-attribute_data.txt", header = TRUE, row.names = 1, check.names = FALSE )
-    
+
     # convert matrix to statnet network object instance.
     test1_statnet <- network( tab_test1_matrix, matrix.type = "adjacency", directed = FALSE, vertex.attr = tab_attribute_test1 )
-    
+
     # look at information now.
     test1_statnet
 
     # Network attributes:
-    #  vertices = 314 
-    #  directed = FALSE 
-    #  hyper = FALSE 
-    #  loops = FALSE 
-    #  multiple = FALSE 
-    #  bipartite = FALSE 
-    #  total edges= 309 
-    #    missing edges= 0 
-    #    non-missing edges= 309 
+    #  vertices = 314
+    #  directed = FALSE
+    #  hyper = FALSE
+    #  loops = FALSE
+    #  multiple = FALSE
+    #  bipartite = FALSE
+    #  total edges= 309
+    #    missing edges= 0
+    #    non-missing edges= 309
     #
-    # Vertex attribute names: 
-    #    person_type vertex.names 
+    # Vertex attribute names:
+    #    person_type vertex.names
     #
     # No edge attributes
-    
+
     # - OR - you can just add the attribute values to an existing network.
     test1_statnet%v%"person_type" <- tab_attribute_test1$person_type
-    
+
     # list out the person_type attribute values
     test1_statnet%v%"person_type"
 
@@ -725,38 +731,38 @@ To import data into UCINet:
 
     - save that document and open another.
     - in the original, just copy the portion of the file from after:
-    
+
             =======================
             network data output:
             =======================
-            
+
             N = 314
-            
+
         to before (at the bottom of the file):
 
             =======================
             END network data output
             =======================
-        
+
     - save this portion into another file with file extension ".csv".
 - If you don't care about the full original output:
 
     - delete everything from the following up:
-    
+
             =======================
             network data output:
             =======================
-            
+
             N = 314
 
         and remove the following from the bottom of the file:
-        
+
             =======================
             END network data output
             =======================
-        
+
     - save the file with the file extension ".csv".
-    
+
 - Open Microsoft Excel, and use it to open your .csv file.
 - Save the resulting document as an Excel file.
 - Open UCINet.

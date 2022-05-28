@@ -5157,7 +5157,7 @@ class Article_Text( Unique_Article_Content ):
 class Article_Data( models.Model ):
 
     # declaring a few "constants"
-    DEBUG = True
+    DEBUG = False
 
     ARTICLE_TYPE_NEWS_TO_ID_MAP = {
         'news' : 1,
@@ -5269,7 +5269,7 @@ class Article_Data( models.Model ):
 
             if cls.DEBUG == True:
                 log_message = "automated coder user: {} - {}".format( automated_coder_user.id, automated_coder_user )
-                output_log_message( log_message, me, do_print_IN = True )
+                output_log_message( log_message, me, do_print_IN = self.DEBUG )
             #-- END DEBUG --#
 
             # filter - either:
