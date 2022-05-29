@@ -129,6 +129,7 @@ class ContextTextBase( ContextBase ):
     PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME = 'include_persons_with_single_word_name'   # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
     PARAM_NAME_DATABASE_OUTPUT = "database_output"
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
+    PARAM_DB_ADD_TIMESTAMP_TO_LABEL = "db_add_timestamp_to_label"
 
     # Article_Data filter parameters.
     PARAM_CODERS = "coders"

@@ -90,6 +90,9 @@ class NetworkOutput( ContextTextBase ):
     PARAM_SOURCE_CAPACITY_INCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CAPACITY_INCLUDE_LIST
     PARAM_SOURCE_CAPACITY_EXCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CAPACITY_EXCLUDE_LIST
     PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST = NetworkDataOutput.PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST
+    # in ContextTextBase: PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST = 'exclude_persons_with_tags_in_list'   # comma-delimited string list of Article_Subject and Article_Author tag values you want excluded when creating network data.
+    # in ContextTextBase: PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME = 'include_persons_with_single_word_name'   # boolean, do we include Article_Subject and Article_Author people with a single word verbatim_name.
+
 
     # network selection parameters unique to this class.
     PARAM_CODER_LIST = 'coders'   # list of IDs of coders whose data you want included.
@@ -105,6 +108,8 @@ class NetworkOutput( ContextTextBase ):
     PARAM_NETWORK_INCLUDE_HEADERS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_HEADERS
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = NetworkDataOutput.PARAM_NETWORK_INCLUDE_RENDER_DETAILS
     PARAM_NETWORK_DATA_OUTPUT_TYPE = NetworkDataOutput.PARAM_NETWORK_DATA_OUTPUT_TYPE
+    # in ContextTextBase: PARAM_NAME_DATABASE_OUTPUT = "database_output"
+    # in ContextTextBase: PARAM_DB_ADD_TIMESTAMP_TO_LABEL = "db_add_timestamp_to_label"
 
     # prefix for person-selection params - same as network selection parameters
     #    above, but with this prefix appended to the front.
@@ -134,6 +139,8 @@ class NetworkOutput( ContextTextBase ):
         PARAM_SOURCE_CONTACT_TYPE_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_SOURCE_CAPACITY_INCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_SOURCE_CAPACITY_EXCLUDE_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_EXCLUDE_PERSONS_WITH_TAGS_IN_LIST : ParamContainer.PARAM_TYPE_LIST,
+        ContextTextBase.PARAM_INCLUDE_PERSONS_WITH_SINGLE_WORD_NAME : ParamContainer.PARAM_TYPE_STRING,
         PARAM_HEADER_PREFIX : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_DOWNLOAD_AS_FILE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_RENDER_DETAILS : ParamContainer.PARAM_TYPE_STRING,
@@ -141,6 +148,8 @@ class NetworkOutput( ContextTextBase ):
         PARAM_NETWORK_DATA_OUTPUT_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_LABEL : ParamContainer.PARAM_TYPE_STRING,
         PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_NAME_DATABASE_OUTPUT : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_DB_ADD_TIMESTAMP_TO_LABEL : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
@@ -921,7 +930,7 @@ class NetworkOutput( ContextTextBase ):
         #-- END loop over expected parameters --#
 
         # initialize article and person parameter output strings.
-        article_output_string = "Article selection parameters:\n-----------------------------\n"
+        article_output_string = "Article_Data selection and network creation parameters:\n-----------------------------\n"
         person_output_string = "Person selection parameters:\n----------------------------\n"
 
         # now, join the parameters together for each, separated by "\n".
@@ -1234,6 +1243,7 @@ class NetworkOutput( ContextTextBase ):
         output_logger = None
         dataspec_json = None
         my_param_container = None
+        add_timestamp_to_label = None
         output_log_label = None
         network_label_IN = None
         label_value = None
@@ -1466,6 +1476,10 @@ class NetworkOutput( ContextTextBase ):
 
             #------------------------------------------------------------------#
             # ==> label
+            add_timestamp_to_label = self.get_param(
+                NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL,
+                NetworkOutput.CHOICE_YES
+            )
 
             # start with standard value
             current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
@@ -1504,11 +1518,21 @@ class NetworkOutput( ContextTextBase ):
                 and ( label_value != "" )
             ):
 
-                # yes - prepend it to label...
-                output_log_label = "{label_value}-{rest_of_label}".format(
-                    label_value = label_value,
-                    rest_of_label = output_log_label
-                )
+                # yes - do we add_timestamp_to_label?
+                if ( add_timestamp_to_label == NetworkOutput.CHOICE_YES ):
+
+                    # prepend it to label...
+                    output_log_label = "{label_value}-{rest_of_label}".format(
+                        label_value = label_value,
+                        rest_of_label = output_log_label
+                    )
+
+                else:
+
+                    # just the label, no time stamp.
+                    output_log_label = label_value
+
+                #-- END check if, when there is a label passed in, we want to add a timestamp --#
 
             #-- END check if label value --#
 

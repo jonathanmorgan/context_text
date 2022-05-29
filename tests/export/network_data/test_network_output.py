@@ -21,6 +21,7 @@ from context_text.tests.test_helper import TestHelper
 
 # import class that actually processes requests for outputting networks.
 from context_text.export.network_output import NetworkOutput
+from context_text.models import NetworkDataOutputLog
 
 
 class NetworkOutputTest( django.test.TestCase ):
@@ -550,6 +551,14 @@ class NetworkOutputTest( django.test.TestCase ):
         # declare variables
         me = "test_process_network_output_request"
         my_data_spec_dict = None
+        data_spec_label = None
+        data_spec_details = None
+        data_spec = None
+        data_spec_json = None
+        new_data_spec_string = None
+        my_network_label = None
+        output_log_qs = None
+        output_log_count = None
 
         # debug
         debug_flag = self.DEBUG
@@ -563,9 +572,59 @@ class NetworkOutputTest( django.test.TestCase ):
         for data_spec_label, data_spec_details in my_data_spec_dict.items():
 
             # call the validate method.
+            print( "Evaluating data spec {}".format( data_spec_label ) )
             self.validate_process_network_output_request( data_spec_details )
 
         #-- END loop over data specs --#
+
+        # use last item in list to test not adding timestamp to label.
+
+        # get data spec from data_spec_details.
+        data_spec = data_spec_details.get( self.PROP_DATA_SPEC, None )
+        data_spec_json = json.loads( data_spec )
+
+        # set property `db_add_timestamp_to_label' to "no"
+        data_spec_json[ NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL ] = NetworkOutput.CHOICE_NO
+
+        # retrieve network_label property.
+        my_network_label = data_spec_json.get( NetworkOutput.PARAM_NETWORK_LABEL, None )
+
+        # convert back to string, store back in details.
+        new_data_spec_string = json.dumps( data_spec_json, sort_keys = True, indent = 4, separators = ( ',', ': ' ) )
+        data_spec_details[ self.PROP_DATA_SPEC ] = new_data_spec_string
+
+        # first, try to retrieve log with label = just network label.
+        output_log_qs = NetworkDataOutputLog.objects.filter( label = my_network_label )
+        output_log_count = output_log_qs.count()
+
+        # success?
+        test_value = output_log_count
+        should_be = 0
+        error_string = "For spec {data_spec_label}: with 'db_add_timestamp_to_label' to 'yes', made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be}, returned {test_value}.".format(
+            data_spec_label = data_spec_label,
+            my_network_label = my_network_label,
+            should_be = should_be,
+            test_value = test_value
+        )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # validate again (render output again with updated spec)
+        self.validate_process_network_output_request( data_spec_details )
+
+        # now, try to retrieve output log with just label.
+        output_log_qs = NetworkDataOutputLog.objects.filter( label = my_network_label )
+        output_log_count = output_log_qs.count()
+
+        # success?
+        test_value = output_log_count
+        should_be = 1
+        error_string = "For spec {data_spec_label}: set 'db_add_timestamp_to_label' to 'no', then made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be} record, returned {test_value}.".format(
+            data_spec_label = data_spec_label,
+            my_network_label = my_network_label,
+            should_be = should_be,
+            test_value = test_value
+        )
+        self.assertEqual( test_value, should_be, msg = error_string )
 
     #-- END test method test_process_network_output_request() --#
 
