@@ -499,7 +499,7 @@ class NetworkOutputForm( forms.Form ):
     network_include_headers = forms.ChoiceField( required = False, label = "Include headers?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST )
 
     # do we want to store the network data output in database?
-    database_output = forms.ChoiceField( required = False, label = "Store output in database?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST, initial = NetworkOutput.CHOICE_NO )
+    database_output = forms.ChoiceField( required = False, label = "DB - Store output in database?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST, initial = NetworkOutput.CHOICE_NO )
 
     db_add_timestamp_to_label = forms.ChoiceField( required = False, label = "DB - Add timestamp to label?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST, initial = NetworkOutput.CHOICE_YES )
 
