@@ -1019,7 +1019,7 @@ class PersonSelectForm( forms.Form ):
     person_coder_types_list = forms.CharField( required = False, label = "coder_type 'Value In' List (comma-delimited)" )
 
     person_topics = forms.ModelMultipleChoiceField( required = False, queryset = Topic.objects.all() )
-    person_tag_list = forms.CharField( required = False, label = "Person - Include Articles With Tags In List (comma-delimited)" )
+    person_tags_list = forms.CharField( required = False, label = "Person - Include Articles With Tags In List (comma-delimited)" )
     person_unique_identifiers = forms.CharField( required = False, label = "Person - Include Articles With unique_identifier In List (comma-delimited)" )
 
     # allow duplicate articles?

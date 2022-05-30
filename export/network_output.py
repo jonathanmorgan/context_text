@@ -1337,6 +1337,93 @@ class NetworkOutput( ContextTextBase ):
             output_logger.set_request_type( data_output_request_type )
             output_logger.set_data_spec_json( data_spec_json )
 
+            #------------------------------------------------------------------#
+            # ==> label
+            add_timestamp_to_label = self.get_param(
+                NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL,
+                NetworkOutput.CHOICE_YES
+            )
+
+            # start with standard value
+            current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
+            output_log_label = "{request_type}-{timestamp_now}".format(
+                request_type = output_logger.get_request_type(),
+                timestamp_now = current_date_time
+            )
+
+            # anything else to add?
+
+            # retrieve network_label parameter.
+            network_label_IN = self.get_param(
+                NetworkOutput.PARAM_NETWORK_LABEL,
+                None
+            )
+
+            # first, parameter passed in data spec takes precedence.
+            if (
+                ( network_label_IN is not None )
+                and ( network_label_IN != "" )
+            ):
+
+                # network_label param - use it.
+                label_value = network_label_IN
+
+            else:
+
+                # no data spec param, try parameter passed to method.
+                label_value = output_log_label_IN
+
+            #-- END check if label passed in. --#
+
+            # got a label_value?
+            if (
+                ( label_value is not None )
+                and ( label_value != "" )
+            ):
+
+                # yes - do we add_timestamp_to_label?
+                if ( add_timestamp_to_label == NetworkOutput.CHOICE_YES ):
+
+                    # prepend it to label...
+                    output_log_label = "{label_value}-{rest_of_label}".format(
+                        label_value = label_value,
+                        rest_of_label = output_log_label
+                    )
+
+                else:
+
+                    # just the label, no time stamp.
+                    output_log_label = label_value
+
+                #-- END check if, when there is a label passed in, we want to add a timestamp --#
+
+            #-- END check if label value --#
+
+            # store label
+            output_logger.set_label( output_log_label )
+
+            #------------------------------------------------------------------#
+            # output_type --> network_data_format
+            output_type_IN = self.get_param(
+                NetworkOutput.PARAM_OUTPUT_TYPE,
+                None
+            )
+            output_logger.set_network_data_format( output_type_IN )
+
+            #------------------------------------------------------------------#
+            # save()
+            output_logger.save()
+
+            #------------------------------------------------------------------#
+            # tags - got a label_value?
+            if ( label_value is not None ):
+
+                # yes - add it and the label as tags.
+                output_logger.tags.add( label_value )
+                output_logger.tags.add( output_log_label )
+
+            #-- END check if label value --#
+
         #-- END init logging output. --#
 
         # do we include details?
@@ -1475,91 +1562,8 @@ class NetworkOutput( ContextTextBase ):
             output_logger.set_network_data( data_OUT )
 
             #------------------------------------------------------------------#
-            # ==> label
-            add_timestamp_to_label = self.get_param(
-                NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL,
-                NetworkOutput.CHOICE_YES
-            )
-
-            # start with standard value
-            current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
-            output_log_label = "{request_type}-{timestamp_now}".format(
-                request_type = output_logger.get_request_type(),
-                timestamp_now = current_date_time
-            )
-
-            # anything else to add?
-
-            # retrieve network_label parameter.
-            network_label_IN = self.get_param(
-                NetworkOutput.PARAM_NETWORK_LABEL,
-                None
-            )
-
-            # first, parameter passed in data spec takes precedence.
-            if (
-                ( network_label_IN is not None )
-                and ( network_label_IN != "" )
-            ):
-
-                # network_label param - use it.
-                label_value = network_label_IN
-
-            else:
-
-                # no data spec param, try parameter passed to method.
-                label_value = output_log_label_IN
-
-            #-- END check if label passed in. --#
-
-            # got a label_value?
-            if (
-                ( label_value is not None )
-                and ( label_value != "" )
-            ):
-
-                # yes - do we add_timestamp_to_label?
-                if ( add_timestamp_to_label == NetworkOutput.CHOICE_YES ):
-
-                    # prepend it to label...
-                    output_log_label = "{label_value}-{rest_of_label}".format(
-                        label_value = label_value,
-                        rest_of_label = output_log_label
-                    )
-
-                else:
-
-                    # just the label, no time stamp.
-                    output_log_label = label_value
-
-                #-- END check if, when there is a label passed in, we want to add a timestamp --#
-
-            #-- END check if label value --#
-
-            # store label
-            output_logger.set_label( output_log_label )
-
-            #------------------------------------------------------------------#
-            # output_type --> network_data_format
-            output_type_IN = self.get_param(
-                NetworkOutput.PARAM_OUTPUT_TYPE,
-                None
-            )
-            output_logger.set_network_data_format( output_type_IN )
-
-            #------------------------------------------------------------------#
             # save()
             output_logger.save()
-
-            #------------------------------------------------------------------#
-            # tags - got a label_value?
-            if ( label_value is not None ):
-
-                # yes - add it and the label as tags.
-                output_logger.tags.add( label_value )
-                output_logger.tags.add( output_log_label )
-
-            #-- END check if label value --#
 
         #-- END check if output_logger instance present. --#
 
