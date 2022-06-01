@@ -150,6 +150,8 @@ class NetworkOutput( ContextTextBase ):
         PARAM_NETWORK_INCLUDE_HEADERS : ParamContainer.PARAM_TYPE_STRING,
         ContextTextBase.PARAM_NAME_DATABASE_OUTPUT : ParamContainer.PARAM_TYPE_STRING,
         ContextTextBase.PARAM_DB_ADD_TIMESTAMP_TO_LABEL : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_NAME_DB_SAVE_DATA_IN_DATABASE : ParamContainer.PARAM_TYPE_STRING,
+        ContextTextBase.PARAM_NAME_SAVE_DATA_IN_FOLDER : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
@@ -243,6 +245,9 @@ class NetworkOutput( ContextTextBase ):
         # variable to hold combined master article and person coder ID list.
         self.m_article_coder_id_list = None
         self.m_person_coder_id_list = None
+
+        # auditing
+        self.last_label = None
 
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
         self.set_logger_name( "context_text.export.network_output" )
@@ -1238,8 +1243,8 @@ class NetworkOutput( ContextTextBase ):
         # declare variables - output logging
         data_spec_json = None
         data_output_request_type = None
-        database_output_IN = None
         do_log_output = None
+        do_save_data_to_db = None
         output_logger = None
         dataspec_json = None
         my_param_container = None
@@ -1248,6 +1253,14 @@ class NetworkOutput( ContextTextBase ):
         network_label_IN = None
         label_value = None
         output_type_IN = None
+
+        # declare variables - save data to file system.
+        save_data_in_folder_path_IN = None
+        do_save_data_to_file = None
+        data_file_name = None
+        data_file_path = None
+        data_file = None
+        my_data_hash_hexdigest = None
 
         # declare variables - DEBUG
         coder_list_IN = None
@@ -1291,42 +1304,64 @@ class NetworkOutput( ContextTextBase ):
 
         #-- END check to see
 
+        #----------------------------------------
+        # save to resulting data to file system?
+        do_save_data_to_file = False
+        save_data_in_folder_path_IN = self.get_param(
+            NetworkOutput.PARAM_NAME_SAVE_DATA_IN_FOLDER,
+            None
+        )
+        if ( ( save_data_in_folder_path_IN is not None ) and ( save_data_in_folder_path_IN != "" ) ):
+
+            # looks like we have a file output folder path...
+            do_save_data_to_file = True
+
+        #-- END check if we save data to file --#
+
+        #----------------------------------------
         # logging output?
 
-        # retrieve database_output parameter.
-        database_output_IN = self.get_param(
+        # retrieve database_output parameters.
+        do_log_output = self.get_param_yes_no_as_boolean(
             NetworkOutput.PARAM_NAME_DATABASE_OUTPUT,
+            default_IN = do_log_output_IN
+        )
+
+        # retrieve database_output parameters.
+        do_save_data_to_db = self.get_param_yes_no_as_boolean(
+            NetworkOutput.PARAM_NAME_DB_SAVE_DATA_IN_DATABASE,
+            default_IN = True
+        )
+
+        # retrieve label information so it can be reused for file output.
+
+        #----------------------------------------------------------------------#
+        # ==> label
+
+        # start with date-time string (standard value)
+        current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
+
+        # retrieve network_label parameter.
+        network_label_IN = self.get_param(
+            NetworkOutput.PARAM_NETWORK_LABEL,
             None
         )
 
-        # param set?
+        # first, parameter passed in data spec takes precedence.
         if (
-            ( database_output_IN is not None )
-            and ( database_output_IN != "" )
-            and ( database_output_IN in NetworkOutput.CHOICE_YES_OR_NO_VALUE_LIST )
+            ( network_label_IN is not None )
+            and ( network_label_IN != "" )
         ):
 
-            #raise ContextTextError( "Found database_output param: {}".format( database_output_IN ) )
-            # got a valid value. Yes or no?
-            if ( database_output_IN == NetworkOutput.CHOICE_NO ):
-
-                # no - set to True.
-                do_log_output = False
-
-            elif ( database_output_IN == NetworkOutput.CHOICE_YES ):
-
-                # no - set to True.
-                do_log_output = True
-
-            #-- END check to see if we log output based on data spec --#
+            # network_label param - use it.
+            label_value = network_label_IN
 
         else:
 
-            #raise ContextTextError( "DID NOT FIND database_output param: {} ( {} )".format( database_output_IN, self.get_parameters_dict() ) )
-            # param not set, use argument to method.
-            do_log_output = do_log_output_IN
+            # no data spec param, try parameter passed to method.
+            label_value = output_log_label_IN
 
-        #-- END check if database_output param set --#
+        #-- END check if label passed in. --#
 
         if ( do_log_output == True ):
 
@@ -1338,42 +1373,19 @@ class NetworkOutput( ContextTextBase ):
             output_logger.set_data_spec_json( data_spec_json )
 
             #------------------------------------------------------------------#
-            # ==> label
-            add_timestamp_to_label = self.get_param(
-                NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL,
-                NetworkOutput.CHOICE_YES
-            )
+            # label
 
-            # start with standard value
-            current_date_time = datetime.datetime.now().strftime( '%Y%m%d-%H%M%S' )
+            # start with request type and timestamp.
             output_log_label = "{request_type}-{timestamp_now}".format(
                 request_type = output_logger.get_request_type(),
                 timestamp_now = current_date_time
             )
 
-            # anything else to add?
-
-            # retrieve network_label parameter.
-            network_label_IN = self.get_param(
-                NetworkOutput.PARAM_NETWORK_LABEL,
-                None
+            # do we want timestamp added to label?
+            add_timestamp_to_label = self.get_param_yes_no_as_boolean(
+                NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL,
+                default_IN = True
             )
-
-            # first, parameter passed in data spec takes precedence.
-            if (
-                ( network_label_IN is not None )
-                and ( network_label_IN != "" )
-            ):
-
-                # network_label param - use it.
-                label_value = network_label_IN
-
-            else:
-
-                # no data spec param, try parameter passed to method.
-                label_value = output_log_label_IN
-
-            #-- END check if label passed in. --#
 
             # got a label_value?
             if (
@@ -1382,7 +1394,7 @@ class NetworkOutput( ContextTextBase ):
             ):
 
                 # yes - do we add_timestamp_to_label?
-                if ( add_timestamp_to_label == NetworkOutput.CHOICE_YES ):
+                if ( add_timestamp_to_label == True ):
 
                     # prepend it to label...
                     output_log_label = "{label_value}-{rest_of_label}".format(
@@ -1401,6 +1413,7 @@ class NetworkOutput( ContextTextBase ):
 
             # store label
             output_logger.set_label( output_log_label )
+            self.last_label = output_log_label
 
             #------------------------------------------------------------------#
             # output_type --> network_data_format
@@ -1552,20 +1565,94 @@ class NetworkOutput( ContextTextBase ):
 
         data_OUT = output_string
 
+        # write file to file system?
+
         # logging output?
         if ( do_log_output == True ):
 
-            # store output and save.
+            # only store to data base if told to do so.
+            if ( do_save_data_to_db == True ):
 
-            #------------------------------------------------------------------#
-            # ==> network_data
-            output_logger.set_network_data( data_OUT )
+                # store output and save.
 
-            #------------------------------------------------------------------#
-            # save()
-            output_logger.save()
+                #------------------------------------------------------------------#
+                # ==> network_data
+                output_logger.set_network_data( data_OUT )
+
+                #------------------------------------------------------------------#
+                # save()
+                output_logger.save()
+
+            #-- END check
 
         #-- END check if output_logger instance present. --#
+
+        # write data to file system?
+        if ( do_save_data_to_file == True ):
+
+            # we have been asked to save data file to file system.
+            data_file_name = current_date_time
+
+            # got a label_value?
+            if (
+                ( label_value is not None )
+                and ( label_value != "" )
+            ):
+
+                # yes - add to beginning of file name.
+                data_file_name = "{label_value}-{rest_of_name}".format(
+                    label_value = label_value,
+                    rest_of_name = data_file_name
+                )
+
+            else:
+
+                # no - create generic name.
+                data_file_name = "{generic_label}-{rest_of_name}".format(
+                    generic_label = "network_output_data",
+                    rest_of_name = data_file_name
+                )
+
+            #-- END check if label value --#
+
+            # create data file path from save folder path and name
+            data_file_path = "{folder_path}/{data_file_name}".format(
+                folder_path = save_data_in_folder_path_IN,
+                data_file_name = data_file_name
+            )
+
+            # write data to specified file.
+            with open( data_file_path, 'w' ) as data_file:
+
+                # write!
+                data_file.write( data_OUT )
+
+                # logging?
+                if ( do_log_output == True ):
+
+                    #------------------------------------------------------------------#
+                    # ==> network_data_file_path
+                    output_logger.set_network_data_file_path( data_file_path )
+
+                    # calculate and store hash
+                    my_data_hash_hexdigest = output_logger.get_network_data_hash()
+                    if ( ( my_data_hash_hexdigest is None ) or ( my_data_hash_hexdigest == "" ) ):
+
+                        # no hash yet - make and store one.
+                        my_data_hash_hexdigest = output_logger.make_string_hash( data_OUT )
+                        output_logger.set_network_data_hash( my_data_hash_hexdigest )
+
+                    #-- END check to see if hash set yet. --#
+
+                    #------------------------------------------------------------------#
+                    # save()
+                    output_logger.save()
+
+                #-- END check if logging --#
+
+            #-- END with open( data_file_path, 'w') as data_file --#
+
+        #-- END check if save data file to file system --#
 
         return data_OUT
 

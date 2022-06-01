@@ -10504,7 +10504,8 @@ class NetworkDataOutputLog( models.Model ):
     data_spec_json_hash = models.CharField( max_length = 255, blank = True, null = True )
     description = models.TextField( blank = True, null = True )
     label = models.CharField( max_length = 255, blank = True, null = True )
-    network_data = models.TextField()
+    network_data = models.TextField( blank = True, null = True  )
+    network_data_file_path = models.TextField( blank = True, null = True  )
     network_data_content_type = models.CharField( max_length = 255, choices = CONTENT_TYPE_CHOICES, blank = True, null = True, default = CONTENT_TYPE_DEFAULT )
     network_data_format = models.CharField( max_length = 255, choices = ContextTextBase.NETWORK_DATA_FORMAT_CHOICES_LIST, blank = True, null = True )
     network_data_hash = models.CharField( max_length = 255, blank = True, null = True )
@@ -10568,7 +10569,7 @@ class NetworkDataOutputLog( models.Model ):
 
 
     @classmethod
-    def make_string_hash( cls, value_IN, hash_function_IN = hashlib.sha256 ):
+    def make_string_hash( cls, value_IN, hash_function_IN = hashlib.sha256, do_encode_IN = True ):
 
         # return reference
         value_OUT = None
@@ -10577,7 +10578,7 @@ class NetworkDataOutputLog( models.Model ):
         me = "make_string_hash"
 
         # call StringHelper method.
-        value_OUT = StringHelper.make_string_hash( value_IN, hash_function_IN = hash_function_IN )
+        value_OUT = StringHelper.make_string_hash( value_IN, hash_function_IN = hash_function_IN, do_encode_IN = do_encode_IN )
 
         return value_OUT
 
@@ -10718,6 +10719,30 @@ class NetworkDataOutputLog( models.Model ):
         return value_OUT
 
     #-- END method get_network_data() --#
+
+
+    def get_network_data_file_path( self, *args, **kwargs ):
+
+        '''
+        Returns network_data_file_path nested in this instance.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data_file_path exactly as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "get_network_data_file_path"
+
+        # return the content.
+        value_OUT = self.network_data_file_path
+
+        return value_OUT
+
+    #-- END method get_network_data_file_path() --#
 
 
     def get_network_data_format( self, *args, **kwargs ):
@@ -10945,6 +10970,34 @@ class NetworkDataOutputLog( models.Model ):
         return value_OUT
 
     #-- END method set_network_data() --#
+
+
+    def set_network_data_file_path( self, value_IN = "", *args, **kwargs ):
+
+        '''
+        Accepts a path to network data output to file.  Stores it in this instance's
+            network_data_file_path variable.
+        Preconditions: None
+        Postconditions: None
+
+        Returns the network_data_file_path as it is stored in the instance.
+        '''
+
+        # return reference
+        value_OUT = None
+
+        # declare variables
+        me = "set_network_data_file_path"
+
+        # set the text in the instance.
+        self.network_data_file_path = value_IN
+
+        # return the content.
+        value_OUT = self.get_network_data_file_path()
+
+        return value_OUT
+
+    #-- END method set_network_data_file_path() --#
 
 
     def set_network_data_format( self, value_IN = "", *args, **kwargs ):

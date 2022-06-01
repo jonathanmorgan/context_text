@@ -503,6 +503,10 @@ class NetworkOutputForm( forms.Form ):
 
     db_add_timestamp_to_label = forms.ChoiceField( required = False, label = "DB - Add timestamp to label?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST, initial = NetworkOutput.CHOICE_YES )
 
+    db_save_data_in_database = forms.ChoiceField( required = False, label = "DB - Save data in database?", choices = NetworkOutput.CHOICES_YES_OR_NO_LIST, initial = NetworkOutput.CHOICE_YES )
+
+    save_data_in_folder = forms.CharField( required = False, label = "FS - Save data in folder (path)" )
+
 #-- END Form class NetworkOutputForm --#
 
 

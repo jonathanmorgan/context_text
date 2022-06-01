@@ -8,6 +8,7 @@ Functions tested:
 # import six
 import hashlib
 import json
+import os
 import six
 
 # django imports
@@ -412,6 +413,9 @@ class NetworkOutputTest( django.test.TestCase ):
             matches what we expect.
         '''
 
+        # return reference
+        network_outputter_OUT = None
+
         # declare variables
         me = "test_process_network_output_request"
         data_spec_label = None
@@ -455,7 +459,7 @@ class NetworkOutputTest( django.test.TestCase ):
         request_json = json.loads( data_spec_IN )
 
         # make NetworkOutput instance.
-        network_outputter = network_outputter = NetworkOutput()
+        network_outputter = NetworkOutput()
 
         # create data
         network_data = network_outputter.process_network_output_request(
@@ -533,6 +537,11 @@ class NetworkOutputTest( django.test.TestCase ):
 
         #-- END loop over include persons to find. --#
 
+        # return NetworkOutput instance.
+        network_outputter_OUT = network_outputter
+
+        return network_outputter_OUT
+
     #-- END test method test_create_article_relations() --#
 
 
@@ -556,12 +565,28 @@ class NetworkOutputTest( django.test.TestCase ):
         data_spec = None
         data_spec_json = None
         new_data_spec_string = None
+        last_network_outputter = None
+        last_actual_label = None
+        last_log = None
+        last_data = None
+        last_data_line_list = None
         my_network_label = None
+        my_network_data = None
+        my_network_data_hash = None
+        my_network_data_file_path = None
+        my_network_data_file = None
+        my_network_data_from_file = None
+        my_network_data_hash_from_file = None
         output_log_qs = None
         output_log_count = None
+        output_log = None
+        original_line_list = None
+        file_line_list = None
+        do_clean_up_temp = None
 
         # debug
         debug_flag = self.DEBUG
+        do_clean_up_temp = True
 
         print( '\n\n====> In {}.{}\n'.format( self.CLASS_NAME, me ) )
 
@@ -573,11 +598,24 @@ class NetworkOutputTest( django.test.TestCase ):
 
             # call the validate method.
             print( "Evaluating data spec {}".format( data_spec_label ) )
-            self.validate_process_network_output_request( data_spec_details )
+            last_network_outputter = self.validate_process_network_output_request( data_spec_details )
 
         #-- END loop over data specs --#
 
         # use last item in list to test not adding timestamp to label.
+
+        #----------------------------------------------------------------------#
+        # ==> before we begin, get info from last run.
+        last_actual_label = last_network_outputter.last_label
+
+        # retrieve log for that label.
+        last_log = NetworkDataOutputLog.objects.get( label = last_actual_label )
+
+        # get last data and hash
+        last_data = last_log.get_network_data()
+
+        #----------------------------------------------------------------------#
+        # ==> update spec for next test
 
         # get data spec from data_spec_details.
         data_spec = data_spec_details.get( self.PROP_DATA_SPEC, None )
@@ -585,6 +623,12 @@ class NetworkOutputTest( django.test.TestCase ):
 
         # set property `db_add_timestamp_to_label' to "no"
         data_spec_json[ NetworkOutput.PARAM_DB_ADD_TIMESTAMP_TO_LABEL ] = NetworkOutput.CHOICE_NO
+
+        # set property "db_save_data_in_database" to "no"
+        data_spec_json[ NetworkOutput.PARAM_NAME_DB_SAVE_DATA_IN_DATABASE ] = NetworkOutput.CHOICE_NO
+
+        # and try saving data to /tmp
+        data_spec_json[ NetworkOutput.PARAM_NAME_SAVE_DATA_IN_FOLDER ] = "/tmp"
 
         # retrieve network_label property.
         my_network_label = data_spec_json.get( NetworkOutput.PARAM_NETWORK_LABEL, None )
@@ -600,7 +644,7 @@ class NetworkOutputTest( django.test.TestCase ):
         # success?
         test_value = output_log_count
         should_be = 0
-        error_string = "For spec {data_spec_label}: with 'db_add_timestamp_to_label' to 'yes', made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be}, returned {test_value}.".format(
+        error_string = "Checking that no log row matches for just label - For spec {data_spec_label}: with 'db_add_timestamp_to_label' to 'yes', made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be}, returned {test_value}.".format(
             data_spec_label = data_spec_label,
             my_network_label = my_network_label,
             should_be = should_be,
@@ -608,6 +652,7 @@ class NetworkOutputTest( django.test.TestCase ):
         )
         self.assertEqual( test_value, should_be, msg = error_string )
 
+        #----------------------------------------------------------------------#
         # validate again (render output again with updated spec)
         self.validate_process_network_output_request( data_spec_details )
 
@@ -618,13 +663,97 @@ class NetworkOutputTest( django.test.TestCase ):
         # success?
         test_value = output_log_count
         should_be = 1
-        error_string = "For spec {data_spec_label}: set 'db_add_timestamp_to_label' to 'no', then made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be} record, returned {test_value}.".format(
+        error_string = "Checking if single log row found for label - For spec {data_spec_label}: set 'db_add_timestamp_to_label' to 'no', then made data, then tried to retrieve output log instance using just label ( {my_network_label} ). Should have returned {should_be} record, returned {test_value}.".format(
             data_spec_label = data_spec_label,
             my_network_label = my_network_label,
             should_be = should_be,
             test_value = test_value
         )
         self.assertEqual( test_value, should_be, msg = error_string )
+
+        #-----------------------------------#
+        # try to retrieve network_data.
+        output_log = output_log_qs.get()
+        my_network_data = output_log.get_network_data()
+
+        # should be None
+        test_value = my_network_data
+        error_string = "Checking if network data present in log instance - For spec {data_spec_label}: set 'db_save_data_in_database' to 'no', then made data, then tried to retrieve data from log instance. Data was present in instance, should be None. Error.".format(
+            data_spec_label = data_spec_label
+        )
+        self.assertIsNone( test_value, msg = error_string )
+
+        #-----------------------------------#
+        # try to retrieve network data hash
+        my_network_data_hash = output_log.get_network_data_hash()
+
+        # should not be None
+        test_value = my_network_data_hash
+        error_string = "Checking if hash is stored in log instance - For spec {data_spec_label}: set 'db_save_data_in_database' to 'no', then made data, then tried to retrieve data hash from log instance. Data hash was not present in instance, should have been set when data file was output.".format(
+            data_spec_label = data_spec_label
+        )
+        self.assertIsNotNone( test_value, msg = error_string )
+
+        #-----------------------------------#
+        # compare to what should be there.
+        expected_hash = data_spec_details.get( self.PROP_OUTPUT_HASH, None )
+
+        # success?
+        test_value = my_network_data_hash
+        should_be = expected_hash
+        error_string = "Comparing hash from log instance to expected hash - For spec {data_spec_label}: hash from saving file to file system ( {new_hash} ) doesn't match expected ( {expected_hash} ).".format(
+            data_spec_label = data_spec_label,
+            new_hash = my_network_data_hash,
+            expected_hash = expected_hash
+        )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        #----------------------------------------#
+        # get path for file - should be present.
+        my_network_data_file_path = output_log.get_network_data_file_path()
+
+        # should not be None
+        test_value = my_network_data_file_path
+        error_string = "Check if file path is present - For spec {data_spec_label}: set 'save_data_in_folder' to '/tmp', then made data, then tried to retrieve data file path from log instance. Should not be None. Error.".format(
+            data_spec_label = data_spec_label
+        )
+        self.assertIsNotNone( test_value, msg = error_string )
+
+        #----------------------------------------#
+        # load data file
+
+        # load file, calculate hash, make sure it matches.
+        with open( my_network_data_file_path, 'rb' ) as my_network_data_file:
+
+            # read contents of file
+            my_network_data_from_file = my_network_data_file.read()
+
+        #-- END open file we might or might not have just made. --#
+
+        # calculate hash
+        my_network_data_hash_from_file = NetworkDataOutputLog.make_string_hash( my_network_data_from_file, do_encode_IN = False )
+
+        # success?
+        test_value = my_network_data_hash_from_file
+        should_be = expected_hash
+        error_string = "For spec {data_spec_label}: hash from saving file ( {file_path} ) to file system ( {new_hash} ) doesn't match expected ( {expected_hash} ).".format(
+            data_spec_label = data_spec_label,
+            file_path = my_network_data_file_path,
+            new_hash = my_network_data_hash_from_file,
+            expected_hash = expected_hash
+        )
+        self.assertEqual( test_value, should_be, msg = error_string )
+
+        # delete the file?
+        if ( do_clean_up_temp == True ):
+
+            if os.path.exists( my_network_data_file_path ):
+                os.remove( my_network_data_file_path )
+            else:
+                print("The file does not exist")
+            #-- END check if file exists, so it can be deleted.. --#
+
+        #-- END check if we clean up /tmp --#
 
     #-- END test method test_process_network_output_request() --#
 

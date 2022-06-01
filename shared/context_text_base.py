@@ -130,6 +130,8 @@ class ContextTextBase( ContextBase ):
     PARAM_NAME_DATABASE_OUTPUT = "database_output"
     PARAM_NETWORK_INCLUDE_RENDER_DETAILS = 'network_include_render_details'
     PARAM_DB_ADD_TIMESTAMP_TO_LABEL = "db_add_timestamp_to_label"
+    PARAM_NAME_DB_SAVE_DATA_IN_DATABASE = "db_save_data_in_database"  # string path of folder to which resulting network data will be written.
+    PARAM_NAME_SAVE_DATA_IN_FOLDER = "save_data_in_folder"  # string path of folder to which resulting network data will be written. Will include network label in generated file name if one is set. If empty, will not output network data as file.
 
     # Article_Data filter parameters.
     PARAM_CODERS = "coders"
