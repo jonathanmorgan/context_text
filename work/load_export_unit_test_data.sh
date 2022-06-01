@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # project home folder path is folder where "manage.py" file lives.
-$django_project_home_path="."
+django_project_home_path="."
 if [[ -n "$1" ]]
 then    
     $django_project_home_path="${1}"
