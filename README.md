@@ -466,6 +466,17 @@ Person parameters - When using the "Select People" area to specify separate filt
 
 ## What gets output
 
+- For all types, the column header is a formatted string with the following pattern: "`<position>__<person_id>__<type>-<type_id>`" WHERE:
+
+    - `<position>` = the index of the row or column, starting with 1.
+    - `<person_id>` = the ID of the person who is the row or column, from the Person table.
+    - `<type>-<type_id>` = the string name and ID of the type of the person. Values:
+
+        - "unknown - 1" - this person is included because of the person query, but not present in Article_Data data used to create network ties.
+        - "author - 2" - this person was a reporter/author on one or more stories.
+        - "source - 3" - this person was quoted as a source on one or more stories.
+        - "both - 4" - this person was both a reporter/author and a source in one or more stories.
+
 ### type: Simple Matrix
 
 The results of network generation are output in a text box at the top of the page named "Output:".  In this box, the output is broken out into 3 sections:
