@@ -1820,7 +1820,7 @@ class NetworkDataOutput( ContextTextBase ):
 
             Params:
             - person_id_IN - ID of person whose type we are updating.
-            - value_IN - type we want t assign to person.
+            - value_IN - type we want to assign to person.
         """
 
         # declare variables
