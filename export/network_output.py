@@ -249,6 +249,9 @@ class NetworkOutput( ContextTextBase ):
         # auditing
         self.last_label = None
 
+        # ability to store NetworkDataOutput instance
+        self.ndo_instance = None
+
         # set logger name (for LoggingHelper parent class: (LoggingHelper --> BasicRateLimited --> ContextTextBase --> ArticleCoding).
         self.set_logger_name( "context_text.export.network_output" )
 
@@ -1086,7 +1089,31 @@ class NetworkOutput( ContextTextBase ):
     #-- END method get_coder_id_list --#
 
 
-    def get_NDO_instance( self ):
+    def get_file_extension( self ):
+
+        # return reference
+        value_OUT = None
+
+        value_OUT = self.file_extension
+
+        return value_OUT
+
+    #-- END method get_file_extension() --#
+
+
+    def get_mime_type( self ):
+
+        # return reference
+        value_OUT = None
+
+        value_OUT = self.mime_type
+
+        return value_OUT
+
+    #-- END method get_mime_type() --#
+
+
+    def get_NDO_instance( self, store_ndo_instance_IN = False ):
 
         '''
         Assumes there is an output type property specified in the POST parameters
@@ -1130,6 +1157,13 @@ class NetworkOutput( ContextTextBase ):
         # set mime type and file extension from instance
         self.mime_type = NDO_instance_OUT.mime_type
         self.file_extension = NDO_instance_OUT.file_extension
+
+        # store instance, as well?
+        if ( store_ndo_instance_IN == True ):
+
+            self.ndo_instance = NDO_instance_OUT
+
+        #-- END check if we want to store the instance, as well. --#
 
         return NDO_instance_OUT
 
@@ -1255,8 +1289,10 @@ class NetworkOutput( ContextTextBase ):
         output_type_IN = None
 
         # declare variables - save data to file system.
+        file_extension = None
         save_data_in_folder_path_IN = None
         do_save_data_to_file = None
+        file_extension = None
         data_file_name = None
         data_file_path = None
         data_file = None
@@ -1591,7 +1627,11 @@ class NetworkOutput( ContextTextBase ):
         if ( do_save_data_to_file == True ):
 
             # we have been asked to save data file to file system.
-            data_file_name = current_date_time
+            file_extension = self.get_file_extension()
+            data_file_name = "{current_date_time}.{file_extension}".format(
+                current_date_time = current_date_time,
+                file_extension = file_extension
+            )
 
             # got a label_value?
             if (
@@ -1885,7 +1925,7 @@ class NetworkOutput( ContextTextBase ):
     #-- END remove_duplicate_article_data() --#
 
 
-    def render_network_data( self, query_set_IN, debug_flag_IN = None ):
+    def render_network_data( self, query_set_IN, debug_flag_IN = None, save_ndo_IN = False ):
 
         """
             Accepts query set of Article_Data.  Creates a new instance of the
@@ -1942,7 +1982,7 @@ class NetworkOutput( ContextTextBase ):
             self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
             # create instance of NetworkDataOutput.
-            network_data_outputter = self.get_NDO_instance()
+            network_data_outputter = self.get_NDO_instance( store_ndo_instance_IN = save_ndo_IN )
 
             debug_message = "in {me}: retrieved NDO instance of type = {ndo_type}".format(
                 me = me,
@@ -1983,6 +2023,34 @@ class NetworkOutput( ContextTextBase ):
         return network_OUT
 
     #-- END render_network_data() --#
+
+
+    def set_file_extension( self, value_IN ):
+
+        # return reference
+        value_OUT = None
+
+        self.file_extension = value_IN
+
+        value_OUT = self.get_file_extension()
+
+        return value_OUT
+
+    #-- END method get_file_extension() --#
+
+
+    def set_mime_type( self, value_IN ):
+
+        # return reference
+        value_OUT = None
+
+        self.mime_type = value_IN
+
+        value_OUT = self.get_mime_type()
+
+        return value_OUT
+
+    #-- END method get_mime_type() --#
 
 
 #-- END class NetworkOutput --#
