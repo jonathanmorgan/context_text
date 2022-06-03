@@ -114,6 +114,22 @@ class NetworkOutput( ContextTextBase ):
     # prefix for person-selection params - same as network selection parameters
     #    above, but with this prefix appended to the front.
     PARAM_PERSON_PREFIX = 'person_'
+    PARAM_PERSON_START_DATE = "{prefix}{param_name}".format(
+        prefix = PARAM_PERSON_PREFIX,
+        param_name = ContextTextBase.PARAM_START_DATE
+    )
+    PARAM_PERSON_END_DATE = "{prefix}{param_name}".format(
+        prefix = PARAM_PERSON_PREFIX,
+        param_name = ContextTextBase.PARAM_END_DATE
+    )
+    PARAM_PERSON_CODER_LIST = "{prefix}{param_name}".format(
+        prefix = PARAM_PERSON_PREFIX,
+        param_name = PARAM_CODER_LIST
+    )
+    PARAM_PERSON_CODER_ID_PRIORITY_LIST = "{prefix}{param_name}".format(
+        prefix = PARAM_PERSON_PREFIX,
+        param_name = PARAM_CODER_ID_PRIORITY_LIST
+    )
 
     # parameters for person selection.
     PARAM_PERSON_QUERY_TYPE = NetworkDataOutput.PARAM_PERSON_QUERY_TYPE
@@ -153,8 +169,8 @@ class NetworkOutput( ContextTextBase ):
         ContextTextBase.PARAM_NAME_DB_SAVE_DATA_IN_DATABASE : ParamContainer.PARAM_TYPE_STRING,
         ContextTextBase.PARAM_NAME_SAVE_DATA_IN_FOLDER : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_QUERY_TYPE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_START_DATE : ParamContainer.PARAM_TYPE_STRING,
-        PARAM_PERSON_PREFIX + ContextTextBase.PARAM_END_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_START_DATE : ParamContainer.PARAM_TYPE_STRING,
+        PARAM_PERSON_END_DATE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_DATE_RANGE : ParamContainer.PARAM_TYPE_STRING,
         PARAM_PERSON_PREFIX + ContextTextBase.PARAM_PUBLICATION_LIST : ParamContainer.PARAM_TYPE_LIST,
         PARAM_PERSON_PREFIX + PARAM_CODER_TYPE_FILTER_TYPE : ParamContainer.PARAM_TYPE_STRING,
@@ -1505,8 +1521,8 @@ class NetworkOutput( ContextTextBase ):
         self.output_debug( debug_message, do_print_IN = my_debug_flag )
 
         # get the two places where person coder IDs are stored.
-        person_coder_list_IN = self.get_param_as_list( "person_" + NetworkOutput.PARAM_CODER_LIST )
-        person_coder_id_priority_list_IN = self.get_string_param_as_list( "person_" + NetworkOutput.PARAM_CODER_ID_PRIORITY_LIST )
+        person_coder_list_IN = self.get_param_as_list( NetworkOutput.PARAM_PERSON_CODER_LIST )
+        person_coder_id_priority_list_IN = self.get_string_param_as_list( NetworkOutput.PARAM_PERSON_CODER_ID_PRIORITY_LIST )
 
         debug_message = "In " + me + ": person_coder_list_IN = " + str( person_coder_list_IN ) + "; person_coder_id_priority_list_IN = " + str( person_coder_id_priority_list_IN )
         self.output_debug( debug_message, do_print_IN = my_debug_flag )
