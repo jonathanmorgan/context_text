@@ -1638,7 +1638,15 @@ class Article( Abstract_Entity_Container ):
 
     # Meta-data for this class.
     class Meta:
+
         ordering = [ 'pub_date', 'section', 'page' ]
+
+        indexes = [
+            models.Index( fields=[ 'pub_date' ] ),
+            models.Index( fields=[ 'unique_identifier' ] ),
+        ]
+        
+    #-- END Meta class --#
 
     #----------------------------------------------------------------------------
     # ! ==> class methods
@@ -5229,10 +5237,19 @@ class Article_Data( models.Model ):
     projects = models.ManyToManyField( Project, blank = True )
     work_log = models.ForeignKey( Work_Log, on_delete = models.SET_NULL, blank = True, null = True )
 
-    # Meta-data for this class.
+    #----------------------------------------------------------------------------
+    # ! ==> Meta class
+    #----------------------------------------------------------------------------
+
     class Meta:
+
         ordering = [ 'article', 'last_modified', 'create_date' ]
 
+        indexes = [
+            models.Index( fields=[ 'coder_type' ] ),
+        ]
+        
+    #-- END Meta class --#
 
     #----------------------------------------------------------------------
     # ! ==> class methods
@@ -6452,10 +6469,19 @@ class Article_Person( Abstract_Person_Parent ):
     create_date = models.DateTimeField( auto_now_add = True )
     last_modified = models.DateTimeField( auto_now = True )
 
-    # meta class so we know this is an abstract class.
+    #----------------------------------------------------------------------------
+    # ! ==> Meta class
+    #----------------------------------------------------------------------------
+
     class Meta:
 
         abstract = True
+
+        indexes = [
+            models.Index( fields=[ 'verbatim_name' ] ),
+        ]
+        
+    #-- END Meta class --#
 
     #----------------------------------------------------------------------------
     # NOT Instance variables
