@@ -1,5 +1,5 @@
 '''
-Copyright 2014 Jonathan Morgan
+Copyright 2022 Jonathan Morgan
 
 This file is part of http://github.com/jonathanmorgan/context_text.
 
@@ -11,7 +11,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 '''
 
 __author__="jonathanmorgan"
-__date__ ="$May 1, 2010 6:26:35 PM$"
+__date__ ="$June 12, 2022 9:50:35 AM$"
 
 if __name__ == "__main__":
     print( "Hello World" )
@@ -47,7 +47,7 @@ from context_text.export.network_data_output import NetworkDataOutput
 # classes (in alphabetical order by name)
 #===============================================================================
 
-class NDO_CSVMatrix( NetworkDataOutput ):
+class NDO_EdgeList( NetworkDataOutput ):
 
     
     #---------------------------------------------------------------------------
@@ -55,11 +55,21 @@ class NDO_CSVMatrix( NetworkDataOutput ):
     #---------------------------------------------------------------------------
 
     # output type
-    MY_OUTPUT_TYPE = "csv_matrix"
+    MY_OUTPUT_TYPE = "edge_list"
 
     # LOCAL_DEBUG_FLAG
     LOCAL_DEBUG_FLAG = False
-
+    
+    # node dictionary keys
+    NODE_LABEL = "label"
+    NODE_PERSON_ID = "person_id"
+    NODE_PERSON_TYPE = "person_type"
+    
+    # edge dictionary keys
+    EDGE_FROM = "from"          # person ID of FROM (or just one of two with a tie if not directed)
+    EDGE_TO = "to"              # person ID of TO (or just the other of two who are connected if not directed)
+    EDGE_WEIGHT = "weight"      # optional weight of tie
+    EDGE_DIRECTED = "directed"  # boolean whether directed or not, defaults to False.
 
     #---------------------------------------------------------------------------
     # class variables
@@ -83,16 +93,27 @@ class NDO_CSVMatrix( NetworkDataOutput ):
 
         # override things set in parent.
         self.output_type = self.MY_OUTPUT_TYPE
-        self.debug = "NDO_CSVMatrix debug:\n\n"
+        self.debug = "NDO_EdgeList debug:\n\n"
 
         # initialize variables.
-        self.csv_string_buffer = None
-        self.csv_writer = None
-        self.delimiter = ","
 
-        # variables for outputting result as file
-        self.mime_type = "text/csv"
-        self.file_extension = "csv"
+        # for node storage
+        
+        # the full node "list"
+        self.id_to_node_info_map = dict()
+
+        # build the following from self.id_to_node_info_map
+        #self.id_list = list()
+        #self.person_id_list = list()
+        #self.person_type_list = list()
+        
+        # and, a place to store the edge list we are building up
+        self.edge_list = list()
+        self.from_id_to_edge_map = dict()
+        self.to_id_to_edge_map = dict()
+        
+        # need to figure out what an undirected edge list looks like - just one edge for each pair?
+        # and, need to figure out how to specify directed or undirected, how processing differs.
 
     #-- END method __init__() --#
 
@@ -446,6 +467,74 @@ class NDO_CSVMatrix( NetworkDataOutput ):
     #-- END method create_csv_string --#
 
 
+    def create_node_list( self ):
+
+        """
+            Method: create_node_list()
+
+            Purpose: retrieves the master person list from the instance, uses it
+               to create a list of nodes for the output network.
+
+            Preconditions: Assumes that edge list output is already initialized.
+            
+            Returns:
+            - nothing - node list is stored in internal variable id_to_node_info_map.
+        """
+
+        # return reference
+
+        # declare variables
+        header_label_list = None
+        master_list = None
+        current_person_id = -1
+        person_counter = -1
+        my_csv_buffer = None
+        do_output_attr_rows = False
+
+        # get list of column headers.
+        header_label_list = self.create_header_list()
+        
+        # add header label row to csv document.
+        self.append_row_to_csv( header_label_list )
+
+        # get sorted master list (returns it sorted by default)
+        master_list = self.get_master_person_list()
+
+        # got something?
+        if ( ( master_list != None ) and ( len( master_list ) > 0 ) ):
+
+            # loop over sorted person list, calling method to output network
+            #    row for each person.  Leaving in sorted() since it copies
+            #    the array, and we are looping twice - not sure if it will
+            #    maintain two separate positions in nested loops.
+            person_counter = 0
+            for current_person_id in sorted( master_list ):
+
+                # increment counter
+                person_counter += 1
+
+                # add the person's row to the CSV writer.
+                self.append_person_row( current_person_id, person_counter )
+
+            #-- END loop over persons.
+
+        #-- END check to make sure we have a person list. --#
+        
+        # add attributes as rows?
+        do_output_attr_rows = self.do_output_attribute_rows()
+        if ( do_output_attr_rows == True ):
+
+            # yes - append the "person_id" attribute string...
+            self.append_person_id_row()
+            
+            # ...and append the "person_type" attribute string.
+            self.append_person_type_id_row()
+            
+        #-- END check to see if include attributes. --#
+
+    #-- END method create_csv_document --#
+
+
     def get_csv_string_buffer( self ):
         
         # return reference
@@ -568,6 +657,13 @@ class NDO_CSVMatrix( NetworkDataOutput ):
             network_data_OUT += "\nN = " + str( len( self.master_person_list ) ) + "\n"
             
         #-- END check to see if include render details. --#
+        
+        # first, create node (person) list.
+        
+        # then, create edge list.
+        
+        # And, finally, turn the whole mess into a JSON blob to return,
+        #     with two properties: node_list and edge_list.
     
         # output network.
         network_data_OUT += self.create_csv_string()

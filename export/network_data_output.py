@@ -183,7 +183,7 @@ class NetworkDataOutput( ContextTextBase ):
     def __init__( self ):
 
         # call parent's __init__()
-        super( NetworkDataOutput, self ).__init__()
+        super().__init__()
 
         # declare variables
         self.query_set = None
